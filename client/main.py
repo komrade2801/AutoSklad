@@ -30,7 +30,7 @@ from dbSync.Transport.routers import sync_router
 # ------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    cfg = SyncConfig(Path(__file__).parent / "config.json")
+    cfg = SyncConfig()
 
     # вы можете залогировать их, чтобы убедиться:
     print("SYNC CONFIG:", cfg.__dict__)

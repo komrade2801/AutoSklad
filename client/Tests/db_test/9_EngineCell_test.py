@@ -27,8 +27,6 @@ def test_engine():
     """
     Создаёт движок базы данных для тестов (SQLite в памяти).
     """
-    # engine = create_engine("sqlite:///:memory:")
-    # BaseCRUD.metadata.create_all(bind=engine)
     return engine
 
 
@@ -294,7 +292,7 @@ def test_update_cell(engine_cell, test_session, engine_group, setup_data, engine
         raise
 
     # Обновляем ячейку
-    result = engine_cell.update_cell(cell.id, description="After Update")
+    result = engine_cell.update_cell(id=cell.id, description="After Update")
     assert result is True, "Ячейка не была обновлена"
 
     # Проверяем обновление

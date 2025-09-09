@@ -95,6 +95,8 @@ class WebSocketTransport:
                 h = hashlib.sha256(plain).hexdigest()
                 # 3) ставим в очередь runner-а
                 reply_q: asyncio.Queue = asyncio.Queue()
+
+
                 queue_in.put({
                     "type":    msg.get("type", "handshake"),
                     "payload": msg.get("payload", msg),

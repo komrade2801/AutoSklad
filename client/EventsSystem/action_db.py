@@ -1,8 +1,6 @@
 import datetime
-# import random
 import traceback
-from typing import List, Optional, Type  # Dict,
-
+from typing import List, Optional, Type
 import dbSync
 from DB.Engine.HelpCRUD import EngineHelp  # ----------------------------------- 1
 from DB.Engine.ErrorsCRUD import EngineError  # -------------------------------- 2
@@ -26,12 +24,7 @@ from DB.Engine.OperationsConsumptionCRUD import EngineOperationsConsumption  # -
 from DB.Engine.LoadOperationsCRUD import EngineLoadOperations  # --------------- 20
 from DB.Data.db import SessionLocal
 from DB.Data.db import engine
-# from sqlalchemy import create_engine, MetaData
-# from sqlalchemy.orm import sessionmaker, Session
-# import os
-
 import logging
-
 from DB.Models.Cell import Cell
 from DB.Models.LoadOperations import LoadOperations
 from DB.Models.MassDrop import MassDrop
@@ -39,18 +32,9 @@ from DB.Models.OperationsConsumption import OperationsConsumption
 from DB.Models.Tools import Tools
 from DB.Models.User import User
 
-
-# Настройка логирования
-# logging.basicConfig(level=logging.DEBUG)
-
-
-# from .config import db_path
-
-
 class MassDropToolPlanIDNoneError(Exception):
     def __init__(self, message):
         super().__init__(message)
-        # self.logger(message)  # Вызов метода logger при создании объекта исключения
 
     def logger(self, message):
         logging.error(f"Ошибка: {message}")
@@ -59,7 +43,6 @@ class MassDropToolPlanIDNoneError(Exception):
 class MassDropPlanIdEQToolsError(Exception):
     def __init__(self, message):
         super().__init__(message)
-        # self.logger(message)  # Вызов метода logger при создании объекта исключения
 
     def logger(self, message):
         logging.error(f"Ошибка: {message}")
@@ -68,7 +51,6 @@ class MassDropPlanIdEQToolsError(Exception):
 class MassDropLenEqCellToolsError(Exception):
     def __init__(self, message):
         super().__init__(message)
-        # self.logger(message)  # Вызов метода logger при создании объекта исключения
 
     def logger(self, message):
         logging.error(f"Ошибка: {message}")
@@ -79,7 +61,6 @@ class MassLoadLenEqCellToolsError(Exception):
 
     def __init__(self, message):
         super().__init__(message)
-        # self.logger(message)  # Вызов метода logger при создании объекта исключения
 
     def logger(self, message):
         logging.error(f"Ошибка: {message}")
@@ -90,7 +71,6 @@ class MassLoadToolPlanIDError(Exception):
 
     def __init__(self, message):
         super().__init__(message)
-        # self.logger(message)  # Вызов метода logger при создании объекта исключения
 
     def logger(self, message):
         logging.error(f"Ошибка: {message}")
@@ -101,7 +81,6 @@ class MassLoadToolPlanIDNoneError(Exception):
 
     def __init__(self, message):
         super().__init__(message)
-        # self.logger(message)  # Вызов метода logger при создании объекта исключения
 
     def logger(self, message):
         logging.error(f"Ошибка: {message}")
@@ -112,7 +91,6 @@ class MassLoadPlanIdEQToolsError(Exception):
 
     def __init__(self, message):
         super().__init__(message)
-        # self.logger(message)  # Вызов метода logger при создании объекта исключения
 
     def logger(self, message):
         logging.error(f"Ошибка: {message}")
@@ -122,11 +100,7 @@ class ActionMapper:
     def __init__(self, executor):
         # Определите имя файла базы данных self.db_path
         # Проверьте, существует ли файл
-        # self.db_path = db_path
         self.__executor = executor
-
-        # Создание движка и сессии
-        # engine = create_engine(f"sqlite:///{self.db_path}", echo=True)
         # Определяем карту активности, используя лямбда-функции
         self.session_local = SessionLocal(engine())  # sessionmaker(bind=engine)
         self.e_help = EngineHelp(session=self.session_local)
@@ -149,7 +123,6 @@ class ActionMapper:
         self.e_drop_operations = EngineDropOperations(session=self.session_local)
         self.e_operations_consumption = EngineOperationsConsumption(session=self.session_local)
         self.e_load_operations = EngineLoadOperations(session=self.session_local)
-
         self.current_user = None
         self.select_tool = None
         self.current_role = None
@@ -161,19 +134,14 @@ class ActionMapper:
             'read_db_user_from_barcode': {'trigger': 'err_barcode'},
             'read_db_authorization': {'trigger': 'err_authorization'},
             'read_db_username': {'trigger': 'err_authorization'},
-            # "": None{'trigger,: 'err_
             'write_db_rights_by_user_id': {'trigger': 'write_err'},
             'read_db_rights_tool': {'trigger': 'err_rights'},
             'read_db_get_cell': {'trigger': 'err_data'},
-            # "": None{'trigger,: 'err_
             'write_db_plans': {'trigger': 'write_err'},
             'read_db_plan_id': {'trigger': 'err_barcode'},
-            # "": None{'trigger,: 'err_
             'read_db_get_tools': {'trigger': 'err_get_tools_by_plan_id'},
-            # "": None{'trigger,: 'err_
             'write_db_mass_drop_tools_by_plan': {'trigger': 'write_err'},
             'write_db_mass_drop_tools_by_free': {'trigger': 'write_err'},
-            # "": None{'trigger,: 'err_
             'write_db_mass_load_tools_by_plan': {'trigger': 'write_err'},
             'write_db_mass_load_tools_by_free': {'trigger': 'write_err'},
         }
@@ -273,10 +241,6 @@ class ActionMapper:
         # Получаем все ячейки, связанные с данным инструментом
         cells = self.e_cell.get_cells_by_tool(tool_id)
 
-        # # Если name передан, фильтруем результат дополнительно
-        # if tool_name:
-        #     cells = [cell for cell in cells if cell.description == tool_name]
-
         # Если результат пустой, возвращаем None
         if not cells:
             return {"trigger": "err_data"}
@@ -309,12 +273,12 @@ class ActionMapper:
             return {'trigger': 'view_err'}
         # Очистить ячейку (удалить инструмент из неё)
         cleared = self.e_cell.update_cell(
-            cell_id=cell.id,
+            id=cell.id,
             number=cell.number,
             description='Старт',
-            groups_id=None,
+            groups_id=0,
             tools_id=0,
-            status_id=1,
+            status_id=0,
         )
         if not cleared:
             print(f"Failed to clear tool {self.select_tool.id} from cell {cell.id}.")
@@ -330,6 +294,7 @@ class ActionMapper:
                 stype="consumption",
                 description="Инструмент выдан!"
             )
+            status = self.e_status.get_status_by_id(status_id=index)
             # return {'trigger': 'view_err'}
 
         # Добавить запись в таблицу Consumption
@@ -427,7 +392,6 @@ class ActionMapper:
             result.append(plan)
 
             for tool in tools:
-                # print(f"Инструмент с id {str(tool.id)} обнаружен в списке")
                 # Проверка статуса инструмента в таблице Cell
                 cells = self.e_cell.get_cells_by_tool(tool.id)
                 cell = None
@@ -440,17 +404,14 @@ class ActionMapper:
                 # Проверка операций в таблице DropOperations
                 drop_operations = self.e_drop_operations.get_operations_by_tool(tool.id)
                 if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
-                    # print(f"Инструмент с id {tool.id} не добавлен, причина инструмент выгружен")
                     continue
                 # Проверка операций в таблице OperationsConsumption
                 consumption_operations = self.e_operations_consumption.get_operations_by_tool(tool.id)
                 if consumption_operations:
-                    # print(f"Инструмент с id {tool.id} не добавлен, причина инструмент выдан")
                     continue
                 # Проверка операций в таблице LoadOperations
                 load_operations = self.e_load_operations.get_operations_by_tool(tool.id)
                 if len(load_operations) > 0 and not any(self.e_status.get_status_by_id(op.status_id).stype in ["mass_load_ready", "load_ready"] for op in load_operations):
-                    # print(f"Инструмент с id {tool.id} не добавлен, причина инструмент не загружен")
                     continue
 
                 result.append(tool)
@@ -478,7 +439,6 @@ class ActionMapper:
         #     print(" Эталон tool id " + str(tool.id))
 
         for tool in tools:
-            # print(f"Инструмент с id {str(tool.id)} обнаружен в списке")
             # Проверка статуса инструмента в таблице Cell
             cells = self.e_cell.get_cells_by_tool(tool.id)
             cell = None
@@ -491,16 +451,13 @@ class ActionMapper:
             # Проверка операций в таблице DropOperations
             drop_operations = self.e_drop_operations.get_operations_by_tool(tool.id)
             if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
-                # print(f"Инструмент с id {tool.id} не добавлен, причина инструмент выгружен")
                 continue
             # Проверка операций в таблице OperationsConsumption
             consumption_operations = self.e_operations_consumption.get_operations_by_tool(tool.id)
             if consumption_operations:
-                # print(f"Инструмент с id {tool.id} не добавлен, причина инструмент выдан")
                 continue
             # Проверка операций в таблице LoadOperations
             load_operations = self.e_load_operations.get_operations_by_tool(tool.id)
-            # if not any(self.e_status.get_status_by_id(op.status_id).stype in ["mass_load_ready", "load_ready"] for op in load_operations):
             found = False  # предполагаем, что ни один статус не подходит
 
             for op in load_operations:
@@ -510,20 +467,12 @@ class ActionMapper:
                     break  # нашли хотя бы один — дальше не надо
 
             if not found:
-                # print(f"Инструмент с id {tool.id} не добавлен, причина инструмент не загружен")
                 continue
             if len(load_operations) == 0 or load_operations == []:
-                # print(f"Инструмент с id {tool.id} не добавлен, причина инструмент не загружен")
                 continue
             # Если инструмент прошёл все проверки, добавляем его в список
             valid_tools.append(tool)
-            # print(f"Инструмент с id {tool.id} добавлен в список")
         return valid_tools, group_name
-
-        # try:
-        # except Exception as e:
-        #     print(f"Ошибка при извлечении инструментов для группы {group_id}: {e}")
-        #     return []
 
     def read_db_plan_operations(self, plans_id: int) -> list[dict]:
         """
@@ -898,13 +847,24 @@ class ActionMapper:
 
             target_tools = []
             for load in loads_by_mass_load:
+
+                tool = self.e_tools.get(load.tools_id)
+
+                # Если группа не найдена — создаём новую с именем первого слова из tool.name
+                group = self.e_group.get(tool.groups_id)
+                if group is None:
+                    first_word = tool.name.split()[0]
+                    new_group_id = max(self.e_group.get_all_ids(), default=0) + 1
+                    self.e_group.add(id=new_group_id, name=first_word)
+                    tool.groups_id = new_group_id
+
                 target_tools.append(self.e_tools.get(load.tools_id))
 
             # Получаем статус "ready"
             all_statuses = self.e_status.all()
             ready_status = next((s for s in all_statuses if s.stype == "mass_load_ready"), None)
-            index = max(self.e_status.get_all_ids(), default=0) + 1
             if not ready_status:
+                index = max(self.e_status.get_all_ids(), default=0) + 1
                 self.e_status.add(
                     index=index,
                     stype="mass_load_ready",
@@ -914,7 +874,9 @@ class ActionMapper:
             ready_status_id = ready_status.id
 
             for cell in target_cells:
-                self.e_cell.update(cell.id, status_id=ready_status_id)
+                # cell = self.e_cell.get()
+                cell.status_id=ready_status_id
+                self.e_cell.update_cell(**(cell.to_dict()))
             # Добавляем запись операций в LoadOperations и ячеек в Cell о готовности к использованию.
             for operations in target_operations:
                 access = True
@@ -948,8 +910,9 @@ class ActionMapper:
                     # Обновляем статус ячейки
                     load = self.e_load.get(operations[0].load_id)
                     cell = self.e_cell.get(load.cell_id)
+                    cell.description = description
                     if cell:
-                        result = result and self.e_cell.update(cell.id, status_id=ready_status_id)
+                        result = result and self.e_cell.update_cell(**(cell.to_dict()))
             return result
         except Exception as e:
             print(e)
@@ -964,21 +927,6 @@ class ActionMapper:
         """
         try:
             groups = self.e_group.get_all_groups()
-
-            # if not groups:
-            #     print("Нет доступных групп в базе данных.")
-            #     return []
-            #
-            # group_list = []
-            #
-            # for group in groups:
-            #     group_list.append({
-            #         "id": group.id,
-            #         "name": group.name,
-            #         "description": group.description,
-            #         "status": group.status
-            #     })
-
             return groups  # group_list
 
         except Exception as e:
@@ -1147,7 +1095,6 @@ class ActionMapper:
                 raise ValueError("Отсутствует информация о роли пользователя.")
 
             existing_role = self.e_role.get_all_roles()
-            # role = next((r for r in existing_role if r.name == role_data.name), None)
             role = None
             for r in existing_role:
                 if r.name == role_data.name:

@@ -29,6 +29,7 @@ class Group(Base, Model):
     name = Column(String(100), nullable=True, comment='Название группы')  # Увеличен размер для более длинных названий
     description = Column(String(450), nullable=True, comment='Описание группы')  # Описание группы
     status = Column(Integer, nullable=True, comment='Статус группы (например, активна/не активна)')
+
     @property
     def cells(self):
         if 'Cells' not in Base.metadata.tables:
@@ -36,6 +37,7 @@ class Group(Base, Model):
         else:
             Cell = Base.metadata.tables['Cells'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Cell, back_populates="Drops")
+
     @property
     def tools(self):
         if 'Tools' not in Base.metadata.tables:
@@ -49,6 +51,7 @@ class Group(Base, Model):
         Index('idx_group_name', 'name', unique=False),
         Index('idx_group_status', 'status', unique=False),
     )
+
     def __repr__(self):
         """Представляет объект Group в виде строки для удобства отладки."""
         return (f"<Group("
@@ -57,7 +60,6 @@ class Group(Base, Model):
                 f"description={self.description}, "
                 f"status={self.status}"
                 f")>")
-
 
 # Внешние связи
 # cells = relationship('Cell', back_populates='Groups')

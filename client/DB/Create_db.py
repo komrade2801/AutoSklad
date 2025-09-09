@@ -1,103 +1,29 @@
-# import logging
-# import pkgutil
-# from sqlalchemy import create_engine
-# import importlib
-# import os
-# from sqlalchemy.orm import sessionmaker
-# from DB.Models.Tables import Error
-# from DB.Models.Tables import Help
-# from DB.Models.Tables import Role
-# from DB.Models.Tables import Rights
-# from DB.Models.Tables import User
-# from DB.Models.Tables import Identification
-# from DB.Models.Tables import Plan
-# from DB.Models.Tables import Group
-# from DB.Models.Tables import Tools
-# from DB.Models.Tables import History
-# from DB.Models.Tables import Cell
-# from DB.Models.Tables import MassLoad
-# from DB.Models.Tables import MassDrop
-# from DB.Models.Tables import LoadOperations
-# from DB.Models.Tables import OperationsConsumption
-# from DB.Models.Tables import Drop
-# from DB.Models.Tables import Status
-# from DB.Models.Tables import Load
-# from DB.Models.Tables import DropOperations
-# from DB.Models.Tables import Consumption
-# Определите имя файла, который хотите удалить
-# # Проверьте, существует ли файл
-# if os.path.exists(db_path):
-#     try:
-#         os.remove(db_path)
-#         print(f"Файл '{db_path}' был успешно удален.")
-#     except Exception as e:
-#         print(f"Ошибка при удалении файла: {e}")
-# else:
-#     print(f"Файл '{db_path}' не найден.")
-#
-# # Создаем файл и записываем в него пример данных
-# try:
-#     with open(db_path, 'w') as file:
-#         # Вы можете записывать строки в файл, используя метод write()
-#         file.write('')
-#     print(f"Файл '{db_path}' был успешно создан.")
-# except Exception as e:
-#     print(f"Ошибка при создании файла: {e}")
+# DB/Create_db.py
 import json
+import time
 import traceback
-
 import dbSync
 from DB.Data.sqlite_db import SessionLocal, engine
-# from Core.Parser import HtmlTitleParser
 from DB.Engine.CellCRUD import EngineCell
-# from DB.Engine.CellHasDeviceCRUD import EngineCellHasDevice
-# from dbSync.Engines.CRUD import EngineCommand
 from DB.Engine.ConsumptionCRUD import EngineConsumption
-# from DB.Engine.DeviceCRUD import EngineDevice
 from DB.Engine.DropCRUD import EngineDrop
 from DB.Engine.DropOperationsCRUD import EngineDropOperations
-# from DB.Engine.DropOperationsHasDeviceCRUD import EngineDropOperationsHasDevice
 from DB.Engine.ErrorsCRUD import EngineError
-# from DB.Engine.ErrorHasDeviceCRUD import EngineErrorHasDevice
 from DB.Engine.GroupCRUD import EngineGroup
 from DB.Engine.HelpCRUD import EngineHelp
 from DB.Engine.HistoryCRUD import EngineHistory
 from DB.Engine.IdentificationCRUD import EngineIdentification
 from DB.Engine.LoadCRUD import EngineLoad
 from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
-# from DB.Engine.LoadOperationsHasDeviceCRUD import EngineLoadOperationsHasDevice
 from DB.Engine.MassDropCRUD import EngineMassDrop
 from DB.Engine.MassLoadCRUD import EngineMassLoad
-# from DB.Engine.MassDropHasDeviceCRUD import EngineMassDropHasDevice
-# from DB.Engine.MassLoadHasDeviceCRUD import EngineMassLoadHasDevice
 from DB.Engine.OperationsConsumptionCRUD import EngineOperationsConsumption
-# from DB.Engine.OperationsConsumptionHasDeviceCRUD import EngineOperationsConsumptionHasDevice
 from DB.Engine.PlanCRUD import EnginePlan
-# from DB.Engine.ActualNormCRUD import EngineActualNorm
-# from DB.Engine.ActualNormHasDeviceCRUD import EngineActualNormHasDevice
 from DB.Engine.RightsCRUD import EngineRights
 from DB.Engine.RoleCRUD import EngineRole
 from DB.Engine.StatusCRUD import EngineStatus
-# from DB.Engine.ToolLocationCRUD import EngineToolLocation
 from DB.Engine.ToolsCRUD import EngineTools
-# from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
-# from DB.Engine.ToolTypesCRUD import EngineToolTypes
-# from DB.Engine.TypeCRUD import EngineType
 from DB.Engine.UserCRUD import EngineUser
-# from DB.Engine.PageCRUD import EnginePage
-
-# Включение логирования SQLAlchemy
-# logging.basicConfig()
-# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-
-# modules = [Cell, Error, Group, Help, History, Identification, Plan, Rights, Role, Tools, User, MassLoad, MassDrop,
-#            LoadOperations, OperationsConsumption, Drop, Status, Load, DropOperations, Consumption]
-#
-# # Создание базы данных и таблиц
-# engine = create_engine(f'sqlite:///{db_path}')
-# print(Base.metadata.tables.keys())
-# Base.metadata.create_all(engine)  # Создает все таблицы, описанные в Base
-
 from DB.Models.Help import Help  # ----------------------------------- 1
 from DB.Models.Error import Error  # --------------------------------- 2
 from DB.Models.Role import Role  # ----------------------------------- 3
@@ -121,7 +47,6 @@ from DB.Models.LoadOperations import LoadOperations  # --------------- 20
 from sqlalchemy import create_engine
 from DB.Data.base import Base
 import os
-# from config import config_path
 from datetime import datetime
 from pathlib import Path
 from threading import RLock
@@ -130,7 +55,7 @@ from config import config_path, db_path
 
 # Глобальное хранилище прогресса
 progress_data = {
-    "status": "idle",  # idle, in_progress, complete, error
+    "status": "idle",
     "messages": [],
     "current_stage": "",
     "percentage": 0
@@ -147,20 +72,12 @@ def update_progress(message: str = None, stage: str = None, percentage: int = 0)
         if percentage >= 0:
             progress_data["percentage"] = percentage
 
+
 def run_setup_process():
     try:
         update_progress("Starting full setup", "init", 0)
         progress_data["status"] = "in_progress"
-        #
-        # stages = [
-        #     ("Creating tables", 20),
-        #     ("Seeding data", 40),
-        #     ("Generating indexes", 60),
-        #     ("Optimizing", 80),
-        #     ("Finalizing", 100)
-        # ]
 
-        # Запуск процессов
         rebuild_db()
         execute()
 
@@ -173,131 +90,96 @@ def run_setup_process():
 
 
 
-
 def rebuild_db():
-    modules = [Help, Error, Role, Plan, Group, Rights, MassDrop, MassLoad, Status, User, Identification, Tools, Cell,
-               Load, Drop, Consumption, History, DropOperations, OperationsConsumption, LoadOperations]
-    # modules = [Cell, Error, Group, Help, History, Identification, Plan, Rights, Role, Tools, User, MassLoad, MassDrop,
-    #            LoadOperations, OperationsConsumption, Drop, Status, Load, DropOperations, Consumption]
+    # 1) Determine the module folder and path to DB/Data
+    current_dir = os.path.dirname(os.path.abspath(__file__))      # .../Vending/DB
+    project_root = os.path.dirname(current_dir)                    # .../Vending
+    data_dir     = os.path.join(project_root, "DB", "Data")        # .../Vending/DB/Data
 
-    # Получаем текущую директорию
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Определяем путь к родительской директории  os.path.dirname()
-    parent_dir = current_dir + "\\" + "Data"
-    # Формируем полный путь к базе данных в родительской директории
-    db_filename = os.path.join(parent_dir, db_path)
+    # 2) Ensure that the directory exists
+    os.makedirs(data_dir, exist_ok=True)
 
-    # Определите имя файла, который хотите удалить
-    # Проверьте, существует ли файл
+    # 3) Build the full path to the database file
+    db_filename = os.path.join(data_dir, db_path)
+
+    # 4) Small pause to let the OS release any locks
+    time.sleep(0.1)
+
+    # 5) Remove the old file if it exists
     if os.path.exists(db_filename):
         try:
             os.remove(db_filename)
-            print(f"Файл '{db_filename}' был успешно удален.")
+            print(f"Database file removed: {db_filename}")
         except Exception as e:
-            print(f"Ошибка при удалении файла: {e}")
+            print(f"Error removing database file: {e}")
             print(traceback.format_exc())
-
     else:
-        print(f"Файл '{db_filename}' не найден.")
+        print(f"No existing database file found; creating new one at: {db_filename}")
 
-    # Включение логирования SQLAlchemy
-    # logging.basicConfig()
-    # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-
-    # Создаем движок базы данных с использованием относительного пути
-    # engine = create_engine(f'sqlite:///{db_path}')
-    # Создаем файл и записываем в него пример данных
+    # 6) Create an empty file
     try:
-        with open(db_filename, 'w') as file:
-            # Вы можете записывать строки в файл, используя метод write(), echo=True
-            file.write('')
-        print(f"Файл '{db_filename}' был успешно создан.")
+        open(db_filename, "w").close()
+        print(f"Database file created: {db_filename}")
     except Exception as e:
-        print(f"Ошибка при создании файла: {e}")
+        print(f"Error creating database file: {e}")
         print(traceback.format_exc())
+        return
 
-    # Создание базы данных и таблиц
-    engine = create_engine(f'sqlite:///{db_filename}')
-    print(Base.metadata.tables.keys())
-    Base.metadata.create_all(engine)  # Создает все таблицы, описанные в Base
-
+    # 7) Connect to SQLite and create tables
+    engine = create_engine(f"sqlite:///{db_filename}")
+    try:
+        Base.metadata.drop_all(engine)
+        Base.metadata.create_all(engine)
+        print("All tables have been successfully (re)created.")
+    except Exception as e:
+        print(f"Error during (re)creation of tables: {e}")
+        print(traceback.format_exc())
+    finally:
+        engine.dispose()
 
 def execute():
     try:
 
         update_progress("Starting database population", "execute", 0)
         e_cell = EngineCell(SessionLocal(engine()))
-        # e_cell_has_device = EngineCellHasDevice(SessionLocal(engine()))
-        # e_command = EngineCommand(SessionLocal(engine()))
         e_consumption = EngineConsumption(SessionLocal(engine()))
-        # e_device = EngineDevice(SessionLocal(engine()))
         e_drop = EngineDrop(SessionLocal(engine()))
         e_drop_operations = EngineDropOperations(SessionLocal(engine()))
-        # e_drop_operations_has_device = EngineDropOperationsHasDevice(SessionLocal(engine()))
         e_error = EngineError(SessionLocal(engine()))
-        # e_error_has_device = EngineErrorHasDevice(SessionLocal(engine()))
         e_group = EngineGroup(SessionLocal(engine()))
         e_help = EngineHelp(SessionLocal(engine()))
         e_history = EngineHistory(SessionLocal(engine()))
         e_identification = EngineIdentification(SessionLocal(engine()))
         e_load = EngineLoad(SessionLocal(engine()))
         e_load_operations = EngineLoadOperations(SessionLocal(engine()))
-        # e_load_operations_has_device = EngineLoadOperationsHasDevice(SessionLocal(engine()))
         e_mass_drop = EngineMassDrop(SessionLocal(engine()))
         e_mass_load = EngineMassLoad(SessionLocal(engine()))
-        # e_mass_drop_has_device = EngineMassDropHasDevice(SessionLocal(engine()))
-        # e_mass_load_has_device = EngineMassLoadHasDevice(SessionLocal(engine()))
         e_operations_consumption = EngineOperationsConsumption(SessionLocal(engine()))
-        # e_operations_consumption_has_device = EngineOperationsConsumptionHasDevice(SessionLocal(engine()))
         e_plan = EnginePlan(SessionLocal(engine()))
-        # e_actual_norm = EngineActualNorm(SessionLocal(engine()))
-        # e_actual_norm_has_device = EngineActualNormHasDevice(SessionLocal(engine()))
         e_rights = EngineRights(SessionLocal(engine()))
         e_role = EngineRole(SessionLocal(engine()))
         e_status = EngineStatus(SessionLocal(engine()))
-        # e_tool_location = EngineToolLocation(SessionLocal(engine()))
         e_tools = EngineTools(SessionLocal(engine()))
-        # e_tools_has_device = EngineToolsHasDevice(SessionLocal(engine()))
-        # e_tool_types = EngineToolTypes(SessionLocal(engine()))
-        # e_type = EngineType(SessionLocal(engine()))
         e_user = EngineUser(SessionLocal(engine()))
-        # e_page = EnginePage(SessionLocal(engine()))
-
-        # e_page.delete_all()
         e_cell.delete_all()
-        # e_cell_has_device.delete_all()
-        # e_command.delete_all()
         e_consumption.delete_all()
-        # e_device.delete_all()
         e_drop.delete_all()
         e_drop_operations.delete_all()
-        # e_drop_operations_has_device.delete_all()
         e_error.delete_all()
-        # e_error_has_device.delete_all()
         e_group.delete_all()
         e_help.delete_all()
         e_history.delete_all()
         e_identification.delete_all()
         e_load.delete_all()
         e_load_operations.delete_all()
-        # e_load_operations_has_device.delete_all()
         e_mass_drop.delete_all()
         e_mass_load.delete_all()
-        # e_mass_drop_has_device.delete_all()
-        # e_mass_load_has_device.delete_all()
         e_operations_consumption.delete_all()
-        # e_operations_consumption_has_device.delete_all()
         e_plan.delete_all()
-        # e_actual_norm.delete_all()
-        # e_actual_norm_has_device.delete_all()
         e_rights.delete_all()
         e_role.delete_all()
         e_status.delete_all()
-        # e_tool_location.delete_all()
         e_tools.delete_all()
-        # e_tools_has_device.delete_all()
-        # e_tool_types.delete_all()
-        # e_type.delete_all()
         e_user.delete_all()
 
         update_progress("База данных создана!", "complete", 10)
@@ -306,18 +188,6 @@ def execute():
         BASE_DIR = Path(__file__).parent.parent
         PAGE_DIR = BASE_DIR / "frontend/page"
 
-        # --- Инициализация страниц в БД и регистрация маршрутов ---
-        # _pages_dir = os.path.join(os.path.dirname(__file__), "page")
-        # for file_name in os.listdir(PAGE_DIR):
-        #     if file_name.startswith("screen") and file_name.endswith(".html"):
-        #         # если нет в БД — создаём
-        #         if not e_page.find_page(name=file_name):
-        #             # parser = HtmlTitleParser(f"../frontend/page/{file_name}")
-        #             parser = HtmlTitleParser(str(PAGE_DIR / file_name))
-        #             description = parser.get_title()
-        #             e_page.add_page(name=file_name, description=description)
-
-        #  print("Страницы добавлены")
         update_progress("Страницы добавлены!", "complete", 11)
         """
             id	    number	    name	                description	        details	                        create
@@ -371,41 +241,6 @@ def execute():
         # вариант 1: получить datetime.date
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
-        # e_device.add_device(
-        #     number=1,
-        #     name="Основной вендинг",
-        #     description="Главный цех",
-        #     details='''{
-        #       "signature": {
-        #         "serial_number": 1,
-        #         "cells": {
-        #           "length": 1024,
-        #           "columns": 32,
-        #           "rows": 32
-        #         }
-        #       },
-        #       "network": {
-        #         "ip": "192.168.0.10",
-        #         "port": 8080
-        #       },
-        #       "serial": {
-        #         "port": "COM1",
-        #         "baudrate": 9600
-        #       },
-        #       "barcode": {
-        #         "port": "COM1",
-        #         "baudrate": 9600
-        #       },
-        #       "locks": {
-        #         "load_locked": 0,
-        #         "drop_locked": 0
-        #       },
-        #       "logs": {
-        #         "critical_errors": []
-        #       }
-        #     }''',
-        #     create=date_obj,
-        # )
         print("Устройство добавлено")
         update_progress("Устройство добавлено!", "complete", 12)
         status_names = [
@@ -419,12 +254,12 @@ def execute():
         ]
         status_description = [
             "Инициализация системы!",
-            "Инициализирована массовая загрузка",
-            "Инициализирована массовая выгрузка",
-            "Инструмент по массовой загрузке загружен в аппарат",
-            "Инструмент по массовой выгрузки извлечён из аппарата",
-            "Инструмент по массовой загрузке загружен в аппарат",
-            "Инструмент по массовой выгрузки извлечён из аппарата",
+            "Инструмент извлечён из аппарата",
+            "Инструмент готов к выдаче",
+            "Объявлена массовая выгрузка",
+            "Объявлена массовая загрузка",
+            "Инструмент извлечён из аппарата",
+            "Инструмент готов к выдаче",
         ]
         for key, name in enumerate(status_names):
             status = e_status.find_by_name(name)
@@ -454,32 +289,36 @@ def execute():
                     groups_id=0,
                     description='Старт',
                 )
-                # e_cell_has_device.add_link(
-                #     device_id=index,
-                #     cell_id=index
-                # )
+
                 number += 1
 
-                persent = ((number/cell_length) * 100)
+                persent = ((number / cell_length) * 100)
 
                 update_progress(f"Ячейка {number} из {cell_length} добавлена!", "complete", persent)
 
         roles_and_pages = {
-            'Developer':[ 'Выдача инструмента', 'История операций', 'История ошибок', 'Выгрузка №', 'Выгрузка №', 'История выгрузок', 'Загрузка №', 'Загрузка №', 'История загрузок', 'Библиотека инструмента', 'Добавление инструмента', 'Генерация штрихкода', 'Настройка', 'Добавление пользователя', 'Все пользователи', 'Редактирование конфигурации', 'Информация', 'Все устройства', 'Добавление устройства', 'Массовая загрузка', 'Массовая выгрузка', 'Управление запасами', 'Списание инструмента', 'История списаний', 'Все чертежи', 'Добавление чертежа', 'Добавление нормы', 'Актуальные нормы сотрудников'],
-            'Stockman': [ "История операций", "История ошибок", "История выгрузок", "История загрузок", "Библиотека инструмента", "Генерация штрих-кода", "Массовая загрузка", "Массовая выгрузка" ],
-            'Admin': [ 'Все устройства', 'Добавление устройства', 'Редактирование конфигурации', 'Настройка', 'Все пользователи', 'Добавление пользователя', 'Информация', 'История ошибок', 'История загрузок', 'История выгрузок', 'История операций'],
-            'Engineer': [ 'Все чертежи', 'Добавление чертежа', 'Добавление нормы', 'Актуальные нормы сотрудников', 'Все пользователи', 'Библиотека инструмента', 'Добавление инструмента', ],
-            'Manager': [ 'Выдача инструмента', 'История операций', 'История ошибок', 'Выгрузка №', 'Выгрузка №', 'История выгрузок', 'Загрузка №', 'Загрузка №', 'История загрузок', 'Библиотека инструмента', 'Добавление инструмента', 'Генерация штрихкода', 'Настройка', 'Добавление пользователя', 'Все пользователи', 'Редактирование конфигурации', 'Информация', 'Все устройства', 'Добавление устройства', 'Массовая загрузка', 'Массовая выгрузка', 'Управление запасами', 'Списание инструмента', 'История списаний', 'Все чертежи', 'Добавление чертежа', 'Добавление нормы', 'Актуальные нормы сотрудников'],
-            'User': [ 'Выдача инструмента','Управление запасами', 'Списание инструмента', 'История списаний',]
+            'Developer': ['Выдача инструмента', 'История операций', 'История ошибок', 'Выгрузка №', 'Выгрузка №', 'История выгрузок', 'Загрузка №', 'Загрузка №', 'История загрузок',
+                          'Библиотека инструмента', 'Добавление инструмента', 'Генерация штрихкода', 'Настройка', 'Добавление пользователя', 'Все пользователи', 'Редактирование конфигурации',
+                          'Информация', 'Все устройства', 'Добавление устройства', 'Массовая загрузка', 'Массовая выгрузка', 'Управление запасами', 'Списание инструмента', 'История списаний',
+                          'Все чертежи', 'Добавление чертежа', 'Добавление нормы', 'Актуальные нормы сотрудников'],
+            'Stockman': ["История операций", "История ошибок", "История выгрузок", "История загрузок", "Библиотека инструмента", "Генерация штрих-кода", "Массовая загрузка", "Массовая выгрузка"],
+            'Admin': ['Все устройства', 'Добавление устройства', 'Редактирование конфигурации', 'Настройка', 'Все пользователи', 'Добавление пользователя', 'Информация', 'История ошибок',
+                      'История загрузок', 'История выгрузок', 'История операций'],
+            'Engineer': ['Все чертежи', 'Добавление чертежа', 'Добавление нормы', 'Актуальные нормы сотрудников', 'Все пользователи', 'Библиотека инструмента', 'Добавление инструмента', ],
+            'Manager': ['Выдача инструмента', 'История операций', 'История ошибок', 'Выгрузка №', 'Выгрузка №', 'История выгрузок', 'Загрузка №', 'Загрузка №', 'История загрузок',
+                        'Библиотека инструмента', 'Добавление инструмента', 'Генерация штрихкода', 'Настройка', 'Добавление пользователя', 'Все пользователи', 'Редактирование конфигурации',
+                        'Информация', 'Все устройства', 'Добавление устройства', 'Массовая загрузка', 'Массовая выгрузка', 'Управление запасами', 'Списание инструмента', 'История списаний',
+                        'Все чертежи', 'Добавление чертежа', 'Добавление нормы', 'Актуальные нормы сотрудников'],
+            'User': ['Выдача инструмента', 'Управление запасами', 'Списание инструмента', 'История списаний', ]
         }
 
         test_users = [
-            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим', 'second_name': 'Кудрявцев',  'family': 'Single',  'password': 1111, 'role_id': 1},
-            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон', 'second_name': 'Пестова',    'family': 'Single',  'password': 2222, 'role_id': 2},
-            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий','second_name': 'Комаров',    'family': 'Single',  'password': 3333, 'role_id': 3},
-            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица', 'second_name': 'Устинова',   'family': 'Single',  'password': 4444, 'role_id': 4},
-            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей',  'second_name': 'Никифорова', 'family': 'Single',  'password': 5555, 'role_id': 5},
-            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий','second_name': 'Фомичев',    'family': 'Single',  'password': 6666, 'role_id': 6}
+            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим', 'second_name': 'Кудрявцев', 'family': 'Single', 'password': 1111, 'role_id': 1},
+            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон', 'second_name': 'Пестова', 'family': 'Single', 'password': 2222, 'role_id': 2},
+            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий', 'second_name': 'Комаров', 'family': 'Single', 'password': 3333, 'role_id': 3},
+            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица', 'second_name': 'Устинова', 'family': 'Single', 'password': 4444, 'role_id': 4},
+            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей', 'second_name': 'Никифорова', 'family': 'Single', 'password': 5555, 'role_id': 5},
+            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий', 'second_name': 'Фомичев', 'family': 'Single', 'password': 6666, 'role_id': 6}
         ]
 
         for user in test_users:
@@ -498,7 +337,6 @@ def execute():
         update_progress("Пользователи добавлены", "complete", 90)
 
         for role_name in roles_and_pages:
-
             update_progress(f"Роль {role_name} добавлена", "complete", 95)
 
             e_role.add_role(
@@ -510,23 +348,6 @@ def execute():
 
             role_id_max = max(e_role.get_all_ids())
             role = e_role.get_role_by_id(role_id_max)
-
-            # stockman_id = role.id
-            # page_stockman_ids = []
-            #
-            # pages = e_page.get_all_pages()
-            # for page in pages:
-            #     if page.description in page_stockman:
-            #         page_stockman_ids.append(page.id)
-
-            # for index in page_stockman_ids:
-            #     e_rights.add_right(
-            #         name="разрешено",
-            #         role_id=stockman_id,
-            #         page_id=index,
-            #         description="",
-            #     )
-
             update_progress("Database populated", "execute", 100)
 
     except Exception as e:
@@ -534,7 +355,21 @@ def execute():
         raise
 
 
+CACHE_PATH = Path(__file__).parent.parent / 'command_queue.json'
+
+
+def clear_command_queue_cache():
+    """
+    Очищает файл command_queue.json, записывая в него пустой список.
+    Если файла нет — создаёт его.
+    """
+    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)  # убедиться, что папка есть
+    with CACHE_PATH.open('w', encoding='utf-8') as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+
+
 if __name__ == "__main__":
+    clear_command_queue_cache()
     dbSync.init_db = True
     rebuild_db()
     execute()

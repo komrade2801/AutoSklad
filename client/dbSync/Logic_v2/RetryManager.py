@@ -2,6 +2,7 @@ import threading
 import time
 import logging
 import traceback
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Protocol, TypedDict
 import logging
 from .DiagnosticLogger import DiagnosticLogger
@@ -107,11 +108,19 @@ class RetryManager:
                     "Scheduling retry",
                     {"id": cmd_id, "attempt": count, "delay": actual_delay}
                 )
-            self.scheduler.schedule(
-                func=self._retry_one,
-                args=(cmd,),
-                delay=actual_delay
+            run_date = datetime.utcnow() + timedelta(seconds=actual_delay)
+            self.scheduler.add_job(
+                self._retry_one,
+                trigger='date',
+                run_date=run_date,
+                args=[cmd],
+                id=f"retry_{cmd_id}_{count}"
             )
+            # self.scheduler.schedule(
+            #     func=self._retry_one,
+            #     args=(cmd,),
+            #     delay=actual_delay
+            # )
             print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][schedule_retry] - count: {len(self.queue.get_pending_commands() + self.queue.get_failed_commands())}')
 
     def _retry_one(self, cmd: RetryCommand) -> None:

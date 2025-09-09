@@ -27,6 +27,6 @@ class ActionSelector:
             elif actor in list(self.mappers.items())[2]:
                 return self.__cnf_mapper
             # elif actor in list(self.mappers.items())[3]:
-                # return self.__http_mapper
+            #     return self.__http_mapper
 
         raise ValueError(f"Модуль не найден для действия '{action}'.")

@@ -47,7 +47,7 @@ def test_write_db_drop_tool_groups_success(mapper, fake_data):
             status_id = mapper.e_status.add(
                 index=max(mapper.e_status.get_all_ids(), default=0) + 1,
                 stype="mass_load_ready",
-                description="Статус готовности инструментов"
+                description="Инструмент готов к выдаче"
             )
         else:
             status_id = status.id

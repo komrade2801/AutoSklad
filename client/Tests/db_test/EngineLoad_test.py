@@ -41,8 +41,6 @@ def test_engine():
     """
     Создает тестовый движок базы данных (в памяти).
     """
-    # engine = create_engine('sqlite:///:memory:')  # Используем SQLite в памяти для тестов
-    # Base.metadata.create_all(engine)  # Создаем все таблицы
     return engine()
 
 

@@ -80,31 +80,3 @@ class EngineMassDrop(BaseCRUD):
         :return: True если таблица успешно удалена, иначе False.
         """
         return self.drop()
-
-
-if __name__ == "__main__":
-    # Пример использования EngineMassDrop
-    engine = create_engine('sqlite:///:memory:')  # Используйте вашу базу данных
-    from DB.Data.base import Base
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(bind=engine)
-
-    # Инициализация
-    session = SessionLocal()
-    mass_drop_engine = EngineMassDrop(session)
-
-    # Добавление задачи
-    mass_drop_engine.add_task(description="Удаление устаревших данных")
-
-    # Получение всех задач
-    tasks = mass_drop_engine.get_all_tasks()
-    print(tasks)
-
-    # Обновление задачи
-    mass_drop_engine.update_task(task_id=1, description="Обновленное описание")
-
-    # Удаление задачи
-    mass_drop_engine.delete_task(task_id=1)
-
-    # Количество задач
-    print(mass_drop_engine.count_tasks())

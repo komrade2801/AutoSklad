@@ -17,7 +17,6 @@ def test_engine():
     """
     Создает тестовый движок базы данных (в памяти).
     """
-    # engine = create_engine("sqlite:///:memory:")
     return engine()
 
 
@@ -27,8 +26,6 @@ def test_session(test_engine):
     """
     Создает тестовую сессию SQLAlchemy.
     """
-    # SessionLocal.configure(bind=engine)
-    # session = SessionLocal()
     return SessionLocal(test_engine)
 
 

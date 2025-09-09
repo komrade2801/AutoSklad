@@ -249,10 +249,11 @@ def init_processor(queue, sender, db_session, retry_manager, cmd_crud, record_cr
             json_validator=json_validator,
             sync_manager=sync_manager,
             server_schema=SERVER_SCHEMA,
-            db_session=db_session,
+            sync_session=db_session,
             retry_attempts=5,  # настраиваемые параметры
             retry_delay=30,
-            emulate_server=False
+            emulate_server=False,
+            work_session=SessionLocal()
         )
         print('[setup]init_processor')
         return processor

@@ -93,38 +93,3 @@ class EngineDrop(BaseCRUD):
         :return: True если запись успешно удалена, иначе False.
         """
         return self.delete(drop_id)
-
-
-if __name__ == "__main__":
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-    from ..Data.base import Base  # Импорт вашего Base
-    from ..Models.Drop import Drop  # Импорт модели Drop
-
-    # from .EngineDrop import EngineDrop  # Импорт EngineDrop
-
-    # Инициализация базы данных
-    engine = create_engine('sqlite:///:memory:')  # Замените на вашу базу данных
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    session = SessionLocal()
-
-    # Создаем объект EngineDrop
-    engine_drop = EngineDrop(session)
-
-    # Пример добавления записи
-    engine_drop.add_drop(tools_id=1, mass_drop_id=2, cell_id=3, description="Выдача инструмента")
-
-    # Пример получения всех записей
-    all_drops = engine_drop.all()
-    print(all_drops)
-
-    # Пример поиска по tools_id
-    drops_by_tool = engine_drop.get_by_tools_id(1)
-    print(drops_by_tool)
-
-    # Пример обновления записи
-    engine_drop.update_drop(1, description="Обновленное описание")
-
-    # Пример удаления записи
-    engine_drop.delete_drop(1)

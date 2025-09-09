@@ -9,7 +9,7 @@ import logging
 import threading
 import traceback
 from datetime import datetime
-from typing import Optional, Dict, Any #List,
+from typing import Optional, Dict, Any  # List,
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -21,9 +21,11 @@ from dbSync.Engines.RecordEngine import RecordCRUD
 from dbSync.Model.Command import Command
 from dbSync.Model.CommandStatus import CommandStatus
 from dbSync.Model.Record import Record
+
 # from dbSync.Runner import create_db_session
 
 logger = logging.getLogger(__name__)
+
 
 class CommandCRUD(BaseCRUD):
     """
@@ -39,10 +41,10 @@ class CommandCRUD(BaseCRUD):
 
     def __init__(self,
                  *,
-                 session: Session=None,
+                 session: Session = None,
                  cache_maxsize: int = 1000,
                  cache_ttl: int = 300
-            ):
+                 ):
         """
         Инициализация CRUD-объекта для команд синхронизации
 
@@ -278,36 +280,3 @@ class CommandCRUD(BaseCRUD):
                 "record": record,
                 "statuses": statuses
             }
-
-
-# Пример использования
-if __name__ == "__main__":
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    # Инициализация подключения
-    engine = create_engine("sqlite:///sync.db")
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    # Создание CRUD-объекта
-    command_crud = CommandCRUD()
-    # base = command_crud.__class__ = BaseCRUD
-    # base.
-    # Создание тестовой команды
-    cmd_id = command_crud.add_command(
-        table_name="products",
-        operation="UPDATE",
-        record_id=123,
-        device_number=5,
-        data_json="{'price': 199}"
-    )
-    print(f"Создана команда ID: {cmd_id}")
-
-    # Получение ожидающих команд
-    pending = command_crud.get_pending_for_device(5)
-    print(f"Ожидающие команды: {len(pending)} шт.")
-
-    # Подтверждение выполнения
-    command_crud.acknowledge(cmd_id, "COMPLETED")
-    print("Статус команды обновлен")

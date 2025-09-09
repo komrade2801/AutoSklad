@@ -129,35 +129,3 @@ class EngineTools(BaseCRUD):
         tool = self.get_tool_by_id(tool_id)
         return tool.stories if tool else []
 
-
-if __name__ == "__main__":
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-    from contextlib import contextmanager
-    from DB.Data.base import Base
-
-    DATABASE_URL = "sqlite:///vending.db"
-    engine = create_engine(DATABASE_URL)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-    @contextmanager
-    def get_session():
-        session = SessionLocal()
-        try:
-            yield session
-        finally:
-            session.close()
-
-
-    with get_session() as session:
-        engine_tools = EngineTools(session)
-        # Пример добавления инструмента
-        engine_tools.add_tool(
-            barcode="12345",
-            name="Молоток",
-            description="Универсальный молоток",
-            img="hammer.png",
-            plan_id=1,
-            group_id=2
-        )

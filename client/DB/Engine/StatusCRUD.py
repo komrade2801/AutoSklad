@@ -59,7 +59,7 @@ class EngineStatus(BaseCRUD):
         :param status_id: Уникальный идентификатор операции.
         :return: Экземпляр DropOperations или None, если операция не найдена.
         """
-        return self.get(status_id)
+        return self.get(index=status_id)
 
 
     def all(self) -> List[Status]:
@@ -113,36 +113,4 @@ class EngineStatus(BaseCRUD):
 
         result = self.session.query(Status).filter_by(stype=stype).first()
         return result
-        # try:
-        # except SQLAlchemyError as e:
-        #     print(f"Ошибка при поиске статуса по названию '{stype}': {e}")
-        #     return None
-        # except AttributeError as e:
-        #     print(f"Ошибка при поиске статуса по названию '{stype}': {e}")
-        #     return None
 
-if __name__ == "__main__":
-    # Инициализация базы данных
-    engine = create_engine('sqlite:///:memory:')  # Замените на вашу базу данных
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    session = SessionLocal()
-
-    # Создание экземпляра EngineStatus
-    engine_status = EngineStatus(session)
-
-    # Пример использования
-    engine_status.add(stype='Active', description='The status is active.')
-    print(engine_status.count())  # Выведет: 1
-    print(engine_status.all())  # Выведет: [<Status(id=1, type='Active', description='The status is active.')>]
-
-    # Обновление статуса
-    engine_status.update(1, description='The status is now active and confirmed.')
-
-    # Получение статуса
-    status = engine_status.get(1)
-    print(status)  # Выведет: <Status(id=1, type='Active', description='The status is now active and confirmed.')>
-
-    # Удаление статуса
-    engine_status.delete(1)
-    print(engine_status.count())  # Выведет: 0

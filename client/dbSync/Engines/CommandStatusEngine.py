@@ -217,24 +217,3 @@ class CommandStatusCRUD(BaseCRUD):
         """
         print(f"[ПОТОК][{threading.current_thread().name}][CommandStatusEngine][get_active][INFO] - [{datetime.now()}]")
         return self.get_by_status("IN_PROGRESS")
-
-
-# Пример использования
-if __name__ == "__main__":
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    # Инициализация подключения
-    engine = create_engine("sqlite:///sync.db")
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    # Создание CRUD-объекта
-    status_crud = CommandStatusCRUD()
-
-    # Добавление нового статуса
-    status_crud.add_status(command_id=1, status="PENDING")
-
-    # Получение последнего статуса
-    latest = status_crud.get_latest_for_command(1)
-    print(f"Последний статус команды 1: {latest.status if latest else 'не найден'}")

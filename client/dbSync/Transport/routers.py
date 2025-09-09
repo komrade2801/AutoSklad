@@ -187,6 +187,7 @@ async def api_sync_push(device: int, request: Request):
 
 @sync_router.get("/pull", response_model=PullResponseModel)
 def api_sync_pull(device: int, since: str = ""):
+    print(f'[ПОТОК][{threading.current_thread().name}][router] Получили пакет данных: {device} ')
     print(f'[ПОТОК][{threading.current_thread().name}][router] Берем очередь фонового потока для {device} ')
     queue_in = INBOUND_QUEUES.get(device)
     if not queue_in:

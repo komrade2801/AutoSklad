@@ -108,32 +108,3 @@ class EngineLoad(BaseCRUD):
         :return: Количество записей.
         """
         return self.session.query(self.model).filter_by(cell_id=cell_id).count()
-
-
-if __name__ == "__main__":
-    # Инициализация базы данных
-    engine = create_engine('sqlite:///:memory:')  # Замените на вашу базу данных
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    session = SessionLocal()
-
-    # Использование EngineLoad
-    engine_load = EngineLoad(session)
-
-    # Добавление новой записи
-    engine_load.add(tools_id=1, mass_load_id=2, cell_id=3, description='Test load')
-
-    # Получение всех записей
-    loads = engine_load.all()
-    print(loads)
-
-    # Поиск записей по tools_id
-    loads_by_tools = engine_load.find_by_tools_id(1)
-    print(loads_by_tools)
-
-    # Обновление описания записи
-    engine_load.update_description(load_id=1, description='Updated description')
-
-    # Удаление записей по tools_id
-    deleted_count = engine_load.delete_by_tools_id(1)
-    print(f"Удалено записей: {deleted_count}")

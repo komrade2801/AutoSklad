@@ -16,7 +16,7 @@ from .MappingConfigurator import MappingConfigurator
 from .DataMapper import DataMapper
 from .DataTransformer import DataTransformer
 from .ConflictManager import ConflictManager
-from .BatchProcessor import BatchProcessor
+# from .BatchProcessor import BatchProcessor
 from .SyncMonitor import SyncMonitor
 from .RetryManager import RetryManager, RetryCommand
 from .JSONSchemaValidator import JSONSchemaValidator
@@ -48,11 +48,11 @@ class SyncProcessor:
           - CommandCRUD, RecordCRUD, CommandStatusCRUD, SyncConfigCRUD — доступ к БД.
 
     Основные этапы синхронизации:
-      1. **handshake** (`process_schema`)  
-         - Клиент и сервер согласовывают структуру данных (mapping).  
-      2. **pull** (`prepare_pull`)  
-         - Сервер подготавливает набор команд и изменений для клиента.  
-      3. **push** (`process_push`)  
+      1. **handshake** (`process_schema`)
+         - Клиент и сервер согласовывают структуру данных (mapping).
+      2. **pull** (`prepare_pull`)
+         - Сервер подготавливает набор команд и изменений для клиента.
+      3. **push** (`process_push`)
          - Клиент отправляет на сервер локальные изменения; сервер их применяет.
 
     Поток вызовов (упрощённо):
@@ -69,30 +69,30 @@ class SyncProcessor:
         SyncProcessor -> RetryManager -> SyncMonitor/DiagnosticLogger
 
     Зависимости:
-      - `schema_cache: SchemaCache`  
-      - `schema_analyzer: SchemaAnalyzer`  
-      - `mapping_config: MappingConfigurator`  
-      - `data_mapper: DataMapper`  
-      - `data_transformer: DataTransformer`  
-      - `conflict_manager: ConflictManager`  
-      - `batch_processor: BatchProcessor`  
-      - CRUD-слои: `cmd_crud`, `record_crud`, `status_crud`, `sync_config_crud`  
-      - `sync_manager: SyncManager`  
-      - `retry_manager: RetryManager`  
-      - `json_validator: JSONSchemaValidator`  
-      - `sync_monitor: SyncMonitor`  
-      - `diagnostic_logger: DiagnosticLogger`  
-      - `db_session: Session`  
+      - `schema_cache: SchemaCache`
+      - `schema_analyzer: SchemaAnalyzer`
+      - `mapping_config: MappingConfigurator`
+      - `data_mapper: DataMapper`
+      - `data_transformer: DataTransformer`
+      - `conflict_manager: ConflictManager`
+      - `batch_processor: BatchProcessor`
+      - CRUD-слои: `cmd_crud`, `record_crud`, `status_crud`, `sync_config_crud`
+      - `sync_manager: SyncManager`
+      - `retry_manager: RetryManager`
+      - `json_validator: JSONSchemaValidator`
+      - `sync_monitor: SyncMonitor`
+      - `diagnostic_logger: DiagnosticLogger`
+      - `db_session: Session`
 
     Входящие/исходящие данные:
-      - **process_schema**  
-        Принимает: `src_schema: Dict[table,fields]`, `client_schema_hash: str`  
-        Возвращает: `{ mapping: Dict[...], schema_hash: str }`  
-      - **prepare_pull**  
-        Принимает: `device: int`, `since: ISO timestamp`, `client_schema_hash: str`  
-        Возвращает: `{ schema_hash: str, commands: List[{id,table,operation,data,last_modified}] }`  
-      - **process_push**  
-        Принимает: `device: int`, `commands: List[{...}]`, `client_schema_hash: str`  
+      - **process_schema**
+        Принимает: `src_schema: Dict[table,fields]`, `client_schema_hash: str`
+        Возвращает: `{ mapping: Dict[...], schema_hash: str }`
+      - **prepare_pull**
+        Принимает: `device: int`, `since: ISO timestamp`, `client_schema_hash: str`
+        Возвращает: `{ schema_hash: str, commands: List[{id,table,operation,data,last_modified}] }`
+      - **process_push**
+        Принимает: `device: int`, `commands: List[{...}]`, `client_schema_hash: str`
         Возвращает: `List[{id, status, error?}]`
 
     Исключения:
@@ -102,7 +102,7 @@ class SyncProcessor:
       - Для защиты кэша и доступа к схеме используется единый `threading.Lock()`.
 
     Метрики:
-      - `sync_monitor.record_success(duration)`  
+      - `sync_monitor.record_success(duration)`
       - `sync_monitor.record_failure(duration)`
 
     Повторные попытки:
@@ -121,7 +121,7 @@ class SyncProcessor:
             data_transformer: DataTransformer,
             conflict_manager,
             batch_processor,
-            cmd_crud,            # не используем здесь, но оставляем для совместимости
+            cmd_crud,  # не используем здесь, но оставляем для совместимости
             record_crud,
             status_crud,
             sync_config_crud,
@@ -131,10 +131,11 @@ class SyncProcessor:
             json_validator: JSONSchemaValidator,
             sync_manager,
             server_schema: Dict[str, Dict[str, Any]],
-            db_session,          # передаётся обычная сессия для инициализации фабрики
+            sync_session,  # передаётся обычная сессия для инициализации фабрики
             retry_attempts: int = 3,
             retry_delay: int = 60,
-            emulate_server: bool = False
+            emulate_server: bool = False,
+            work_session=None
     ) -> None:
         """
         Инициализация SyncProcessor со всеми необходимыми зависимостями.
@@ -155,7 +156,7 @@ class SyncProcessor:
         :param retry_manager:     Планировщик повторов (RetryManager).
         :param json_validator:    Валидация по JSON-Схемам (JSONSchemaValidator).
         :param server_schema:     Определение текущей серверной схемы.
-        :param db_session:        SQLAlchemy Session для транзакций.
+        :param sync_session:        SQLAlchemy Session для транзакций.
         :param retry_attempts:    Число попыток для неудач (по умолчанию 3).
         :param retry_delay:       Задержка между попытками в секундах (по умолчанию 60).
         :param emulate_server:    Флаг dev-режима эмуляции server-side.
@@ -163,8 +164,11 @@ class SyncProcessor:
         # Основные компоненты
         # вместо единой сессии заводим фабрику сессий
         # 1) заводим фабрику новых сессий на основе переданной сессии
-        engine = db_session.get_bind()
-        self._Session = sessionmaker(bind=engine)()
+
+        work_engine = work_session.get_bind()
+        self.work_session = sessionmaker(bind=work_engine)()
+        sync_engine = sync_session.get_bind()
+        self.sync_session = sessionmaker(bind=sync_engine)()
 
         # 2) отдельный лок для работы с кэшем схем
         self._schema_lock = threading.RLock()
@@ -202,7 +206,6 @@ class SyncProcessor:
         print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Инициализирова'
               f'н. [{datetime.now()}]')
 
-
     def update_schema(self,
                       field_mappings: Dict[str, Dict[str, str]],
                       schema_hash: str) -> None:
@@ -210,15 +213,18 @@ class SyncProcessor:
         Обновляет внутренний хэш и, при желании, серверную схему
         (если вы хотите менять server_schema на основании mapping).
         """
-        self.current_schema_hash = schema_hash
-        # Если вы хотите, чтобы SyncProcessor использовал mapping как
-        # "новый" server_schema (например, bidirectional),
-        # можете раскомментировать:
-        self.server_schema = {
-            table: {dst: src for src, dst in tbl_map.items()}
-            for table, tbl_map in field_mappings.items()
-        }
-        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Обновлены маппинги. [{datetime.now()}]')
+        try:
+            self.current_schema_hash = schema_hash
+            # Если вы хотите, чтобы SyncProcessor использовал mapping как
+            # "новый" server_schema (например, bidirectional),
+            # можете раскомментировать:
+            self.server_schema = {
+                table: {dst: src for src, dst in tbl_map.items()}
+                for table, tbl_map in field_mappings.items()
+            }
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Обновлены маппинги. [{datetime.now()}]')
+        except:
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Список пуст. [{datetime.now()}]')
 
     def process_schema(
             self,
@@ -277,7 +283,7 @@ class SyncProcessor:
             client_schema_hash: str
     ) -> Dict[str, Any]:
         start = time.time()
-        session = None
+        sync_session = None
         try:
             self.diagnostic_logger.log_info("Pull start", {"device": device, "since": since})
 
@@ -286,9 +292,9 @@ class SyncProcessor:
             mapping = self._get_mapping(client_schema_hash)
 
             # 2) Новая сессия и CRUD
-            session = self._Session
-            cmd_crud = CommandCRUD(session=session)
-            record_crud = RecordCRUD(session=session)
+            sync_session = self.sync_session
+            cmd_crud = CommandCRUD(session=sync_session)
+            record_crud = RecordCRUD(session=sync_session)
 
             commands: List[Dict[str, Any]] = []
             # 3) Транзакция только для запросов в БД
@@ -319,8 +325,8 @@ class SyncProcessor:
             return_data = {"schema_hash": client_schema_hash, "commands": commands}
             self.json_validator.validate(return_data, "pull_response")
             self.sync_monitor.record_success(time.time() - start)
-            self.diagnostic_logger.log_info("Запрос завершен успешно", {"count": len(commands)})
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Запрос завершен в {datetime.now()}')
+            self.diagnostic_logger.log_info("Pull completed", {"count": len(commands)})
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Pull completed at {datetime.now()}')
             return return_data
 
         except Exception as ex:
@@ -333,8 +339,8 @@ class SyncProcessor:
             raise
 
         finally:
-            if session:
-                session.close()
+            if sync_session:
+                sync_session.close()
 
     def process_push(
             self,
@@ -346,17 +352,18 @@ class SyncProcessor:
         Push-этап: приём и применение команд от клиента.
 
         1. Валидация входящего списка команд JSON
-        2. Подготовка операций:
+        2. Фильтрация дубликатов ADD‑операций по полному совпадению
+        3. Подготовка операций:
            a) preprocess (DataTransformer)
            b) валидация (DataTransformer.validate)
            c) детект структурных конфликтов (ConflictManager)
            d) map incoming (DataMapper)
            e) postprocess (DataTransformer.postprocess)
            f) detect & resolve data conflicts (ConflictManager)
-        3. Пакетная отправка операций в БД (BatchProcessor.execute_batch)
-        4. Обновление статусов команд (CommandStatusCRUD)
-        5. Планирование retry для неудач (RetryManager)
-        6. Сбор метрик и логирование
+        4. Пакетная отправка операций в БД (BatchProcessor.execute_batch)
+        5. Обновление статусов команд (CommandStatusCRUD)
+        6. Планирование retry для неудач (RetryManager)
+        7. Сбор метрик и логирование
 
         :param device:               ID устройства
         :param commands:             Список команд от клиента
@@ -366,64 +373,98 @@ class SyncProcessor:
         """
         start = time.time()
         try:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Начало push-этапа. Устройство: {device}, Команд: {len(commands)}. [{datetime.now()}]')
+            # 1. Начало и лог
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                  f'Начало push-этапа. Устройство: {device}, Команд: {len(commands)}. [{datetime.now()}]')
             self.diagnostic_logger.log_info("Push start", {"device": device, "count": len(commands)})
 
-            # 1. Валидация JSON
+            # 2. Валидация JSON
             self.json_validator.validate({"commands": commands}, "push_commands")
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Валидация JSON завершена. [{datetime.now()}]')
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                  f'Валидация JSON завершена. [{datetime.now()}]')
 
+            # 3. ───── ФИЛЬТРАЦИЯ ДУБЛИКАТОВ ─────
+            filtered: List[Dict[str, Any]] = []
+            for cmd in commands:
+                op = cmd["operation"].upper()
+                data = cmd.get("data", {}) or {}
+                rec_id = data.get("id") or data.get("index")
+                # если это ADD с заданным ID, и запись на сервере уже точно совпадает — пропускаем
+                if op == "ADD" and rec_id is not None:
+                    existing = self.sync_manager.get_current_data(
+                        table=cmd["table"],
+                        work_session=self.work_session,
+                        rec_id=rec_id
+                    )
+                    if existing is not None and all(existing.get(k) == v for k, v in data.items()):
+                        print(f"[SyncProcessor] Пропускаем дубликат ADD для {cmd['table']} id={rec_id}")
+                        continue
+                filtered.append(cmd)
+
+            # если после фильтрации нечего делать — сразу уходим
+            if not filtered:
+                print(f"[SyncProcessor] Нет новых команд после фильтрации дубликатов, выходим.")
+                return []
+
+            # дальше работаем уже с отфильтрованным списком
+            commands = filtered
+            # ────────────────────────────────────
+
+            # 4. Основная транзакция по командам
             with self._schema_lock, self.cmd_crud.transaction(), self.status_crud.transaction():
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Транзакция начата. Устройство: {device}. [{datetime.now()}]')
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Транзакция начата. Устройство: {device}. [{datetime.now()}]')
                 mapping = self._get_mapping(client_schema_hash)
                 ops, failed = [], []
 
-                # 2. Подготовка операций
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Начало обработки {len(commands)} команд. [{datetime.now()}]')
+                # 5. Подготовка операций
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Начало обработки {len(commands)} команд. [{datetime.now()}]')
                 for cmd in commands:
-
                     if not self.sync_config_crud.get_status(cmd["table"]):
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Таблица {cmd["table"]} отключена - пропуск, проверьте корректность конфигурации в таблице Vending/Model/sync.db->SyncConfig. [{datetime.now()}]')
+                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                              f'Таблица {cmd["table"]} отключена - пропуск. [{datetime.now()}]')
                         continue
 
-                    # 2a-2b. Препроцессинг и валидация
+                    # 5a-b. Препроцессинг и валидация
                     cleaned = self.data_transformer.preprocess(cmd["table"], cmd.get("data", {}))
                     if not self.data_transformer.validate(cmd["table"], cleaned):
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Ошибка валидации в таблице {cmd["table"]}. [{datetime.now()}]')
+                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                              f'Ошибка валидации в таблице {cmd["table"]}. [{datetime.now()}]')
                         failed.append(cmd)
                         continue
 
-                    # 2c-2f. Обработка команды
-                    op = self._process_single(cmd, mapping)
-                    if not op["success"]:
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Конфликт/ошибка в команде {cmd.get("id")}. [{datetime.now()}]')
-                        failed.append(op)
+                    # 5c-f. Обработка команды
+                    op_result = self._process_single(cmd, mapping)
+                    if not op_result["success"]:
+                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                              f'Конфликт/ошибка в команде {cmd.get("id")}. [{datetime.now()}]')
+                        failed.append(op_result)
                     else:
-                        ops.append(op)
+                        ops.append(op_result)
 
-                if not ops:
-                    error_msg = f"Нет ни одной валидной операции для выполнения. Команд: {len(commands)}, неудачных: {len(failed)}"
-                    self.diagnostic_logger.log_error("Нет операций", {"device": device, "error": error_msg})
-                    raise RuntimeError(error_msg)
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Подготовлено операций: {len(ops)}, неудач: {len(failed)}. [{datetime.now()}]')
 
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Подготовлено операций: {len(ops)}, неудач: {len(failed)}. [{datetime.now()}]')
-
-                # 3. Пакетное выполнение
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Запуск пакетной обработки. [{datetime.now()}]')
+                # 6. Пакетное выполнение
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Запуск пакетной обработки. [{datetime.now()}]')
                 results = self.batch_processor.execute_batch(ops)
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Пакетная обработка завершена. Результатов: {len(results)}. [{datetime.now()}]')
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Пакетная обработка завершена. Результатов: {len(results)}. [{datetime.now()}]')
 
-                # 4. Обновление статусов
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Обновление статусов команд. [{datetime.now()}]')
+                # 7. Обновление статусов
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Обновление статусов команд. [{datetime.now()}]')
                 statuses = self._update_command_statuses(results)
 
-                # 5. Планирование повторов
+                # 8. Планирование повторов
                 if failed:
-                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Планирование {len(failed)} повторов. [{datetime.now()}]')
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                          f'Планирование {len(failed)} повторов. [{datetime.now()}]')
                     for cmd in failed:
-                        # cmd здесь — это результат _process_single, дополним его нужными полями
                         retry_cmd: RetryCommand = {
-                            "id": cmd["id"],  # теперь точно есть
+                            "id": cmd["id"],
                             "table": cmd["table"],
                             "operation": cmd["operation"],
                             "data": cmd["data"],
@@ -433,17 +474,22 @@ class SyncProcessor:
                         }
                         self.retry_manager.schedule_retry(retry_cmd, self.retry_delay)
 
-                # 6. Фиксация транзакции
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Фиксация изменений. Устройство: {device}. [{datetime.now()}]')
+                # 9. Фиксация транзакции
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Фиксация изменений. Устройство: {device}. [{datetime.now()}]')
 
+            # 10. Успешный лог и возврат
             self.sync_monitor.record_success(time.time() - start)
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Push завершен успешно. Время: {time.time() - start:.2f}с. [{datetime.now()}]')
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                  f'Push завершен успешно. Время: {time.time() - start:.2f}с. [{datetime.now()}]')
             self.diagnostic_logger.log_info("Push completed", {"statuses": statuses})
             return statuses
 
         except Exception as ex:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ОШИБКА PUSH: {str(ex)}. [{datetime.now()}]')
-            self.diagnostic_logger.log_error("Отправка не удалась", {
+            # общий обработчик ошибок
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                  f'ОШИБКА PUSH: {str(ex)}. [{datetime.now()}]')
+            self.diagnostic_logger.log_error("Push failed", {
                 "error": str(ex),
                 "traceback": traceback.format_exc()
             })
@@ -451,6 +497,7 @@ class SyncProcessor:
             raise
 
     # ——————————————————————————————————————————————————————————————————————————————
+
     def _get_mapping(self, client_schema_hash: str) -> Dict[str, Dict[str, str]]:
         """
         Получить или сгенерировать маппинг схемы по hash.
@@ -460,10 +507,10 @@ class SyncProcessor:
         """
         mapping = self.schema_cache.get(client_schema_hash)
         if mapping is None:
-            self.diagnostic_logger.log_info("Конфигурация необнаружена, генерация новой", {"hash": client_schema_hash})
+            self.diagnostic_logger.log_info("Mapping miss, generating new", {"hash": client_schema_hash})
             mapping = self.schema_analyzer.generate_mapping(self.server_schema, self.server_schema)
             self.schema_cache.set(client_schema_hash, mapping)
-        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Конфигурация загружена. [{datetime.now()}]')
+        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Mapping loaded. [{datetime.now()}]')
         return mapping
 
     def _process_single(self, cmd: Dict[str, Any], mapping: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
@@ -478,12 +525,12 @@ class SyncProcessor:
         """
         try:
             table = cmd["table"]
-            rec_id = cmd.get("id")
+            rec_id = cmd.get("id") or cmd.get("index")
             raw = cmd.get("data", {})
 
             cleaned = self.data_transformer.preprocess(table, raw)
             if not self.data_transformer.validate(table, cleaned):
-                return {"command_id": cmd["id"], "success": False, "error": "Validation failed"}
+                return {"command_id": cmd.get("id") or cmd.get("index"), "success": False, "error": "Validation failed"}
 
             # struct conflicts
             server_fields = list(self.server_schema.get(table, {}))
@@ -495,34 +542,29 @@ class SyncProcessor:
             # map & postprocess
             local = self.data_mapper.map_incoming(table, cleaned, mapping.get(table, {}))
             local = self.data_transformer.postprocess(table, local)
+            raw = cmd.get("data", {})
+            merged = {**raw, **local}
+            cmd['data'] = merged
+            index = cmd['data'].get('id') or cmd['data'].get('index')
 
-            # data conflicts
-            # TODO: передать в _Session сессию основной базы данных.
-            existing = self.sync_manager.get_current_data( SessionLocal(), table, rec_id)
+            existing = self.sync_manager.get_current_data(table=table, work_session=SessionLocal(), rec_id=index)
             if existing and self.conflict_manager.detect_data_conflict(existing, local):
                 local = self.conflict_manager.apply_data_strategy(existing, local)
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Command processed. [{datetime.now()}]')
-            # return {"command_id": cmd["id"],
-            #         "table": table,
-            #         "operation": cmd["operation"],
-            #         "data": local,
-            #         "id": rec_id,
-            #         "success": True
-            #     }
+
             return {
-                    "command_id": cmd["id"],
-                    "id": rec_id,
-                    "table": table,
-                    "operation": cmd["operation"],
-                    "data": local,
-                    "success": True
-                }
+                "command_id": cmd.get("id") or cmd.get("index"),
+                "id": rec_id,
+                "table": table,
+                "operation": cmd["operation"],
+                "data": local,
+                "success": True
+            }
         except Exception as ex:
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Одиночная команда не удалась. Подробности: {traceback.format_exc()} [{datetime.now()}]')
             self.diagnostic_logger.log_error("Одиночная команда не удалась", {
                 "command": cmd, "error": str(ex), "traceback": traceback.format_exc()
             })
-            # return {"command_id": cmd.get("id"), "success": False, "error": str(ex)}
             return {
                 "command_id": cmd.get("id"),
                 "id": cmd.get("id"),
@@ -551,9 +593,9 @@ class SyncProcessor:
         return statuses
 
     def _get_last_modified(
-        self,
-        command_id: int,
-        session
+            self,
+            command_id: int,
+            session
     ) -> Optional[str]:
         """
         Получает ISO-строку последней модификации команды, используя переданную сессию.
@@ -597,8 +639,7 @@ class SyncProcessor:
         в очередь CommandQueue, чтобы позже отправить на сервер.
         """
         try:
-            # допустим, у вас в SyncProcessor есть доступ к CommandQueue
-            # или можно завести его тут:
+
             self.queue.add_command(
                 table=cmd["table"],
                 operation=cmd["operation"],
@@ -608,40 +649,12 @@ class SyncProcessor:
                 "Local command enqueued",
                 {"table": cmd["table"], "operation": cmd["operation"]}
             )
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Command enqueued. [{datetime.now()}]')
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Команда поставлена в очередь. data: {cmd["data"]}'
+                  f'table: {cmd["table"]}, operation: {cmd["operation"]} [{datetime.now()}]')
         except Exception as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Failed to enqueue local command. [{datetime.now()}]')
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Не удалось поставить локальную команду в очередь. [{datetime.now()}]')
             self.diagnostic_logger.log_error(
-                "Failed to enqueue local command",
+                "Не удалось поставить локальную команду в очередь.",
                 {"error": str(e), "traceback": traceback.format_exc()}
             )
 
-
-
-# Список изменений в обновлённой версии
-#     Расширенный докстринг
-#     – Описание роли класса, его места в архитектуре, зависимостей, форматов входных/выходных данных, протоколов вызовов (Sequence Diagrams).
-#     Унификация структуры
-#     – Единый подход к логированию, мониторингу метрик и обработке ошибок.
-#     Извлечение приватных методов
-#     – _get_mapping, _process_single, _update_command_statuses, _get_last_modified для повышения читаемости и тестируемости.
-#     Типизация
-#     – Чёткие аннотации аргументов и возвращаемых значений (Dict[str, Any], Optional[str] и т.д.).
-#     Улучшенная логика блокировки
-#     – Гранулярный threading.Lock вокруг критичных секций кэша и транзакций.
-#     Консистентная валидация JSON
-#     – Использование json_validator.validate перед каждым выходом и приёмом payload.
-#     Retry-логика
-#     – Отдельная коллекция неуспешных команд и планирование повторных попыток через retry_manager.schedule_retry.
-#     Dev-режим эмуляции
-#     – Флаг emulate_server и метод emulate_server_push.
-#     Упрощённые Sequence Diagrams
-#     – В докстрингах показаны основные потоки вызова и взаимодействия с другими компонентами.
-# Прочие рекомендации по улучшению
-#     Асинхронность: переписать критичные методы (process_schema, prepare_pull, process_push) в async def под aiohttp/asyncio
-#     для масштабирования на сотни устройств.
-#     Метрики: интеграция с Prometheus/OpenTelemetry через SyncMonitor.log_metric(...).
-#     Более гибкий кэш: введение интерфейса SchemaCacheBackend и поддержка Redis/SQLite бэкендов.
-#     pydantic-модели: для автоматической валидации входного/выходного JSON вместо «ручного» JSONSchemaValidator.
-#     Тестирование: покрытие всех ветвлений unit-тестами, в т. ч. конфликтов, rollback-транзакций, retry-логики.
-#     Документация: сгенерировать Swagger/OpenAPI по public-методам.

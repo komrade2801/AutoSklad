@@ -1,0 +1,29 @@
+cd /home/admin/Desktop/Vending
+source venv/bin/activate
+pip install --no-build-isolation -r requirements.txt
+
+
+source venv/bin/activate
+pip install wheel
+pip install --no-build-isolation -r requirements.txt
+
+pip install --no-build-isolation --no-use-pep517 -r requirements.txt
+
+Run command:
+cd /home/admin/Desktop/Vending
+source venv/bin/activate
+python3 main.py
+
+
+If update code base, you mast have rebuild db!
+db defualt:
+cd /home/admin/Desktop/Vending
+source venv/bin/activate
+python3 -m DB.Create_db
+
+
+
+interface eth0        
+static ip_address=192.168.0.100/24
+static routers=192.168.0.1
+static domain_name_servers=192.168.0.1 8.8.8.8

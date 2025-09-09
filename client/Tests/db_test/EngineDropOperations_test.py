@@ -38,7 +38,6 @@ def test_engine():
     """
     Создает тестовый движок базы данных (в памяти).
     """
-    # engine = create_engine('sqlite:///:memory:')  # Используем базу данных в памяти
     return engine()
 
 

@@ -97,11 +97,13 @@ class DataTransformer:
         """
         rules = self.rules.get(table, {})
         data = raw.copy()
+        print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][preprocess] начали обработку - table: {table}, data: {data}. [{datetime.now()}]')
+
         for fn in rules.get('incoming', []):
             try:
                 data = fn(data)
             except Exception as e:
-                print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][preprocess][ERROR] - error: {e}, Ошибка предварительной обработки {table} подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+                print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][preprocess][ERROR] закончили обработку - error: {e}, Ошибка предварительной обработки {table} подробности: - {traceback.format_exc()}. [{datetime.now()}]')
                 if self.logger:
                     self.logger.log_error(f"Preprocess error {table}: {e}")
                 if self.strict:

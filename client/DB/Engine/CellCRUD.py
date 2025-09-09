@@ -71,15 +71,83 @@ class EngineCell(BaseCRUD):
             .all()
         )
 
-    def update_cell(self, cell_id: int, **kwargs) -> bool:
+    # def update_cell(self, cell_id: int, **kwargs) -> bool:
+    #     """
+    #     Обновляет параметры ячейки по её уникальному идентификатору.
+    #
+    #     :param cell_id: Уникальный идентификатор ячейки.
+    #     :param kwargs: Поля и значения для обновления.
+    #     :return: True, если запись успешно обновлена, иначе False.
+    #     """
+    #     return self.update(index=cell_id, **kwargs)
+    # def update_cell(self,cell_id : int,
+    #                 number,
+    #                 description,
+    #                 groups_id,
+    #                 tools_id,
+    #                 status_id,
+    # ) -> bool:
+    #     """
+    #     Обновляет параметры ячейки по её уникальному идентификатору.
+    #     :param status_id:
+    #     :param tools_id:
+    #     :param groups_id:
+    #     :param description:
+    #     :param number:
+    #     :param cell_id: Уникальный идентификатор ячейки.
+    #     :return: True, если запись успешно обновлена, иначе False.
+    #     """
+    #
+    #     return self.update(
+    #         index=cell_id,
+    #         number=number,
+    #         description=description,
+    #         groups_id=groups_id,
+    #         tools_id=tools_id,
+    #         status_id=status_id,
+    #     )
+    def update_cell(self, *,
+                    id: int=0,
+                    number=None,
+                    description=None,
+                    groups_id=None,
+                    tools_id=None,
+                    status_id=None,
+                    ) -> bool:
         """
-        Обновляет параметры ячейки по её уникальному идентификатору.
+            Обновляет параметры ячейки по её уникальному идентификатору.
+            :param status_id:
+            :param tools_id:
+            :param groups_id:
+            :param description:
+            :param number:
+            :param id: Уникальный идентификатор ячейки.
+            :return: True, если запись успешно обновлена, иначе False.
+        """
+        # 1) Загружаем из БД текущее состояние
+        instance = self.session.query(self.model).get(id)
+        if not instance:
+            return False
 
-        :param cell_id: Уникальный идентификатор ячейки.
-        :param kwargs: Поля и значения для обновления.
-        :return: True, если запись успешно обновлена, иначе False.
-        """
-        return self.update(index=cell_id, **kwargs)
+        # 2) Собираем только те поля, которые действительно изменились
+        updates = {}
+        if number is not None and instance.number != number:
+            updates['number'] = number
+        if description is not None and instance.description != description:
+            updates['description'] = description
+        if groups_id is not None and instance.groups_id != groups_id:
+            updates['groups_id'] = groups_id
+        if tools_id is not None and instance.tools_id != tools_id:
+            updates['tools_id'] = tools_id
+        if status_id is not None and instance.status_id != status_id:
+            updates['status_id'] = status_id
+
+        # 3) Если нечего менять — вернём True, потому что ошибок нет
+        if not updates:
+            return True
+
+        # 4) Иначе передаём только изменившиеся поля
+        return self.update(index=id, **updates)
 
     def delete_cell(self, cell_id: int) -> bool:
         """

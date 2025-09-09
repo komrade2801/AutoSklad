@@ -108,7 +108,7 @@ class RecordCRUD(BaseCRUD):
             try:
                 print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_json_data][INFO] - record_id: {record_id}. [{datetime.now()}]")
                 return json.loads(record.data_json)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_json_data][ERROR][JSONDecodeError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
                 return None
         return None
@@ -167,7 +167,7 @@ class RecordCRUD(BaseCRUD):
         try:
             json.loads(record.data_json)
             return True
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][validate_json][ERROR][JSONDecodeError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
             return False
 
@@ -207,31 +207,3 @@ class RecordCRUD(BaseCRUD):
         except Exception as e:
             print(f"[RecordEngine][get_bulk_records][ERROR] - {e}, подробности: - {traceback.format_exc()}")
             raise
-
-
-# Пример использования
-if __name__ == "__main__":
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-
-    # Инициализация подключения
-    engine = create_engine("sqlite:///sync.db")
-    Session = sessionmaker(bind=engine)
-    session = Session()
-
-    # Создание CRUD-объекта
-    record_crud = RecordCRUD()
-
-    # Добавление новой записи
-    try:
-        record_crud.add_record(
-            command_id=1,
-            data={"product": "Coffee", "price": 199}
-        )
-        print("Запись успешно добавлена")
-    except ValueError as e:
-        print(f"Ошибка: {str(e)}")
-
-    # Получение данных
-    data = record_crud.get_json_data(1)
-    print(f"Данные записи: {data}")

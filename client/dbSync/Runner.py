@@ -3,6 +3,7 @@
 from sqlalchemy import create_engine, NullPool, text, inspect
 from sqlalchemy.orm import sessionmaker
 
+import dbSync
 # from DB.Data.sqlite_db import SessionLocal
 from dbSync.Logic_v2.SyncManager import SyncManager
 from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES
@@ -182,11 +183,13 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
                     try:
                         data = msg.get("hash", "")
                         print(f"[ПОТОК][{threading.current_thread().name}][runner][push] " + ', '.join(f"{k}: {v}" for k, v in msg.items()))
+                        dbSync.init_db = True
                         statuses = processor.process_push(
                             device=device_id,
                             commands=msg["payload"],
                             client_schema_hash=data
                         )
+                        dbSync.init_db = False
                         print(f'[ПОТОК][{threading.current_thread().name}][runner] statuses: {statuses}')
                     except Exception as e:
                         # если упало — возвращаем ошибку в reply_queue

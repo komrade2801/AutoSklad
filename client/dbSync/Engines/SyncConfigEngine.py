@@ -85,24 +85,3 @@ class SyncConfigCRUD(BaseCRUD):
 
         # Создание новой записи если не найдено
         return self.add(table_name=table_name, enabled=status)
-
-
-# # Пример использования:
-# if __name__ == "__main__":
-#     from sqlalchemy import create_engine
-#     from sqlalchemy.orm import sessionmaker
-#
-#     # Инициализация сессии
-#     engine = create_engine("sqlite:///sync.db")
-#     Session = sessionmaker(bind=engine)
-#     session = Session()
-#
-#     # Создание CRUD-объекта
-#     sync_crud = SyncConfigCRUD()
-#
-#     # Включение синхронизации для таблицы
-#     sync_crud.enable_sync("products")
-#
-#     # Проверка статуса
-#     status = sync_crud.get_status("products")
-#     logger.(f"Синхронизация для products: {"включена" if status else "отключена"}")

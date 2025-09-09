@@ -36,7 +36,6 @@ def test_engine():
     """
     Создает тестовый движок базы данных (в памяти).
     """
-    # engine = create_engine("sqlite:///:memory:")  # Использование базы данных в памяти для тестов
     return engine()
 
 @pytest.fixture

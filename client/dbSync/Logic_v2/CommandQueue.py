@@ -4,16 +4,18 @@ import threading
 import traceback
 import uuid
 from datetime import datetime
-from typing import List, Dict, TypedDict, Literal #Optional,
+from typing import List, Dict, TypedDict, Literal  # Optional,
 
 # from DB.Data.base import Base
 
 # dbSync/queues.py
 from queue import Queue
 import logging
+
 logger = logging.getLogger(__name__)
 
 INBOUND_QUEUES: Dict[int, Queue] = {}
+
 
 class Command(TypedDict):
     """
@@ -146,6 +148,11 @@ class CommandQueue:
                 cmd["status"] = new_status
                 break
         self._save_queue()
+
+    def get_failed_commands(self) -> List[Dict]:
+        """Возвращает список команд со статусом 'failed'."""
+        print(f'[CommandQueue][get_failed_commands] Count failed: {len(self.queue)}')
+        return [cmd for cmd in self.queue if cmd.get("status") == "failed"]
 
 #  Список изменений:
 # Типизация через TypedDict (Command) — строгая структура команд.

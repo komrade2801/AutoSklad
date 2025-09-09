@@ -9,5 +9,30 @@
     "description": "description",
     "img": "img",
     "groups_id": "groups_id"
+  },
+  "Cell": {
+    "id": "id",
+    "index": "id",
+    "number": "number",
+    "description": "description",
+    "groups_id": "groups_id",
+    "tools_id": "tools_id",
+    "status_id": "status_id"
+  },
+    "Load": {
+    "id": "id",
+    "description": "description",
+    "tools_id": "tools_id",
+    "mass_load_id": "mass_load_id",
+    "cell_id": "cell_id"
+  },
+  "History": {
+    "id": "id",
+    "datetime": "datetime",
+    "status": "status",
+    "description": "description",
+    "user_id": "user_id",
+    "user_role_id": "user_role_id",
+    "tools_id": "tools_id"
   }
 }

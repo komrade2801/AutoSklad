@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 class SyncConfig:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path=Path(__file__).parent.parent / "config.json"):
 
         cfg = json.loads(path.read_text(encoding="utf-8"))
         srv = cfg["server"]

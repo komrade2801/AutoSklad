@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Bootstrap Buttons Example</title>
+    <!-- Подключение Bootstrap из CDN -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        integrity="sha384-9ndCyUa5l3Q2HhX+8oqdZsjaDivKQENkKQWBvi+Haiq8CHuxItpj2e1zJ+BtZKke"
+        crossorigin="anonymous"
+    >
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+    </style>
+</head>
+<body class="p-4 text-center">
+    <h1>Пример интерфейса на Bootstrap</h1>
+    <div class="d-grid gap-2 col-6 mx-auto">
+        <button id="btn1" class="btn btn-primary" type="button">Сделать фон синий</button>
+        <button id="btn2" class="btn btn-secondary" type="button">Сделать фон зеленым</button>
+        <button id="btn3" class="btn btn-danger" type="button">Сделать фон красным</button>
+    </div>
+
+    <script>
+        document.getElementById('btn1').addEventListener('click', () => {
+            document.body.style.backgroundColor = 'lightblue';
+        });
+        document.getElementById('btn2').addEventListener('click', () => {
+            document.body.style.backgroundColor = 'lightgreen';
+        });
+        document.getElementById('btn3').addEventListener('click', () => {
+            document.body.style.backgroundColor = 'lightcoral';
+        });
+    </script>
+</body>
+</html>

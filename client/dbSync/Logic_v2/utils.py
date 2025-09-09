@@ -15,10 +15,6 @@ from dbSync.Engines.SyncConfigEngine import SyncConfigCRUD
 for finder, name, ispkg in pkgutil.iter_modules(DB.Models.__path__):
     importlib.import_module(f"DB.Models.{name}")
 
-# --- (Опционально) если вы хотите брать реальные типы из живой БД, а не декларативные ---
-# engine = create_engine("postgresql://user:pass@host/dbname")
-# Base.metadata.reflect(bind=engine, only=[m.name for m in Base.metadata.sorted_tables])
-
 def _build_server_schema() -> dict[str, dict[str, str]]:
     """
     Проходит по всему Base.metadata и собирает
