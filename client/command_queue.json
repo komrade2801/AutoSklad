@@ -1,0 +1,472 @@
+[
+  {
+    "id": "e3ba28ff-d553-4f88-918f-c8ebbce9c85f",
+    "table": "Group",
+    "operation": "update",
+    "data": {
+      "index": 3,
+      "name": "Фрезы",
+      "description": "10мм"
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T22:54:47.714401Z"
+  },
+  {
+    "id": "991a0a58-90a5-4164-900e-40d152dc0847",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 1,
+      "number": 1,
+      "description": "Объявлена новая загрузка Инициализирована новая массовая загрузка инструмента в аппарат Основной вендинг, время: 2025-06-17 01:56:52.737319",
+      "groups_id": 2,
+      "tools_id": 1,
+      "status_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T22:57:16.148928Z"
+  },
+  {
+    "id": "6b002794-b529-4fa5-b617-4fe761914490",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T22:58:18.791758Z"
+  },
+  {
+    "id": "d6519b43-df39-48ac-a699-92444d89ec96",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 151,
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T22:58:38.429159Z"
+  },
+  {
+    "id": "f2a51553-5675-4c54-8b5c-61ed274f8122",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:00:53.049417Z"
+  },
+  {
+    "id": "e3a818db-0c4d-4fab-869c-079f7f35bdf2",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 151,
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:00:57.123904Z"
+  },
+  {
+    "id": "bf4f9828-725c-423b-994d-a50ee019a736",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 2,
+      "datetime": "2025-06-17 02:01:09.089438",
+      "Status": "<Status(id=5, type=mass_load_init, description=Инструмент по массовой выгрузки извлечён из аппарата, created_at=2025-06-17 01:52:13.357190)>",
+      "description": "Готов к выдаче",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:01:09.168810Z"
+  },
+  {
+    "id": "00f9e907-e927-455f-b394-353bab4df4f6",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:01:09.203972Z"
+  },
+  {
+    "id": "97a5efe9-c0f3-49d7-b73c-1e962e2901d6",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 151,
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:01:25.768990Z"
+  },
+  {
+    "id": "6536b639-06a6-4191-9907-f6091556159a",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:06:52.608891Z"
+  },
+  {
+    "id": "911ecb23-8add-44d1-a7de-511f50bad923",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 6,
+      "datetime": "2025-06-17 02:07:01.719105",
+      "Status": "<Status(id=3, type=mass_load_ready, description=Инициализирована массовая выгрузка, created_at=2025-06-17 01:52:13.172044)>",
+      "description": "Готов к выдаче",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:07:01.909271Z"
+  },
+  {
+    "id": "e23cd7bc-51cf-4a0d-8dc0-6074ee41da18",
+    "table": "LoadOperations",
+    "operation": "add",
+    "data": {
+      "id": 4,
+      "date": "2025-06-17 02:07:01.919223",
+      "load_id": 1,
+      "load_tools_id": 1,
+      "status_id": 3,
+      "history_id": 6,
+      "description": ""
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:07:01.984084Z"
+  },
+  {
+    "id": "79783daa-b121-4eed-8e56-97afd598b013",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 151,
+      "status_id": 3
+    },
+    "status": "done",
+    "timestamp": "2025-06-16T23:07:22.072854Z"
+  },
+  {
+    "id": "29a2f9f3-f473-4312-91af-cbca74a10caa",
+    "table": "Cell",
+    "operation": "delete",
+    "data": {
+      "id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T13:16:49.498088Z"
+  },
+  {
+    "id": "1559dd55-0e39-4466-9eb3-621caacdc83d",
+    "table": "Cell",
+    "operation": "delete",
+    "data": {
+      "id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T13:50:43.852289Z"
+  },
+  {
+    "id": "3f775b37-b756-4f1d-962d-e844a1b9901b",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 1,
+      "number": 1,
+      "description": "Старт",
+      "groups_id": null,
+      "tools_id": 0,
+      "status_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T13:52:19.678386Z"
+  },
+  {
+    "id": "9a8e01f6-1c69-4fda-902d-fd7e5703804f",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 1,
+      "number": 1,
+      "description": "Старт",
+      "groups_id": null,
+      "tools_id": 0,
+      "status_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T13:59:31.177420Z"
+  },
+  {
+    "id": "8fa9dd8b-afaf-4096-ae9e-65144c5e4d4c",
+    "table": "Status",
+    "operation": "add",
+    "data": {
+      "id": 8,
+      "stype": "consumption",
+      "description": "Инструмент выдан!",
+      "created_at": "2025-06-17 16:59:54.074782"
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T13:59:54.234333Z"
+  },
+  {
+    "id": "e8e35892-691b-4202-a266-166d124b3562",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 1,
+      "cell_id": 1,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T14:00:09.915536Z"
+  },
+  {
+    "id": "475d4779-e0b2-4db2-8d2f-fc376c064cb6",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "number": 2,
+      "description": "Объявлена новая загрузка Инициализирована новая массовая загрузка инструмента в аппарат Основной вендинг, время: 2025-06-17 23:30:31.074869",
+      "groups_id": 2,
+      "tools_id": 2,
+      "status_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T20:30:59.211502Z"
+  },
+  {
+    "id": "35cec553-11e7-49d1-b1c3-8e5e037dd50a",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 3,
+      "number": 3,
+      "description": "Объявлена новая загрузка Инициализирована новая массовая загрузка инструмента в аппарат Основной вендинг, время: 2025-06-18 00:07:40.551876",
+      "groups_id": 2,
+      "tools_id": 3,
+      "status_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T21:08:00.132178Z"
+  },
+  {
+    "id": "f9f05997-4b0e-46a6-bae8-b6a228a1b07b",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 4,
+      "number": 4,
+      "description": "Объявлена новая загрузка Инициализирована новая массовая загрузка инструмента в аппарат Основной вендинг, время: 2025-06-18 00:17:49.582498",
+      "groups_id": 2,
+      "tools_id": 4,
+      "status_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T21:17:58.637388Z"
+  },
+  {
+    "id": "00e927a9-9d7f-4894-8b2f-47f41446ec36",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 5,
+      "cell_id": 4,
+      "tools_id": 4
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T21:19:57.469409Z"
+  },
+  {
+    "id": "077ea532-abc4-4932-b57d-aee7afbe417d",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 17,
+      "datetime": "2025-06-18 00:19:57.498419",
+      "Status": 8,
+      "description": "Инструмент 4 выдано пользователю 2.",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 4
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T21:19:57.553178Z"
+  },
+  {
+    "id": "87a22c8c-b063-4543-a6c5-57f856097842",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 7540,
+      "date": "2025-06-18 00:19:57.569510",
+      "consumption_id": 5,
+      "consumption_tools_id": 4,
+      "status_id": 8,
+      "history_id": 17,
+      "description": "Инструмент 4 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T21:19:57.620137Z"
+  },
+  {
+    "id": "81dd4b0c-3957-47fa-8b6c-8ac1f77d9ea0",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "number": 2,
+      "description": "Объявлена новая загрузка Инициализирована новая массовая загрузка инструмента в аппарат Основной вендинг, время: 2025-06-18 02:00:47.479499",
+      "groups_id": 2,
+      "tools_id": 5,
+      "status_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T23:01:13.162996Z"
+  },
+  {
+    "id": "04ba38c8-3300-4cb9-b04b-04947f954699",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 6,
+      "cell_id": 2,
+      "tools_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T23:05:49.422332Z"
+  },
+  {
+    "id": "07fa9f95-8679-4615-8eaf-e2aa61014482",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 21,
+      "datetime": "2025-06-18 02:05:49.459771",
+      "Status": 8,
+      "description": "Инструмент 5 выдано пользователю 2.",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T23:05:49.509451Z"
+  },
+  {
+    "id": "c7e3fcb6-08bb-4e5b-b363-fbc7d7d9bd9f",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 7541,
+      "date": "2025-06-18 02:05:49.530564",
+      "consumption_id": 6,
+      "consumption_tools_id": 5,
+      "status_id": 8,
+      "history_id": 21,
+      "description": "Инструмент 5 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T23:05:49.589862Z"
+  },
+  {
+    "id": "5a96afd6-be4d-43d9-a9c5-3c325b47b955",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 7,
+      "cell_id": 2,
+      "tools_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T23:47:24.291344Z"
+  },
+  {
+    "id": "75efb35f-2cec-4234-821a-dcdebc956c9d",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 24,
+      "datetime": "2025-06-18 02:47:24.327346",
+      "Status": 8,
+      "description": "Инструмент 5 выдано пользователю 2.",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T23:47:24.409207Z"
+  },
+  {
+    "id": "2cfaa124-35cc-40b5-863a-1d1ce8218c21",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 7542,
+      "date": "2025-06-18 02:47:24.434512",
+      "consumption_id": 7,
+      "consumption_tools_id": 5,
+      "status_id": 8,
+      "history_id": 24,
+      "description": "Инструмент 5 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-06-17T23:47:24.488472Z"
+  },
+  {
+    "id": "f4e4914b-8fe6-4b59-aa00-a049c1b41862",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 8,
+      "cell_id": 2,
+      "tools_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-18T10:53:24.657863Z"
+  },
+  {
+    "id": "3d2b5fed-bf43-4c69-b15d-6e967ece2087",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 26,
+      "datetime": "2025-06-18 13:53:24.665034",
+      "Status": 8,
+      "description": "Инструмент 5 выдано пользователю 2.",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 5
+    },
+    "status": "done",
+    "timestamp": "2025-06-18T10:53:24.797837Z"
+  },
+  {
+    "id": "18af8549-b0aa-4338-a1b5-dd103a76d40e",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 7543,
+      "date": "2025-06-18 13:53:24.833836",
+      "consumption_id": 8,
+      "consumption_tools_id": 5,
+      "status_id": 8,
+      "history_id": 26,
+      "description": "Инструмент 5 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-06-18T10:53:24.887155Z"
+  }
+]

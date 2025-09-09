@@ -1,0 +1,455 @@
+.droppable {
+    border: 1px rgb(255, 255, 255);
+    padding: 1px;
+    margin: 1px;
+    min-height: 50px;
+    min-width: 44px;
+    text-align: center;
+    user-select: none;
+}
+
+.draggable {
+  user-select: none;
+}
+
+.btn_vending {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(black, rgb(131,173,239) 1%, rgb(120,158,217) 97%, white), rgb(0,49,114);
+  border-color: rgb(255, 255, 255);
+  border-radius: 5px;
+  color: rgb(0,49,114);
+  font-weight: bold;
+  font-size: 16px;
+  letter-spacing: normal;
+  line-height: 1;
+  width: 225px;
+  height: 35px;
+  margin-top: 2px;
+}
+
+.btn_vending_active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgb(0,49,114);
+  border-color: rgb(80, 130, 179);
+  border-radius: 5px;
+  color: rgb(199, 224, 249);
+  font-weight: bold;
+  font-size: 16px;
+  letter-spacing: normal;
+  line-height: 1;
+  width: 225px;
+  height: 35px;
+  margin-top: 2px;
+}
+
+.search-container {
+      position: relative;
+      width: 140px;
+}
+
+.search-input {
+    width: 100%;
+    height: 30px;
+    padding-right: 30px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.suggestions {
+    position: absolute;
+    top: 35px;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-top: none;
+    background: white;
+    z-index: 1000;
+    border-radius: 0 0 4px 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+}
+
+.suggestions div {
+    padding: 5px;
+    cursor: pointer;
+}
+
+.suggestions div:hover {
+    background-color: #f0f0f0;
+}
+
+
+
+#body_screen_5_write_off{
+    margin-bottom: 0;
+    width: 100%;
+    height: 100vh;
+    padding-bottom: 0px;
+}
+
+#tool_photo{
+    width: 200px;
+    height: 110px;
+    margin-top: 15px;
+}
+
+#modal_window_confirmation_button{
+    display: flex;
+    width: 80%;
+    align-items: start;
+    margin-top: 15px;
+}
+
+#modal_window_confirmation_comment{
+    display: flex;
+    width: 80%;
+    align-items: start;
+    margin-top: 15px;
+}
+
+#modal_window_confirmation_tool_group{
+    display: flex;
+    width: 80%;
+    align-items: start;
+    margin-top: 10px;
+}
+
+#modal_window_confirmation_tool_name{
+    display: flex;
+    width: 80%;
+    align-items: start;
+    margin-top: 15px;
+}
+
+#modal_window_confirmation_plan_name_id{
+    display: flex;
+    width: 80%;
+    align-items: start;
+    margin-top: 10px;
+}
+
+#modal_window_confirmation_plan_name_count{
+    display: flex;
+    width: 80%;
+    align-items: start;
+    margin-top: 10px;
+}
+
+#modal_window_confirmation_btn_box{
+    display: flex;
+    flex-direction: row;
+    margin-top: 50px;
+}
+
+#modal_window_confirmation_btn_back{
+    margin-right: 20px;
+}
+
+#modal_window_confirmation_btn_ok{}
+
+#write_off_full_body_substrate{
+    height: 100%;
+    width: 100%;
+    position: static;
+    margin-left: 0px;
+    background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);
+    color: rgb(255,255,255);
+}
+
+
+
+#logo_image_manufacture{
+     height: 100px;
+     margin-right: 10px;
+     margin-left: 10px;
+}
+
+#main_name_manufacture{
+     color: rgb(78,155,229);
+     font-size: 22px;
+     font-weight: bold;
+     margin-right: 10px;
+}
+
+#screen_main_name{
+     position: absolute;
+     left: 50%;
+     transform: translateX(-50%);
+     z-index: 99;
+     text-align: center;
+     text-shadow: 2px 2px 5px rgb(0,49,114);
+     color: rgb(78,155,229);
+     font-weight: bold;
+
+     max-width: 100px;
+     overflow: hidden;
+     text-overflow: ellipsis;
+     white-space: nowrap;
+}
+
+#in_screen_user_role{
+     color: rgb(78,155,229);
+     font-size: 22px;
+     font-weight: bold;
+}
+
+#in_screen_user_dot{
+     color: rgb(78,155,229);
+     font-size: 22px;
+     font-weight: bold;
+}
+
+#in_screen_user_first_name{
+     margin-right: 5px;
+     color: rgb(78,155,229);
+     font-size: 22px;
+     font-weight: bold;
+}
+
+#in_screen_user_second_name{
+    color: rgb(78,155,229);
+    margin-right: 15px;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+#in_screen_user_out_btn{
+     width: 90px;
+     font-family: Arial Black;
+     font-size: 18px;
+}
+
+#in_screen_main_area{
+    height: calc(100% - 120px);
+    margin-top:10px;
+    border-top: 2px solid rgb(78,155,229);
+}
+
+#v-pills-tab{
+     width: 235px;
+     padding-left: 10px;
+     margin-top: 10px;
+}
+
+#in_screen_main_information_panel{
+     display: flex;
+     flex-direction: row;
+     flex-wrap: nowrap;
+     width: calc(100% - 235px);
+     height: 100%;
+     padding: 0px;
+}
+
+#column-1{
+     flex-direction: column;
+     width: calc(100% - 225px);
+     height: 100%;
+     align-items: center;
+}
+
+#main_logic_panel{
+    display: flex;
+    flex-direction: column;
+    width: 30%;
+    height: 80%;
+    margin-top: 10px;
+    border-style: solid;
+    border-radius: 5px;
+    border-color: rgb(78, 155, 229);
+    align-items: center;
+    padding: 10px;
+}
+
+#tool_identification_number{
+    width: 100%;
+    margin-top: 10px;
+    padding-left: 10px;
+    align-items: left;
+}
+
+#form_logic_tool_add{
+    width: 100%;
+    margin-top: 5px;
+}
+
+#find_btn_number_plan{
+     width: 30px;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     border-color: rgb(153, 153, 153);
+}
+
+#find_btn_number_plan_img{
+     width: 20px;
+     height: 20px;
+     pointer-events: none;
+}
+
+#tool_identification_group_tool_number{
+     width: 100%;
+     margin-top: 10px;
+     padding-left: 10px;
+     align-items: left;
+}
+
+#tools-group{
+     display: flex;
+     flex-direction: row;
+     margin-top: 10px;
+}
+
+#tools-group-text{
+     width: 190px;
+}
+
+#tools-group-btn{
+     width: 35px;
+}
+
+#tool_identification_sub_group_tool_number{
+     width: 100%;
+     margin-top: 10px;
+     padding-left: 10px;
+     align-items: left;
+}
+
+#tools-subgroup{
+     display: flex;
+     flex-direction: row;
+     margin-top: 10px;
+}
+
+#tools-subgroup-text{
+     width: 190px;
+}
+
+#tools-subgroup-btn{
+     width: 35px;
+}
+
+#tool-name-identification-text{
+     width: 100%;
+     margin-top: 10px;
+     padding-left: 10px;
+     align-items: left;
+}
+
+#tools-name{
+     display: flex;
+     flex-direction: row;
+     margin-top: 10px;
+}
+
+#tools-name-text-btn{
+     width: 190px;
+}
+
+#tools-name-btn{
+     width: 35px;
+}
+
+#source-confirmation-tools-text{
+     width: 100%;
+     margin-top: 10px;
+     padding-left: 10px;
+     align-items: left;
+}
+
+#tools-position{
+     display: flex;
+     flex-direction: row;
+     margin-top: 10px;
+}
+
+
+#tools-position-emitter-text{
+     width: 190px;
+}
+
+#tools-position-emitter-execute-toggle{
+     width: 35px;
+}
+
+#tool-confirmation-count-box{
+     flex-direction: row;
+     height: 35px;
+     margin-top: 10px;
+     padding-left: 10px;
+     justify-content: center;
+     align-items: left;
+}
+
+#tool-confirmation-count-text{
+     margin-right: 10px;
+}
+
+#tool-confirmation-count-int-input{
+    width: 30%;
+}
+
+#tool-confirmation-text-why-text{
+    width: 100%;
+    margin-top: 10px;
+    padding-left: 10px;
+    align-items: left;
+}
+
+#tool-confirmation-text-why-find{
+    width: 100%;
+    margin-top: 5px;
+}
+
+#column-3{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 225px;
+    height: 100%;
+    margin-right: 10px;
+}
+
+#column-3-right-panel-top-element{
+    width: 100%;
+    height: 70px;
+    margin-top: 10px;
+}
+
+#column-3-right-panel-center-element-box{
+    width: 225px;
+    border: 20px;
+    border-radius: 5px;
+    border-color: rgb(0,49,114);
+    font-size: 16px;
+}
+
+#column-3-right-panel-center-element-body{
+    color: rgb(0,49,114);
+    padding: 10px;
+}
+
+#column-3-right-panel-center-element-text{
+    font-family: Arial;
+}
+
+#vending_right_down_buttons{
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+
+

@@ -1,0 +1,92 @@
+"""
+Этот модуль содержит определение класса TableTools, который представляет
+таблицу "Tools" в базе данных. Класс предназначен для хранения информации
+об инструментах, связанных с планами, включая такие детали, как название,
+описание, штрих-код и изображения, а также способы их группировки.
+"""
+
+# if 'Group' not in Base.metadata.tables:
+#     from DB.Models.Group import Group
+# if 'Cell' not in Base.metadata.tables:
+#     from DB.Models.Cell import Cell
+# if 'History' not in Base.metadata.tables:
+#     from DB.Models.History import History
+# Tools.py
+from sqlalchemy import Column, Integer, String, ForeignKey, Index
+from sqlalchemy.orm import relationship
+from DB.Data.base import Base
+from DB.Models.BaseModel import Model
+
+if 'Plan' not in Base.metadata.tables:
+    from DB.Models.Plan import Plan
+
+
+# print("Tools")
+
+class Tools(Base, Model):
+    __tablename__ = 'Tools'
+    __table_kwargs__ = {"extend_existing": True}  # Указываем аргументы таблицы отдельно
+
+    # Поля таблицы
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment='Уникальный идентификатор инструмента')
+    barcode = Column(String(45), nullable=True, comment='Штрих-код инструмента')
+    name = Column(String(45), nullable=True, comment='Название инструмента')
+    description = Column(String(450), nullable=True, comment='Описание инструмента')
+    img = Column(String(45), nullable=True, comment='Изображение инструмента')
+    plan_id = Column(Integer, ForeignKey('Plan.id'), nullable=True, comment='Идентификатор плана')
+    groups_id = Column(Integer, ForeignKey('Group.id'), nullable=True, comment='Внешний ключ на таблицу Group')
+
+    @property
+    def plans(self):
+        if 'Plans' not in Base.metadata.tables:
+            from DB.Models.Plan import Plan
+        else:
+            Plan = Base.metadata.tables['Plans'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(Plan, back_populates='Tools')
+
+    @property
+    def groups(self):
+        if 'Groups' not in Base.metadata.tables:
+            from DB.Models.Group import Group
+        else:
+            Group = Base.metadata.tables['Groups'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(Group, back_populates='Tools')
+
+    @property
+    def cells(self):
+        if 'Cells' not in Base.metadata.tables:
+            from DB.Models.Cell import Cell
+        else:
+            Cell = Base.metadata.tables['Cells'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(Cell, back_populates='Tools')
+
+    @property
+    def stories(self):
+        if 'Stories' not in Base.metadata.tables:
+            from DB.Models.History import History
+        else:
+            History = Base.metadata.tables['Stories'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(History, back_populates='Tools')
+
+    # Индексы
+    __table_args__ = (
+        Index('idx_tools_barcode', 'barcode', unique=False),
+        Index('fk_tools_Plan_idx', 'plan_id', unique=False),
+        Index('fk_tools_Group_idx', 'groups_id', unique=False),
+    )
+
+    def __repr__(self):
+        """Представляет объект Status в виде строки для удобства отладки."""
+        return (f"<Tools("
+                f"id={self.id}, "
+                f"barcode={self.barcode}, "
+                f"name={self.name}, "
+                f"description={self.description}, "
+                f"img={self.img}, "
+                f"plan_id={self.plan_id}, "
+                f"groups_id={self.groups_id}"
+                f")>")
+
+# groups = relationship('Group', back_populates='Tools')
+# cells = relationship('Cell', back_populates='Tools')
+# stories = relationship('History', back_populates='Tools')

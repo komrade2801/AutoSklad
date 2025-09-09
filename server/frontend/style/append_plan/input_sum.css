@@ -1,0 +1,31 @@
+/* Только для .custom-spinner-input */
+.input_sum {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  background-color: #56b358;
+  border: 1.5px solid #FFFFFF;
+  color: #FFFFFF;
+}
+
+/* Стрелочки в WebKit-браузерах */
+.input_sum::-webkit-inner-spin-button,
+.input_sum::-webkit-outer-spin-button {
+  -webkit-appearance: inner-spin-button;
+  display: block;
+  width: auto;
+  height: auto;
+  color: #56b358;
+  opacity: 1;
+  background: transparent;
+  border-radius: 5px;
+}
+
+/* Стрелочки в Firefox */
+.input_sum {
+  -moz-appearance: textfield;
+}
+.input_sum::-moz-number-spin-box {
+  -moz-appearance: number-input;
+  background: transparent;
+}

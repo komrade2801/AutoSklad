@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru" style="margin: 0;">
+<head>
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+
+     <title>Списание инструмента</title>
+     <link rel="icon" href="/favicon.png?v=1" type="image/png">
+     <link rel="stylesheet" href="../assets/css/write_off/main.css">
+
+     <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
+     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
+     <link rel="stylesheet" href="../style/titles.css">
+     <link rel="stylesheet" href="../style/dropdown_list.css">
+     <link rel="stylesheet" href="../style/write_off/style_modal_window.css">
+
+     <script type="module" src="../scripts/write_off/init_white_off.js"></script>
+     <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
+     <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
+     <script src="../scripts/write_off/modal_window.js"></script>
+     <script src="../scripts/write_off/modal_open.js"></script>
+</head>
+<body id="body_screen_5_write_off" class="d-flex justify-content-center" onload="initialization('screen_5_write_off')">
+  <div id="membrane"></div>
+  <div id="modal_window_confirmation">
+    <span id="modal_window_confirmation_button" class="title_confirmation">Вы уверены, что хотите отменить списание?</span>
+    <span id="modal_window_confirmation_comment" class="title_confirmation">Инструмент вернётся на прежнее место.</span>
+    <img id="tool_photo" src="">
+    <span id="modal_window_confirmation_tool_group" class="tool_group">Группа: </span>
+    <span id="modal_window_confirmation_tool_name" class="tool_name">Инструмент: </span>
+    <span id="modal_window_confirmation_plan_name_id" class="plan_name">ID инструмента: </span>
+    <span id="modal_window_confirmation_plan_name_count" class="plan_name">Количество: </span>
+    <div id="modal_window_confirmation_btn_box">
+      <button id="modal_window_confirmation_btn_back" class="btn_vending" onclick="show('none')">Назад</button>
+      <button id="modal_window_confirmation_btn_ok" class="btn_vending" onclick="show('none')">Списать</button>
+    </div>
+  </div>
+  <div id="write_off_full_body_substrate" class="d-flex flex-column">
+    <nav id="navbar" class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3" style="width: 100%; height: 100px; margin-top: 10px; margin-left: 0px;">
+    </nav>
+    <div id="in_screen_main_area" class="d-flex" >
+    <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical"></div>
+    <div id="in_screen_main_information_panel" class="tab-pane fade show active d-flex" >
+        <div id="column-1" class="d-flex">
+          <div id="main_logic_panel">
+            <span id="tool_identification_number">Идентификационный номер инструмента:</span>
+            <form id="form_logic_tool_add" class="d-flex" role="search">
+              <input class="form-control me-2" type="search" placeholder="XXXX.DDDD.xxxx.xxxx.xxxx" aria-label="Поиск">
+              <button id="find_btn_number_plan" class="btn" type="submit">
+                <img id="find_btn_number_plan_img" src="../assets/img/loupe.png">
+              </button>
+            </form>
+            <span id="tool_identification_group_tool_number">Группа инструмента:</span>
+            <div id="tools-group">
+              <button id="tools-group-text" class="btn_vending" type="button">Группа инструмента</button>
+              <button id="tools-group-btn" class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button"></button>
+              <div class="dropdown-menu dropdown-menu-div"></div>
+            </div>
+            <span id="tool_identification_sub_group_tool_number">Подгруппа инструмента:</span>
+            <div id="tools-subgroup">
+              <button id="tools-subgroup-text" class="btn_vending" type="button">Подгруппа инструмента</button>
+              <button id="tools-subgroup-btn" class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button"></button>
+              <div class="dropdown-menu dropdown-menu-div"></div>
+            </div>
+            <span id="tool-name-identification-text">Название инструмента:</span>
+            <div id="tools-name">
+              <button id="tools-name-text-btn" class="btn_vending" type="button">Название инструмента</button>
+              <button id="tools-name-btn" class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button"></button>
+              <div class="dropdown-menu dropdown-menu-div"></div>
+            </div>
+            <span id="source-confirmation-tools-text">Источник, откуда списать:</span>
+            <div id="tools-position">
+              <button id="tools-position-emitter-text" class="btn_vending" type="button">Откуда списать</button>
+              <button id="tools-position-emitter-execute-toggle" class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button"></button>
+              <div class="dropdown-menu dropdown-menu-div">
+                <a class="dropdown-item" href="#">Со склада</a>
+                <a class="dropdown-item" href="#">С рук</a>
+              </div>
+            </div>
+            <div id="tool-confirmation-count-box" class="d-flex">
+              <span id="tool-confirmation-count-text">Количество инструмента:</span>
+              <input id="tool-confirmation-count-int-input" class="form-control me-2" type="number" min="1" aria-label="Поиск">
+            </div>
+            <span id="tool-confirmation-text-why-text">Причина списания:</span>
+            <input id="tool-confirmation-text-why-find" class="form-control me-2" type="text" placeholder="Сломан." aria-label="Поиск">
+          </div>
+        </div>
+        <div id="column-3" class="d-flex">
+          <div id="column-3-right-panel-top-element"></div>
+          <div id="column-3-right-panel-center-element-box" class="card">
+            <div id="column-3-right-panel-center-element-body" class="card-body">
+              <h6 class="card-title" >Подсказка:</h6>
+              <p id="column-3-right-panel-center-element-text" class="card-text">Для списания инструмента из аппарата сделайте его выгрузку.</p>
+            </div>
+          </div>
+          <div id="vending_right_down_buttons">
+            <button class="btn_vending" type="button" onclick="openModalConfirmation()">Отмена</button>
+            <button class="btn_vending" type="button">Сохранить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+  // Извлекаем данные пользователя, сохраненные в localStorage (объект должен содержать: role_id, first_name, second_name, family)
+  const userDataJSON = localStorage.getItem('user');
+  if (!userDataJSON) {
+    console.error('Информация о пользователе не найдена в localStorage');
+    return;
+  }
+
+  const userData = JSON.parse(userDataJSON);
+
+  // Выполняем запрос к эндпоинту для получения информации о роли по role_id
+  fetch(`/backend/roles/${userData.role_id}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Ошибка получения данных о роли');
+    }
+    return response.json();
+  })
+  .then(roleData => {
+    // Находим элементы для вывода данных
+    const roleElement = document.getElementById('userRole');
+    const nameElement = document.getElementById('userName');
+    const patronymicElement = document.getElementById('userPatronymic');
+
+    // Проверяем наличие необходимых полей и вставляем данные
+    if (roleElement) {
+      // В roleData ожидается, что название роли хранится в поле name
+      roleElement.textContent = roleData.name;
+    }
+    if (nameElement) {
+      // Формируем ФИО: фамилия + имя
+      nameElement.textContent = `${userData.family} ${userData.first_name}`;
+    }
+    if (patronymicElement) {
+      // Отчество пользователя
+      patronymicElement.textContent = userData.second_name;
+    }
+  })
+  .catch(error => {
+    console.error('Ошибка при получении данных о роли: ', error);
+  });
+});
+</script>
+</body>
+</html>

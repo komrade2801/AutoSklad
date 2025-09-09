@@ -1,0 +1,58 @@
+{
+  "Tools": {
+    "id": "id",
+    "barcode": "barcode",
+    "inventory_number": "inventory_number",
+    "plan_id": "plan_id",
+    "tool_type_id": "tool_type_id",
+    "name": "name",
+    "description": "description",
+    "img": "img",
+    "groups_id": "groups_id"
+  },
+  "ToolTypes": {
+    "id": "id",
+    "name": "name",
+    "description": "description",
+    "count": "count",
+    "img": "img",
+    "groups_id": "groups_id"
+  },
+  "ToolsHasDevice": {
+    "tools_id": "tools_id",
+    "device_id": "device_id"
+  },
+  "LoadOperationsHasDevice": {
+    "load_operations_id": "load_operations_id",
+    "device_id": "device_id"
+  },
+  "OperationsConsumptionHasDevice": {
+    "operations_consumption_id": "operations_consumption_id",
+    "device_id": "device_id"
+  },
+  "Cell": {
+    "id": "id",
+    "index": "id",
+    "number": "number",
+    "description": "description",
+    "groups_id": "groups_id",
+    "tools_id": "tools_id",
+    "status_id": "status_id"
+  },
+    "Load": {
+    "id": "id",
+    "description": "description",
+    "tools_id": "tools_id",
+    "mass_load_id": "mass_load_id",
+    "cell_id": "cell_id"
+  },
+  "History": {
+    "id": "id",
+    "datetime": "datetime",
+    "status": "status",
+    "description": "description",
+    "user_id": "user_id",
+    "user_role_id": "user_role_id",
+    "tools_id": "tools_id"
+  }
+}

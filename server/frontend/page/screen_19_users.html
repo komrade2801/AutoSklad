@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru" style="margin: 0; height: 100%;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <script type="module" src="../scripts/users/init_4_users.js"></script>
+    <title>Все пользователи</title>
+    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
+    <link rel="stylesheet" href="../style/titles.css">
+    <link rel="stylesheet" href="../style/dropdown_list.css">
+    <link rel="stylesheet" href="../style/users/style_modal_window.css">
+    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
+    <script type="module" src="../scripts/users/deleteUser.js"></script>
+    <script type="module" src="../scripts/users/createTableAllUsers.js"></script>
+    <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
+    <style>
+      .btn_vending {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(black, rgb(131,173,239) 1%, rgb(120,158,217) 97%, white), rgb(0,49,114);
+        border-color: rgb(255, 255, 255);
+        border-radius: 5px;
+        color: rgb(0,49,114);
+        font-weight: bold;
+        font-size: 16px;
+        letter-spacing: normal;
+        line-height: 1;
+        width: 225px;
+        height: 35px;
+        margin-top: 2px;
+      }
+
+      .btn_vending_active {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgb(0,49,114);
+        border-color: rgb(80, 130, 179);
+        border-radius: 5px;
+        color: rgb(199, 224, 249);
+        font-weight: bold;
+        font-size: 16px;
+        letter-spacing: normal;
+        line-height: 1;
+        width: 225px;
+        height: 35px;
+        margin-top: 2px;
+      }
+
+      .search-container {
+            position: relative;
+            width: 140px;
+      }
+
+      .search-input {
+          width: 100%;
+          height: 30px;
+          padding-right: 30px;
+          box-sizing: border-box;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          outline: none;
+      }
+
+      .search-icon {
+          position: absolute;
+          top: 50%;
+          right: 5px;
+          transform: translateY(-50%);
+          cursor: pointer;
+      }
+
+       .suggestions {
+           position: absolute;
+           top: 35px;
+           width: 100%;
+           border: 1px solid #ccc;
+           border-top: none;
+           background: white;
+           z-index: 1000;
+           border-radius: 0 0 4px 4px;
+           max-height: 150px;
+           overflow-y: auto;
+           display: none;
+       }
+
+       .suggestions div {
+           padding: 5px;
+           cursor: pointer;
+       }
+
+       .suggestions div:hover {
+           background-color: #f0f0f0;
+       }
+
+/* Полупрозрачный фон поверх всего */
+.modal-overlay {
+  display: none;                         
+  position: fixed;                       
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);        
+  justify-content: center;               
+  align-items: center;                   
+  z-index: 1000;                         
+}
+
+/* Собственно окно — увеличили размеры */
+.modal-content {
+  background-color: rgb(131, 149, 174);
+  padding: 30px;               /* чуть больше отступы */
+  border-radius: 10px;
+  max-width: 95%;              /* почти вся ширина экрана */
+  width: 700px;                /* фиксированная большая ширина */
+  max-height: 90vh;            /* не выходит за пределы окна */
+  overflow-y: auto;            /* прокрутка, если высота большая */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Отступы и размер картинки */
+.barcode-img {
+  height: 200px;              /* увеличили высоту изображения */
+  margin: 20px 0;
+}
+
+/* Кнопки в ряд */
+.modal-actions {
+  display: flex;
+  gap: 15px;                  /* увеличенный промежуток */
+  margin-top: 30px;
+}
+
+    </style>
+</head>
+<body onload="initialization('screen_19_users')"
+      class="d-flex justify-content-center" id="body"
+      style="margin-bottom: 0; width: 100%; height: 100%; padding-bottom: 0px; background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);">
+
+  <div id="membrane"></div>
+  <div id="modal_window_confirmation">
+    <span style="font-size: 24px; padding-left:10px;">Вы уверены, что хотите удалить пользователя?</span>
+    <span id="role" style="display: flex; width: 80%; align-items: start; margin-top: 15px;"></span>
+    <span id="name_user" style="display: flex; width: 80%; align-items: start; margin-top: 15px;"></span>
+    <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Отменить действие будет невозможно.</span>
+    <div style="display: flex; flex-direction: row; margin-top: 50px;">
+      <button class="btn_vending" onclick="show_conf('none')" style="margin-right: 20px;">Назад</button>
+      <button class="btn_vending" onclick="deleteUser()">Удалить</button>
+    </div>
+  </div>
+
+  <div id="modal_window_password">
+    <span id="user" style="font-size: 24px;"></span>
+    <span id="login" style="display: flex; width: 80%; align-items: start; margin-top: 15px;"></span>
+    <span id="password" style="display: flex; width: 80%; align-items: start; margin-top: 15px;">
+      <input type="text" id="password_input" style="width: 100%;" inputmode="numeric" pattern="\d*" oninput="this.value = this.value.replace(/\D/g, '')"/>
+    </span>
+    <div style="display: flex; flex-direction: row; margin-top: 50px;">
+      <button class="btn_vending" onclick="show_password('none')" style="margin-right: 20px;">Назад</button>
+      <button class="btn_vending" onclick="">Сохранить</button>
+    </div>
+  </div>
+
+  <!-- Разметка модалки -->
+  <div id="modal_window_barcode" class="modal-overlay">
+    <div class="modal-content">
+      <span class="plan_name">Пользователь №: <span id="modal_user_id"></span></span>
+      <img id="modal_barcode_img" class="barcode-img" src="" alt="User barcode"/>
+      <div class="modal-actions">
+        <button class="btn_vending" onclick="showBarcode('none')">Назад</button>
+        <button class="btn_vending" onclick="printBarcode()">Распечатать</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex flex-column" style="height: 100%; width: 100%; position: static; margin-left: 0px; color: rgb(255,255,255);">
+    <nav id="navbar" class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3" style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
+    </nav>
+    <div class="d-flex" style="height: calc(100% - 120px); margin-top:10px; border-top: 2px solid rgb(78,155,229);">
+    <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical" style="width: 235px; padding-left: 10px; margin-top: 10px;">
+    </div>
+    <div class="tab-pane fade show active d-flex" id="v-pills-page_15_mass_load" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
+        <div id="column-1" class="d-flex" style="flex-direction: column; width: calc(100% - 225px); height: 100%; padding: 10px; align-items: center;"></div>
+        <div id="column-3" class="d-flex" style="display: flex; flex-direction: column; justify-content: space-between; width: 225px; height: 100%; margin-right: 10px;">
+          <div style="width: 100%; height: 70px; margin-top: 10px;">
+            <button class="btn_vending" type="button" onclick="addUser()" >Добавить пользователя</button>
+          </div>
+          <div class="card" style="width: 225px; border: 20px; border-radius: 5px; border-color: rgb(0,49,114); font-size: 16px;">
+            <div class="card-body" style="display: none; color: rgb(0,49,114); padding: 10px;">
+              <h6 class="card-title" >Подсказка:</h6>
+              <p class="card-text" style="font-family: Arial;">Перетащите инструмент в ячейку, зажав левую кнопку мыши, и отпустив над номером нужной ячейки.</p>
+            </div>
+          </div>
+          <div style="width: 100%; margin-bottom: 10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Push Commands",
+  "type": "object",
+
+  "properties": {
+    "device": {
+      "type": "integer"
+    },
+    "schema_hash": {
+      "type": "string"
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "table": {
+            "type": "string"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "insert", "INSERT",
+              "update", "UPDATE",
+              "delete", "DELETE",
+              "add",    "ADD"
+            ]
+          },
+          "data": {
+            "type": "object"
+          },
+          "last_modified": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "table",
+          "operation",
+          "data"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+
+  "required": [
+    "commands"
+  ],
+  "additionalProperties": false
+}

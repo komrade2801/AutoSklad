@@ -1,0 +1,22 @@
+# Default ignored files
+/shelf/
+.idea/
+/workspace.xml
+misc.xml
+modules.xml
+vcs.xml
+Vending_web.iml
+workspace.xml
+веб.iml
+inspectionProfiles/profiles_settings.xml
+/options.py
+.idea/misc.xml
+.idea/веб.iml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml
+/.idea/shelf/Uncommitted_changes_before_Update_at_22_05_2025_6_46_[Changes]/web_vending.db
+/.idea/shelf/Uncommitted_changes_before_Update_at_23_05_2025_7_09_[Changes]/web_vending.db
+/.idea/shelf/Uncommitted_changes_before_Update_at_20_05_2025_6_36_[Changes]/web_vending.db
+/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml
+__pycache__/

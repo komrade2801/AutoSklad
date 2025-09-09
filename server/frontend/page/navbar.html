@@ -1,0 +1,62 @@
+{# templates/navbar.html #}
+<div class="container-fluid">
+  <img id="logo_image_manufacture" class="d-flex"
+       src="{{ url_for('assets', path='/img/logo.png') }}"
+       style="height:100px;margin:0 10px;">
+  <span id="main_name_manufacture"
+        style="color:#4E9BE5;font-size:22px;font-weight:bold;margin-right:10px;">
+        Завод Контакт
+  </span>
+
+  <h1 id="screen_main_name" class="d-flex"
+      style="position:absolute;left:50%;transform:translateX(-50%);z-index:99;
+             text-align:center;text-shadow:2px 2px 5px #003172;
+             color:#4E9BE5;font-weight:bold; overflow-wrap: break-word; word-break: break-word;">
+    {{ screen_name }}
+  </h1>
+
+
+  <div class="collapse navbar-collapse d-flex" id="navcol-2">
+    <ul class="navbar-nav">
+      {%- for key, label in buttons %}
+      <li class="nav-item">
+        <a class="nav-link {% if key==screen_key %}active{% endif %}"
+           href="{{ url_for(request.scope.endpoint, page=key) }}">
+          {{ label }}
+        </a>
+      </li>
+      {%- endfor %}
+    </ul>
+  </div>
+
+  <div id="user_information" class="d-flex ms-auto" style="overflow-wrap: break-word; word-break: break-word;">
+    <span style="color:#4E9BE5;font-size:22px;font-weight:bold;">
+      {{ user_role }},&nbsp;
+    </span>
+    <span style="color:#4E9BE5;font-size:22px;font-weight:bold;">
+      {{ user_fullname }}
+    </span>
+  </div>
+
+  <button id="in_screen_user_out_btn" class="btn_vending"
+          type="button" onclick="window.location.href='/'; localStorage.removeItem('token')"
+          style="width:90px;font-family:Arial Black;font-size:18px;">
+    Выйти
+  </button>
+</div>
+
+
+
+<!--<div class="container-fluid">-->
+<!--  <img id="logo_image_manufacture" class="d-flex" src="../assets/img/logo.png" style="height: 100px;margin-right: 10px;margin-left: 10px;">-->
+<!--  <span id="main_name_manufacture" style="color: rgb(78,155,229);font-size: 22px;font-weight: bold;margin-right: 10px;">Завод Контакт</span>-->
+<!--  <h1 id="screen_main_name" class="d-flex"  style="position: absolute; left: 50%; transform: translateX(-50%); z-index: 99; text-align: center; text-shadow: 2px 2px 5px rgb(0,49,114); color: rgb(78,155,229); font-weight: bold;">Списание инструмента</h1>-->
+<!--  <div class="collapse navbar-collapse d-flex" id="navcol-2"></div>-->
+<!--  <div id="user_information" class="d-flex ms-auto">-->
+<!--    <span id="in_screen_user_role" style="color: rgb(78,155,229);font-size: 22px;font-weight: bold;">Кладовщик</span>-->
+<!--    <span id="in_screen_user_dot" style="color: rgb(78,155,229);font-size: 22px;font-weight: bold;">,&nbsp;</span>-->
+<!--    <span id="in_screen_user_first_name" style="margin-right: 5px;color: rgb(78,155,229);font-size: 22px;font-weight: bold;">Иванов Иван</span>-->
+<!--    <span id="in_screen_user_second_name" style="color: rgb(78,155,229);margin-right: 15px;font-size: 22px;font-weight: bold;">Иванович</span>-->
+<!--  </div>-->
+<!--  <button id="in_screen_user_out_btn" class="btn_vending" type="button" onclick="window.location.href='./';" style="width: 90px; font-family: Arial Black; font-size: 18px;">Выйти</button>-->
+<!--</div>-->

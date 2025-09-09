@@ -1,0 +1,34 @@
+#full {
+    height: 100%;
+    width: 100%;
+    position: static;
+}
+
+#central {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 35%;
+}
+
+body {
+    width: 100%;
+    height: 100vh;
+    padding-bottom: 0px;
+    margin-bottom: 0;
+    color: rgb(255,255,255);
+    background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);
+}
+
+h1 {
+    font-size: 46px; /* Размер заголовка первого уровня */
+}
+h2 {
+    font-size: 32px; /* Размер заголовка второго уровня */
+    margin-bottom: 0px;
+}
+p {
+    font-size: 20px;
+}

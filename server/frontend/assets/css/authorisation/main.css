@@ -1,0 +1,55 @@
+input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 90%;
+    height: 50px;
+    font-family: Arial Black;
+    font-weight: bold;
+    font-size: 25px;
+    border-color: rgb(41, 83, 150);
+    border-style: solid;
+    border-width: 2px;
+    border-radius: 5px;
+    color: rgb(0,49,114);
+    margin-top: 40px;
+    /* Выравнивание текста и плейсхолдера */
+}
+
+#img_logo {
+    max-width: 90%;
+    height: auto;
+}
+
+#full {
+    height: 100%;
+    width: 100%;
+    position: static;
+}
+
+#central {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 25%;
+}
+
+body {
+    width: 100%;
+    height: 100vh;
+    padding-bottom: 0px;
+    margin-bottom: 0;
+    color: rgb(255,255,255);
+    background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, white);
+}
+
+#login {
+    width: 90%;
+    height: 50px;
+    font-family: Arial Black;
+    font-size: 28px;
+    margin-top: 40px;
+}
+

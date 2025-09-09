@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Pull Response Schema",
+  "type": "object",
+  "properties": {
+    "schema_hash": {
+      "type": "string",
+      "description": "SHA256-хэш схемы данных, согласованный в ходе handshake"
+    },
+    "commands": {
+      "type": "array",
+      "description": "Список команд, которые нужно применить на клиенте",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "anyOf": [
+              { "type": "integer" },
+              { "type": "string" }
+            ],
+            "description": "Уникальный идентификатор команды на сервере"
+          },
+          "table": {
+            "type": "string",
+            "description": "Имя таблицы, к которой относится команда"
+          },
+          "operation": {
+            "type": "string",
+            "enum": ["INSERT", "UPDATE", "DELETE"],
+            "description": "Тип операции (верхний регистр)"
+          },
+          "data": {
+            "type": "object",
+            "description": "Поля и значения записи в локальном формате (JSON)"
+          },
+          "last_modified": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "ISO-8601 метка времени последнего изменения"
+          }
+        },
+        "required": ["id", "table", "operation", "data", "last_modified"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["schema_hash", "commands"],
+  "additionalProperties": false
+}

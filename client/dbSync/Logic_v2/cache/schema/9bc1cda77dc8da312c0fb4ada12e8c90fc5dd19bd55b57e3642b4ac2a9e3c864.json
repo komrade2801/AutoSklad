@@ -1,0 +1,146 @@
+{
+  "Error": {
+    "id": "id",
+    "error_type": "error_type",
+    "message": "message",
+    "timestamp": "timestamp"
+  },
+  "Group": {
+    "id": "id",
+    "name": "name",
+    "description": "description"
+  },
+  "Help": {
+    "id": "id",
+    "text": "text",
+    "data": "data"
+  },
+  "Plan": {
+    "id": "id",
+    "enterprise": "enterprise",
+    "barcode": "barcode",
+    "name": "name",
+    "description": "description",
+    "designation": "designation",
+    "index_list": "index_list",
+    "list_count": "list_count",
+    "parent_plan_id": "parent_plan_id"
+  },
+  "Role": {
+    "id": "id",
+    "Name": "Name",
+    "Description": "Description",
+    "ParentRole_id": "ParentRole_id"
+  },
+  "Status": {
+    "id": "id",
+    "stype": "stype",
+    "description": "description",
+    "created_at": "created_at"
+  },
+  "mass_drop": {
+    "id": "id",
+    "description": "description",
+    "created_at": "created_at"
+  },
+  "mass_load": {
+    "id": "id",
+    "description": "description",
+    "created_at": "created_at"
+  },
+  "Rights": {
+    "id": "id",
+    "Name": "Name",
+    "Description": "Description",
+    "Role_id": "Role_id"
+  },
+  "User": {
+    "id": "id",
+    "barcode": "barcode",
+    "Code": "Code",
+    "FirstName": "FirstName",
+    "password": "password",
+    "SecondName": "SecondName",
+    "Family": "Family",
+    "Role_id": "Role_id"
+  },
+  "Identification": {
+    "id": "id",
+    "datetime": "datetime",
+    "Status": "Status",
+    "Description": "Description",
+    "User_id": "User_id"
+  },
+  "Tools": {
+    "id": "id",
+    "plan_id": "plan_id",
+    "name": "name",
+    "description": "description",
+    "img": "img",
+    "groups_id": "groups_id"
+  },
+  "Cell": {
+    "id": "id",
+    "number": "number",
+    "description": "description",
+    "groups_id": "groups_id",
+    "tools_id": "tools_id",
+    "status_id": "status_id"
+  },
+  "History": {
+    "id": "id",
+    "datetime": "datetime",
+    "Status": "Status",
+    "Description": "Description",
+    "user_id": "user_id",
+    "user_role_id": "user_role_id",
+    "tools_id": "tools_id"
+  },
+  "Consumption": {
+    "id": "id",
+    "cell_id": "cell_id",
+    "tools_id": "tools_id"
+  },
+  "Drop": {
+    "id": "id",
+    "description": "description",
+    "created_at": "created_at",
+    "cell_id": "cell_id",
+    "mass_drop_id": "mass_drop_id",
+    "tools_id": "tools_id"
+  },
+  "Load": {
+    "id": "id",
+    "description": "description",
+    "tools_id": "tools_id",
+    "mass_load_id": "mass_load_id",
+    "cell_id": "cell_id"
+  },
+  "OperationsConsumption": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "consumption_id": "consumption_id",
+    "history_id": "history_id",
+    "consumption_tools_id": "consumption_tools_id",
+    "status_id": "status_id"
+  },
+  "dropOperations": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "history_id": "history_id",
+    "status_id": "status_id",
+    "tools_id": "tools_id",
+    "drop_id": "drop_id"
+  },
+  "loadOperations": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "load_id": "load_id",
+    "load_tools_id": "load_tools_id",
+    "status_id": "status_id",
+    "history_id": "history_id"
+  }
+}

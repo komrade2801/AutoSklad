@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru" style="margin: 0; height: 100%;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Библиотека инструмента</title>
+    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
+    <link rel="stylesheet" href="../style/titles.css">
+    <link rel="stylesheet" href="../style/dropdown_list.css">
+    <link rel="stylesheet" href="../style/tool_library/style_modal_window.css">
+    <script type="module" src="../scripts/tool_library/init_15.js?v=3"></script>
+    <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
+    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
+    <style>
+      .droppable {
+          border: 1px rgb(255, 255, 255);
+          padding: 1px;
+          margin: 1px;
+          min-height: 50px;
+          min-width: 44px;
+          text-align: center;
+          user-select: none;
+      }
+
+      .draggable {
+        user-select: none;
+      }
+
+      .btn_vending {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(black, rgb(131,173,239) 1%, rgb(120,158,217) 97%, white), rgb(0,49,114);
+        border-color: rgb(255, 255, 255);
+        border-radius: 5px;
+        color: rgb(0,49,114);
+        font-weight: bold;
+        font-size: 16px;
+        letter-spacing: normal;
+        line-height: 1;
+        width: 225px;
+        height: 35px;
+        margin-top: 2px;
+      }
+
+      .btn_vending_active {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgb(0,49,114);
+        border-color: rgb(80, 130, 179);
+        border-radius: 5px;
+        color: rgb(199, 224, 249);
+        font-weight: bold;
+        font-size: 16px;
+        letter-spacing: normal;
+        line-height: 1;
+        width: 225px;
+        height: 35px;
+        margin-top: 2px;
+      }
+
+      .search-container {
+            position: relative;
+            width: 140px;
+      }
+
+      .search-input {
+          width: 100%;
+          height: 30px;
+          padding-right: 30px;
+          box-sizing: border-box;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          outline: none;
+      }
+
+      .search-icon {
+          position: absolute;
+          top: 50%;
+          right: 5px;
+          transform: translateY(-50%);
+          cursor: pointer;
+      }
+
+       .suggestions {
+           position: absolute;
+           top: 35px;
+           width: 100%;
+           border: 1px solid #ccc;
+           border-top: none;
+           background: white;
+           z-index: 1000;
+           border-radius: 0 0 4px 4px;
+           max-height: 150px;
+           overflow-y: auto;
+           display: none;
+       }
+
+       .suggestions div {
+           padding: 5px;
+           cursor: pointer;
+       }
+
+       .suggestions div:hover {
+           background-color: #f0f0f0;
+       }
+    </style>
+</head>
+
+<body onload="initialization('screen_15_tool_library')" 
+      class="d-flex justify-content-center" id="body"
+      style="margin-bottom: 0; width: 100%; height: 100%; padding-bottom: 0px; background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);">
+  <div id="membrane"></div>
+  <div id="modal_window_confirmation">
+    <span style="font-size: 24px;">Вы уверены, что хотите удалить инструмент?</span>
+    <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Отменить действие будет невозможно. При необходимости добавьте инструмент в библиотеку заново.</span>
+    <div style="display: flex; flex-direction: row; margin-top: 50px;">
+      <button class="btn_vending" onclick="show_conf('none')" style="margin-right: 20px;">Назад</button>
+      <button class="btn_vending" onclick="show_conf('none')">Удалить</button>
+    </div>
+  </div>
+  <div class="d-flex flex-column" style="height: 100%; width: 100%; position: static; margin-left: 0px; color: rgb(255,255,255);">
+    <nav id="navbar" class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3" style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
+    </nav>
+    <div class="d-flex" style="height: calc(100% - 120px); margin-top:10px; border-top: 2px solid rgb(78,155,229);">
+    <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical" style="width: 235px; padding-left: 10px; margin-top: 10px;">
+    </div>
+    <div class="tab-pane fade show active d-flex" id="v-pills-page_15_mass_load" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
+        <div id="column-1" class="d-flex" style="flex-direction: column; width: calc(100% - 225px); height: 100%; align-items: center; overflow-y: auto; padding: 10px;"></div>
+        <div id="column-3" class="d-flex" style="display: flex; flex-direction: column; justify-content: space-between; width: 225px; height: 100%; margin-right: 10px;">
+          <div style="width: 100%; height: 70px; margin-top: 10px;">
+            <div id="tools-group" style="display: flex; flex-direction: row;">
+              <button class="btn_vending" type="button" style="width: 190px;">Группа инструмента</button>
+              <button class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button" style="width: 35px;"></button>
+              <div class="dropdown-menu dropdown-menu-div"></div>
+            </div>
+            <div id="tools-subgroup" style="display: flex; flex-direction: row;">
+              <button class="btn_vending" type="button" style="width: 190px;">Подгруппа инструмента</button>
+              <button class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button" style="width: 35px;"></button>
+              <div class="dropdown-menu dropdown-menu-div"></div>
+            </div>
+          </div>
+          <div class="card" style="width: 225px; border: 20px; border-radius: 5px; border-color: rgb(0,49,114); font-size: 16px;"></div>
+          <div style="width: 100%; margin-bottom: 10px;">
+            <button class="btn_vending" type="button" onclick="window.location.href='./screen_16_add_tool.html?token='+localStorage.getItem('token');">Добавить инструмент</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

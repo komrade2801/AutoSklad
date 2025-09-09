@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%;">
+<head>
+    <meta charset="UTF-8">
+    <title>Блокировка</title>
+    <style>
+    .body {
+        height: 100%;
+        width: 100%;
+        margin: 0px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);
+        color: rgb(255,255,255);
+        font-family: 'Arial Black', Arial, sans-serif;
+    }
+    .btn_vending {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: radial-gradient(black, rgb(131,173,239) 1%, rgb(120,158,217) 97%, white), rgb(0,49,114);
+        border-color: rgb(255, 255, 255);
+        border-radius: 5px;
+        color: rgb(0,49,114);
+        font-weight: bold;
+        font-size: 20px;
+        letter-spacing: normal;
+        line-height: 1;
+        width: 15%;
+        height: 35px;
+        margin-top: 7%;
+        font-family: 'Arial Black', Arial, sans-serif;
+      }
+</style>
+</head>
+<body class="body">
+    <h1 style="font-size: 40px;">Предыдущая операция не завершена.</h1>
+    <a style="font-size: 24px; margin-top: 100px;">Вы инициализировали массовую загрузку или массовую выгрузку,</a>
+    <a style="font-size: 24px; margin-top: 0px;">но не применили её в аппарате. </a>
+    <a style="font-size: 24px; margin-top: 0px;">Для продолжения работы либо отмените предыдущую операцию, </a>
+    <a style="font-size: 24px; margin-top: 0px;">либо отредактируйте, если требуется внести дополнительные данные. </a>
+
+    <button class="btn_vending" onclick="window.location.href = '/screen_14_history_load.html?token=' + localStorage.getItem('token');">Вернуться на главную</button>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Handshake Schema",
+  "type": "object",
+  "properties": {
+    "mapping": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      }
+    },
+    "schema_hash": { "type": "string" }
+  },
+  "required": ["mapping", "schema_hash"],
+  "additionalProperties": false
+}

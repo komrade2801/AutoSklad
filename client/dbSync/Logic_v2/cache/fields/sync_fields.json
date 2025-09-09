@@ -1,0 +1,13 @@
+{
+  "Tools": {
+    "id": "id",
+    "barcode": "barcode",
+    "inventory_number": "inventory_number",
+    "plan_id": "plan_id",
+    "tool_type_id": "tool_type_id",
+    "name": "name",
+    "description": "description",
+    "img": "img",
+    "groups_id": "groups_id"
+  }
+}

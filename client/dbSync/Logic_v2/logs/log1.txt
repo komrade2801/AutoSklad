@@ -1,0 +1,307 @@
+2025-05-21T16:04:01 INFO [sync.1] Push start | context={'device': 1, 'count': 1}
+[2025-05-21 16:04:01][sync-thread-1][sync.1][INFO] Push start | context={'device': 1, 'count': 1}
+[SyncConfigCRUD][get_status] найдено среди всех:  <dbSync.Model.SyncConfig.SyncConfig object at 0x0000022BF1500370>
+[SyncConfigCRUD][get_status]Поиск SyncConfig для table='User' → найденный: [<dbSync.Model.SyncConfig.SyncConfig object at 0x0000022BF1500370>]
+[ПОТОК][sync-thread-1][DataTransformer][map_outgoing_local_to_json] - table: User, data: {'id': 10, 'barcode': 1747832578266, 'Code': 8706, 'FirstName': 'Игнат', 'SecondName': 'Петрович', 'Family': 'Петров', 'password': '8706', 'Role_id': 6}. [2025-05-21 16:04:01.882139]
+[ПОТОК][sync-thread-1][DataTransformer][map_outgoing_local_to_json] - table: User, data: {'id': 10, 'barcode': 1747832578266, 'Code': 8706, 'FirstName': 'Игнат', 'SecondName': 'Петрович', 'Family': 'Петров', 'password': '8706', 'Role_id': 6}. [2025-05-21 16:04:01.882139]
+[ПОТОК][sync-thread-1][DataMapper][map_incoming] - table: User, record: {'id': 10, 'barcode': 1747832578266, 'Code': 8706, 'FirstName': 'Игнат', 'SecondName': 'Петрович', 'Family': 'Петров', 'password': '8706', 'Role_id': 6}, base_map: {'id': 'id', 'barcode': 'barcode', 'Code': 'Code', 'FirstName': 'FirstName', 'password': 'password', 'SecondName': 'SecondName', 'Family': 'Family', 'Role_id': 'Role_id'}, converters: {}, type_map: {}. Текущее время: 2025-05-21 16:04:01.883138
+[ПОТОК][sync-thread-1][DataMapper][map_incoming] - result: {'id': 10, 'barcode': 1747832578266, 'Code': 8706, 'FirstName': 'Игнат', 'SecondName': 'Петрович', 'Family': 'Петров', 'password': '8706', 'Role_id': 6}. Текущее время: 2025-05-21 16:04:01.883138
+[ПОТОК][sync-thread-1][DataTransformer][map_outgoing_local_to_json] - table: User, data: {'id': 10, 'barcode': 1747832578266, 'Code': 8706, 'FirstName': 'Игнат', 'SecondName': 'Петрович', 'Family': 'Петров', 'password': '8706', 'Role_id': 6}. [2025-05-21 16:04:01.883138]
+[ПОТОК][sync-thread-1][SyncProcessor] Command processed. [2025-05-21 16:04:01.893140]
+[ПОТОК][sync-thread-1][SyncProcessor] Подготовлено операций: 1, неудач: 0. [2025-05-21 16:04:01.893140]
+[ПОТОК][sync-thread-1][SyncProcessor] Запуск пакетной обработки. [2025-05-21 16:04:01.893140]
+[MainThread][router] process_push timeout @ 2025-05-21 16:04:50.614694
+INFO:     192.168.0.10:61431 - "POST /sync/push?device=1 HTTP/1.1" 504 Gateway Timeout
+[ПОТОК][ThreadPoolExecutor-0_0][TransportService][send_push] Ошибка HTTP: 504 / {"detail":"Push processing timed out"}. [2025-05-21 16:04:50.626693]
+[ПОТОК][ThreadPoolExecutor-0_0][CommandSender] Не удалось отправить команды: 504 Server Error: Gateway Timeout for url: http://192.168.0.10/sync/push?device=1 Текущее время: 2025-05-21 16:04:50.629692
+[ПОТОК][ThreadPoolExecutor-0_0][CommandQueue][mark_as_failed] Команда помечена как неуспешная. [2025-05-21 16:04:50.630694]
+[ПОТОК][ThreadPoolExecutor-0_0][CommandQueue][_update_status] Статус команды обновлен. [2025-05-21 16:04:50.630694]
+2025-05-21T16:04:50 ERROR [sync.1] Failed to send commands: 504 Server Error: Gateway Timeout for url: http://192.168.0.10/sync/push?device=1
+[2025-05-21 16:04:50][ThreadPoolExecutor-0_0][sync.1][ERROR] Failed to send commands: 504 Server Error: Gateway Timeout for url: http://192.168.0.10/sync/push?device=1
+[ПОТОК][ThreadPoolExecutor-0_0][CommandQueue][_save_queue] Очередь сохранена в кэш. [2025-05-21 16:04:50.672691]
+[2025-05-21 16:04:50][ThreadPoolExecutor-0_0][apscheduler.executors.default][ERROR] Job "job_send (trigger: interval[0:01:00], next run at: 2025-05-21 16:05:01 MSK)" raised an exception
+Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\apscheduler\executors\base.py", line 131, in run_job
+    retval = job.func(*job.args, **job.kwargs)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Runner.py", line 26, in job_send
+    _sender.send_pending()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\CommandSender.py", line 173, in send_pending
+    response = self.transport.send_push(self.endpoint, payload)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\TransportService.py", line 261, in send_push
+    resp.raise_for_status()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\requests\models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 504 Server Error: Gateway Timeout for url: http://192.168.0.10/sync/push?device=1
+[ПОТОК][sync-thread-1][BatchProcessor][execute_batch][ERROR] - error: Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id
+[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (10, 1747832578266, 8706, 'Игнат', '8706', 'Петрович', 'Петров', 6)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj), подробности: - Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.IntegrityError: UNIQUE constraint failed: User.id
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\BaseCRUD.py", line 80, in transaction
+    self.session.commit()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2032, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 1313, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 1288, in _prepare_impl
+    self.session.flush()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 4353, in flush
+    self._flush(objects)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 4489, in _flush
+    transaction.rollback(_capture_exception=True)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 4449, in _flush
+    flush_context.execute()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\persistence.py", line 1048, in _emit_insert_statements
+    result = connection.execute(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1416, in execute
+    return meth(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\sql\elements.py", line 516, in _execute_on_connection
+    return connection._execute_clauseelement(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id
+[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (10, 1747832578266, 8706, 'Игнат', '8706', 'Петрович', 'Петров', 6)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\BatchProcessor.py", line 100, in execute_batch
+    res = self._apply_single(op)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\BatchProcessor.py", line 146, in _apply_single
+    result = self.sync_manager.process_command(payload)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\SyncManager.py", line 97, in process_command
+    return crud.add(**data)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\decorators.py", line 29, in wrapper
+    result = func(self, *args, **kwargs)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\Engine\CRUD.py", line 23, in add
+    return super().add(**kwargs)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\BaseCRUD.py", line 262, in add
+    db.add(instance)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python39\lib\contextlib.py", line 126, in __exit__
+    next(self.gen)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\BaseCRUD.py", line 83, in transaction
+    raise RuntimeError(f"Integrity error: {e}") from e
+RuntimeError: Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id
+[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (10, 1747832578266, 8706, 'Игнат', '8706', 'Петрович', 'Петров', 6)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+. [2025-05-21 16:04:51.764694]
+[ПОТОК][sync-thread-1][SyncProcessor] ОШИБКА PUSH: Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id
+[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (10, 1747832578266, 8706, 'Игнат', '8706', 'Петрович', 'Петров', 6)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj). [2025-05-21 16:04:51.775693]
+2025-05-21T16:04:51 ERROR [sync.1] BatchProcessor failed on command 1b1e4ff8-6276-4b06-a1db-a25c48069739 | context={'operation': {'command_id': '1b1e4ff8-6276-4b06-a1db-a25c48069739', 'id': '1b1e4ff8-6276-4b06-a1db-a25c48069739', 'table': 'User', 'operation': 'ADD', 'data': {'id': 10, 'barcode': 1747832578266, 'Code': 8706, 'FirstName': 'Игнат', 'SecondName': 'Петрович', 'Family': 'Петров', 'password': '8706', 'Role_id': 6}, 'success': True}, 'exception': 'Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)'}
+[2025-05-21 16:04:51][sync-thread-1][sync.1][ERROR] BatchProcessor failed on command 1b1e4ff8-6276-4b06-a1db-a25c48069739 | context={'operation': {'command_id': '1b1e4ff8-6276-4b06-a1db-a25c48069739', 'id': '1b1e4ff8-6276-4b06-a1db-a25c48069739', 'table': 'User', 'operation': 'ADD', 'data': {'id': 10, 'barcode': 1747832578266, 'Code': 8706, 'FirstName': 'Игнат', 'SecondName': 'Петрович', 'Family': 'Петров', 'password': '8706', 'Role_id': 6}, 'success': True}, 'exception': 'Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)'}
+2025-05-21T16:04:51 ERROR [sync.1] Push failed | context={'error': 'Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)', 'traceback': 'Traceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1964, in _exec_single_context\n    self.dialect.do_execute(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\default.py", line 942, in do_execute\n    cursor.execute(statement, parameters)\nsqlite3.IntegrityError: UNIQUE constraint failed: User.id\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\BaseCRUD.py", line 80, in transaction\n    self.session.commit()\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 2032, in commit\n    trans.commit(_to_root=True)\n  File "<string>", line 2, in commit\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\state_changes.py", line 139, in _go\n    ret_value = fn(self, *arg, **kw)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 1313, in commit\n    self._prepare_impl()\n  File "<string>", line 2, in _prepare_impl\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\state_changes.py", line 139, in _go\n    ret_value = fn(self, *arg, **kw)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 1288, in _prepare_impl\n    self.session.flush()\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 4353, in flush\n    self._flush(objects)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 4489, in _flush\n    transaction.rollback(_capture_exception=True)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\util\\langhelpers.py", line 146, in __exit__\n    raise exc_value.with_traceback(exc_tb)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 4449, in _flush\n    flush_context.execute()\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\unitofwork.py", line 466, in execute\n    rec.execute(self)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\unitofwork.py", line 642, in execute\n    util.preloaded.orm_persistence.save_obj(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\persistence.py", line 93, in save_obj\n    _emit_insert_statements(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\persistence.py", line 1048, in _emit_insert_statements\n    result = connection.execute(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1416, in execute\n    return meth(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\sql\\elements.py", line 516, in _execute_on_connection\n    return connection._execute_clauseelement(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1638, in _execute_clauseelement\n    ret = self._execute_context(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1843, in _execute_context\n    return self._exec_single_context(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1983, in _exec_single_context\n    self._handle_dbapi_exception(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 2352, in _handle_dbapi_exception\n    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1964, in _exec_single_context\n    self.dialect.do_execute(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\default.py", line 942, in do_execute\n    cursor.execute(statement, parameters)\nsqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\SyncProcessor.py", line 407, in process_push\n    results = self.batch_processor.execute_batch(ops)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\BatchProcessor.py", line 100, in execute_batch\n    res = self._apply_single(op)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\BatchProcessor.py", line 146, in _apply_single\n    result = self.sync_manager.process_command(payload)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\SyncManager.py", line 97, in process_command\n    return crud.add(**data)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\decorators.py", line 29, in wrapper\n    result = func(self, *args, **kwargs)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\Engine\\CRUD.py", line 23, in add\n    return super().add(**kwargs)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\BaseCRUD.py", line 262, in add\n    db.add(instance)\n  File "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python39\\lib\\contextlib.py", line 126, in __exit__\n    next(self.gen)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\BaseCRUD.py", line 83, in transaction\n    raise RuntimeError(f"Integrity error: {e}") from e\nRuntimeError: Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)\n'}
+[2025-05-21 16:04:51][sync-thread-1][sync.1][ERROR] Push failed | context={'error': 'Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)', 'traceback': 'Traceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1964, in _exec_single_context\n    self.dialect.do_execute(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\default.py", line 942, in do_execute\n    cursor.execute(statement, parameters)\nsqlite3.IntegrityError: UNIQUE constraint failed: User.id\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\BaseCRUD.py", line 80, in transaction\n    self.session.commit()\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 2032, in commit\n    trans.commit(_to_root=True)\n  File "<string>", line 2, in commit\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\state_changes.py", line 139, in _go\n    ret_value = fn(self, *arg, **kw)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 1313, in commit\n    self._prepare_impl()\n  File "<string>", line 2, in _prepare_impl\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\state_changes.py", line 139, in _go\n    ret_value = fn(self, *arg, **kw)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 1288, in _prepare_impl\n    self.session.flush()\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 4353, in flush\n    self._flush(objects)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 4489, in _flush\n    transaction.rollback(_capture_exception=True)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\util\\langhelpers.py", line 146, in __exit__\n    raise exc_value.with_traceback(exc_tb)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\session.py", line 4449, in _flush\n    flush_context.execute()\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\unitofwork.py", line 466, in execute\n    rec.execute(self)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\unitofwork.py", line 642, in execute\n    util.preloaded.orm_persistence.save_obj(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\persistence.py", line 93, in save_obj\n    _emit_insert_statements(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\orm\\persistence.py", line 1048, in _emit_insert_statements\n    result = connection.execute(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1416, in execute\n    return meth(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\sql\\elements.py", line 516, in _execute_on_connection\n    return connection._execute_clauseelement(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1638, in _execute_clauseelement\n    ret = self._execute_context(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1843, in _execute_context\n    return self._exec_single_context(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1983, in _exec_single_context\n    self._handle_dbapi_exception(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 2352, in _handle_dbapi_exception\n    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\base.py", line 1964, in _exec_single_context\n    self.dialect.do_execute(\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\.venv\\lib\\site-packages\\sqlalchemy\\engine\\default.py", line 942, in do_execute\n    cursor.execute(statement, parameters)\nsqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\SyncProcessor.py", line 407, in process_push\n    results = self.batch_processor.execute_batch(ops)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\BatchProcessor.py", line 100, in execute_batch\n    res = self._apply_single(op)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\BatchProcessor.py", line 146, in _apply_single\n    result = self.sync_manager.process_command(payload)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\SyncManager.py", line 97, in process_command\n    return crud.add(**data)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\decorators.py", line 29, in wrapper\n    result = func(self, *args, **kwargs)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\Engine\\CRUD.py", line 23, in add\n    return super().add(**kwargs)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\BaseCRUD.py", line 262, in add\n    db.add(instance)\n  File "C:\\Users\\Admin\\AppData\\Local\\Programs\\Python\\Python39\\lib\\contextlib.py", line 126, in __exit__\n    next(self.gen)\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\DB\\BaseCRUD.py", line 83, in transaction\n    raise RuntimeError(f"Integrity error: {e}") from e\nRuntimeError: Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id\n[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]\n[parameters: (10, 1747832578266, 8706, \'Игнат\', \'8706\', \'Петрович\', \'Петров\', 6)]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)\n'}
+[ПОТОК][sync-thread-1][SyncMonitor] Неуспешная обработка пакета. [2025-05-21 16:04:51.786694]
+[ПОТОК][sync-thread-1][runner] процесс синхронизации ошибка в 2025-05-21 16:03:01.571129 причина: Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id
+[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (10, 1747832578266, 8706, 'Игнат', '8706', 'Петрович', 'Петров', 6)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj) подробности: Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.IntegrityError: UNIQUE constraint failed: User.id
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\BaseCRUD.py", line 80, in transaction
+    self.session.commit()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 2032, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 1313, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 1288, in _prepare_impl
+    self.session.flush()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 4353, in flush
+    self._flush(objects)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 4489, in _flush
+    transaction.rollback(_capture_exception=True)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\util\langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\session.py", line 4449, in _flush
+    flush_context.execute()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\orm\persistence.py", line 1048, in _emit_insert_statements
+    result = connection.execute(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1416, in execute
+    return meth(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\sql\elements.py", line 516, in _execute_on_connection
+    return connection._execute_clauseelement(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\sqlalchemy\engine\default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id
+[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (10, 1747832578266, 8706, 'Игнат', '8706', 'Петрович', 'Петров', 6)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Runner.py", line 163, in runner
+    statuses = processor.process_push(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\SyncProcessor.py", line 407, in process_push
+    results = self.batch_processor.execute_batch(ops)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\BatchProcessor.py", line 100, in execute_batch
+    res = self._apply_single(op)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\BatchProcessor.py", line 146, in _apply_single
+    result = self.sync_manager.process_command(payload)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\SyncManager.py", line 97, in process_command
+    return crud.add(**data)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\decorators.py", line 29, in wrapper
+    result = func(self, *args, **kwargs)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\Engine\CRUD.py", line 23, in add
+    return super().add(**kwargs)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\BaseCRUD.py", line 262, in add
+    db.add(instance)
+  File "C:\Users\Admin\AppData\Local\Programs\Python\Python39\lib\contextlib.py", line 126, in __exit__
+    next(self.gen)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\DB\BaseCRUD.py", line 83, in transaction
+    raise RuntimeError(f"Integrity error: {e}") from e
+RuntimeError: Integrity error: (sqlite3.IntegrityError) UNIQUE constraint failed: User.id
+[SQL: INSERT INTO "User" (id, barcode, "Code", "FirstName", password, "SecondName", "Family", "Role_id") VALUES (?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: (10, 1747832578266, 8706, 'Игнат', '8706', 'Петрович', 'Петров', 6)]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+[ПОТОК][sync-thread-1][runner] отправляем результат в reply_queue
+[ПОТОК][sync-thread-1][runner] процесс синхронизации, время на данный момент 2025-05-21 16:04:51.791694, итерация цикла: 9 попытка считать очередь
+[2025-05-21 16:05:01][ThreadPoolExecutor-0_0][apscheduler.executors.default][INFO] Running job "job_send (trigger: interval[0:01:00], next run at: 2025-05-21 16:06:01 MSK)" (scheduled at 2025-05-21 16:05:01.546127+03:00)
+2025-05-21T16:05:01 DEBUG [sync.1] No pending commands to send.
+[2025-05-21 16:05:01][ThreadPoolExecutor-0_0][sync.1][DEBUG] No pending commands to send.
+[2025-05-21 16:05:01][ThreadPoolExecutor-0_0][apscheduler.executors.default][INFO] Job "job_send (trigger: interval[0:01:00], next run at: 2025-05-21 16:06:01 MSK)" executed successfully
+[ПОТОК][ThreadPoolExecutor-0_0][CommandSender] send_pending. Текущее время: 2025-05-21 16:05:01.550674
+[ПОТОК][ThreadPoolExecutor-0_0][CommandQueue][get_pending_commands] Количество команд в очереди: 52. [2025-05-21 16:05:01.550674]
+[ПОТОК][ThreadPoolExecutor-0_0][CommandSender] No pending commands to send. Текущее время: 2025-05-21 16:05:01.550674
+[2025-05-21 16:05:01][ThreadPoolExecutor-0_0][apscheduler.executors.default][INFO] Running job "job_fetch (trigger: interval[0:02:00], next run at: 2025-05-21 16:07:01 MSK)" (scheduled at 2025-05-21 16:05:01.560181+03:00)
+[ПОТОК][ThreadPoolExecutor-0_0][JSONSchemaValidator][validate] - Проверяем payload по схеме schema_name: handshake_request. [2025-05-21 16:05:01.567673]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Берем очередь фонового потока для 1 . [2025-05-21 16:05:01.602672]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Читаем raw-байты
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Дешифруем AES-CBC + PKCS7. [2025-05-21 16:05:01.605674]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Парсим JSON. [2025-05-21 16:05:01.606675]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Считаем хеш и кладем задачу в очередь [2025-05-21 16:05:01.606675]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Кладем задачу в очередь фонового потока. [2025-05-21 16:05:01.606675]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Задача кладена в очередь фонового потока. [2025-05-21 16:05:01.606675][ПОТОК][sync-thread-1][runner] type: handshake, payload: {'Device': {'id': 'integer', 'number': 'integer', 'name': 'string', 'description': 'string', 'details': 'string', 'create': 'date'}, 'Error': {'id': 'integer', 'error_type': 'string', 'message': 'string', 'timestamp': 'datetime'}, 'Group': {'id': 'integer', 'name': 'string', 'description': 'string', 'paren_group_id': 'integer'}, 'Help': {'id': 'integer', 'text': 'string', 'data': 'datetime'}, 'Page': {'id': 'integer', 'name': 'string', 'description': 'string'}, 'Plan': {'id': 'integer', 'enterprise': 'string', 'barcode': 'string', 'name': 'string', 'description': 'string', 'designation': 'string', 'index_list': 'integer', 'list_count': 'integer', 'parent_plan_id': 'integer'}, 'Role': {'id': 'integer', 'Name': 'string', 'Description': 'string', 'ParentRole_id': 'integer'}, 'Status': {'id': 'integer', 'stype': 'string', 'description': 'string', 'created_at': 'datetime'}, 'Type': {'id': 'integer', 'name': 'string', 'operation': 'string'}, 'mass_drop': {'id': 'integer', 'description': 'string', 'created_at': 'datetime'}, 'mass_load': {'id': 'integer', 'description': 'string', 'created_at': 'datetime'}, 'Error_has_Device': {'error_id': 'integer', 'device_id': 'integer'}, 'Rights': {'id': 'integer', 'Name': 'string', 'Description': 'string', 'Role_id': 'integer', 'Page_id': 'integer'}, 'ToolTypes': {'id': 'integer', 'name': 'string', 'description': 'string', 'count': 'integer', 'img': 'string', 'groups_id': 'integer'}, 'User': {'id': 'integer', 'barcode': 'integer', 'Code': 'integer', 'FirstName': 'string', 'password': 'string', 'SecondName': 'string', 'Family': 'string', 'Role_id': 'integer'}, 'mass_drop_has_Device': {'mass_drop_id': 'integer', 'device_id': 'integer'}, 'mass_load_has_Device': {'mass_load_id': 'integer', 'device_id': 'integer'}, 'ActualNorm': {'id': 'integer', 'User_id': 'integer', 'day': 'datetime'}, 'Command': {'id': 'integer', 'user_id': 'integer', 'device_id': 'integer', 'type_id': 'integer', 'Status_id': 'integer', 'name': 'string', 'create': 'date'}, 'Identification': {'id': 'integer', 'datetime': 'datetime', 'Status': 'integer', 'Description': 'string', 'User_id': 'integer'}, 'Tools': {'id': 'integer', 'inventory_number': 'string', 'plan_id': 'integer', 'tool_type_id': 'integer'}, 'ActualNormHasDevice': {'actual_norm_id': 'integer', 'device_id': 'integer'}, 'Cell': {'id': 'integer', 'number': 'integer', 'description': 'string', 'groups_id': 'integer', 'tools_id': 'integer', 'status_id': 'integer'}, 'History': {'id': 'integer', 'datetime': 'datetime', 'Status': 'integer', 'Description': 'string', 'user_id': 'integer', 'user_role_id': 'integer', 'tools_id': 'integer'}, 'ToolLocation': {'tools_id': 'integer', 'status_id': 'integer'}, 'ToolsNorm': {'id': 'integer', 'summa': 'integer', 'summa_of_periods': 'integer', 'description': 'string', 'type_periods': 'string', 'summa_of_use': 'string', 'start_date': 'datetime', 'tools_id': 'integer', 'actual_norm_id': 'integer'}, 'Tools_has_Device': {'tools_id': 'integer', 'device_id': 'integer'}, 'Cell_has_Device': {'Cell_id': 'integer', 'Device_id': 'integer'}, 'Consumption': {'id': 'integer', 'cell_id': 'integer', 'tools_id': 'integer'}, 'Drop': {'id': 'integer', 'description': 'string', 'created_at': 'datetime', 'cell_id': 'integer', 'mass_drop_id': 'integer', 'tools_id': 'integer'}, 'Load': {'id': 'integer', 'description': 'string', 'tools_id': 'integer', 'mass_load_id': 'integer', 'cell_id': 'integer'}, 'OperationsConsumption': {'id': 'integer', 'date': 'datetime', 'description': 'string', 'consumption_id': 'integer', 'history_id': 'integer', 'consumption_tools_id': 'integer', 'status_id': 'integer'}, 'dropOperations': {'id': 'integer', 'date': 'datetime', 'description': 'string', 'history_id': 'integer', 'status_id': 'integer', 'tools_id': 'integer', 'drop_id': 'integer'}, 'loadOperations': {'id': 'integer', 'date': 'datetime', 'description': 'string', 'load_id': 'integer', 'load_tools_id': 'integer', 'status_id': 'integer', 'history_id': 'integer'}, 'OperationsConsumption_has_Device': {'operations_consumption_id': 'integer', 'device_id': 'integer'}, 'dropOperations_has_Device': {'dropOperations_id': 'integer', 'Device_id': 'integer'}, 'loadOperations_has_Device': {'loadOperations_id': 'integer', 'device_id': 'integer'}}, hash: 7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7, reply_queue: <queue.Queue object at 0x0000022BF159FC70>
+[ПОТОК][sync-thread-1][runner] процесс синхронизации попытка запустить процессор
+[ПОТОК][sync-thread-1][JSONSchemaValidator][validate] - Проверяем payload по схеме schema_name: handshake_request. [2025-05-21 16:05:01.607675]
+2025-05-21T16:05:01 INFO [sync.1] Handshake start | context={'hash': '7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7'}
+[2025-05-21 16:05:01][sync-thread-1][sync.1][INFO] Handshake start | context={'hash': '7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7'}
+[ПОТОК][sync-thread-1][SchemaCache][get] Маппинг найден в кэше. [2025-05-21 16:05:01.627677]
+[ПОТОК][sync-thread-1][JSONSchemaValidator][validate] - Проверяем payload по схеме schema_name: handshake_response. [2025-05-21 16:05:01.627677]
+[ПОТОК][sync-thread-1][SyncMonitor] Успешно обработан пакет. [2025-05-21 16:05:01.646672]
+[ПОТОК][sync-thread-1][SyncProcessor] Handshake completed. [2025-05-21 16:05:01.646672]
+[ПОТОК][sync-thread-1][runner] процесс синхронизации отправляем результат обратно в HTTP-обработчик
+[ПОТОК][sync-thread-1][runner] процесс синхронизации, время на данный момент 2025-05-21 16:05:01.646672, итерация цикла: 10 попытка считать очередь[ПОТОК][MainThread][router] INBOUND_QUEUES: Ответ получен [2025-05-21 16:05:01.646672]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Шифруем результат и отдаем клиенту [2025-05-21 16:05:01.646672]
+[ПОТОК][MainThread][router] INBOUND_QUEUES: Ответ отправлен клиенту [2025-05-21 16:05:01.647672]
+INFO:     192.168.0.10:61458 - "POST /sync/handshake?device=1 HTTP/1.1" 200 OK
+[ПОТОК][ThreadPoolExecutor-0_0][TransportService][send_schema] Отправка схемы. [2025-05-21 16:05:01.652691]
+[ПОТОК][ThreadPoolExecutor-0_0][TransportService][_decrypt] секретный ключ: b'16byteslongkey!!'[2025-05-21 16:05:01.652691]
+[ПОТОК][ThreadPoolExecutor-0_0][JSONSchemaValidator][validate] - Проверяем payload по схеме schema_name: handshake_response. [2025-05-21 16:05:01.652691]
+2025-05-21T16:05:01 INFO [sync.1] Handshake completed | context={'tables': ['Device', 'Error', 'Group', 'Help', 'Page', 'Plan', 'Role', 'Status', 'Type', 'mass_drop', 'mass_load', 'Error_has_Device', 'Rights', 'ToolTypes', 'User', 'mass_drop_has_Device', 'mass_load_has_Device', 'ActualNorm', 'Command', 'Identification', 'Tools', 'ActualNormHasDevice', 'Cell', 'History', 'ToolLocation', 'ToolsNorm', 'Tools_has_Device', 'Cell_has_Device', 'Consumption', 'Drop', 'Load', 'OperationsConsumption', 'dropOperations', 'loadOperations', 'OperationsConsumption_has_Device', 'dropOperations_has_Device', 'loadOperations_has_Device']}
+[2025-05-21 16:05:01][sync-thread-1][sync.1][INFO] Handshake completed | context={'tables': ['Device', 'Error', 'Group', 'Help', 'Page', 'Plan', 'Role', 'Status', 'Type', 'mass_drop', 'mass_load', 'Error_has_Device', 'Rights', 'ToolTypes', 'User', 'mass_drop_has_Device', 'mass_load_has_Device', 'ActualNorm', 'Command', 'Identification', 'Tools', 'ActualNormHasDevice', 'Cell', 'History', 'ToolLocation', 'ToolsNorm', 'Tools_has_Device', 'Cell_has_Device', 'Consumption', 'Drop', 'Load', 'OperationsConsumption', 'dropOperations', 'loadOperations', 'OperationsConsumption_has_Device', 'dropOperations_has_Device', 'loadOperations_has_Device']}
+[ПОТОК][ThreadPoolExecutor-0_0][TransportService][send_schema] Проверка схемы. [2025-05-21 16:05:01.669672]
+[ПОТОК][ThreadPoolExecutor-0_0][SyncProcessor] Обновлены маппинги. [2025-05-21 16:05:01.670672]
+[ПОТОК][ThreadPoolExecutor-0_0][DataMapper] update_field_mappings. Текущее время: 2025-05-21 16:05:01.670672
+[ПОТОК][ThreadPoolExecutor-0_0][CommandReceiver][_ensure_handshake] [2025-05-21 16:05:01.670672]
+[ПОТОК][ThreadPoolExecutor-0_0][CommandReceiver][fetch_and_apply] Запрос команд. [2025-05-21 16:05:01.670672]
+[ПОТОК][AnyIO worker thread][router] INBOUND_QUEUES: Берем очередь фонового потока для 1 
+[ПОТОК][AnyIO worker thread][router] INBOUND_QUEUES: Отправляем задачу в очередь фонового потока для 1. since=. [2025-05-21 16:05:02.266637]
+[ПОТОК][AnyIO worker thread][router] Ждём ответа 1. [2025-05-21 16:05:02.267636][ПОТОК][sync-thread-1][runner] type: pull, device: 1, since: , hash: , reply_queue: <queue.Queue object at 0x0000022BF14DE370>
+[ПОТОК][sync-thread-1][runner] Вызываем prepare_pull
+[ПОТОК][sync-thread-1][SchemaCache][_load_from_disk] Маппинг загружен из кэша. [2025-05-21 16:05:02.269634]
+[ПОТОК][sync-thread-1][SchemaCache][_insert] Маппинг сохранен в кэш. [2025-05-21 16:05:02.271636]
+[ПОТОК][sync-thread-1][SchemaCache][get] Маппинг загружен из диска. [2025-05-21 16:05:02.271636]
+[ПОТОК][sync-thread-1][SyncProcessor] Mapping loaded. [2025-05-21 16:05:02.271636]
+[ПОТОК][sync-thread-1][SyncProcessor] Pull failed at 2025-05-21 16:05:02.271636
+[ПОТОК][sync-thread-1][SyncMonitor] Неуспешная обработка пакета. [2025-05-21 16:05:02.273637]
+[ПОТОК][sync-thread-1][runner] процесс синхронизации ошибка в 2025-05-21 16:03:01.571129 причина: 'Session' object is not callable подробности: Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Runner.py", line 184, in runner
+    result = processor.prepare_pull(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\SyncProcessor.py", line 289, in prepare_pull
+    session = self._Session()
+TypeError: 'Session' object is not callable
+[ПОТОК][sync-thread-1][runner] кладём ответ обратно в reply_queue
+[ПОТОК][AnyIO worker thread][router] ответ получен
+[2025-05-21 16:05:02][sync-thread-1][sync.runner][INFO] [runner] handling pull: since='', hash=''
+2025-05-21T16:05:02 INFO [sync.1] Pull start | context={'device': 1, 'since': ''}
+[2025-05-21 16:05:02][sync-thread-1][sync.1][INFO] Pull start | context={'device': 1, 'since': ''}
+2025-05-21T16:05:02 ERROR [sync.1] Pull failed | context={'error': "'Session' object is not callable", 'traceback': 'Traceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\SyncProcessor.py", line 289, in prepare_pull\n    session = self._Session()\nTypeError: \'Session\' object is not callable\n'}
+[2025-05-21 16:05:02][sync-thread-1][sync.1][ERROR] Pull failed | context={'error': "'Session' object is not callable", 'traceback': 'Traceback (most recent call last):\n  File "G:\\Project\\!!!!!!!!!tool_helper\\src\\WEB\\dbSync\\Logic_v2\\SyncProcessor.py", line 289, in prepare_pull\n    session = self._Session()\nTypeError: \'Session\' object is not callable\n'}
+[2025-05-21 16:05:02][sync-thread-1][sync.runner][ERROR] Error in prepare_pull
+Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Runner.py", line 184, in runner
+    result = processor.prepare_pull(
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\SyncProcessor.py", line 289, in prepare_pull
+    session = self._Session()
+TypeError: 'Session' object is not callable
+[2025-05-21 16:05:02][sync-thread-1][sync.runner][INFO] [runner] reply_queue.put() done
+2025-05-21T16:05:02 ERROR [sync.1] Pull request failed: 500 Server Error: Internal Server Error for url: http://192.168.0.10/sync/pull?device=1&since=&schema_hash=7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7
+[2025-05-21 16:05:02][ThreadPoolExecutor-0_0][sync.1][ERROR] Pull request failed: 500 Server Error: Internal Server Error for url: http://192.168.0.10/sync/pull?device=1&since=&schema_hash=7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7
+[2025-05-21 16:05:02][ThreadPoolExecutor-0_0][apscheduler.executors.default][INFO] Job "job_fetch (trigger: interval[0:02:00], next run at: 2025-05-21 16:07:01 MSK)" executed successfully
+[ПОТОК][AnyIO worker thread][router] error: 'Session' object is not callable. [2025-05-21 16:05:02.277637]
+[ПОТОК][sync-thread-1][runner] процесс синхронизации, время на данный момент 2025-05-21 16:05:02.277637, итерация цикла: 11 попытка считать очередьINFO:     192.168.0.10:61459 - "GET /sync/pull?device=1&since=&schema_hash=7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7 HTTP/1.1" 500 Internal Server Error
+[ПОТОК][ThreadPoolExecutor-0_0][TransportService][send_pull] Ошибка при получении данных. [2025-05-21 16:05:02.286637]
+Ошибка при получении данных: 500 Server Error: Internal Server Error for url: http://192.168.0.10/sync/pull?device=1&since=&schema_hash=7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7, подробнее: Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\TransportService.py", line 321, in send_pull
+    resp.raise_for_status()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\requests\models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: http://192.168.0.10/sync/pull?device=1&since=&schema_hash=7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7
+[ПОТОК][ThreadPoolExecutor-0_0][CommandReceiver][fetch_and_apply][ERROR] - error: 500 Server Error: Internal Server Error for url: http://192.168.0.10/sync/pull?device=1&since=&schema_hash=7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7, подробности: - Traceback (most recent call last):
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\CommandReceiver.py", line 203, in fetch_and_apply
+    response: PullResponse = self.transport.send_pull(self.endpoint, params)
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\dbSync\Logic_v2\TransportService.py", line 321, in send_pull
+    resp.raise_for_status()
+  File "G:\Project\!!!!!!!!!tool_helper\src\WEB\.venv\lib\site-packages\requests\models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 500 Server Error: Internal Server Error for url: http://192.168.0.10/sync/pull?device=1&since=&schema_hash=7a1ced02f1ee7705b42d4e6ee24739cc653aff78080111b023c43e31848760a7
+. [2025-05-21 16:05:02.289634]

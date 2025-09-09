@@ -1,0 +1,69 @@
+[data-tooltip] {
+    position: relative; /* Относительное позиционирование */
+   }
+   [data-tooltip]::after {
+    content: attr(data-tooltip); /* Выводим текст */
+    position: absolute; /* Абсолютное позиционирование */
+    z-index: 100; /* Поднимаем подсказку над соседними элементами */
+    /* width: 200px; Ширина подсказки */
+    left: 25px; /*  top: 0;Положение подсказки */
+    top: 3.5em; /* Поднимаем подсказку над ячейкой */
+    background: #FFFFFF; /* цвет фона */
+    border-width: 2px;
+    border-style: solid;
+    border-color: #003172;
+    border-radius: 5px;
+    color: #003172; /* Цвет текста */
+    font-size: 14px;
+    font-family: Arial;
+    white-space: pre; /* Учитываем переносы строк (\n) */
+    text-align: start;
+    padding-top: 2px; /* Поля вокруг текста */
+    padding-bottom: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    /*box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);  Параметры тени */
+    pointer-events: none; /* Подсказка */
+    opacity: 0; /* Подсказка невидима */
+    transition: 0.5s; /* Время появления подсказки */
+   }
+   [data-tooltip]:hover::after {
+    opacity: 1;  /*Показываем подсказку */
+     /*top: 2em; Положение подсказки */
+   }
+
+[data-tooltipPlan] {
+    position: relative; /* Относительное позиционирование */
+   }
+   [data-tooltipPlan]::after {
+    content: attr(data-tooltipPlan); /* Выводим текст */
+    position: absolute; /* Абсолютное позиционирование */
+    z-index: 100; /* Поднимаем подсказку над соседними элементами */
+    /* width: 200px; Ширина подсказки */
+    left: -200px; /*  top: 0;Положение подсказки */
+    top: 3.5em; /* Поднимаем подсказку над ячейкой */
+    background: #FFFFFF; /* цвет фона */
+    border-width: 2px;
+    border-style: solid;
+    border-color: #003172;
+    border-radius: 5px;
+    color: #003172; /* Цвет текста */
+    font-size: 14px;
+    font-family: Arial;
+    white-space: pre; /* Учитываем переносы строк (\n) */
+    text-align: start;
+    padding-top: 2px; /* Поля вокруг текста */
+    padding-bottom: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    /*box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);  Параметры тени */
+    pointer-events: none; /* Подсказка */
+    opacity: 0; /* Подсказка невидима */
+    transition: 0.5s; /* Время появления подсказки */
+   }
+   [data-tooltipPlan]:hover::after {
+    opacity: 1;  /*Показываем подсказку */
+     /*top: 2em; Положение подсказки */
+   }
+
+

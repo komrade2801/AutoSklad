@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Handshake response (server → client)",
+  "type": "object",
+  "required": ["mapping", "schema_hash"],
+  "properties": {
+    "mapping": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "object",
+          "patternProperties": {
+            "^.*$": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "schema_hash": { "type": "string" }
+  },
+  "additionalProperties": false
+}

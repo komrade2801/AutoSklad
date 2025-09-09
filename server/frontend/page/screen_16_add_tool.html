@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru" style="margin: 0; height: 100%;">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <script type="module" src="../scripts/add_tool/init_16_add_tool.js"></script>
+    <title>Добавление инструмента</title>
+    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
+    <link rel="stylesheet" href="../style/titles.css">
+    <link rel="stylesheet" href="../style/dropdown_list.css">
+    <link rel="stylesheet" href="../style/add_tool/style_modal_window.css">
+    <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
+    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../scripts/add_tool/modal_window.js"></script>
+    <!--<script src="filter_handler.js"></script>
+    <script src="../scripts/add_tool/script_tool_group.js"></script>
+    <script src="../scripts/add_tool/clear_all_form.js"></script>
+    <script src="scriptFilterTools.js"></script>
+    <script src="modal_open.js"></script>-->
+    <style>
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        input{
+            width: 90%;
+        }
+        td, th {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        input[type="text"] {
+            width: 200px;
+            padding: 5px;
+        }
+
+        .droppable {
+            border: 1px rgb(255, 255, 255);
+            padding: 1px;
+            margin: 1px;
+            min-height: 50px;
+            min-width: 44px;
+            text-align: center;
+            user-select: none;
+        }
+
+        .draggable {
+            user-select: none;
+        }
+
+        .btn_vending {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(black, rgb(131,173,239) 1%, rgb(120,158,217) 97%, white), rgb(0,49,114);
+            border-color: rgb(255, 255, 255);
+            border-radius: 5px;
+            color: rgb(0,49,114);
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: normal;
+            line-height: 1;
+            width: 225px;
+            height: 35px;
+            margin-top: 2px;
+        }
+
+        .btn_vending_active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgb(0,49,114);
+            border-color: rgb(80, 130, 179);
+            border-radius: 5px;
+            color: rgb(199, 224, 249);
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: normal;
+            line-height: 1;
+            width: 225px;
+            height: 35px;
+            margin-top: 2px;
+        }
+
+        .search-container {
+              position: relative;
+              width: 140px;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 30px;
+            padding-right: 30px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            right: 5px;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+         .suggestions {
+             position: absolute;
+             top: 35px;
+             width: 100%;
+             border: 1px solid #ccc;
+             border-top: none;
+             background: white;
+             z-index: 1000;
+             border-radius: 0 0 4px 4px;
+             max-height: 150px;
+             overflow-y: auto;
+             display: none;
+        }
+
+        .suggestions div {
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .suggestions div:hover {
+            background-color: #f0f0f0;
+        }
+
+        .search-container {
+            position: relative;
+            display: inline-block;
+        }
+        .input-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        #search {
+            padding: 8px 30px 8px 12px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .arrow-icon {
+            position: absolute;
+            right: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            pointer-events: all;
+        }
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            border-radius: 0 0 4px 4px;
+        }
+        .suggestions div {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .suggestions div:hover {
+            background: #f0f0f0;
+        }
+
+        #tool_description {
+            width: 100%;
+            padding: 10px;
+            font-family: Arial;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical; /* или 'none' чтобы запретить изменение размера */
+        }
+    </style>
+</head>
+<body onload="initialization('screen_16_add_tool'); updateTable();" class="d-flex justify-content-center" id="body"
+      style="margin-bottom: 0; width: 100%; height: 100%; padding-bottom: 0px; background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);">
+    <div id="membrane"></div>
+    <div id="modal_window_confirmation">
+        <span style="font-size: 24px;">Вы уверены, что хотите отменить добавление инструмента?</span>
+        <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Введённые данные не сохранятся.</span>
+        <div style="display: flex; flex-direction: row; margin-top: 50px;">
+            <button class="btn_vending" onclick="show_conf('none')" style="margin-right: 20px;">Назад</button>
+            <button class="btn_vending" onclick="show_conf('none')">Отменить добавление</button>
+        </div>
+    </div>
+    <div class="d-flex flex-column" style="height: 100%; width: 100%; position: static; margin-left: 0px; color: rgb(255,255,255);">
+        <nav id="navbar" class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3" style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
+        </nav>
+        <div class="d-flex" style="height: calc(100% - 120px); margin-top:10px; border-top: 2px solid rgb(78,155,229);">
+        <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical" style="width: 235px; padding-left: 10px; margin-top: 10px;">
+        </div>
+        <div class="tab-pane fade show active d-flex" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
+            <div id="column-1" class="d-flex" style="flex-direction: column; width: calc(100% - 225px); height: 100%; align-items: center;">
+                <div style="display: flex; flex-direction: column; width: 40%; height: auto; margin-top: 10px; border-style: solid; border-radius: 5px; border-color: rgb(78, 155, 229); align-items: center; padding: 10px;">
+                    <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Группа инструмента:</span>
+                    <div class="search-container" style="display: flex; flex-direction: row;">
+                        <input type="text" id="search_group" placeholder="Группа инструмента">
+                        <div id="groups" class="suggestions"></div>
+                    </div>
+                    <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Подгруппа инструмента:</span>
+                    <div style="display: flex; flex-direction: row;">
+                        <input type="text" id="search_subgroup" placeholder="Подгруппа инструмента">
+                        <div id="subgroups" class="suggestions"></div>
+                    </div>
+                    <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Наименование инструмента:</span>
+                    <input type="text" id="tool_name" placeholder="Наименование инструмента">
+                    <div class="d-flex" id="selection_tools" style="flex-direction: column;"></div>
+
+                    <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Описание инструмента:</span>
+                    <textarea id="tool_description" placeholder="Введите описание..." rows="6" cols="40" maxlength="500" spellcheck="true" style="resize: vertical;"></textarea>
+                    <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Количество инструмента:</span>
+                    <input type="number" id="tool_count" placeholder="Количество инструмента" min="1" value="1" oninput="updateTable()">
+                    <table id="tools_table" style="width: 100%;">
+                        <thead>
+                        <tr>
+                            <th style="width: 10%;">№</th>
+                            <th style="width: 90%;">Инвентарный номер</th>
+                        </tr>
+                        </thead>
+                        <tbody id="table_body">
+                        </tbody>
+                    </table>
+                    <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Загрузить изображение (png, jpg):</span>
+                    <button class="btn_vending" type="button">Загрузить изображение</button>
+                </div>
+            </div>
+            <div id="column-3" class="d-flex" style="display: flex; flex-direction: column; justify-content: space-between; width: 225px; height: 100%; margin-right: 10px;">
+                <div style="width: 100%; height: 70px; margin-top: 10px;">
+                    <form action="/backend/upload" method="post" enctype="multipart/form-data">
+                      <input type="file" name="file" accept=".xlsx" required />
+                      <button type="submit" class="btn_vending">Загрузить xlsx</button>
+                    </form>
+                </div>
+                <div class="card" style="width: 225px; border: 20px; border-radius: 5px; border-color: rgb(0,49,114); font-size: 16px;">
+                    <div class="card-body" style="color: rgb(0,49,114); padding: 10px;">
+                        <h6 class="card-title" >Подсказка:</h6>
+                        <p class="card-text" style="font-family: Arial;">После сохранения инструмент появится в библиотеке инструмента.</p>
+                    </div>
+                </div>
+                <div style="width: 100%; margin-bottom: 10px;">
+                    <button class="btn_vending" type="button" onclick="clearAllForm()">Очистить все поля</button>
+                    <button class="btn_vending" type="button" onclick="openModalConf()">Отмена</button>
+                    <button id="saveToolBtn" class="btn_vending" type="button">Сохранить</button>
+                    <!-- onclick="window.location.href='../screen_15_tool_library.html?token='+localStorage.getItem('token');" -->
+                </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        // Функция, собирающая данные из формы и таблицы, формирующая JSON и отправляющая его на сервер
+        function collectDataAndSend() {
+            const group = document.getElementById("search_group").value.trim();
+            const subgroup = document.getElementById("search_subgroup").value.trim();
+            const tool_name = document.getElementById("tool_name").value.trim();
+            const description = document.getElementById("tool_description").value.trim();
+            const count = parseInt(document.getElementById("tool_count").value, 10);
+
+            const tableRows = document.querySelectorAll("#tools_table tbody tr");
+            const tools = {};
+            Array.from(tableRows).forEach(row => {
+                const cells = row.querySelectorAll("td");
+                const number = cells[0].textContent.trim();
+                const inventory = cells[1].textContent.trim();
+                tools[number] = inventory;
+            });
+        
+            const data = {
+                group: group,
+                subgroup: subgroup,
+                tool_name: tool_name,
+                img: "",
+                description: description,
+                count: count,
+                tools: tools
+            };
+        
+            const endpointUrl = '../backend/create_tools';
+        
+            fetch(endpointUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errData => {
+                        throw new Error('Ошибка сети: ' + JSON.stringify(errData));
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Успешно:', result);
+                let url = '../screen_15_tool_library.html';
+                let targetUrl = new URL(url, window.location.origin).href;
+                let token = localStorage.getItem('token');
+                let full_url = targetUrl + "?token=" + token;
+                window.location.href = full_url;
+                // Дополнительные действия
+            })
+            .catch(error => {
+                console.error('Ошибка при сохранении данных:', error);
+                // Обработка ошибок
+            });
+        }
+
+        // Привязываем обработчик события "click" к кнопке "Сохранить"
+        // Если в вашем HTML используется другой способ вызова функции, достаточно изменить этот обработчик.
+        document.getElementById("saveToolBtn").addEventListener("click", collectDataAndSend);
+    </script>
+
+    <script>
+        function updateTable() {
+            const count = document.getElementById('tool_count').value;
+            const tbody = document.getElementById('table_body');
+
+            // Очищаем текущие строки
+            tbody.innerHTML = '';
+
+            // Создаем новые строки
+            for(let i = 1; i <= count; i++) {
+                const row = document.createElement('tr');
+
+                // Номер строки
+                const numberCell = document.createElement('td');
+                numberCell.textContent = i;
+
+                // Поле ввода
+                const inputCell = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'Введите инвентарный номер';
+                input.name = 'inventory_number_' + i;
+
+                inputCell.appendChild(input);
+                row.appendChild(numberCell);
+                row.appendChild(inputCell);
+
+                tbody.appendChild(row);
+            }
+        }
+
+        // Инициализация таблицы при загрузке
+        // window.onload = updateTable;
+    </script>
+</body>
+</html>
+
+
+<!-- <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Общая инициализация для основной страницы
+    initialization('screen_16_add_tool');
+  });
+</script> -->
+<!-- onload="initialization('screen_16_add_tool')" -->
+      
