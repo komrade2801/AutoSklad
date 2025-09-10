@@ -22,7 +22,8 @@ auth_service = AuthService()
 e_right = EngineRights()
 
 front_router = APIRouter(tags=["gui"])
-templates = Jinja2Templates(directory="./frontend/page", auto_reload=True)
+templates = Jinja2Templates(directory=os.path.join(
+    os.path.dirname(__file__), "page"), auto_reload=True)
 
 # определяем папку этого модуля
 BASE_DIR = Path(__file__).parent
@@ -88,6 +89,8 @@ for file_name in os.listdir(_pages_dir):
         )
 
 # Корневой эндпоинт — авторизация
+
+
 @front_router.get("/", response_class=HTMLResponse)
 async def auth_page(request: Request):
     return templates.TemplateResponse("authorisation.html", {"request": request})
@@ -197,7 +200,8 @@ async def navbar(
 
     # 4) Получаем информацию о пользователе
     user_engine = EngineUser()
-    user = user_engine.get_user_by_id(user_id)  # предполагается, что есть BaseCRUD.get
+    # предполагается, что есть BaseCRUD.get
+    user = user_engine.get_user_by_id(user_id)
     user_fullname = f"{user.second_name} {user.first_name} {user.family}"
     e_role = EngineRole()
     user_role = e_role.get_role_by_id(role_id).name
@@ -359,6 +363,3 @@ async def get_interface():
     </body>
     </html>
     """
-
-
-

@@ -21,12 +21,14 @@ from DB.Engine.UserCRUD import EngineUser
 from fastapi import HTTPException, Depends
 from sqlalchemy.orm import Session
 from datetime import timedelta  # datetime,
-from API.backend.request_models import AuthResponse  # путь и название модели может отличаться
+# путь и название модели может отличаться
+from API.backend.request_models import AuthResponse
 import barcode
 from barcode.codex import Code128
 from barcode.writer import ImageWriter
 from fastapi.responses import StreamingResponse
 from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
@@ -53,63 +55,69 @@ def user_authorization(login: str, password: str, db: Session = Depends(get_db))
     """
     Возвращает данные авторизации: токен, redirect_url и информацию о пользователе, если логин/пароль корректны.
     """
-    if login == '' or password == '':
-        raise HTTPException(status_code=402, detail="Некорректные данные")
+    try:
+        if login == '' or password == '':
+            raise HTTPException(status_code=402, detail="Некорректные данные")
 
-    # Инициализируем движки для работы с пользователями и ролями
-    e_user = EngineUser()
-    e_role = EngineRole()
+        # Инициализируем движки для работы с пользователями и ролями
+        e_user = EngineUser()
+        e_role = EngineRole()
 
-    # 1. Получаем пользователя по логину
-    user = e_user.get_user_by_code(int(login))
-    if not user:
-        raise HTTPException(status_code=401, detail="Пользователь не найден")
+        # 1. Получаем пользователя по логину
+        user = e_user.get_user_by_code(int(login))
+        if not user:
+            raise HTTPException(
+                status_code=401, detail="Пользователь не найден")
 
-    # Проверяем пароль
-    if str(user.password) != str(password):
-        raise HTTPException(status_code=511, detail="Неверный пароль")
+        # Проверяем пароль
+        if str(user.password) != str(password):
+            raise HTTPException(status_code=511, detail="Неверный пароль")
 
-    # 2. Получаем роль пользователя
-    role = e_role.get_role_by_id(user.role_id)
-    if not role:
-        raise HTTPException(status_code=401, detail="Роль не найдена")
+        # 2. Получаем роль пользователя
+        role = e_role.get_role_by_id(user.role_id)
+        if not role:
+            raise HTTPException(status_code=401, detail="Роль не найдена")
 
-    # Подготовим данные для формирования ответа
-    user_response = {
-        "index": user.id,
-        "barcode": user.barcode,
-        "code": user.code,
-        "first_name": user.first_name,
-        "password": user.password,
-        "second_name": user.second_name,
-        "family": user.family,
-        "role_id": role.id
-    }
+        # Подготовим данные для формирования ответа
+        user_response = {
+            "index": user.id,
+            "barcode": user.barcode,
+            "code": user.code,
+            "first_name": user.first_name,
+            "password": user.password,
+            "second_name": user.second_name,
+            "family": user.family,
+            "role_id": role.id
+        }
 
-    # Генерируем JWT-токен. Можно включить в него необходимые данные (например, user.id, role и т.д.)
-    # token_data = {"sub": str(user.barcode), "role_id": role.id}
-    token_data = TokenData(user_id=user.id, user_barcode=user.barcode, role_id=user.role_id)
-    token = auth_service.create_access_token(
-        token_data=token_data,
-        expires_delta=timedelta(minutes=auth_service.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    #
-    # token_data = {"sub": str(user.barcode), "role_id": role.id}
-    # token = auth_service.create_access_token(data=token_data, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        # Генерируем JWT-токен
+        token_data = TokenData(
+            user_id=user.id, user_barcode=user.barcode, role_id=user.role_id)
+        token = auth_service.create_access_token(
+            token_data=token_data,
+            expires_delta=timedelta(
+                minutes=auth_service.ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
 
-    # Определяем redirect_url на основе идентификатора роли
-    if role.id == 1:
-        redirect_url = '/screen_14_history_load.html'
-    elif role.id == 2:
-        redirect_url = '/screen_14_history_load.html'
-    elif role.id == 3:
-        redirect_url = '/screen_14_history_load.html'
-    elif role.id == 4:
-        redirect_url = '/screen_14_history_load.html'
-    else:
-        redirect_url = '/'
+        # Определяем redirect_url на основе идентификатора роли
+        if role.id == 1:
+            redirect_url = '/screen_14_history_load.html'
+        elif role.id == 2:
+            redirect_url = '/screen_14_history_load.html'
+        elif role.id == 3:
+            redirect_url = '/screen_14_history_load.html'
+        elif role.id == 4:
+            redirect_url = '/screen_14_history_load.html'
+        else:
+            redirect_url = '/'
 
-    return AuthResponse(token=token, redirect_url=redirect_url, user=user_response)
+        return AuthResponse(token=token, redirect_url=redirect_url, user=user_response)
+    except RuntimeError as e:
+        tb = traceback.format_exc()
+        return JSONResponse(status_code=500, content={"status": "error", "detail": str(e), "traceback": tb})
+    except Exception as e:
+        tb = traceback.format_exc()
+        return JSONResponse(status_code=500, content={"status": "error", "detail": str(e), "traceback": tb})
 
 
 @all_users_router.get("/all_users", response_model=AllUserResponse)
@@ -170,7 +178,6 @@ def all_users(db: Session = Depends(get_db)):
     return AllUserResponse(users=all_user_response)
 
 
-
 @all_users_router.get(
     "/user_barcode",
     responses={200: {"content": {"image/png": {}}}},
@@ -197,7 +204,8 @@ def user_barcode(user_id: int, db: Session = Depends(get_db)):
     draw = ImageDraw.Draw(canvas)
     try:
         # Попробуем системный шрифт
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
+        font = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
     except (OSError, IOError):
         # Аварийно — встроенный bitmap-шрифт
         try:
@@ -220,6 +228,7 @@ def user_barcode(user_id: int, db: Session = Depends(get_db)):
     out_buf.seek(0)
     return StreamingResponse(out_buf, media_type="image/png")
 
+
 @all_users_router.post("/create_user", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     e_user = EngineUser()
@@ -229,7 +238,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         role = e_role.get_role_by_id(created_user.role_id)
         role_name = role.name
         if not created_user:
-            raise HTTPException(status_code=400, detail="Ошибка создания пользователя")
+            raise HTTPException(
+                status_code=400, detail="Ошибка создания пользователя")
         return UserResponse(
             index=created_user.id,
             barcode=created_user.barcode,
@@ -321,10 +331,12 @@ def create_right(right: RightsCreate, db: Session = Depends(get_db)):
             page_id=right.page_id,  # page_id
             description=right.Description,  # status
     ):
-        raise HTTPException(status_code=400, detail="Ошибка создания записи о праве доступа")
+        raise HTTPException(
+            status_code=400, detail="Ошибка создания записи о праве доступа")
     new_right = e_rights.get_right_by_id(right.id)
     if not new_right:
-        raise HTTPException(status_code=500, detail="Ошибка получения созданной записи о праве доступа")
+        raise HTTPException(
+            status_code=500, detail="Ошибка получения созданной записи о праве доступа")
     return new_right
 
 
@@ -408,17 +420,18 @@ def create_role(role: RoleCreate, db: Session = Depends(get_db)):
     """
     e_role = EngineRole()
     if not e_role.add_role(
-            id=role.id,
-            name=role.Name,
-            description=role.Description,
-            parent_role_id=role.ParentRole_id
-        ):
+        id=role.id,
+        name=role.Name,
+        description=role.Description,
+        parent_role_id=role.ParentRole_id
+    ):
         raise HTTPException(status_code=400, detail="Ошибка создания роли")
     # Предполагается, что уникальность названия роли позволяет получить вновь созданную роль.
     roles = e_role.all()
     new_role = next((r for r in roles if r.Name == role.name), None)
     if not new_role:
-        raise HTTPException(status_code=500, detail="Ошибка получения созданной роли")
+        raise HTTPException(
+            status_code=500, detail="Ошибка получения созданной роли")
     return new_role
 
 
@@ -524,10 +537,12 @@ def generate_login_password(first_name: str, patronymic: str, last_name: str, ba
     try:
         # Проверка корректности штрих-кода
         if len(barcode) < 4 or not barcode.isdigit():
-            raise ValueError("Штрих-код должен состоять минимум из 4 цифр и содержать только числа.")
+            raise ValueError(
+                "Штрих-код должен состоять минимум из 4 цифр и содержать только числа.")
 
         # Базовая генерация логина по первым символам имени, отчества и фамилии
-        login_value = (ord(first_name[0]) + ord(patronymic[0]) + ord(last_name[0])) % 10000
+        login_value = (
+            ord(first_name[0]) + ord(patronymic[0]) + ord(last_name[0])) % 10000
 
         # Генерация пароля: сумма ASCII-кодов полного имени + последние 4 цифры штрих-кода
         full_name = first_name + patronymic + last_name
@@ -541,7 +556,8 @@ def generate_login_password(first_name: str, patronymic: str, last_name: str, ba
             attempts = 0
             while exists_check(int(str(login_value).zfill(4))):
                 if attempts >= max_attempts:
-                    raise ValueError("Не удалось сгенерировать уникальный логин после нескольких попыток.")
+                    raise ValueError(
+                        "Не удалось сгенерировать уникальный логин после нескольких попыток.")
                 # Добавляем случайное число в качестве соли и пересчитываем значение логина
                 random_salt = secrets.randbelow(10000)
                 login_value = (login_value + random_salt) % 10000
@@ -597,4 +613,5 @@ def generate_credentials(data: UserCredentialsInput, db: Session = Depends(get_d
         )
         return UserCredentialsResponse(login=login, password=password)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
