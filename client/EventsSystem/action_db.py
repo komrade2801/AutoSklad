@@ -2,23 +2,36 @@ import datetime
 import traceback
 from typing import List, Optional, Type
 import dbSync
-from DB.Engine.HelpCRUD import EngineHelp  # ----------------------------------- 1
-from DB.Engine.ErrorsCRUD import EngineError  # -------------------------------- 2
-from DB.Engine.RoleCRUD import EngineRole  # ----------------------------------- 3
-from DB.Engine.PlanCRUD import EnginePlan  # ----------------------------------- 4
-from DB.Engine.GroupCRUD import EngineGroup  # --------------------------------- 5
-from DB.Engine.RightsCRUD import EngineRights  # ------------------------------- 6
+# ----------------------------------- 1
+from DB.Engine.HelpCRUD import EngineHelp
+# -------------------------------- 2
+from DB.Engine.ErrorsCRUD import EngineError
+# ----------------------------------- 3
+from DB.Engine.RoleCRUD import EngineRole
+# ----------------------------------- 4
+from DB.Engine.PlanCRUD import EnginePlan
+# --------------------------------- 5
+from DB.Engine.GroupCRUD import EngineGroup
+# ------------------------------- 6
+from DB.Engine.RightsCRUD import EngineRights
 from DB.Engine.MassDropCRUD import EngineMassDrop  # --------------------------- 7
 from DB.Engine.MassLoadCRUD import EngineMassLoad  # --------------------------- 8
-from DB.Engine.StatusCRUD import EngineStatus  # ------------------------------- 9
-from DB.Engine.UserCRUD import EngineUser  # ----------------------------------- 10
+# ------------------------------- 9
+from DB.Engine.StatusCRUD import EngineStatus
+# ----------------------------------- 10
+from DB.Engine.UserCRUD import EngineUser
 from DB.Engine.IdentificationCRUD import EngineIdentification  # --------------- 11
-from DB.Engine.ToolsCRUD import EngineTools  # --------------------------------- 12
-from DB.Engine.CellCRUD import EngineCell  # ----------------------------------- 13
-from DB.Engine.LoadCRUD import EngineLoad  # ----------------------------------- 14
-from DB.Engine.DropCRUD import EngineDrop  # ----------------------------------- 15
+# --------------------------------- 12
+from DB.Engine.ToolsCRUD import EngineTools
+# ----------------------------------- 13
+from DB.Engine.CellCRUD import EngineCell
+# ----------------------------------- 14
+from DB.Engine.LoadCRUD import EngineLoad
+# ----------------------------------- 15
+from DB.Engine.DropCRUD import EngineDrop
 from DB.Engine.ConsumptionCRUD import EngineConsumption  # --------------------- 16
-from DB.Engine.HistoryCRUD import EngineHistory  # ----------------------------- 17
+# ----------------------------- 17
+from DB.Engine.HistoryCRUD import EngineHistory
 from DB.Engine.DropOperationsCRUD import EngineDropOperations  # --------------- 18
 from DB.Engine.OperationsConsumptionCRUD import EngineOperationsConsumption  # - 19
 from DB.Engine.LoadOperationsCRUD import EngineLoadOperations  # --------------- 20
@@ -31,6 +44,7 @@ from DB.Models.MassDrop import MassDrop
 from DB.Models.OperationsConsumption import OperationsConsumption
 from DB.Models.Tools import Tools
 from DB.Models.User import User
+
 
 class MassDropToolPlanIDNoneError(Exception):
     def __init__(self, message):
@@ -102,7 +116,8 @@ class ActionMapper:
         # Проверьте, существует ли файл
         self.__executor = executor
         # Определяем карту активности, используя лямбда-функции
-        self.session_local = SessionLocal(engine())  # sessionmaker(bind=engine)
+        self.session_local = SessionLocal(
+            engine())  # sessionmaker(bind=engine)
         self.e_help = EngineHelp(session=self.session_local)
         self.e_error = EngineError(session=self.session_local)
         self.e_role = EngineRole(session=self.session_local)
@@ -113,16 +128,20 @@ class ActionMapper:
         self.e_mass_load = EngineMassLoad(session=self.session_local)
         self.e_status = EngineStatus(session=self.session_local)
         self.e_user = EngineUser(session=self.session_local)
-        self.e_identification = EngineIdentification(session=self.session_local)
+        self.e_identification = EngineIdentification(
+            session=self.session_local)
         self.e_tools = EngineTools(session=self.session_local)
         self.e_cell = EngineCell(session=self.session_local)
         self.e_load = EngineLoad(session=self.session_local)
         self.e_drop = EngineDrop(session=self.session_local)
         self.e_consumption = EngineConsumption(session=self.session_local)
         self.e_history = EngineHistory(session=self.session_local)
-        self.e_drop_operations = EngineDropOperations(session=self.session_local)
-        self.e_operations_consumption = EngineOperationsConsumption(session=self.session_local)
-        self.e_load_operations = EngineLoadOperations(session=self.session_local)
+        self.e_drop_operations = EngineDropOperations(
+            session=self.session_local)
+        self.e_operations_consumption = EngineOperationsConsumption(
+            session=self.session_local)
+        self.e_load_operations = EngineLoadOperations(
+            session=self.session_local)
         self.current_user = None
         self.select_tool = None
         self.current_role = None
@@ -158,7 +177,8 @@ class ActionMapper:
             # "": None,
             'write_db_rights_by_user_id': lambda user_id, rights_data: self.write_db_rights_by_user_id(user_id, rights_data),
             'read_db_rights_by_user_id': lambda user_id: self.read_db_rights_by_user_id(user_id),
-            'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),  # 'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
+            # 'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
+            'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
             'read_db_get_cell': lambda tool_id, tool_name: self.read_db_get_cell(tool_id, tool_name),
             # "": None,
             'read_db_user_operations': lambda user_id: self.read_db_user_operations(user_id),
@@ -191,8 +211,10 @@ class ActionMapper:
             'write_db_mass_load_tools_by_free': lambda tools__data, cells__data: self.write_db_mass_load_tools_by_free(tools__data, cells__data),
             'write_db_load_tool_groups': lambda index: self.write_db_load_tool_groups(index),
             'read_db_mass_load_tools_by_free': None,  # WEB
-            'read_db_mass_load_tools_by_plan': lambda plan_id: self.read_db_mass_load_tools_by_plan(plan_id),  # WEB
-            'read_db_mass_load_tools': lambda index: self.read_db_mass_load_tools(index),  # mass_load execute
+            # WEB
+            'read_db_mass_load_tools_by_plan': lambda plan_id: self.read_db_mass_load_tools_by_plan(plan_id),
+            # mass_load execute
+            'read_db_mass_load_tools': lambda index: self.read_db_mass_load_tools(index),
             # "": None,
             'write_db_err_get_tools_by_plan_id': lambda *args, **kwargs: print(),
             'write_db_err_barcode_user': lambda *args, **kwargs: print(),
@@ -269,7 +291,8 @@ class ActionMapper:
         if cells != []:
             cell = cells[0]
         if not cell:
-            print(f"Инструмент с идентификатором {self.select_tool.id} не найдено ни в одной ячейке.")
+            print(
+                f"Инструмент с идентификатором {self.select_tool.id} не найдено ни в одной ячейке.")
             return {'trigger': 'view_err'}
         # Очистить ячейку (удалить инструмент из неё)
         cleared = self.e_cell.update_cell(
@@ -281,7 +304,8 @@ class ActionMapper:
             status_id=0,
         )
         if not cleared:
-            print(f"Failed to clear tool {self.select_tool.id} from cell {cell.id}.")
+            print(
+                f"Failed to clear tool {self.select_tool.id} from cell {cell.id}.")
             return {'trigger': 'view_err'}
 
         # Получить статус "расход"
@@ -323,7 +347,8 @@ class ActionMapper:
             print("Не удалось записать запись в историю.")
             return {'trigger': 'view_err'}
 
-        operation_id = max(self.e_operations_consumption.get_all_ids(), default=0) + 1
+        operation_id = max(
+            self.e_operations_consumption.get_all_ids(), default=0) + 1
         # Добавить запись в таблицу OperationsConsumption
         self.e_operations_consumption.add_operation(
             index=operation_id,
@@ -352,7 +377,8 @@ class ActionMapper:
             tools = self.e_tools.get_tools_by_group(group_id)
             return tools
         except Exception as e:
-            print(f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
+            print(
+                f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
             print(traceback.format_exc())
             return []
 
@@ -369,7 +395,8 @@ class ActionMapper:
             return tools
 
         except Exception as e:
-            print(f"Ошибка при извлечении инструментов для группы с ID {group_id}: {e}")
+            print(
+                f"Ошибка при извлечении инструментов для группы с ID {group_id}: {e}")
             print(traceback.format_exc())
             return []
 
@@ -402,15 +429,18 @@ class ActionMapper:
                     if status.stype not in ["mass_load_ready", "load_ready"]:
                         continue
                 # Проверка операций в таблице DropOperations
-                drop_operations = self.e_drop_operations.get_operations_by_tool(tool.id)
+                drop_operations = self.e_drop_operations.get_operations_by_tool(
+                    tool.id)
                 if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
                     continue
                 # Проверка операций в таблице OperationsConsumption
-                consumption_operations = self.e_operations_consumption.get_operations_by_tool(tool.id)
+                consumption_operations = self.e_operations_consumption.get_operations_by_tool(
+                    tool.id)
                 if consumption_operations:
                     continue
                 # Проверка операций в таблице LoadOperations
-                load_operations = self.e_load_operations.get_operations_by_tool(tool.id)
+                load_operations = self.e_load_operations.get_operations_by_tool(
+                    tool.id)
                 if len(load_operations) > 0 and not any(self.e_status.get_status_by_id(op.status_id).stype in ["mass_load_ready", "load_ready"] for op in load_operations):
                     continue
 
@@ -418,7 +448,8 @@ class ActionMapper:
             return result
 
         except Exception as e:
-            print(f"Ошибка при извлечении инструментов для плана с ID {plan_id}: {e}")
+            print(
+                f"Ошибка при извлечении инструментов для плана с ID {plan_id}: {e}")
             print(traceback.format_exc())
             return []
 
@@ -449,19 +480,23 @@ class ActionMapper:
                 if status.stype not in ["mass_load_ready", "load_ready"]:
                     continue
             # Проверка операций в таблице DropOperations
-            drop_operations = self.e_drop_operations.get_operations_by_tool(tool.id)
+            drop_operations = self.e_drop_operations.get_operations_by_tool(
+                tool.id)
             if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
                 continue
             # Проверка операций в таблице OperationsConsumption
-            consumption_operations = self.e_operations_consumption.get_operations_by_tool(tool.id)
+            consumption_operations = self.e_operations_consumption.get_operations_by_tool(
+                tool.id)
             if consumption_operations:
                 continue
             # Проверка операций в таблице LoadOperations
-            load_operations = self.e_load_operations.get_operations_by_tool(tool.id)
+            load_operations = self.e_load_operations.get_operations_by_tool(
+                tool.id)
             found = False  # предполагаем, что ни один статус не подходит
 
             for op in load_operations:
-                status = self.e_status.get_status_by_id(op.status_id)  # получаем объект статуса
+                status = self.e_status.get_status_by_id(
+                    op.status_id)  # получаем объект статуса
                 if status.stype in ["mass_load_ready", "load_ready"]:  # проверка нужного типа
                     found = True
                     break  # нашли хотя бы один — дальше не надо
@@ -497,7 +532,7 @@ class ActionMapper:
             operations = []
 
             # Лямбда для создания словаря операции
-            create_operation_dict = lambda history, op, additional_fields: {
+            def create_operation_dict(history, op, additional_fields): return {
                 "datetime": history.datetime,
                 "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
                 "user_family": self.e_user.get_user_by_id(history.user_id).family,
@@ -512,7 +547,8 @@ class ActionMapper:
 
             for history in history_records:
                 # Добавляем операции из LoadOperations
-                load_operations = self.e_load_operations.get_operations_by_history_id(history.id)
+                load_operations = self.e_load_operations.get_operations_by_history_id(
+                    history.id)
                 operations.extend([
                     create_operation_dict(history, op, {
                         "load_description": self.e_load.get_load_by_id(op.load_id).description,
@@ -525,7 +561,8 @@ class ActionMapper:
                 ])
 
                 # Добавляем операции из DropOperations
-                drop_operations = self.e_drop_operations.get_operations_by_history_id(history.id)
+                drop_operations = self.e_drop_operations.get_operations_by_history_id(
+                    history.id)
                 operations.extend([
                     create_operation_dict(history, op, {
                         "drop_description": self.e_drop.get_drop_by_id(op.drop_id).description,
@@ -534,7 +571,8 @@ class ActionMapper:
                 ])
 
                 # Добавляем операции из OperationsConsumption
-                consumption_operations = self.e_operations_consumption.get_operations_by_history_id(history.id)
+                consumption_operations = self.e_operations_consumption.get_operations_by_history_id(
+                    history.id)
                 operations.extend([
                     create_operation_dict(history, op, {
                         "consumption_description": self.e_consumption.get_consumption_by_id(op.consumption_id).description,
@@ -561,7 +599,7 @@ class ActionMapper:
         operations = []
         try:
             # Лямбда для создания словаря операции
-            create_operation_dict = lambda history, op: {
+            def create_operation_dict(history, op): return {
                 "datetime": history.datetime,
                 "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
                 "user_family": self.e_user.get_user_by_id(history.user_id).family,
@@ -581,11 +619,13 @@ class ActionMapper:
                 if isinstance(op, OperationsConsumption):
                     consumption = self.e_consumption.get(op.consumption_id)
                     load = self.e_load.get_load_by_id(consumption.cell_id)
-                    mass_load = self.e_mass_load.get_mass_load_by_id(load.mass_load_id)
+                    mass_load = self.e_mass_load.get_mass_load_by_id(
+                        load.mass_load_id)
                     return mass_load.description
                 elif isinstance(op, LoadOperations):
                     load = self.e_load.get_load_by_id(op.load_id)
-                    mass_load = self.e_mass_load.get_mass_load_by_id(load.mass_load_id)
+                    mass_load = self.e_mass_load.get_mass_load_by_id(
+                        load.mass_load_id)
                     return mass_load.description
 
             def add_cell_number(op):
@@ -613,8 +653,10 @@ class ActionMapper:
                     # operations.extend([create_operation_dict(history, op) for op in drop_operations])
 
                     # Добавляем операции из OperationsConsumption
-                    consumption_operations = self.e_operations_consumption.get_operations_by_history_id(history.id)
-                    operations.extend([create_operation_dict(history, op) for op in consumption_operations])
+                    consumption_operations = self.e_operations_consumption.get_operations_by_history_id(
+                        history.id)
+                    operations.extend([create_operation_dict(history, op)
+                                      for op in consumption_operations])
             return operations
         except Exception as e:
             print(f"Ошибка при извлечении всех операций: {e}")
@@ -635,7 +677,7 @@ class ActionMapper:
             operations = []
 
             # Лямбда для создания словаря операции
-            create_operation_dict = lambda history, op: {
+            def create_operation_dict(history, op): return {
                 "datetime": history.datetime,
                 "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
                 "user_family": self.e_user.get_user_by_id(history.user_id).family,
@@ -653,16 +695,22 @@ class ActionMapper:
 
             for history in user_history:
                 # Добавляем операции из LoadOperations
-                load_operations = self.e_load_operations.get_operations_by_history_id(history.id)
-                operations.extend([create_operation_dict(history, op) for op in load_operations])
+                load_operations = self.e_load_operations.get_operations_by_history_id(
+                    history.id)
+                operations.extend([create_operation_dict(history, op)
+                                  for op in load_operations])
 
                 # Добавляем операции из DropOperations
-                drop_operations = self.e_drop_operations.get_operations_by_history_id(history.id)
-                operations.extend([create_operation_dict(history, op) for op in drop_operations])
+                drop_operations = self.e_drop_operations.get_operations_by_history_id(
+                    history.id)
+                operations.extend([create_operation_dict(history, op)
+                                  for op in drop_operations])
 
                 # Добавляем операции из OperationsConsumption
-                consumption_operations = self.e_operations_consumption.get_operations_by_history_id(history.id)
-                operations.extend([create_operation_dict(history, op) for op in consumption_operations])
+                consumption_operations = self.e_operations_consumption.get_operations_by_history_id(
+                    history.id)
+                operations.extend([create_operation_dict(history, op)
+                                  for op in consumption_operations])
 
             return operations
 
@@ -704,7 +752,8 @@ class ActionMapper:
         # 2. Получить все записи Drop, связанные с MassDrop
         drops = self.e_drop.all()
         mass_drop_ids = {md.id for md in mass_drops}
-        mass_drop_drops = [drop for drop in drops if drop.mass_drop_id in mass_drop_ids]
+        mass_drop_drops = [
+            drop for drop in drops if drop.mass_drop_id in mass_drop_ids]
 
         if not mass_drop_drops:
             return []  # Если нет привязанных Drop, возвращаем пустой список
@@ -712,7 +761,8 @@ class ActionMapper:
         # 3. Получить инструменты из таблицы Tools, привязанные к Drop и к указанному чертежу (plan_id)
         tools_ids_in_drops = {drop.tools_id for drop in mass_drop_drops}
         tools = self.e_tools.all()
-        plan_tools = [tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id == plan_id]
+        plan_tools = [
+            tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id == plan_id]
 
         if not plan_tools:
             return []  # Если таких инструментов нет, возвращаем пустой список
@@ -723,7 +773,8 @@ class ActionMapper:
 
         for tool in plan_tools:
             # Проверяем, есть ли операции для этого инструмента
-            related_operations = [op for op in operations if op.tools_id == tool.id]
+            related_operations = [
+                op for op in operations if op.tools_id == tool.id]
             if related_operations:
                 valid_tools.append(tool)
 
@@ -744,7 +795,8 @@ class ActionMapper:
         # 2. Получить все записи Drop, связанные с MassDrop
         drops = self.e_drop.all()
         mass_drop_ids = {md.id for md in mass_drops}
-        mass_drop_drops = [drop for drop in drops if drop.mass_drop_id in mass_drop_ids]
+        mass_drop_drops = [
+            drop for drop in drops if drop.mass_drop_id in mass_drop_ids]
 
         if not mass_drop_drops:
             return []  # Если нет привязанных Drop, возвращаем пустой список
@@ -752,7 +804,8 @@ class ActionMapper:
         # 3. Получить инструменты из таблицы Tools, привязанные к Drop и не имеющие чертежей (plan_id is None)
         tools_ids_in_drops = {drop.tools_id for drop in mass_drop_drops}
         tools = self.e_tools.all()
-        free_tools = [tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id is None]
+        free_tools = [
+            tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id is None]
 
         if not free_tools:
             return []  # Если таких инструментов нет, возвращаем пустой список
@@ -763,7 +816,8 @@ class ActionMapper:
 
         for tool in free_tools:
             # Проверяем, есть ли операции для этого инструмента
-            related_operations = [op for op in operations if op.tools_id == tool.id]
+            related_operations = [
+                op for op in operations if op.tools_id == tool.id]
             if related_operations:
                 valid_tools.append(tool)
 
@@ -782,7 +836,8 @@ class ActionMapper:
             drops_by_mass_drop = self.e_drop.get_by_mass_drop_id(mass_drop_id)
             target_operations = []
             for drop in drops_by_mass_drop:
-                target_operations.append(self.e_drop_operations.get_operations_by_drop_id(drop.id))
+                target_operations.append(
+                    self.e_drop_operations.get_operations_by_drop_id(drop.id))
 
             target_cells = []
             for drop in drops_by_mass_drop:
@@ -802,7 +857,8 @@ class ActionMapper:
             for operations in target_operations:
                 for operation in operations:
                     history.append(operation.history_id)
-                    result = result and self.e_drop_operations.delete(operation.id)
+                    result = result and self.e_drop_operations.delete(
+                        operation.id)
 
             for target_cell in target_cells:
                 # if target_cell:
@@ -839,7 +895,8 @@ class ActionMapper:
             target_operations = []
             for load in loads_by_mass_load:
                 # Добавляем
-                target_operations.append(self.e_load_operations.get_operations_by_load_id(load.id))
+                target_operations.append(
+                    self.e_load_operations.get_operations_by_load_id(load.id))
 
             target_cells = []
             for load in loads_by_mass_load:
@@ -854,7 +911,8 @@ class ActionMapper:
                 group = self.e_group.get(tool.groups_id)
                 if group is None:
                     first_word = tool.name.split()[0]
-                    new_group_id = max(self.e_group.get_all_ids(), default=0) + 1
+                    new_group_id = max(
+                        self.e_group.get_all_ids(), default=0) + 1
                     self.e_group.add(id=new_group_id, name=first_word)
                     tool.groups_id = new_group_id
 
@@ -862,7 +920,8 @@ class ActionMapper:
 
             # Получаем статус "ready"
             all_statuses = self.e_status.all()
-            ready_status = next((s for s in all_statuses if s.stype == "mass_load_ready"), None)
+            ready_status = next(
+                (s for s in all_statuses if s.stype == "mass_load_ready"), None)
             if not ready_status:
                 index = max(self.e_status.get_all_ids(), default=0) + 1
                 self.e_status.add(
@@ -875,13 +934,14 @@ class ActionMapper:
 
             for cell in target_cells:
                 # cell = self.e_cell.get()
-                cell.status_id=ready_status_id
+                cell.status_id = ready_status_id
                 self.e_cell.update_cell(**(cell.to_dict()))
             # Добавляем запись операций в LoadOperations и ячеек в Cell о готовности к использованию.
             for operations in target_operations:
                 access = True
                 for operation in operations:
-                    status = self.e_status.get_status_by_id(operation.status_id)
+                    status = self.e_status.get_status_by_id(
+                        operation.status_id)
                     if 'ready' in status.stype and not access:
                         access = False
                 if access:
@@ -897,7 +957,8 @@ class ActionMapper:
                         description=description,
                     )
                     # Добавляем информацию о разрешении на использование инструмента
-                    load_operations_id = max(self.e_load_operations.get_all_ids()) + 1
+                    load_operations_id = max(
+                        self.e_load_operations.get_all_ids()) + 1
                     result = result and self.e_load_operations.add_operation(
                         id=load_operations_id,
                         date=datetime.datetime.now(),
@@ -912,7 +973,8 @@ class ActionMapper:
                     cell = self.e_cell.get(load.cell_id)
                     cell.description = description
                     if cell:
-                        result = result and self.e_cell.update_cell(**(cell.to_dict()))
+                        result = result and self.e_cell.update_cell(
+                            **(cell.to_dict()))
             return result
         except Exception as e:
             print(e)
@@ -1050,7 +1112,8 @@ class ActionMapper:
         :return: Кортеж (пользователь, роль), если найдено, иначе (None, None).
         """
         if login == '' and password == '':
-            return {'trigger': 'err_authorization'}  # Пользователь не найден или неверный пароль
+            # Пользователь не найден или неверный пароль
+            return {'trigger': 'err_authorization'}
         try:
             self.current_user = None
             self.select_tool = None
@@ -1062,18 +1125,27 @@ class ActionMapper:
             # 1. Получение пользователя по логину (Code)
             user = self.e_user.get_user_by_code(login)
             if not user or user.password != password:
-                return {'trigger': 'err_authorization'}  # Пользователь не найден или неверный пароль
+                # Пользователь не найден или неверный пароль
+                return {'trigger': 'err_authorization'}
 
             # 2. Получение роли по идентификатору роли пользователя
             role = self.e_role.get_role_by_id(user.role_id)
             self.current_user = user
             self.current_role = role
-            return user, role
+            # Возвращаем явный триггер для роутера по имени роли
+            role_name = (getattr(role, 'name', '') or '').lower()
+            if role_name in ("admin", "administrator", "developer"):
+                return {"trigger": "view_type_admin"}
+            elif role_name in ("storekeeper", "stockman", "кладовщик"):
+                return {"trigger": "type_storekeeper"}
+            else:
+                return {"trigger": "test_user"}
 
         except Exception as e:
             print(f"Ошибка при авторизации пользователя: {e}")
             print(traceback.format_exc())
-            return {'trigger': 'err_authorization'}  # Пользователь не найден или неверный пароль
+            # Пользователь не найден или неверный пароль
+            return {'trigger': 'err_authorization'}
 
     def write_db_users(self, user_data: dict) -> bool:
         """
@@ -1115,13 +1187,15 @@ class ActionMapper:
             # 2. Проверка или создание прав
             rights_data = user_data.get("rights", [])
             if not rights_data:
-                raise ValueError("Отсутствует информация о правах пользователя.")
+                raise ValueError(
+                    "Отсутствует информация о правах пользователя.")
             if not isinstance(rights_data, list):
                 rights_data = [rights_data, ]
 
             for right in rights_data:
                 existing_right = self.e_rights.get_all_rights()
-                matching_right = next((r for r in existing_right if r.name == right.name), None)
+                matching_right = next(
+                    (r for r in existing_right if r.name == right.name), None)
 
                 if not matching_right:
                     added = self.e_rights.add_right(
@@ -1131,11 +1205,13 @@ class ActionMapper:
                         role_id=right.role_id  #
                     )
                     if not added:
-                        raise ValueError(f"Не удалось создать право: {right.name}.")
+                        raise ValueError(
+                            f"Не удалось создать право: {right.name}.")
 
             # 3. Проверка или создание пользователя
             user = self.e_user.get_all_users()
-            matching_user = next((u for u in user if u.barcode == user_data['user'].barcode), None)
+            matching_user = next(
+                (u for u in user if u.barcode == user_data['user'].barcode), None)
             user = user_data['user']
             if not matching_user:
                 user_id = self.e_user.add_user(
@@ -1177,7 +1253,8 @@ class ActionMapper:
             # Проверка наличия роли у пользователя
             role_id = user.role_id
             if not role_id:
-                raise ValueError(f"У пользователя с ID {user_id} не указана роль.")
+                raise ValueError(
+                    f"У пользователя с ID {user_id} не указана роль.")
 
             role = self.e_role.get_role_by_id(role_id)
             if not role:
@@ -1203,12 +1280,14 @@ class ActionMapper:
                     role_id=role_id
                 )
                 if not success:
-                    raise ValueError(f"Не удалось добавить право: {name} для роли с ID {role_id}.")
+                    raise ValueError(
+                        f"Не удалось добавить право: {name} для роли с ID {role_id}.")
 
             return True
 
         except Exception as e:
-            print(f"Ошибка при записи прав для пользователя с ID {user_id}: {e}")
+            print(
+                f"Ошибка при записи прав для пользователя с ID {user_id}: {e}")
             print(traceback.format_exc())
             return False
 
@@ -1228,7 +1307,8 @@ class ActionMapper:
             # Получение роли пользователя по Role_id
             role_id = user.role_id
             if not role_id:
-                raise ValueError(f"У пользователя с ID {user_id} не указана роль.")
+                raise ValueError(
+                    f"У пользователя с ID {user_id} не указана роль.")
 
             role = self.e_role.get_role_by_id(role_id)
             if not role:
@@ -1243,7 +1323,8 @@ class ActionMapper:
             return rights
 
         except Exception as e:
-            print(f"Ошибка при получении прав для пользователя с ID {user_id}: {e}")
+            print(
+                f"Ошибка при получении прав для пользователя с ID {user_id}: {e}")
             print(traceback.format_exc())
             return []
 
@@ -1323,13 +1404,16 @@ class ActionMapper:
         try:
             for plan_data in plans_data:
                 # Проверяем, существует ли чертеж с таким штрих-кодом
-                existing_plan = self.e_plan.get_plan_by_barcode(plan_data['barcode'])
+                existing_plan = self.e_plan.get_plan_by_barcode(
+                    plan_data['barcode'])
 
                 if existing_plan:
                     # Обновляем данные, если чертеж уже существует
-                    success = self.e_plan.update_plan(existing_plan.id, **plan_data)
+                    success = self.e_plan.update_plan(
+                        existing_plan.id, **plan_data)
                     if not success:
-                        raise ValueError(f"Не удалось обновить чертеж с штрих-кодом {plan_data['barcode']}.")
+                        raise ValueError(
+                            f"Не удалось обновить чертеж с штрих-кодом {plan_data['barcode']}.")
                 else:
                     # Добавляем новый чертеж, если его нет в базе
                     success = self.e_plan.add_plan(
@@ -1345,7 +1429,8 @@ class ActionMapper:
                         parent_plan_id=plan_data['parent_plan_id']
                     )
                     if not success:
-                        raise ValueError(f"Не удалось добавить новый чертеж с штрих-кодом {plan_data['barcode']}.")
+                        raise ValueError(
+                            f"Не удалось добавить новый чертеж с штрих-кодом {plan_data['barcode']}.")
 
             return True
 
@@ -1365,7 +1450,8 @@ class ActionMapper:
         # Проверка данных
         for tool in tools_data:
             if tool.plan_id is not None:
-                raise MassDropToolPlanIDNoneError("Значение идентификатора чертежа должно быть пустым (None).")
+                raise MassDropToolPlanIDNoneError(
+                    "Значение идентификатора чертежа должно быть пустым (None).")
         if len(tools_data) != len(cells_data):
             raise MassDropLenEqCellToolsError(
                 f"Значения не могут быть разной длины! tools: {len(tools_data)}, cells: {len(cells_data)}"
@@ -1373,7 +1459,8 @@ class ActionMapper:
 
         # 1. Найти или создать статус "mass_drop_init"
         all_statuses = self.e_status.all()
-        mass_drop_status = next((s for s in all_statuses if s.stype == "mass_drop_init"), None)
+        mass_drop_status = next(
+            (s for s in all_statuses if s.stype == "mass_drop_init"), None)
 
         mass_drop_indx = self.e_status.get_all_ids()
         mass_drop_indx = max(mass_drop_indx, default=0) + 1
@@ -1433,7 +1520,8 @@ class ActionMapper:
             )
 
             if not operation_added:
-                raise ValueError(f"Не удалось создать запись в таблице DropOperations для Drop ID {drop_id}.")
+                raise ValueError(
+                    f"Не удалось создать запись в таблице DropOperations для Drop ID {drop_id}.")
 
         return True
 
@@ -1449,7 +1537,8 @@ class ActionMapper:
         # Проверка данных
         for tool in tools_data:
             if not tool.plan_id:
-                raise MassDropToolPlanIDNoneError("Значение идентификатора чертежа не может быть пустым (None)")
+                raise MassDropToolPlanIDNoneError(
+                    "Значение идентификатора чертежа не может быть пустым (None)")
             if tool.plan_id != plan_id:
                 raise MassDropPlanIdEQToolsError(
                     f"Значение идентификатора чертежа в команде записи и "
@@ -1463,7 +1552,8 @@ class ActionMapper:
 
         # 1. Найти или создать статус "mass_drop_init"
         all_statuses = self.e_status.all()
-        mass_drop_status = next((s for s in all_statuses if s.stype == "mass_drop_init"), None)
+        mass_drop_status = next(
+            (s for s in all_statuses if s.stype == "mass_drop_init"), None)
 
         mass_drop_indx = self.e_status.get_all_ids()
         mass_drop_indx = max(mass_drop_indx, default=0) + 1
@@ -1523,7 +1613,8 @@ class ActionMapper:
             )
 
             if not operation_added:
-                raise ValueError(f"Не удалось создать запись в таблице DropOperations для Drop ID {drop_id}.")
+                raise ValueError(
+                    f"Не удалось создать запись в таблице DropOperations для Drop ID {drop_id}.")
 
         return True
 
@@ -1540,7 +1631,8 @@ class ActionMapper:
         # 1. Найти или создать статус "mass_load_init"
         for tool in tools_data:
             if not tool.plan_id:
-                raise MassLoadToolPlanIDNoneError("Значение идентификатора чертежа не может быть пустым(None)")
+                raise MassLoadToolPlanIDNoneError(
+                    "Значение идентификатора чертежа не может быть пустым(None)")
             if tool.plan_id != plan_id:
                 raise MassLoadPlanIdEQToolsError(
                     f"Значение идентификатора чертежа в команде записи и "
@@ -1549,7 +1641,8 @@ class ActionMapper:
             raise MassLoadLenEqCellToolsError(
                 f"Значения не могут быть разной длины! tools: {len(tools_data)} cells: {len(cells_data)}")
         all_statuses = self.e_status.all()
-        mass_load_status = next((s for s in all_statuses if s.stype == "mass_load_init"), None)
+        mass_load_status = next(
+            (s for s in all_statuses if s.stype == "mass_load_init"), None)
 
         mass_load_indx = self.e_status.get_all_ids()
 
@@ -1575,7 +1668,8 @@ class ActionMapper:
 
         # 2. Создать запись в таблице MassLoad
         mass_load_description = f"Mass load for plan {plan_id}"
-        self.e_mass_load.add(id=mass_load_id, description=mass_load_description, created_at=datetime.datetime.now())
+        self.e_mass_load.add(
+            id=mass_load_id, description=mass_load_description, created_at=datetime.datetime.now())
 
         if not mass_load_id:
             raise ValueError("Не удалось создать запись в таблице MassLoad.")
@@ -1616,7 +1710,8 @@ class ActionMapper:
             )
 
             if not operation_added:
-                raise ValueError(f"Не удалось создать запись в таблице LoadOperations для Load ID {load_id}.")
+                raise ValueError(
+                    f"Не удалось создать запись в таблице LoadOperations для Load ID {load_id}.")
 
         return True
 
@@ -1628,7 +1723,8 @@ class ActionMapper:
         try:
             # 1. Найти статус с типом "mass_load_init"
             status = self.e_status.all()
-            status_id = next((s.id for s in status if s.stype == "mass_load_init"), None)
+            status_id = next(
+                (s.id for s in status if s.stype == "mass_load_init"), None)
 
             if not status_id:
                 raise ValueError("Статус 'mass_load_init' не найден.")
@@ -1637,11 +1733,13 @@ class ActionMapper:
             loads = self.e_load.find_by_mass_load_id(mass_load_id)
             cells_ids = []
             for load in loads:
-                operations = self.e_load_operations.get_operations_by_load_id(load.id)
+                operations = self.e_load_operations.get_operations_by_load_id(
+                    load.id)
                 # 2. Найти последние операции загрузки, связанные с этим статусом
                 # Проверяем, что есть ровно одна операция и ее статус — mass_load_init
                 if len(operations) == 1 and operations[0].status_id == status_id:
-                    cells_ids.append(load.cell_id)  # Если load подходит, добавляем его в список
+                    # Если load подходит, добавляем его в список
+                    cells_ids.append(load.cell_id)
 
             # Получение идентификаторов загрузок
             cell_numbers = []
@@ -1668,11 +1766,14 @@ class ActionMapper:
         # 1. Найти или создать статус "mass_load_init"
         for tool in tools_data:
             if tool.plan_id:
-                raise MassLoadToolPlanIDError("Значение идентификатора чертежа должно быть пустым(None)")
+                raise MassLoadToolPlanIDError(
+                    "Значение идентификатора чертежа должно быть пустым(None)")
         if len(tools_data) != len(cells_data):
-            raise MassLoadLenEqCellToolsError(f"Значения не могут быть разной длины! tools: {len(tools_data)} cells: {len(cells_data)}")
+            raise MassLoadLenEqCellToolsError(
+                f"Значения не могут быть разной длины! tools: {len(tools_data)} cells: {len(cells_data)}")
         all_statuses = self.e_status.all()
-        mass_load_status = next((s for s in all_statuses if s.stype == "mass_load_init"), None)
+        mass_load_status = next(
+            (s for s in all_statuses if s.stype == "mass_load_init"), None)
 
         mass_load_indx = self.e_status.get_all_ids()
 
@@ -1698,7 +1799,8 @@ class ActionMapper:
 
         # 2. Создать запись в таблице MassLoad
         mass_load_description = f"Mass load for free"
-        self.e_mass_load.add(id=mass_load_id, description=mass_load_description, created_at=datetime.datetime.now())
+        self.e_mass_load.add(
+            id=mass_load_id, description=mass_load_description, created_at=datetime.datetime.now())
 
         if not mass_load_id:
             raise ValueError("Не удалось создать запись в таблице MassLoad.")
@@ -1739,7 +1841,8 @@ class ActionMapper:
             )
 
             if not operation_added:
-                raise ValueError(f"Не удалось создать запись в таблице LoadOperations для Load ID {load_id}.")
+                raise ValueError(
+                    f"Не удалось создать запись в таблице LoadOperations для Load ID {load_id}.")
 
         return True
 
@@ -1757,7 +1860,8 @@ class ActionMapper:
                 raise ValueError(f"План с ID {plan_id} не найден.")
 
             # Извлекаем все задачи массовой загрузки, связанные с данным планом
-            mass_loads = self.e_mass_load.get_all_ids()  # Получаем все ID задач массовой загрузки
+            # Получаем все ID задач массовой загрузки
+            mass_loads = self.e_mass_load.get_all_ids()
             if not mass_loads:
                 return []
 
@@ -1775,7 +1879,8 @@ class ActionMapper:
             return tools
         except Exception as e:
             # Обработка ошибок
-            print(f"Ошибка при чтении инструментов для плана {plan_id}: {str(e)}")
+            print(
+                f"Ошибка при чтении инструментов для плана {plan_id}: {str(e)}")
             print(traceback.format_exc())
             return []
 

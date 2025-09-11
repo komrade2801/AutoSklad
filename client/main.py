@@ -5,6 +5,7 @@ import ast
 from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import List
+import os
 
 import uvicorn
 from PyQt5.QtWidgets import QApplication
@@ -12,6 +13,7 @@ from PyQt5.QtCore import QTimer, QThread, pyqtSignal
 from fastapi import FastAPI
 
 from BarcodeScanner.serial_manager import SerialManager
+from BarcodeScanner.MockSerialManager import MockSerialManager
 from Core import platforms
 from Core.sync_config import SyncConfig
 from DB.Data.sqlite_db import SessionLocal
@@ -51,7 +53,8 @@ async def lifespan(app: FastAPI):
 # ------------------------------------------------------------
 # 2) Инициализируем FastAPI и монтируем роутер синхронизации
 # ------------------------------------------------------------
-app = FastAPI(title="API основного приложения", version="1.0", lifespan=lifespan)
+app = FastAPI(title="API основного приложения",
+              version="1.0", lifespan=lifespan)
 app.mount("/sync", sync_router)
 
 
@@ -69,7 +72,6 @@ class UvicornThread(QThread):
         self.ip = ip
         self.port = port
 
-
     def run(self):
         # Здесь uvicorn.run блокирует до остановки процесса,
         # поэтому мы запускаем его внутри потока.
@@ -85,23 +87,29 @@ def main():
     # a) Билдим карты — подготовка FSM
     # d) Запускаем Uvicorn в фоне
     #    Бери host/port из config.json, как в lifespan
-    cfg = json.loads((Path(__file__).parent / "config.json").read_text(encoding="utf-8"))
+    cfg = json.loads(
+        (Path(__file__).parent / "config.json").read_text(encoding="utf-8"))
     map_builder()
 
     # b) Запускаем Qt-приложение
     qt_app = QApplication(sys.argv)
 
-    # c) Настраиваем SerialManager в зависимости от платформы
+    # c) Настраиваем SerialManager/BarcodeManager
+    use_mocks = os.getenv("AUTOSKLAD_USE_MOCKS", "0") == "1"
     current_platform = platforms.detect()
-    if current_platform == platforms.Windows:
-        serial = cfg["serial"]
-        serial_manager = SerialManager(port=serial["port"])
-        barcode = cfg["barcode"]
-        barcode_manager = SerialManager(port=barcode["port"])
-    else:  # Raspberry Pi и др.
-        ports = cfg["dev"]
-        serial_manager = SerialManager(port=ports["ttyUSB"])
-        barcode_manager = SerialManager(port=ports["serial"])
+    if use_mocks:
+        serial_manager = MockSerialManager(port=None)
+        barcode_manager = MockSerialManager(port=None)
+    else:
+        if current_platform == platforms.Windows:
+            serial = cfg["serial"]
+            serial_manager = SerialManager(port=serial["port"])
+            barcode = cfg["barcode"]
+            barcode_manager = SerialManager(port=barcode["port"])
+        else:  # Raspberry Pi и др.
+            ports = cfg["dev"]
+            serial_manager = SerialManager(port=ports["ttyUSB"])
+            barcode_manager = SerialManager(port=ports["serial"])
 
     serial_manager.start()
     barcode_manager.start()

@@ -3,7 +3,10 @@ import traceback
 from PyQt5 import QtCore
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_14_stockman import Ui_screen_14_stockman
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+except Exception:
+    from Compat import gpio_stub as GPIO
 import time
 
 GPIO.setmode(GPIO.BCM)
@@ -50,9 +53,12 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         self._barcode_timer.setInterval(400)  # 400 мс
         self._barcode_timer.setSingleShot(True)
         self._barcode_timer.timeout.connect(self._process_barcode)
-        self.event_enter_barcode = lambda barcode: print("Получен штрих-код:", barcode)
-        self.btn_open_door.clicked.connect(self.on_open_door)  # :contentReference[oaicite:0]{index=0}
-        self.btn_back.clicked.connect(self.close_door)  # :contentReference[oaicite:0]{index=0}
+        self.event_enter_barcode = lambda barcode: print(
+            "Получен штрих-код:", barcode)
+        # :contentReference[oaicite:0]{index=0}
+        self.btn_open_door.clicked.connect(self.on_open_door)
+        # :contentReference[oaicite:0]{index=0}
+        self.btn_back.clicked.connect(self.close_door)
 
     def on_open_door(self):
         """
@@ -60,7 +66,9 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         при каждом клике по btn_open_door.
         Здесь реализуйте логику открытия двери.
         """
-        print("Кнопка «Открыть дверь» нажата!")  # :contentReference[oaicite:1]{index=1}
+        print(
+            # :contentReference[oaicite:1]{index=1}
+            "Кнопка «Открыть дверь» нажата!")
         # TODO Перенести в основную логику программы
         # Настройка режима нумерации пинов (BCM)
 
@@ -72,12 +80,13 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         при каждом клике по btn_open_door.
         Здесь реализуйте логику открытия двери.
         """
-        print("Кнопка «Открыть дверь» нажата!")  # :contentReference[oaicite:1]{index=1}
+        print(
+            # :contentReference[oaicite:1]{index=1}
+            "Кнопка «Открыть дверь» нажата!")
         # TODO Перенести в основную логику программыц
         # Настройка режима нумерации пинов (BCM)
 
         control_rely("2")
-
 
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""

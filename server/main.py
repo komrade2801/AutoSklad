@@ -1,37 +1,42 @@
-# 1) Сразу убеждаемся, что БД создана (init_db сам перезапустит программу, если файла пока нет)
-import faulthandler
-faulthandler.enable(all_threads=True, file=open("crash.log","w"))
-
-import dbSync
+from options import Host, RECEIVER_TIMEOUT, SENDER_TIMEOUT, AES_KEY, port
+from fastapi import Request  # , HTTPException
+from fastapi.responses import FileResponse
+from frontend.front_router import front_router
+from API.backend.routers import backend_router
+from fastapi.staticfiles import StaticFiles
+import uvicorn
+from fastapi import FastAPI
+from dbSync.Transport.routers import sync_router
+from dbSync.Runner import start_sync, stop_sync
+from DB.Engine.DeviceCRUD import EngineDevice
+from typing import List
+from contextlib import asynccontextmanager
+import mimetypes
+import json
 from DB.Data.init_db import initialize_database_if_needed
+import dbSync
+import faulthandler
+import os
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+# 1) Сразу убеждаемся, что БД создана (init_db сам перезапустит программу, если файла пока нет)
+faulthandler.enable(all_threads=True, file=open("crash.log", "w"))
+
 
 dbSync.init_db = True
 initialize_database_if_needed()
 dbSync.init_db = False
 
-import json
-import os
-import mimetypes
-from contextlib import asynccontextmanager
 # from threading import Thread Dict,
-from typing import List
 # from DB.Data.sqlite_db import SessionLocal
-from DB.Engine.DeviceCRUD import EngineDevice
-from dbSync.Runner import start_sync, stop_sync
-from dbSync.Transport.routers import sync_router
 # from pydantic import BaseModel , UploadFile, File
-from fastapi import FastAPI
-import uvicorn
-from fastapi.staticfiles import StaticFiles
-from API.backend.routers import backend_router
 # from API.vending.routers import main_router
-from frontend.front_router import front_router
-from fastapi.responses import FileResponse
-from fastapi import Request  # , HTTPException
 # from fastapi.responses import HTMLResponse, RedirectResponse
 # from fastapi.templating import Jinja2Templates
 # import jsbeautifier
-from options import Host, RECEIVER_TIMEOUT, SENDER_TIMEOUT, AES_KEY, port
 
 
 # ------------------------------------------------------------
@@ -60,14 +65,15 @@ async def lifespan(app: FastAPI):
             device_id,
             host=ip,
             port=port,
-            token="<YOUR_JWT_TOKEN>",    # TODO: доработать и добавить в базу данных таблицу Device -> details -> device_token
-            secret=b"supersecret",       # HMAC-секрет TODO: доработать и добавить в базу данных таблицу Device -> details -> HMAC
+            # TODO: доработать и добавить в базу данных таблицу Device -> details -> device_token
+            token="<YOUR_JWT_TOKEN>",
+            # HMAC-секрет TODO: доработать и добавить в базу данных таблицу Device -> details -> HMAC
+            secret=b"supersecret",
             aes=AES_KEY,                 # <— передаём именно его
             scheduler_sender_timeout=SENDER_TIMEOUT,
             scheduler_receiver_timeout=RECEIVER_TIMEOUT
         )
         sync_device_ids.append(device_id)
-
 
     yield  # <- здесь приложение запускается и начинает принимать HTTP-запросы
 
@@ -79,16 +85,20 @@ async def lifespan(app: FastAPI):
 # Добавляем MIME-тип для файлов .js
 mimetypes.add_type("application/javascript", ".js")
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-app = FastAPI(title="API основного приложения", version="1.0", lifespan=lifespan)
+app = FastAPI(title="API основного приложения",
+              version="1.0", lifespan=lifespan)
 app.include_router(front_router)
 # app.mount("/devices", main_router)
 app.mount("/backend", backend_router)
 app.mount("/sync", sync_router)
-app.mount("/assets", StaticFiles(directory=os.path.join(current_dir, "frontend", "assets")), name="assets")
-app.mount("/scripts", StaticFiles(directory=os.path.join(current_dir, "frontend", "scripts")), name="scripts")
-app.mount("/JSONs", StaticFiles(directory=os.path.join(current_dir, "frontend", "JSONs")), name="JSONs")
-app.mount("/style", StaticFiles(directory=os.path.join(current_dir, "frontend", "style")), name="style")
+app.mount("/assets", StaticFiles(directory=os.path.join(current_dir,
+          "frontend", "assets")), name="assets")
+app.mount("/scripts", StaticFiles(directory=os.path.join(current_dir,
+          "frontend", "scripts")), name="scripts")
+app.mount("/JSONs", StaticFiles(directory=os.path.join(current_dir,
+          "frontend", "JSONs")), name="JSONs")
+app.mount("/style", StaticFiles(directory=os.path.join(current_dir,
+          "frontend", "style")), name="style")
 # templates = Jinja2Templates(directory="./frontend/page")
 
 
@@ -146,4 +156,3 @@ if __name__ == "__main__":
 #         return {"beautified_code": beautified_code}
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
-
