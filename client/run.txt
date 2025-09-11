@@ -1,0 +1,73 @@
+Требования (Prerequisites)
+- ОС: Linux (Raspberry Pi Desktop/Ubuntu) или Windows 10/11
+- Python: 3.10–3.12 (x64), добавлен в PATH
+- Сеть: доступ к серверу (IP/порт из server.ip/server.port), открытый локальный порт клиента (network.port)
+- Графика: для PyQt5 требуется запуск в GUI‑сессии (не по «чистому» SSH)
+- Необязательные системные пакеты (Linux):
+  - sudo apt update && sudo apt install -y python3-venv build-essential libxcb-xinerama0
+
+1) Клонирование и подготовка окружения
+- Откройте терминал/PowerShell в корне проекта, далее:
+  - cd client
+  - python3 -m venv venv
+  - source venv/bin/activate          # Windows PowerShell: .\venv\Scripts\Activate.ps1
+  - python -m pip install --upgrade pip wheel
+  - pip install -r requirements.txt
+  Примечания:
+  - На Linux вместо PyQt5 из pip можно поставить системный пакет: sudo apt install -y python3-pyqt5
+  - Если используете системный PyQt5, закомментируйте PyQt5 в requirements.txt перед установкой
+
+2) Настройка клиента (client/config.json)
+- server.ip / server.port — адрес и порт веб‑сервера (например, IP ПК: 192.168.31.199 и 8000)
+- network.ip / network.port — адрес/порт локального HTTP клиента (например, IP VM: 192.168.31.189 и 8081; либо 0.0.0.0)
+- dev/serial/barcode — игнорируются в режиме моков
+- AES ключ строго 16 символов (aes: "16byteslongkey!!")
+
+3) Режим моков (без механики/Arduino/сканера)
+- Включить моки перед запуском:
+  - Linux/macOS: export AUTOSKLAD_USE_MOCKS=1
+  - Windows PowerShell: $env:AUTOSKLAD_USE_MOCKS="1"
+- Что даёт мок‑режим:
+  - Заглушка GPIO (управление реле/пинами) — работает без Raspberry Pi
+  - MockSerialManager — эмуляция контроллера/сканера (события command_is_send / command_ok)
+
+4) Инициализация локальной БД клиента (при первом запуске)
+- Активируйте venv и выполните:
+  - python -m DB.Create_db
+
+5) Запуск клиента
+- Активируйте venv и запустите:
+  - python main.py
+- Приложение поднимет локальный FastAPI по адресу из network.ip:network.port и откроет GUI Qt
+
+6) Проверка связи с сервером
+- Убедитесь, что сервер работает и доступен по server.ip:server.port
+- На клиенте при старте печатается SYNC CONFIG — проверьте корректность URL/порта
+- Для проверки сети с клиента:
+  - curl -sI http://<SERVER_IP>:<SERVER_PORT> | head -n1
+
+7) Типичные проблемы и их решения
+- PyQt5 собирается из исходников на Linux:
+  - sudo apt install -y python3-pyqt5; закомментируйте PyQt5 в requirements.txt и переустановите зависимости
+- Ошибки сборки cryptography/jsonschema (maturin/rust):
+  - используем PyCryptodome вместо cryptography
+  - зафиксируйте jsonschema<4.18 в requirements.txt
+  - обновите pip wheel setuptools и переустановите зависимости
+- GUI не отображается по SSH:
+  - запускайте в локальной GUI‑сессии или настройте X11‑форвардинг
+- Не проходит авторизация при корректных логин/пароле:
+  - пересоздайте локальную БД клиента: python -m DB.Create_db
+  - проверьте роль пользователя и права; в логах должна печататься найденная роль
+
+8) Запуск на Windows (кратко)
+- PowerShell (в папке client):
+  - py -m venv venv
+  - .\venv\Scripts\Activate.ps1
+  - python -m pip install --upgrade pip wheel
+  - pip install -r requirements.txt
+  - $env:AUTOSKLAD_USE_MOCKS="1"
+  - python .\main.py
+
+9) Примечания
+- Если не хотите видеть сетевые ошибки синхронизации во время отладки UI, временно задайте недостижимый server.ip или закомментируйте запуск синхронизации в main.py (start_sync/stop_sync)
+- Для доступа к локальному веб‑интерфейсу клиента используйте адрес из network.ip:network.port 

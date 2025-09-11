@@ -1,0 +1,55 @@
+Требования (Prerequisites)
+- ОС: Linux (Ubuntu/Debian) или Windows 10/11
+- Python: 3.10–3.12 (x64), добавлен в PATH
+- Сеть: открыт входящий TCP‑порт (по умолчанию 8000) в фаерволе
+- Необязательные системные пакеты (Linux):
+  - sudo apt update && sudo apt install -y build-essential python3-venv libmysqlclient-dev
+  - Если генерируете изображения/штрихкоды: sudo apt install -y libjpeg-turbo-progs zlib1g-dev
+
+1) Клонирование и подготовка окружения
+- Откройте терминал в корне проекта, затем:
+  - cd server
+  - python3 -m venv venv
+  - source venv/bin/activate        # В Windows PowerShell: .\venv\Scripts\Activate.ps1
+  - python -m pip install --upgrade pip wheel
+  - pip install -r requirements.txt
+
+2) Настройка параметров сервера
+- Отредактируйте server/options.py:
+  - Host = "0.0.0.0"                # либо конкретный IP для привязки
+  - port = 8000
+  - SECRET_KEY: оставьте как есть или замените для продакшена
+  - AES_KEY должен быть ровно 16 байт (как в конфиге клиента)
+  - Параметры БД (MySQL), если используете внешнюю БД
+
+3) Инициализация базы данных (при первом запуске)
+- Если используется серверная SQLite для синхронизации:
+  - python -m dbSync.sync_db          # либо один раз запустите приложение для автосоздания
+- Если используется MySQL — проверьте корректность учётных данных в options.py и существование БД.
+
+4) Запуск веб‑сервера
+- Разработческий запуск:
+  - python main.py
+- Либо напрямую через uvicorn:
+  - uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+5) Проверка доступности
+- С того же хоста:
+  - curl -sI http://127.0.0.1:8000 | head -n1
+- С клиента/VM в локальной сети:
+  - curl -sI http://<HOST_IP>:8000 | head -n1
+
+6) Подключение клиента
+- На машине с клиентом укажите в client/config.json:
+  - "server.ip": "<HOST_IP>"
+  - "server.port": 8000
+- Запуск клиента без механики (моки):
+  - export AUTOSKLAD_USE_MOCKS=1 && python client/main.py
+
+Диагностика проблем (Troubleshooting)
+- Порт занят: измените порт в options.py и в конфиге клиента, либо освободите порт
+- Фаервол: разрешите входящий TCP 8000 (Windows Defender Firewall или ufw)
+- Зависимости не устанавливаются:
+  - Linux: убедитесь, что установлен libmysqlclient-dev (если используете mysqlclient)
+  - Обновите инструменты: python -m pip install --upgrade pip wheel setuptools
+- Страницы 403 во фронтенде: проверьте обработку токена и права пользователя в БД 
