@@ -1,0 +1,172 @@
+Пошагово: выбор на веб-странице → подтверждение → записи в БД → завершение на клиенте
+
+1. Отдача страницы и статики
+
+- FastAPI (server/main.py) монтирует статические каталоги: /assets, /scripts, /style, /JSONs и включает middleware, которое отключает кэширование для них.
+
+- Роутер фронтенда (front_router, подключён в main.py) отдаёт HTML `frontend/page/screen_2_mass_load.html`.
+
+- В HTML подключаются:
+
+  - CSS: Bootstrap, massload/main.css, style_modal_window.css, titles.css, dropdown_list.css
+
+  - JS:
+
+    - модульные massload-скрипты: `../scripts/massload/init.js?v=2`, `../scripts/massload/saveHistoryAsMassLoad.js`
+    - служебные: `../scripts/authorisation/navigate_token.js`, `../scripts/massload/modal_window_confirmation.js`, `../scripts/massload/show_modal.js`
+
+- На body стоит onload: `initialization('screen_2_mass_load')`.
+
+2. Первая точка входа JS (frontend/scripts/massload/init.js)
+
+- Функция initialization(element_name):
+
+  - Проверка авторизации: если в localStorage нет token → редирект на `/`.
+
+  - device_number жёстко берётся как 1.
+
+  - Вызовы для построения UI:
+
+    - `navbar_add(element_name)` — наполняет навбар.
+
+    - `initToolsData(device_number)` → ждём загрузку доступных инструментов.
+
+      - Внутри: `fetchToolLibraryData(1)` делает GET на `../backend/mass_load_tools?device_number=1` (credentials: include, redirect: "manual").
+
+      - Серверный обработчик: API backend `mass_load.export_tools` (server/API/backend/endpoints/mass_load.py):
+
+        - Считывает последнюю массовую загрузку и её последнюю операцию. Если обнаруживает активный “init” статус — возвращает RedirectResponse("/screen_23_mass_locked.html", 302).
+        - Иначе формирует JSON “планы → группы → типы инструментов с количеством”, исключая инструменты уже привязанные к устройству или уже участвующие в загрузке.
+
+      - На фронте: если fetch видит `opaqueredirect`, делается переход на `/mass_locked.html?token=...` (защита от ситуации “массовая загрузка уже заблокирована/идёт”).
+
+      - Если ответ 200 OK — JSON попадает в `window.appData.tools`.
+
+    - После успеха загрузки инструментов вызывается `initCellsData()` → ждём карту ячеек.
+
+      - Внутри: `fetchCellMapData()` делает GET на `../backend/cells_map/1`.
+
+      - Серверный обработчик: `mass_load.cells_map(device_number)`:
+
+        - Берёт у устройства (EngineDevice.get_device_by_number(1)) сигнатуру (rows/columns) из details.signature.cells.
+
+        - По каждой ячейке:
+
+          - Находит модель ячейки (EngineCell.get_cell_by_number), её статус, привязанный инструмент, план.
+          - Вычисляет цвет фона через STATUS_COLORS с учётом наличия плана, определяет тип ячейки (sig["type"] или "big"), признак block (занята/свободна), и собирает content: tool, plan, mass_load (строка вида “текущий_load_id:макс_mass_load_id”).
+
+        - Возвращает объект формата: { "rows": { "1": { "cells": { "1": { id, type, backgroundColor, content, block }, ... } }, ... } }
+
+      - На фронте JSON сохраняется в `window.appData.сells`.
+
+  - Когда оба набора данных есть:
+
+    - `nav_btn_add(element_name)` — добавляет/активирует кнопки навигации для экрана.
+    - `createCells('cells-container', window.appData.сells)` — отрисовывает сетку ячеек:
+      - Для каждого ряда/ячейки создаёт div с class 'droppable', id = номер ячейки, tooltip с содержимым, стилями и цветом фона из backend.
+    - `createTools('tools-container', window.appData.tools)` — заполняет правую панель инструментов на основе сгруппированных данных “план → группа → тип/название → количество”.
+    - `initializeDragAndDrop()` — навешивает dnd‑обработчики для перетаскивания инструментов в ячейки.
+    - `createHistory('history', jsonObjectHistory)` — подготавливает/очищает панель “История текущей загрузки”.
+
+3. Что НЕ делается сразу при открытии
+
+- Никаких POST / сохранений на старте нет. Сохранение массовой загрузки выполняется по кнопке через `saveHistoryAsMassLoad.js` (POST `../backend/mass_load_tools/{device_number}`), где сервер:
+
+  - Проверяет авторизацию по куке/токену (`AuthService.validation_user`).
+  - Регистрирует MassLoad, уменьшает доступное количество типов инструментов, выбирает конкретные Tools, привязывает их к устройству, обновляет Cell, создаёт Load, LoadOperation, History, связи “operation/device” и т. п. (с продуманным откатом при ошибках).
+
+- “Отмена всей загрузки” просто открывает кастомное модальное окно (modal_window_confirmation.js + show_modal.js). В момент открытия экрана бизнес‑операций отмены не совершается.
+
+Итог: при открытии экрана происходит инициализация UI и загрузка данных двумя GET‑запросами:
+
+- GET ../backend/mass_load_tools?device_number=1 — выдаёт дерево доступных к загрузке инструментов (или редиректит на страницу блокировки массовой загрузки, если активен init‑статус).
+- GET ../backend/cells_map/1 — выдаёт “карту ячеек” с цветами/занятостью/подписями. Затем страница отрисовывает сетку ячеек и список инструментов, включает drag‑and‑drop и подготавливает историю, но ничего не записывает в БД до явного действия пользователя.
+
+1. Выбор инструментов и ячеек в браузере (frontend)
+
+- Загрузка данных:
+
+  - GET ../backend/mass_load_tools?device_number=1 → export_tools() (server/API/backend/endpoints/mass_load.py). Если на сервере идёт незавершённая массовая загрузка (последняя операция со статусом init), вернётся 302 на экран блокировки; иначе — JSON с группировкой “план → группа → тип инструмента → количество”.
+  - GET ../backend/cells_map/1 → cells_map(): карта ячеек с цветами, статусами и признаком block.
+
+- DnD (перетаскивание):
+
+  - initializeDragAndDrop() (frontend/scripts/massload/drag_and_drop.js) навешивает обработчики.
+
+  - При dragstart на карточке инструмента сохраняются: toolName, planName, индексы (plansIndex, groupIndex, valueIndex).
+
+  - При drop на div .droppable (ячейка):
+
+    - updateToolsJSON(toolsData, plansIndex, groupIndex, toolIndex): уменьшает sum по выбранному типу инструмента, удаляя позицию при sum==1; пересоздаёт список инструментов createTools(...).
+    - updateCellsJSON(cellData, planName, toolName, cellId): в найденной ячейке (searchCellById) пишет content.plan, content.tool, ставит backgroundColor (#2C8822 “свободный” либо #ff4f00 “по чертежу”), block=true; перерисовывает сетку createCells(...).
+    - updateJsonHistory(jsonObjectHistory, planName, groupIndex, toolName, cellId): добавляет запись в локальную историю текущей сессии: { operation: { "1": {cell, tool, plan}, "2": {...}, ... } } (новая запись встаёт наверх, остальные сдвигаются).
+
+2. Подтверждение массовой загрузки (кнопка “Сохранить загрузку”)
+
+- saveHistoryAsMassLoad(1) (frontend/scripts/massload/saveHistoryAsMassLoad.js):
+
+  - POST ../backend/mass_load_tools/1?token=... c телом jsonObjectHistory.
+  - При 200 OK — редирект на ./screen_14_history_load.html?token=... (страница истории загрузок).
+
+3. Что делает сервер (backend) при POST /backend/mass_load_tools/{device_number} Функция save_mass_load() (server/API/backend/endpoints/mass_load.py):
+
+- Авторизация:
+  - AuthService.validation_user(request): неуспех → 402.
+
+- Данные устройства:
+  - EngineDevice.get_device_by_number(device_number): отсутствие → 404.
+
+- Создание “шапки” массовой загрузки:
+
+  - mass_load_id = max(...) + 1;
+  - EngineMassLoad.add_mass_load(index=mass_load_id, description=...);
+  - new_mass_load = EngineMassLoad.get_mass_load_by_id(mass_load_id).
+
+- Для каждой записи из body.operation[k] = {cell, tool, plan}:
+
+  1. Подбор типа инструмента:
+
+     - EngineToolTypes.find_by_name(...) по частям строки tool; выбор подходящего tool_type.
+     - backup: e_tool_types.get_tool_type_by_id(tool_type.id).
+     - EngineToolTypes.update_tool_type(..., count = count - 1).
+
+  2. Выбор конкретного экземпляра Tools:
+
+     - db_tools = EngineTools.get_tools_by_tool_type(tool_type.id).
+     - tool_to_load = первый, для которого нет активной Load (not e_load.find_by_tools_id(t.id)).
+
+  3. Ячейка и статусы:
+
+     - cell = EngineCell.get_cell_by_number(int(request_cell)).
+     - mass_load_status = EngineStatus.find_by_name("mass_load_init") или добавление (add).
+     - status_load = EngineStatus.find_by_name("mass_load_init").
+
+  4. Привязки инвентаря:
+
+     - EngineToolsHasDevice.add_link(tools_id=tool_to_load.id, device_id=device.id) и проверка this_tool_is_linked().
+     - backup текущей ячейки; EngineCell.update_cell( number=cell.number, groups_id=tool_type.groups_id, tools_id=tool_to_load.id, status_id=mass_load_status.id, description="Объявлена новая загрузка ...").
+
+  5. Создание строк и операций загрузки:
+
+     - load_id = max(...) + 1; EngineLoad.add_load(load_id, "", tools_id=tool_to_load.id, mass_load_id=new_mass_load.id, cell_id=cell.id).
+     - EngineCellHasDevice.add_link(cell_id=cell.id, device_id=device.id).
+     - story_id = max(...) + 1; user = EngineUser.get_user_by_barcode(validation.user_barcode); EngineHistory.add_history(history_id=story_id, user_id=user.id, role_id=user.role_id, tools_id=tool_to_load.id, datetime=now, status=0, description="Массовая загрузка инициирована").
+     - operation_id = max(...) + 1; EngineLoadOperations.add_operation( operation_id, date=now, load_id, load_tools_id=tool_to_load.id, status_id=status_load.id, history_id=story_id, description="").
+     - EngineLoadOperationsHasDevice.add_link(load_operations_id=operation_id, device_id=device.id).
+
+- Откат при ошибках (детально реализован): удаление связей и записей в обратном порядке, возврат count в ToolTypes, восстановление Cell, удаление MassLoad.
+
+- Ответ: {"status": "ok", "message": new_mass_load.description}.
+
+4. Какие таблицы фактически создаются/обновляются
+
+- Status — гарантируется наличие записи “mass_load_init” (при необходимости добавляется).
+- MassLoad — создаётся 1 запись (шапка).
+- ToolTypes — у выбранного типа уменьшается count.
+- Tools_has_Device — создаётся связь инструмента с устройством.
+- Cell — обновляется (groups_id, tools_id, status_id=mass_load_init, description).
+- Cell_has_Device — создаётся связь ячейки с устройством.
+- Load — создаётся по 1 записи на операцию загрузки (привязка Tools ↔ Cell в рамках MassLoad).
+- History — добавляется запись “Массовая загрузка инициирована” (пользователь, инструмент, время).
+- LoadOperations — создаётся запись со статусом “mass_load_init”.
+- LoadOperationsHasDevice — создаётся связь операции с устройством.

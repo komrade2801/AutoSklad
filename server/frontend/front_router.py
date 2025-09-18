@@ -35,6 +35,13 @@ list_page = svc.get_root_pages()
 _pages_dir = os.path.join(os.path.dirname(__file__), "page")
 e_page = EnginePage()
 
+# Определяем стартовый индекс (1-базный), учитывая уже существующие записи
+try:
+    existing_ids = e_page.get_all_ids()
+    next_index = (max(existing_ids) if existing_ids else 0) + 1
+except Exception:
+    next_index = 1
+
 
 # Регистрируем динамически все экраны из _screens
 
@@ -71,14 +78,16 @@ def template_endpoint(template_name: str):
     return endpoint
 
 
-for file_name in os.listdir(_pages_dir):
+for file_name in sorted(os.listdir(_pages_dir)):
     if file_name.startswith("screen") and file_name.endswith(".html"):
         # если нет в БД — создаём
         if not e_page.find_page(name=file_name):
             # parser = HtmlTitleParser(f"../frontend/page/{file_name}")
             parser = HtmlTitleParser(str(PAGE_DIR / file_name))
             description = parser.get_title()
-            e_page.add_page(name=file_name, description=description)
+            e_page.add_page(
+                name=file_name, description=description, index=next_index)
+            next_index += 1
         # регистрируем маршрут
         front_router.add_api_route(
             f"/{file_name}",

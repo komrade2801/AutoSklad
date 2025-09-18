@@ -1,18 +1,16 @@
 from options import Host, RECEIVER_TIMEOUT, SENDER_TIMEOUT, AES_KEY, port
 from fastapi import Request  # , HTTPException
 from fastapi.responses import FileResponse
-from frontend.front_router import front_router
-from API.backend.routers import backend_router
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from fastapi import FastAPI
-from dbSync.Transport.routers import sync_router
 from dbSync.Runner import start_sync, stop_sync
 from DB.Engine.DeviceCRUD import EngineDevice
 from typing import List
 from contextlib import asynccontextmanager
 import mimetypes
 import json
+import importlib
 from DB.Data.init_db import initialize_database_if_needed
 import dbSync
 import faulthandler
@@ -29,6 +27,11 @@ faulthandler.enable(all_threads=True, file=open("crash.log", "w"))
 dbSync.init_db = True
 initialize_database_if_needed()
 dbSync.init_db = False
+
+# Import routers only AFTER DB is initialized to avoid early SQL queries
+front_router = importlib.import_module("frontend.front_router").front_router
+backend_router = importlib.import_module("API.backend.routers").backend_router
+sync_router = importlib.import_module("dbSync.Transport.routers").sync_router
 
 # from threading import Thread Dict,
 # from DB.Data.sqlite_db import SessionLocal

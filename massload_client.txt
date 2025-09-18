@@ -1,0 +1,143 @@
+Этап A. Получение операции массовой загрузки на клиенте
+
+1. Инициализация синхронизации (при старте клиента)
+
+- client/main.py → lifespan/start_sync(...) (dbSync.Runner.start_sync)
+
+  - Создаёт INBOUND_QUEUES[device_id], конфигурирует компоненты синка (create_sync_components), поднимает BackgroundScheduler.
+
+  - Планирует:
+
+    - job_send(sender) каждые S секунд
+    - job_fetch(receiver) каждые R секунд
+
+2. Пулл данных с сервера (получение созданной на сервере MassLoad и её операций)
+
+- Планировщик вызывает job_fetch(_receiver) → CommandReceiver.fetch_and_apply() → SyncProcessor.prepare_pull(...)
+
+- Результат: в локальную клиентскую БД (client/DB/Data/sqlite) применяются изменения, пришедшие с сервера.
+
+- Что появляется в клиентской БД после пулла (если на сервере был выполнен POST /mass_load_tools/...):
+
+  - Status: запись со stype="mass_load_init" (если её не было — будет создана на сервере и синхронизирована).
+  - MassLoad: +1 запись с полями id (server mass_load_id), description, created_at (из сервера).
+  - Load: по одной записи на операцию, поля: id, description, tools_id, mass_load_id, cell_id.
+  - LoadOperations: по одной записи со статусом mass_load_init (status_id указывает на Status.id), поля: id, date (timestamp), load_id, load_tools_id, status_id (mass_load_init), history_id (серверный), description.
+  - Cell: для задействованных ячеек обновлены поля: tools_id (привязанный инструмент), groups_id (группа), status_id (на “mass_load_init”), description (например, “Объявлена новая загрузка ...”).
+  - Примечание: на клиенте нет таблицы Tools_has_Device (связь хранится на сервере).
+
+Этап B. Переход на экран массовой загрузки (client/GUI/screen_15_mass_load.py)
+
+1. Навигация
+
+- Сценарии навигации описаны в стейт-машине (client/StateMachine/state_map.py / Triggers.py — ранее в репозитории встречались триггеры):
+
+  - При входе в режим “массовая загрузка” вызывается действие чтения:
+
+    - ActionMapper.read_db_mass_load_tools(index) (client/EventsSystem/action_db.py)
+
+      - Ищет статус “mass_load_init” в Status.
+      - Находит последнюю MassLoad (max e_mass_load.get_all_ids()).
+      - Для каждого Load этой MassLoad берёт LoadOperations и отбирает те, у которых ровно одна операция и её status_id == Status.id(mass_load_init).
+      - Возвращает список номеров ячеек (cell.number) по этим загрузкам (cell_id → number).
+
+  - Следом стейт-машина триггерит показ экрана (например, ‘view_mass_load_tools’ → экран 15).
+
+2. Отрисовка экрана
+
+- Класс экрана: client/GUI/screen_15_mass_load.py (Ui_screen_15_mass_load + BaseScreen).
+
+  - set_data()/get_data() пока пустые (pass), фактическая подстановка данных в виджеты обычно выполняется из MainWindow/StateRouter, используя полученный список ячеек и/или доп. данные (например, подсветка занятых ячеек, списки инструментов).
+  - Смысловая нагрузка: экран 15 отображает текущую группу незавершённых загрузок (в “init”) — те клетки, куда должно быть помещено (или уже помещено) железо, но операция ещё не переведена в “готово”.
+
+Этап C. Подтверждение массовой загрузки на клиенте
+
+1. Метод, завершающий операцию (перевод в “готово”)
+
+- ActionMapper.write_db_load_tool_groups(_)
+
+  - Шаги:
+
+    - Определяет последнюю MassLoad: mass_load_id = max(self.e_mass_load.get_all_ids()).
+
+    - loads_by_mass_load = self.e_load.find_by_mass_load_id(mass_load_id).
+
+    - Собирает:
+
+      - target_operations: для каждого Load — операции LoadOperations (self.e_load_operations.get_operations_by_load_id(load.id)).
+      - target_cells: соответствующие ячейки (self.e_cell.get(load.cell_id)).
+      - target_tools: соответствующие инструменты (self.e_tools.get(load.tools_id)); при необходимости создаёт группу (Group), если отсутствует (первая часть имени инструмента).
+
+    - Убеждается, что есть Status ‘mass_load_ready’; если нет — добавляет:
+
+      - Status.add(index=..., stype="mass_load_ready", description="Инструмент готов к выдаче").
+      - ready_status_id = Status.id для “mass_load_ready”.
+
+    - Для каждой целевой ячейки:
+      - cell.status_id = ready_status_id; self.e_cell.update_cell(**cell.to_dict()) (итог — ячейка “готова”).
+
+    - Для каждой группы operations:
+
+      - Проверяет, что для инструмента ещё нет готовой операции (“ready”).
+
+      - Если “ready” ещё не зафиксирован:
+
+        - Создаёт History (e_history.add_history) с description="Готов к выдаче" (user_id/role_id из self.current_user).
+        - Создаёт LoadOperations со status_id=ready_status_id и history_id=созданного History.
+        - Обновляет описание ячейки (cell.description="Готов к выдаче") и сохраняет (update_cell).
+
+  - Возвращает True/False.
+
+2. Синхронизация результата на сервер
+
+- Дальше работает синхронизация:
+
+  - job_send(sender) выгружает локальные изменения из очереди команд (если CRUD-слой обёрнут декоратором sync_aware — тогда локальные изменения попадут в INBOUND_QUEUES и уйдут; в проекте декоратор определён в client/dbSync/decorators.py, его включение для конкретных Engine-записей зависит от того, как обёрнуты методы BaseCRUD/Engine в данном билде).
+  - На практике даже без явного декоратора SyncProcessor может считывать изменения в БД и формировать команды (зависит от mapping-конфига Logic_v2, который у вас присутствует в dbSync/Logic_v2).
+  - На сервере, после приёма, статусы и клетки будут отражены (т.е. “init” → “ready”), и веб-экран перестанет блокироваться (export_tools больше не вернёт редирект).
+
+Итоговая матрица изменений в клиентской БД (по стадиям) A) После получения задания (pull):
+
+- Status:
+  - Наличие записи со stype="mass_load_init" (если её синхронизировали с сервера).
+- MassLoad:
+  - +1 запись: id, description, created_at.
+- Load:
+  - +N записей: id, description, tools_id, mass_load_id, cell_id.
+- LoadOperations:
+  - +N записей (по одной на Load): id, date, load_id, load_tools_id, status_id → (mass_load_init), history_id (серверный), description.
+- Cell:
+  - Для задействованных ячеек: обновлены tools_id, groups_id, status_id=mass_load_init, description.
+
+B) При входе на экран (локальное чтение):
+
+- Вызов: ActionMapper.read_db_mass_load_tools()
+  - Ничего не создаёт; читает Status, MassLoad, Load, LoadOperations, Cell, возвращает список cell.number с “init”-операциями.
+
+C) После подтверждения (клиентское завершение):
+
+- Status:
+  - Если отсутствует — создаётся запись со stype="mass_load_ready" (description="Инструмент готов к выдаче").
+- Cell:
+  - Для всех целевых ячеек: update status_id = mass_load_ready, description="Готов к выдаче".
+- History:
+  - +K записей “Готов к выдаче” (по одному на инструмент/операцию, где не было “ready”).
+- LoadOperations:
+  - +K записей со status_id = mass_load_ready, history_id = (созданный History), date = now, load_id, load_tools_id, description = наследуется.
+
+Основные методы, задействованные на клиенте
+
+- Синк-рантайм:
+  - dbSync.Runner.start_sync → job_fetch(receiver.fetch_and_apply) / job_send(sender.send_pending)
+- Чтение для экрана:
+  - ActionMapper.read_db_mass_load_tools()
+    - EngineStatus.all(), EngineMassLoad.get_all_ids(), EngineLoad.find_by_mass_load_id(), EngineLoadOperations.get_operations_by_load_id(), EngineCell.get_cell_by_id()
+- Подтверждение “готово”:
+  - ActionMapper.write_db_load_tool_groups()
+    - EngineMassLoad.get_all_ids(), EngineLoad.find_by_mass_load_id(), EngineLoadOperations.get_operations_by_load_id(), EngineCell.get(), EngineTools.get(), EngineGroup.get()/add(), EngineStatus.all()/add(), EngineCell.update_cell(...), EngineHistory.add_history(...), EngineLoadOperations.add_operation(...)
+
+Примечания по GUI (screen_15_mass_load)
+
+- Файл client/GUI/screen_15_mass_load.py содержит минимальный класс с пустыми set_data/get_data; как правило, данные в виджеты засовывает вызывающая логика (MainWindow/StateRouter) после получения результата от ActionMapper.read_db_mass_load_tools(). Сам экран — контейнер для отображения списка “ещё не завершённых” ячеек.
+
+
