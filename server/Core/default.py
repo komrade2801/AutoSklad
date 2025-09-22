@@ -1,4 +1,4 @@
-#Core/default.py
+# Core/default.py
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -73,10 +73,14 @@ def rebuild_db():
                 if files:
                     for f in files:
                         if "web_vending.db" in f.path:
-                            print(f"Process {proc.info['name']} PID {proc.info['pid']} держит файл {f.path}")
-                            winsound.Beep(400, 300)  # Частота 1000 Гц, длительность 500 мс
-                            winsound.Beep(600, 200)  # Частота 1000 Гц, длительность 500 мс
-                            winsound.Beep(700, 400)  # Частота 1000 Гц, длительность 500 мс
+                            print(
+                                f"Process {proc.info['name']} PID {proc.info['pid']} держит файл {f.path}")
+                            # Частота 1000 Гц, длительность 500 мс
+                            winsound.Beep(400, 300)
+                            # Частота 1000 Гц, длительность 500 мс
+                            winsound.Beep(600, 200)
+                            # Частота 1000 Гц, длительность 500 мс
+                            winsound.Beep(700, 400)
 
                             sys.exit()
 
@@ -129,43 +133,78 @@ def rebuild_db():
         # modules = [Cell, Error, Group, Help, History, Identification, Plan, Rights, Role, Tools, User, MassLoad, MassDrop,
         #            LoadOperations, OperationsConsumption, Drop, Status, Load, DropOperations, Consumption]
 
-        from DB.Models.Cell import Cell  # ------------------------------------------------------------------------1
-        from DB.Models.CellHasDevice import CellHasDevice  # ------------------------------------------------------2
-        from DB.Models.Command import Command  # ------------------------------------------------------------------3
-        from DB.Models.Consumption import Consumption  # ----------------------------------------------------------4
-        from DB.Models.Device import Device  # --------------------------------------------------------------------5
-        from DB.Models.Drop import Drop  # ------------------------------------------------------------------------6
-        from DB.Models.DropOperations import DropOperations  # ----------------------------------------------------7
-        from DB.Models.DropOperationsHasDevice import DropOperationsHasDevice  # ----------------------------------8
-        from DB.Models.Error import Error  # ----------------------------------------------------------------------9
-        from DB.Models.ErrorHasDevice import ErrorHasDevice  # ---------------------------------------------------10
-        from DB.Models.Group import Group  # ---------------------------------------------------------------------11
-        from DB.Models.Help import Help  # -----------------------------------------------------------------------12
-        from DB.Models.History import History  # -----------------------------------------------------------------13
-        from DB.Models.Identification import Identification  # ---------------------------------------------------14
-        from DB.Models.Load import Load  # -----------------------------------------------------------------------15
-        from DB.Models.LoadOperations import LoadOperations  # ---------------------------------------------------16
-        from DB.Models.LoadOperationsHasDevice import LoadOperationsHasDevice  # ---------------------------------17
-        from DB.Models.MassDrop import MassDrop  # ---------------------------------------------------------------18
-        from DB.Models.MassLoad import MassLoad  # ---------------------------------------------------------------19
-        from DB.Models.MassDropHasDevice import MassDropHasDevice  # ---------------------------------------------20
-        from DB.Models.MassLoadHasDevice import MassLoadHasDevice  # ---------------------------------------------21
-        from DB.Models.OperationsConsumption import OperationsConsumption  # -------------------------------------22
-        from DB.Models.OperationsConsumptionHasDevice import OperationsConsumptionHasDevice  # -------------------23
+        # ------------------------------------------------------------------------1
+        from DB.Models.Cell import Cell
+        # ------------------------------------------------------2
+        from DB.Models.CellHasDevice import CellHasDevice
+        # ------------------------------------------------------------------3
+        from DB.Models.Command import Command
+        # ----------------------------------------------------------4
+        from DB.Models.Consumption import Consumption
+        # --------------------------------------------------------------------5
+        from DB.Models.Device import Device
+        # ------------------------------------------------------------------------6
+        from DB.Models.Drop import Drop
+        # ----------------------------------------------------7
+        from DB.Models.DropOperations import DropOperations
+        # ----------------------------------8
+        from DB.Models.DropOperationsHasDevice import DropOperationsHasDevice
+        # ----------------------------------------------------------------------9
+        from DB.Models.Error import Error
+        # ---------------------------------------------------10
+        from DB.Models.ErrorHasDevice import ErrorHasDevice
+        # ---------------------------------------------------------------------11
+        from DB.Models.Group import Group
+        # -----------------------------------------------------------------------12
+        from DB.Models.Help import Help
+        # -----------------------------------------------------------------13
+        from DB.Models.History import History
+        # ---------------------------------------------------14
+        from DB.Models.Identification import Identification
+        # -----------------------------------------------------------------------15
+        from DB.Models.Load import Load
+        # ---------------------------------------------------16
+        from DB.Models.LoadOperations import LoadOperations
+        # ---------------------------------17
+        from DB.Models.LoadOperationsHasDevice import LoadOperationsHasDevice
+        # ---------------------------------------------------------------18
+        from DB.Models.MassDrop import MassDrop
+        # ---------------------------------------------------------------19
+        from DB.Models.MassLoad import MassLoad
+        # ---------------------------------------------20
+        from DB.Models.MassDropHasDevice import MassDropHasDevice
+        # ---------------------------------------------21
+        from DB.Models.MassLoadHasDevice import MassLoadHasDevice
+        # -------------------------------------22
+        from DB.Models.OperationsConsumption import OperationsConsumption
+        # -------------------23
+        from DB.Models.OperationsConsumptionHasDevice import OperationsConsumptionHasDevice
         from DB.Models.Page import Page
-        from DB.Models.Plan import Plan  # -----------------------------------------------------------------------24
-        from DB.Models.ActualNorm import ActualNorm  # ---------------------------------------------------------------------25
-        from DB.Models.ActualNormHasDevice import ActualNormHasDevice  # ---------------------------------------------------26
-        from DB.Models.Rights import Rights  # -------------------------------------------------------------------27
-        from DB.Models.Role import Role  # -----------------------------------------------------------------------28
-        from DB.Models.Status import Status  # -------------------------------------------------------------------29
-        from DB.Models.ToolLocation import ToolLocation  # -------------------------------------------------------30
+        # -----------------------------------------------------------------------24
+        from DB.Models.Plan import Plan
+        # ---------------------------------------------------------------------25
+        from DB.Models.ActualNorm import ActualNorm
+        # ---------------------------------------------------26
+        from DB.Models.ActualNormHasDevice import ActualNormHasDevice
+        # -------------------------------------------------------------------27
+        from DB.Models.Rights import Rights
+        # -----------------------------------------------------------------------28
+        from DB.Models.Role import Role
+        # -------------------------------------------------------------------29
+        from DB.Models.Status import Status
+        # -------------------------------------------------------30
+        from DB.Models.ToolLocation import ToolLocation
         from DB.Models.ToolTypes import ToolTypes
-        from DB.Models.Tools import Tools  # ---------------------------------------------------------------------31
-        from DB.Models.ToolsHasDevice import ToolsHasDevice  # ---------------------------------------------------32
-        from DB.Models.ToolsNorm import ToolsNorm  # ---------------------------------------------------------------33
-        from DB.Models.Type import Type  # -----------------------------------------------------------------------34
-        from DB.Models.User import User  # -----------------------------------------------------------------------35
+        # ---------------------------------------------------------------------31
+        from DB.Models.Tools import Tools
+        # ---------------------------------------------------32
+        from DB.Models.ToolsHasDevice import ToolsHasDevice
+        # ---------------------------------------------------------------33
+        from DB.Models.ToolsNorm import ToolsNorm
+        # -----------------------------------------------------------------------34
+        from DB.Models.Type import Type
+        # -----------------------------------------------------------------------35
+        from DB.Models.User import User
 
         modules = [
             Cell, CellHasDevice, Command, Consumption, Device, Drop, DropOperations, DropOperationsHasDevice,
@@ -178,7 +217,8 @@ def rebuild_db():
         engine = create_engine(f'sqlite:///{db_filename}')
         print(Base.metadata.tables.keys())
         Base.metadata.drop_all(engine)
-        Base.metadata.create_all(engine)  # Создает все таблицы, описанные в Base
+        # Создает все таблицы, описанные в Base
+        Base.metadata.create_all(engine)
         engine.dispose(True)
         update_progress("Database rebuilt successfully", "rebuild", 100)
 
@@ -192,7 +232,8 @@ def to_serializable(obj):
 
     if isinstance(obj, bytes):
         return base64.b64encode(obj).decode("utf-8")
-    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+    raise TypeError(
+        f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
 
 def execute():
@@ -325,7 +366,8 @@ def execute():
                     parser = HtmlTitleParser(str(PAGE_DIR / file_name))
                     description = parser.get_title()
                     index = max(e_page.get_all_ids(), default=0) + 1
-                    e_page.add_page(index=index, name=file_name, description=description)
+                    e_page.add_page(index=index, name=file_name,
+                                    description=description)
 
         print("Страницы добавлены")
         update_progress("Страницы добавлены!", "complete", 11)
@@ -353,8 +395,8 @@ def execute():
                 "receiver_timeout": RECEIVER_TIMEOUT
             },
             "network": {
-                "ip": "192.168.101.93",
-                "port": 8081
+                "ip": "127.0.0.1",
+                "port": 8080
             },
             "serial": {
                 "port": "COM29",
@@ -379,7 +421,8 @@ def execute():
                 "critical_errors": []
             }
         }
-        details_json = json.dumps(device_details, indent=2, ensure_ascii=False, default=to_serializable)
+        details_json = json.dumps(
+            device_details, indent=2, ensure_ascii=False, default=to_serializable)
         # details_json = json.dumps(device_details, indent=2, ensure_ascii=False)
         e_device.add_device(
             index=index,
@@ -447,7 +490,8 @@ def execute():
 
                 persent = ((number / cell_length) * 100)
 
-                update_progress(f"Ячейка {number} из {cell_length} добавлена!", "complete", persent)
+                update_progress(
+                    f"Ячейка {number} из {cell_length} добавлена!", "complete", persent)
 
         roles_and_pages = {
             'Разработчик': ['Выдача инструмента', 'История операций', 'История ошибок', 'Выгрузка №', 'Выгрузка №', 'История выгрузок', 'Загрузка №', 'Загрузка №', 'История загрузок',
@@ -466,12 +510,18 @@ def execute():
         }
 
         test_users = [
-            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим', 'second_name': 'Кудрявцев', 'family': 'Single', 'password': 1111, 'role_id': 1},
-            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон', 'second_name': 'Пестова', 'family': 'Single', 'password': 2222, 'role_id': 2},
-            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий', 'second_name': 'Комаров', 'family': 'Single', 'password': 3333, 'role_id': 3},
-            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица', 'second_name': 'Устинова', 'family': 'Single', 'password': 4444, 'role_id': 4},
-            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей', 'second_name': 'Никифорова', 'family': 'Single', 'password': 5555, 'role_id': 5},
-            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий', 'second_name': 'Фомичев', 'family': 'Single', 'password': 6666, 'role_id': 6}
+            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим',
+                'second_name': 'Кудрявцев', 'family': 'Single', 'password': 1111, 'role_id': 1},
+            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон',
+                'second_name': 'Пестова', 'family': 'Single', 'password': 2222, 'role_id': 2},
+            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий',
+                'second_name': 'Комаров', 'family': 'Single', 'password': 3333, 'role_id': 3},
+            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица',
+                'second_name': 'Устинова', 'family': 'Single', 'password': 4444, 'role_id': 4},
+            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей',
+                'second_name': 'Никифорова', 'family': 'Single', 'password': 5555, 'role_id': 5},
+            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий',
+                'second_name': 'Фомичев', 'family': 'Single', 'password': 6666, 'role_id': 6}
         ]
 
         for user in test_users:
@@ -536,7 +586,8 @@ def clear_command_queue_cache():
     Очищает файл command_queue.json, записывая в него пустой список.
     Если файла нет — создаёт его.
     """
-    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)  # убедиться, что папка есть
+    CACHE_PATH.parent.mkdir(
+        parents=True, exist_ok=True)  # убедиться, что папка есть
     with CACHE_PATH.open('w', encoding='utf-8') as f:
         json.dump([], f, ensure_ascii=False, indent=2)
 

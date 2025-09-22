@@ -1,0 +1,72 @@
+## Общие требования (Prerequisites)
+- ОС: Linux (Ubuntu/Debian/Raspberry Pi Desktop) или Windows 10/11
+- Python: 3.10–3.12 (x64), добавлен в PATH
+- Сеть: для сервера открыт входящий TCP-порт (по умолчанию 8000); для клиента доступ к серверу (IP/порт) и открытый локальный порт клиента (network.port, по умолчанию 8081)
+- Графика: для клиента PyQt5 требуется запуск в GUI-сессии (не по чистому SSH)
+- Необязательные системные пакеты (Linux):
+  - sudo apt update && sudo apt install -y build-essential python3-venv libmysqlclient-dev libxcb-xinerama0
+  - Если генерируете изображения/штрихкоды: sudo apt install -y libjpeg-turbo-progs zlib1g-dev
+
+## 1. Инструкция по инициализации окружения
+- Выполните для сервера и клиента в отдельных терминалах:
+  - Откройте терминал/PowerShell в корне проекта (c:/Users/komrade/Desktop/Proga/AutoSklad)
+
+  **Для сервера:**
+  - cd server
+  - python3 -m venv venv
+  - source venv/bin/activate  # Linux/macOS; Windows PowerShell: .\venv\Scripts\Activate.ps1
+  - python -m pip install --upgrade pip wheel
+  - pip install -r requirements.txt
+
+  **Для клиента:**
+  - cd client
+  - python3 -m venv venv
+  - source venv/bin/activate  # Linux/macOS; Windows PowerShell: .\venv\Scripts\Activate.ps1
+  - python -m pip install --upgrade pip wheel
+  - pip install -r requirements.txt
+  - Примечания для Linux: вместо PyQt5 из pip можно поставить системный пакет: sudo apt install -y python3-pyqt5; если используете, закомментируйте PyQt5 в requirements.txt перед установкой
+
+## 2. Инструкция по удалению баз данных для чистого старта
+- Откройте терминал в корне проекта
+- del server\DB\vending.db
+- del server\DB\web-vending.db
+- del server\DB\sync.db
+- del client\DB\vending.db
+
+Или для Linux: rm server/DB/{vending,web-vending,sync}.db client/DB/vending.db
+
+Это удаляет базы данных для полной переинициализации.
+
+## 3. Инструкция по запуску с подготовленным окружением
+- Активируйте виртуальные окружения в отдельных терминалах (теперь используйте их по умолчанию)
+
+**Для сервера:**
+- Активируйте venv (source venv/bin/activate или .\venv\Scripts\Activate.ps1)
+- Настройка параметров: отредактируйте server/options.py (Host, port, SECRET_KEY, AES_KEY 16 байт; параметры MySQL если нужно)
+- Инициализация БД: python -m dbSync.sync_db (или первый запуск приложения создаст)
+- Запуск:
+  - cd server
+  - .\venv\Scripts\Activate.ps1
+  - python main.py
+- Проверка: curl -sI http://127.0.0.1:8000 или curl -sI http://<SERVER_IP>:8000
+
+**Для клиента:**
+- Активируйте venv
+- Настройка: отредактируйте client/config.json (server.ip, server.port, network.ip/port, aes ключ 16 байт)
+- Режим моков для тестирования без аппаратного обеспечения: Linux export AUTOSKLAD_USE_MOCKS=1; Windows $env:AUTOSKLAD_USE_MOCKS="1"
+- Инициализация БД: python -m DB.Create_db
+- Запуск:
+  - cd client
+  - .\venv\Scripts\Activate.ps1
+  - $env:AUTOSKLAD_USE_MOCKS="1"
+  - python main.py
+- Приложение поднимет локальный FastAPI по network.ip:network.port и откроет GUI Qt
+- Проверка связи: curl -sI http://<SERVER_IP>:<SERVER_PORT> с клиента
+
+Диагностика проблем:
+- Порт занят: измените port в configs
+- Фаервол: разрешите порты TCP (Windows Defender Firewall или ufw)
+- Зависимости не устанавливаются: обновите pip wheel setuptools; на Linux убедитесь в libmysqlclient-dev
+- PyQt5 на Linux: альтернативно системный пакет
+- GUI не отображается: запускайте в GUI-сессии
+- Авторизация не проходит: пересоздайте БД клиента; проверьте роли

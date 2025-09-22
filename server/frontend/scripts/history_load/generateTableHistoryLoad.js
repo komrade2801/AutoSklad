@@ -112,24 +112,25 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
     const container = document.getElementById(containerId);
 
     const table = document.createElement("table");
-    table.border = "1";
     table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
 
     // Заголовки
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    const headers = ["Дата", "Идентификатор операции", "Пользователь", "Статус", ""];
+    const headers = ["Дата", "Идентификатор операции", "Пользователь", "Статус"];
 
     headers.forEach(headerText => {
         const th = document.createElement("th");
         th.textContent = headerText;
+        th.style.border = '1px solid';
         headerRow.appendChild(th);
     });
 
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
-// Преобразуем объект в массив
+    // Преобразуем объект в массив
     const operationsArray = Object.values(jsonHistoryLoad.operation);
 
     function parseDate(dateStr) {
@@ -137,7 +138,7 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
         return new Date(year, month - 1, day);
     }
 
-// Найдём самую свежую дату
+    // Найдём самую свежую дату
     const latestDate = operationsArray
         .map(op => parseDate(op.date.trim()))
         .reduce((max, curr) => (curr > max ? curr : max), new Date(0));
@@ -166,7 +167,7 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
 
         const printerCell = document.createElement("td");
 
-        if (isLatest && status === "на загрузке" || isLatest && status === "mass_load_init" ) {
+        if (isLatest && status === "на загрузке" || isLatest && status === "mass_load_init") {
             // Кнопка с иконкой принтера
             const printButton = document.createElement("button");
             printButton.style.width = "35px";
@@ -202,6 +203,11 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
             <td>${item.status.trim()}</td>
         `;
 
+        for (let td of row.querySelectorAll('td')) {
+            td.style.border = '1px solid';
+        }
+
+        printerCell.style.border = '1px solid';
         row.appendChild(printerCell);
 
         row.addEventListener("click", () => {
@@ -212,6 +218,18 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
 
         tbody.appendChild(row);
     });
+
+    if (operationsArray.length === 0) {
+        const emptyRow = document.createElement("tr");
+        const emptyTd = document.createElement("td");
+        emptyTd.colSpan = 5;  // Для столбцов: Дата, Идентификатор операции, Пользователь, Статус, ""
+        emptyTd.textContent = "История загрузок пуста";
+        emptyTd.style.textAlign = "center";
+        emptyTd.style.fontStyle = "italic";
+        emptyTd.style.border = '1px solid';
+        emptyRow.appendChild(emptyTd);
+        tbody.appendChild(emptyRow);
+    }
 
     table.appendChild(tbody);
 

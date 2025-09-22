@@ -17,13 +17,13 @@ from dbSync.Model.base import sync_base
 # --- Конфигурация ---
 SYNC_DB_FILENAME = "sync.db"
 
+
 def _resolve_sync_db_path() -> str:
     """
     Возвращает абсолютный путь к файлу sync.db в папке dbSync/Model.
     """
-    here      = os.path.dirname(__file__)                # .../dbSync/utils
-    dbsync    = os.path.dirname(here)                    # .../dbSync
-    model_dir = os.path.join(dbsync, "Model")            # .../dbSync/Model
+    dbsync = os.path.dirname(__file__)                    # .../dbSync
+    model_dir = os.path.join(dbsync, "Model")             # .../dbSync/Model
     os.makedirs(model_dir, exist_ok=True)
     return os.path.join(model_dir, SYNC_DB_FILENAME)
 
@@ -42,7 +42,6 @@ def init_sync_db(force_recreate: bool = False) -> None:
     if not os.path.exists(db_file):
         open(db_file, "w").close()
 
-
     models = [CommandStatus, Command, Record, SyncConfig]
     engine = _get_sync_engine()
     sync_base.metadata.create_all(engine)
@@ -52,12 +51,13 @@ def init_sync_db(force_recreate: bool = False) -> None:
 _sync_engine = None
 _SessionLocal = None
 
+
 def _get_sync_engine():
     global _sync_engine
     if _sync_engine is None:
         db_file = _resolve_sync_db_path()
-        url     = f"sqlite:///{db_file}"
-        e       = create_engine(
+        url = f"sqlite:///{db_file}"
+        e = create_engine(
             url,
             poolclass=NullPool,
             connect_args={"check_same_thread": False},
@@ -68,6 +68,7 @@ def _get_sync_engine():
             conn.execute(text("PRAGMA journal_mode=WAL;"))
         _sync_engine = e
     return _sync_engine
+
 
 def get_sync_session():
     """

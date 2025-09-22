@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from typing import Dict
 
 from API.backend.request_models import (
-    HistoryOperationResponse,  # Pydantic-модель: {"operation": { "0": HistoryOperation, ... } }
+    # Pydantic-модель: {"operation": { "0": HistoryOperation, ... } }
+    HistoryOperationResponse,
     HistoryOperation,  # Модель записи истории (при чтении/обновлении)
     HistoryOperationCreate,  # Модель для создания записи
     HistoryOperationUpdate  # Модель для обновления записи
@@ -47,22 +48,23 @@ def get_history_operation(device_number: int):
     # Получаем все операции, связанные с устройством (предполагается, что в таблице HistoryOperation есть поле device_id)
     operations_list = None
     try:
-        operations_list = history_op_crud.get_operations_by_device_id(device.id)
+        operations_list = history_op_crud.get_operations_by_device_id(
+            device.id)
     except:
         print(traceback.format_exc())
-    if not operations_list:
-        raise HTTPException(status_code=404, detail="Операции истории не найдены")
+        operations_list = []
 
     operations: Dict[str, dict] = {}
-    for idx, op in enumerate(operations_list):
-        operations[str(idx)] = {
-            "date": op.get("date", "None"),
-            "name_operation": op.get("name_operation", "None"),
-            "tool": op.get("tool", "None"),
-            "plan": op.get("plan", "None"),
-            "user": op.get("user", "None"),
-            "device": device.name or "Unknown"
-        }
+    if operations_list:
+        for idx, op in enumerate(operations_list):
+            operations[str(idx)] = {
+                "date": op.get("date", "None"),
+                "name_operation": op.get("name_operation", "None"),
+                "tool": op.get("tool", "None"),
+                "plan": op.get("plan", "None"),
+                "user": op.get("user", "None"),
+                "device": device.name or "Unknown"
+            }
 
     return {"operation": operations}
 
@@ -87,14 +89,16 @@ def create_history_operation(device_number: int, op_data: HistoryOperationCreate
     # Если в op_data передан tools_id, проверяем принадлежность
     if hasattr(op_data, "tools_id"):
         if not tools_has_device_crud.check_tool_belongs_to_device(op_data.tools_id, device.id):
-            raise HTTPException(status_code=403, detail="Инструмент не принадлежит данному устройству")
+            raise HTTPException(
+                status_code=403, detail="Инструмент не принадлежит данному устройству")
 
     # Присваиваем созданной записи идентификатор устройства
     op_data.device_id = device.id
 
     new_op = history_op_crud.create_operation(op_data)
     if not new_op:
-        raise HTTPException(status_code=400, detail="Не удалось создать операцию истории")
+        raise HTTPException(
+            status_code=400, detail="Не удалось создать операцию истории")
     return new_op
 
 
@@ -119,14 +123,17 @@ def update_history_operation(device_number: int, op_id: int, op_data: HistoryOpe
 
     existing_op = history_op_crud.get_operation_by_id(op_id)
     if not existing_op:
-        raise HTTPException(status_code=404, detail="Запись истории не найдена")
+        raise HTTPException(
+            status_code=404, detail="Запись истории не найдена")
 
     if existing_op.device_id != device.id:
-        raise HTTPException(status_code=403, detail="Запись истории не принадлежит данному устройству")
+        raise HTTPException(
+            status_code=403, detail="Запись истории не принадлежит данному устройству")
 
     updated_op = history_op_crud.update_operation(op_id, op_data)
     if not updated_op:
-        raise HTTPException(status_code=400, detail="Не удалось обновить запись истории")
+        raise HTTPException(
+            status_code=400, detail="Не удалось обновить запись истории")
     return updated_op
 
 
@@ -149,13 +156,16 @@ def delete_history_operation(device_number: int, op_id: int, db: Session = Depen
 
     existing_op = history_op_crud.get_operation_by_id(op_id)
     if not existing_op:
-        raise HTTPException(status_code=404, detail="Запись истории не найдена")
+        raise HTTPException(
+            status_code=404, detail="Запись истории не найдена")
 
     if existing_op.device_id != device.id:
-        raise HTTPException(status_code=403, detail="Запись истории не принадлежит данному устройству")
+        raise HTTPException(
+            status_code=403, detail="Запись истории не принадлежит данному устройству")
 
     deleted = history_op_crud.delete_operation(op_id)
     if not deleted:
-        raise HTTPException(status_code=400, detail="Не удалось удалить запись истории")
+        raise HTTPException(
+            status_code=400, detail="Не удалось удалить запись истории")
 
     return {"message": "Запись истории успешно удалена"}
