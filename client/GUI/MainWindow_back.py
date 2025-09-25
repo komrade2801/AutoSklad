@@ -155,6 +155,7 @@ class MainWindow(QtWidgets.QWidget):
                 self.open_widget(new_state, value)
 
     def open_back_widget(self, value: Any = None):
+        print("open_back_widget value ", value)
         """
         Возвращает к предыдущему экрану, используя навигационный стек.
         """
@@ -165,6 +166,7 @@ class MainWindow(QtWidgets.QWidget):
             print("История пуста. Нельзя вернуться назад.")
 
     def open_widget(self, widget_name: str, value: Any = None):
+        print("widget_name widget_name", widget_name, " value", value)
         """
         Открывает виджет с указанным именем, скрывая остальные.
         При смене экрана сохраняет текущее состояние в навигационном стеке.
@@ -195,6 +197,7 @@ class MainWindow(QtWidgets.QWidget):
             self._handle_cmd(widget_name, value)
 
     def _handle_widget_not_found(self, widget_name: str, value: Any):
+        print("_handle_widget_not_found widget_name", widget_name, " value", value)
         """
         Обрабатывает случай, когда запрошенный виджет не найден.
         Вызывает action_callback, если он определен.
@@ -216,6 +219,7 @@ class MainWindow(QtWidgets.QWidget):
             print(f"Виджет '{widget_name}' не найден.")
 
     def _handle_cmd(self, widget_name: str, value: Any):
+        print("_handle_cmd widget_name", widget_name, " value", value)
         """
         Обрабатывает команды (виджеты с "cmd" в имени) через action_callback.
         """
