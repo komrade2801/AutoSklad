@@ -1158,9 +1158,9 @@ class ActionMapper:
             self.current_user = user
             self.current_role = role
             print(f"read_db_authorization. current_user: {user}, current_role: {role}")
-            # Возвращаем явный триггер для роутера по имени роли
-            user_name = (getattr(user, 'first_name', '') or '')
-            role_name = (getattr(role, 'name', '') or '').lower()
+            # # Возвращаем явный триггер для роутера по имени роли
+            # user_name = (getattr(user, 'first_name', '') or '')
+            # role_name = (getattr(role, 'name', '') or '').lower()
             return user, role
             # if role_name in ("admin", "administrator", "developer"):
             #     return {"trigger": "view_type_admin"}

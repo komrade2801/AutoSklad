@@ -13,16 +13,19 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.event_select_group = lambda *args, **kwargs: print("screen_19_management_group", *args, **kwargs)
+        self.event_select_group = lambda *args, **kwargs: print(
+            "screen_19_management_group", *args, **kwargs)
 
         self.value = None
         self.trigger = None
         self.trigger_name = "btn_warehouse_select_tools"
+
     def populate_list(self):
         for group in self.groups:
             widget = WidgetSelectGroup(self.trigger_name)
             widget.set_data(group)
-            widget.key_pressed.connect(self.on_group_selected)  # Подключаем обработчик сигнала
+            # Подключаем обработчик сигнала
+            widget.key_pressed.connect(self.on_group_selected)
 
             list_item = QListWidgetItem(self.listWidget)
             list_item.setSizeHint(widget.sizeHint())
@@ -36,22 +39,29 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
         """Устанавливает текст. Реализуется в каждом экране.
         Отображает данные в listWidget.
 
-        Ожидается, что данные передаются в виде:
-        [{'id': 1, 'name': 'Group Name', 'description': 'Description', 'status': 0}, ...]
+        Ожидается, что данные передаются в виде словаря:
+        {group_id: {'group': Group, 'tools': list, 'cells': list}, ...}
         """
+        self.value = None
+        self.trigger = None
+
         groups = args[0]
         if not groups:
             return
         self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:
-            for group in groups:
+            for group_id, group_data in groups.items():
                 # Создаём кастомный виджет
                 widget = WidgetSelectGroup(self.trigger_name)
-                widget.set_data(groups[group]['group'])  # Передаём данные в кастомный виджет
+                # Передаём данные в кастомный виджет
+                widget.set_data(group_data['group'])
+                # Подключаем обработчик сигнала
+                widget.key_pressed.connect(self.on_group_selected)
                 widget.event_select_group = self.handle_select_group
                 # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
                 list_item = QListWidgetItem(self.listWidget)
-                list_item.setSizeHint(widget.sizeHint())  # Используем размер из виджета
+                # Используем размер из виджета
+                list_item.setSizeHint(widget.sizeHint())
 
                 self.listWidget.addItem(list_item)
                 self.listWidget.setItemWidget(list_item, widget)
@@ -65,7 +75,6 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
         self.event_select_group(self.value[0], self.trigger)
 
     def get_data(self):
-        try:
+        if self.value is not None:
             return {"group_id": self.value[0], "group_name": self.value[1]}
-        except:
-            print(traceback.format_exc())
+        return None
