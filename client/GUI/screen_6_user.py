@@ -72,17 +72,21 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
 
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""
-        try:
-            full = args[0].split(" ")
-            self.lbl_name_first.setText(f"{full[0]} {full[1]}")
-            self.lbl_name_second.setText(f"{full[2]}")
-        except:
+        print(f"set_data. Input args: {args}")
+        for arg in args:
             try:
-                full = args[0][0]
-                self.lbl_name.setText(f"{full.first_name} {full.SecondName}")
-                self.lbl_name_2.setText(f"{full.Family}")
-            except:...
-                # print(traceback.format_exc())
+                print(f"set_data. arg: {arg}")
+                if not arg:
+                    continue
+                if isinstance(arg, tuple):
+                    user = arg[0]
+                    print(f"user: {user}")
+                    self.lbl_name.setText(f"{user.first_name} {user.second_name}")
+                    self.lbl_name_2.setText(f"{user.family}")
+                    continue
+
+            except:
+                print(traceback.format_exc())
 
     def get_data(self):
         pass

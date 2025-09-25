@@ -63,6 +63,7 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         self.event_input_name_code = lambda text, *args, **kwargs: print(text)
 
     def on_login_changed(self, text):
+        print(f"on_login_changed. Input text: {text}")
         if ((len(text) >= self.trigger_length_login) and
                 (len(text) < self.trigger_max_length_login)):
             self.login = text  # Обновляем переменную
@@ -73,6 +74,7 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
 
 
     def on_password_changed(self, text):
+        print(f"on_password_changed. Input text: {text}")
         # Обновляем переменную
         try:
             if len(text)==0:
@@ -177,6 +179,7 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
 
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""
+        print(f"set_data. Input args: {args}")
         try:
             if not isinstance(args, tuple):
                 return
@@ -204,6 +207,11 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         return arr
 
     def handle_callback_executor(self, *args, **kwargs):
+        print(f"handle_callback_executor. Input args: {args}")
+
+        print(f"args[0]: {args[0]}")
+        print(f"args[1]: {args[1]}")
+        # print(f"args[2]: {args[2]}")
 
         self.psw = ""
         self.login = ""
@@ -211,12 +219,18 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         # Проверим, что первый аргумент существует и является списком
         triggers = args[0] if len(args) > 0 and isinstance(args[0], list) else []
 
+        print(f"len(args): {len(args)}")
+        print(f"isinstance(args[1], tuple): {isinstance(args[1], tuple)}")
         # Проверим, что второй аргумент существует и является кортежем
         user_and_role = args[1] if len(args) > 1 and isinstance(args[1], tuple) else ()
+        print(f"user_and_role: {user_and_role}")
 
         # Извлечем пользователя и роль, если они есть
         user = user_and_role[0] if len(user_and_role) > 0 else None
         role = user_and_role[1] if len(user_and_role) > 1 else None
+
+        print(f"user: {user}")
+        print(f"role: {role}")
         if not user or not role:
             return 'err_authorization'
         # Вывод данных
