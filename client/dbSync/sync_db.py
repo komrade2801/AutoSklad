@@ -25,7 +25,8 @@ def _resolve_sync_db_path() -> str:
     dbsync_dir = os.path.dirname(__file__)  # .../dbSync
     model_dir = os.path.join(dbsync_dir, "Model")  # .../dbSync/Model
     os.makedirs(model_dir, exist_ok=True)
-    out_name = os.path.join(model_dir, SYNC_DB_FILENAME)  # .../dbSync/Model/sync.db
+    # .../dbSync/Model/sync.db
+    out_name = os.path.join(model_dir, SYNC_DB_FILENAME)
     print(f"[ПОТОК][{threading.current_thread().name}][sync_db.py][_resolve_sync_db_path] расположение синхронизационной базы: {out_name} [{datetime.now()}]")
     return out_name
 

@@ -81,11 +81,109 @@ class UvicornThread(QThread):
 
 
 # ------------------------------------------------------------
+# ------------------------------------------------------------
+
+
+def check_and_initialize_databases():
+    """Ensure both vending.db and sync.db exist with proper schemas"""
+    print("Checking database initialization...")
+
+    # 1. Check vending.db
+    from config import db_path
+    from sqlalchemy import create_engine, inspect
+    import traceback
+    from pathlib import Path
+
+    # Main DB path - use absolute path based on script location (ALWAYS client/)
+    client_dir = Path(__file__).parent.resolve()  # client/ directory
+    main_db_path = client_dir / "DB" / "Data" / db_path
+
+    # Convert Path to string for compatibility
+    full_main_db_path = str(main_db_path)
+
+    needs_setup = False
+    if not os.path.exists(full_main_db_path):
+        print(
+            f"Main database not found at {main_db_path}. Running initial setup...")
+        needs_setup = True
+    else:
+        # Quick validity check
+        try:
+            engine = create_engine(f"sqlite:///{full_main_db_path}")
+            inspector = inspect(engine)
+            required_tables = ['User', 'Cell', 'Tools', 'Role']  # Core tables
+            existing = inspector.get_table_names()
+            missing_tables = [
+                table for table in required_tables if table not in existing]
+            if missing_tables:
+                print(
+                    f"Main database schema incomplete. Missing tables: {missing_tables}. Rebuilding...")
+                engine.dispose()
+                needs_setup = True
+            else:
+                engine.dispose()
+                print("Main database is valid.")
+        except Exception as e:
+            print(f"Main database corrupted: {e}. Rebuilding...")
+            # Cleanup potentially locked connections
+            try:
+                if 'engine' in locals():
+                    engine.dispose()
+            except:
+                pass
+            needs_setup = True
+
+    if needs_setup:
+        try:
+            run_database_setup()
+        except Exception as setup_error:
+            print(f"Fatal: Database setup failed: {setup_error}")
+            print(
+                "Cannot continue without proper database. Please check permissions and try again.")
+            sys.exit(1)
+
+    # 2. Check sync.db (will be auto-created by sync components if needed)
+    print("Database initialization complete.")
+
+
+def run_database_setup():
+    """Run the database setup process as in Create_db.py"""
+    try:
+        # Import the setup functions
+        from DB.Create_db import clear_command_queue_cache, rebuild_db, execute
+
+        # Temporarily set init_db flag (as in Create_db.py)
+        import dbSync
+        dbSync.init_db = True
+
+        print("Rebuilding main database structure...")
+        # Clean setup - this will recreate vending.db
+        clear_command_queue_cache()
+        rebuild_db()  # Recreates vending.db structure
+        print("Populating database with initial data...")
+        execute()     # Populates with test data/roles/users
+
+        dbSync.init_db = False
+        print("Database setup completed successfully.")
+
+    except Exception as e:
+        # Make sure to reset flag
+        try:
+            import dbSync
+            dbSync.init_db = False
+        except:
+            pass
+        raise RuntimeError(f"Database setup failed: {e}") from e
+
+
 # 4) Точка входа для GUI-приложения
 # ------------------------------------------------------------
 def main():
-    # a) Билдим карты — подготовка FSM
-    # d) Запускаем Uvicorn в фоне
+    # a) Проверяем и инициализируем базы данных ПЕРВЫМИ
+    check_and_initialize_databases()
+
+    # b) Билдим карты — подготовка FSM
+    # e) Запускаем Uvicorn в фоне
     #    Бери host/port из config.json, как в lifespan
     cfg = json.loads(
         (Path(__file__).parent / "config.json").read_text(encoding="utf-8"))
