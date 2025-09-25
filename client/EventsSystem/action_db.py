@@ -1137,7 +1137,8 @@ class ActionMapper:
             if role_name in ("admin", "administrator", "developer"):
                 return {"trigger": "view_type_admin"}
             elif role_name in ("storekeeper", "stockman", "кладовщик"):
-                return {"trigger": "type_storekeeper"}
+                user_name = f"{user.first_name} {user.second_name} {user.family}"
+                return {"trigger": "type_storekeeper", "user_name": user_name}
             else:
                 return {"trigger": "test_user"}
 

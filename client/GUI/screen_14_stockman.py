@@ -91,22 +91,22 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""
         try:
-            pass
             for arg in args:
-                if not arg:
-                    continue
-                if isinstance(arg, tuple):
-                    continue
-                full = arg.split(" ")
-                self.lbl_name_first.setText(f"{full[0]} {full[1]}")
-                self.lbl_name_second.setText(f"{full[2]}")
-        except:
-            try:
-                full = args[0][0]
-                self.lbl_name.setText(f"{full.first_name} {full.SecondName}")
-                self.lbl_name_2.setText(f"{full.Family}")
-            except:
-                print(traceback.format_exc())
+                if isinstance(arg, dict):
+                    if "user_name" in arg:
+                        full = arg["user_name"].split(" ", 2)
+                        if len(full) >= 2:
+                            self.lbl_name.setText(f"{full[0]} {full[1]}")
+                            self.lbl_name_2.setText(
+                                f"{full[2]}" if len(full) > 2 else "")
+                elif isinstance(arg, str) and arg.strip():
+                    full = arg.split(" ")
+                    if len(full) >= 2:
+                        self.lbl_name.setText(f"{full[0]} {full[1]}")
+                        self.lbl_name_2.setText(f"{full[2]}")
+        except Exception as e:
+            print(f"Ошибка в set_data stockman: {e}")
+            print(traceback.format_exc())
 
     def get_data(self):
         pass
