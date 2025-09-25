@@ -173,7 +173,7 @@ class ActionMapper:
             'read_db_user_from_barcode': lambda barcode: self.read_db_user_from_barcode(barcode),
             'read_db_authorization': lambda login, password: self.read_db_authorization(login, password),
             'read_db_username': lambda login, password: self.read_db_username(login),
-            'read_db_users': lambda: self.read_db_users(),
+            'read_db_users': lambda index: self.read_db_users(index),
             # "": None,
             'write_db_rights_by_user_id': lambda user_id, rights_data: self.write_db_rights_by_user_id(user_id, rights_data),
             'read_db_rights_by_user_id': lambda user_id: self.read_db_rights_by_user_id(user_id),
@@ -183,8 +183,8 @@ class ActionMapper:
             # "": None,
             'read_db_user_operations': lambda user_id: self.read_db_user_operations(user_id),
             'read_db_plan_operations': lambda plans_id: self.read_db_plan_operations(plans_id),
-            'read_db_history': lambda: self.read_db_history(),
-            'read_db_summary': lambda index: self.read_db_history(),
+            'read_db_history': lambda index: self.read_db_history(index),
+            'read_db_summary': lambda index: self.read_db_history(index),
             # "": None,
             'write_db_plans': lambda plans_data: self.write_db_plans(plans_data),
             'read_db_plan_id': lambda barcode: self.read_db_plan_id(barcode),
@@ -587,7 +587,8 @@ class ActionMapper:
             print(traceback.format_exc())
             return []
 
-    def read_db_history(self) -> list[dict]:
+    def read_db_history(self, index) -> list[dict]:
+        print(f"actions_db read_db_history({index})")
         """
         Возвращает все операции пользователей из таблиц History, LoadOperations, DropOperations и OperationsConsumption.
 
@@ -599,26 +600,45 @@ class ActionMapper:
         operations = []
         try:
             # Лямбда для создания словаря операции
-            def create_operation_dict(history, op): return {
+            def create_operation_dict(history, op):
+
+                user = self.e_user.get_user_by_id(history.user_id)
+                status = self.e_status.get_status_by_id(op.status_id)
+                description = op.description
+
+                if status.stype == "mass_load_init":
+                     description = f"Загрузка инструмента в ячейку {add_cell_number(op)}"
+                elif status.stype == "consumption":
+                     description = f"Выдача инструмента из ячейки {add_cell_number(op)}"
+                elif status.stype == "mass_load_ready":
+                     description = f"Инструмент помещён в ячейку {add_cell_number(op)}"
+
+                # print(f"history: {history}, op: {op}")
+
+                # print(f"user: {user}, tool: {self.e_tools.get_tool_by_id(history.tools_id)}, op: {add_cell_number(op)}")
+
+                return {
                 "datetime": history.datetime,
-                "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
-                "user_family": self.e_user.get_user_by_id(history.user_id).family,
+                "user_name": f"{user.second_name} {user.first_name} {user.family}",
+                # "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
+                # "user_family": self.e_user.get_user_by_id(history.user_id).family,
                 "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
-                "history_description": history.description,
+                # "history_description": history.description,
                 "tools_name": self.e_tools.get_tool_by_id(history.tools_id).name,
                 "group_name": self.e_group.get_group_by_id(self.e_tools.get_tool_by_id(history.tools_id).groups_id).name,
-                "plan_name": self.e_plan.get_plan_by_id(self.e_tools.get_tool_by_id(history.tools_id).plan_id).name,
-                "operation_description": op.description,
-                "load_description": self.e_load.get_load_by_id(op.load_id).description if hasattr(op, "load_id") else None,
-                "cell_number": add_cell_number(op),
-                "mass_load_description": mass_load_description(op),
-                "status_description": self.e_status.get_status_by_id(op.status_id).description,
+                # "plan_name": self.e_plan.get_plan_by_id(self.e_tools.get_tool_by_id(history.tools_id).plan_id).name,
+                # "operation_description": op.description,
+                # "load_description": self.e_load.get_load_by_id(op.load_id).description if hasattr(op, "load_id") else None,
+                # "cell_number": add_cell_number(op),
+                # "mass_load_description": mass_load_description(op),
+                "title": status.description,
+                "operation_description": description
             }
 
             def mass_load_description(op):
                 if isinstance(op, OperationsConsumption):
                     consumption = self.e_consumption.get(op.consumption_id)
-                    load = self.e_load.get_load_by_id(consumption.cell_id)
+                    load = self.e_load.find_by_cell_id(consumption.cell_id)
                     mass_load = self.e_mass_load.get_mass_load_by_id(
                         load.mass_load_id)
                     return mass_load.description
@@ -645,8 +665,8 @@ class ActionMapper:
 
                 for history in user_history:
                     # # Добавляем операции из LoadOperations
-                    # load_operations = self.e_load_operations.get_operations_by_history_id(history.id)
-                    # operations.extend([create_operation_dict(history, op) for op in load_operations])
+                    load_operations = self.e_load_operations.get_operations_by_history_id(history.id)
+                    operations.extend([create_operation_dict(history, op) for op in load_operations])
                     #
                     # # Добавляем операции из DropOperations
                     # drop_operations = self.e_drop_operations.get_operations_by_history_id(history.id)
@@ -1035,7 +1055,8 @@ class ActionMapper:
             print(traceback.format_exc())
             return {}
 
-    def read_db_users(self) -> List[User]:
+    def read_db_users(self, index) -> List[User]:
+        print("read_db_users")
         """
         Получает список всех пользователей из базы данных.
 
@@ -1044,6 +1065,7 @@ class ActionMapper:
         try:
             # Получение всех пользователей
             users = self.e_user.get_all_users()
+            print(users)
             return users if users else []
         except Exception as e:
             print(f"Ошибка при получении списка пользователей: {e}")
@@ -1051,6 +1073,7 @@ class ActionMapper:
             return []
 
     def read_db_username(self, code: int) -> Optional[str]:
+        print(f"read_db_username. Input code: {code}")
         """
         Получает имя пользователя (username) по коду.
 
@@ -1065,6 +1088,7 @@ class ActionMapper:
 
             # Формирование имени пользователя (username)
             username = f"{user.first_name} {user.second_name} {user.family}".strip()
+            print(f"read_db_username. Found username: {username}")
             return username if username else None  # Возвращает None, если username пустой
 
         except Exception as e:
@@ -1111,6 +1135,7 @@ class ActionMapper:
         :param password: Пароль пользователя.
         :return: Кортеж (пользователь, роль), если найдено, иначе (None, None).
         """
+        print(f"read_db_authorization. login: {login}, password: {password}")
         if login == '' and password == '':
             # Пользователь не найден или неверный пароль
             return {'trigger': 'err_authorization'}
@@ -1132,14 +1157,19 @@ class ActionMapper:
             role = self.e_role.get_role_by_id(user.role_id)
             self.current_user = user
             self.current_role = role
+            print(f"read_db_authorization. current_user: {user}, current_role: {role}")
             # Возвращаем явный триггер для роутера по имени роли
+            user_name = (getattr(user, 'first_name', '') or '')
             role_name = (getattr(role, 'name', '') or '').lower()
-            if role_name in ("admin", "administrator", "developer"):
-                return {"trigger": "view_type_admin"}
-            elif role_name in ("storekeeper", "stockman", "кладовщик"):
-                return {"trigger": "type_storekeeper"}
-            else:
-                return {"trigger": "test_user"}
+            return user, role
+            # if role_name in ("admin", "administrator", "developer"):
+            #     return {"trigger": "view_type_admin"}
+            # elif role_name in ("storekeeper", "stockman", "кладовщик"):
+            #     # return {"trigger": "type_storekeeper"}
+            #     # return {"user": user_name, "role": role_name}
+            #     return user, role
+            # else:
+            #     return {"trigger": "test_user"}
 
         except Exception as e:
             print(f"Ошибка при авторизации пользователя: {e}")
@@ -1886,6 +1916,7 @@ class ActionMapper:
 
     def execute(self, act, *args, **kwargs):
         try:
+            print("action_db", "execute", act, args, kwargs)
             return self.__actions[act](*args, **kwargs)
         except Exception as e:
             print("action_db", "execute", act, "exception", e)

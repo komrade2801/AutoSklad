@@ -49,6 +49,15 @@ class EngineLoad(BaseCRUD):
         """
         return self.get(load_id)
 
+    def find_by_cell_id(self, cell_id: int) -> Load:
+        """
+        Возвращает список записей Load, связанных с указанным cell_id.
+
+        :param cell_id: Идентификатор ячейки.
+        :return: Список записей Load.
+        """
+        return self.session.query(self.model).filter_by(cell_id=cell_id).first()
+
     def find_by_tools_id(self, tools_id: int) -> Load:
         """
         Возвращает список записей Load, связанных с указанным tools_id.
