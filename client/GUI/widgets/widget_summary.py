@@ -1,3 +1,5 @@
+import datetime
+
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from GUI.BaseScreen import BaseScreen
@@ -28,16 +30,19 @@ class WidgetSummary(BaseScreen, Ui):
         """
         # Игнорируем *args, если они не нужны
         for key, value in kwargs.items():
+            if key == 'datetime' and isinstance(value, datetime.datetime):
+                value = value.strftime("%H:%M %d.%m.%Y")
             # Проверяем, существует ли атрибут с таким именем
             if hasattr(self, key):
+
                 widget = getattr(self, key)  # Получаем атрибут
                 # Проверяем, имеет ли атрибут метод `setText`
                 if hasattr(widget, 'setText') and callable(widget.setText):
                     widget.setText(str(value))  # Устанавливаем текстовое значение
-                else:...
-                    # print(f"Предупреждение: атрибут '{key}' не поддерживает setText")
-            else:...
-                # print(f"Предупреждение: атрибут '{key}' не найден в {self.__class__.__name__}")
+                else:
+                    print(f"Предупреждение: атрибут '{key}' не поддерживает setText")
+            else:
+                print(f"Предупреждение: атрибут '{key}' не найден в {self.__class__.__name__}")
 
     def get_data(self):
         pass

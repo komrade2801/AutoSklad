@@ -66,7 +66,7 @@ class MainWindow(QtWidgets.QWidget):
 
         # Создание экранов
         self.create_widgets()
-        self.open_widget(self.lump.state(), None)
+        self.open_widget(self.lump.state(), None, None)
         self.action_callback = None
         self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
         self.back_state = None
@@ -188,37 +188,40 @@ class MainWindow(QtWidgets.QWidget):
             return
 
         self.back_state = self.lump.state()
-        print("button_clicked", button_name, "state", self.lump.state(), 'value: ', value)
         self.lump.trigger(button_name)
         state = self.lump.state()
+        print("button_clicked", button_name, "state", state, 'button_name: ', button_name)
         if state != self.back_state:
             # if 'btn_back' in button_name and self.lump.state() != self.lump.machine.initial:
             #     self.open_back_widget()
             # else:
-            self.open_widget(state, value)
+            self.open_widget(state, button_name, value)
         # except (MachineError, TypeError, AttributeError) as e:
         #     self._handle_button_click_error(e)
         #     print("Стек вызовов:")
         #     print(traceback.format_exc())
 
-    def open_back_widget(self, value: any = None):
+    def open_back_widget(self, value: Any = None):
+        print("open_back_widget value", value)
         """
         Возвращает к предыдущему экрану, используя навигационный стек.
         :param value: (Опционально) данные для передачи при возврате.
         """
         prev_state = self.nav_manager.pop()
         if prev_state:
-            self.open_widget(prev_state['screen'], prev_state['value'])
+            self.open_widget(prev_state['screen'], None, prev_state['value'])
         else:
             print("История пуста. Нельзя вернуться назад.")
 
 
-    def open_widget(self, widget_name: str, value: Any = None):
+    def open_widget(self, widget_name: str, source: str = None, value: Any = None):
+        print("open_widget", widget_name, 'source: ', source)
         """
         Открывает виджет с указанным именем, скрывая остальные.
 
         :param widget_name: Имя виджета для отображения.
         :param value: Данные для передачи виджету.
+        :param source: Имя источника перехода на виджет (кнопка).
         """
 
         # Если текущий экран уже установлен и он отличается от нового – сохраняем его в историю.
@@ -239,36 +242,39 @@ class MainWindow(QtWidgets.QWidget):
 
                         if key in self.value:
                             value = {key: self.value[key]}
-                    value = self._handle_widget_data(widget, value)
+                    value = self._handle_widget_data(widget, source, value)
                     # Передаем данные в виджет и сохраняем текущее состояние
-                    self.current_value = self._handle_widget_data(widget, value)
+                    self.current_value = self._handle_widget_data(widget, source, value)
 
         self.current_screen = widget_name
 
         # Если виджет не найден, возвращаемся к предыдущему состоянию
         if not widget_found and "cmd" not in widget_name:
-            self._handle_widget_not_found(widget_name, value)
+            self._handle_widget_not_found(widget_name, source, value)
         elif "cmd" in widget_name:
-            self._handle_cmd(widget_name, value)
+            self._handle_cmd(widget_name, source, value)
 
-    def _handle_widget_data(self, widget, *value: Any):
+    def _handle_widget_data(self, widget, source: str = None, *value: Any):
         """
         Обрабатывает передачу данных виджету.
 
         :param widget: Виджет для обработки.
         :param value: Данные для передачи.
+        :param source: Имя источника перехода на виджет (кнопка).
         """
+        print(f"_handle_widget_data. Widget: {widget}. source: {source}")
 
         # write = widget.is_write()
         # read  = widget.is_read()
         # if write and not read:
-        widget.set_data(*value)
+        widget.set_data(*value, source)
         # elif read and not write:
         data = widget.get_data()
         self.widget_back = widget
         return data
 
-    def _handle_cmd(self, widget_name: str, value: Any):
+    def _handle_cmd(self, widget_name: str, source: str = None, value: Any = None):
+        print("_handle_cmd widget_name", widget_name)
         """
         Обрабатывает случай, когда виджет не найден.
 
@@ -278,9 +284,10 @@ class MainWindow(QtWidgets.QWidget):
         if self.lump.machine.initial != widget_name and callable(self.action_callback):
             value, transition = self.action_callback(self.back_state, widget_name, self.lump, value, None)
             if transition:
-                self.open_widget(transition, value=value)
+                self.open_widget(transition, None, value=value)
 
-    def _handle_widget_not_found(self, widget_name: str, value: Any):
+    def _handle_widget_not_found(self, widget_name: str, source: str = None, value: Any = None):
+        print("_handle_widget_not_found widget_name", widget_name, "source", source)
         """
         Обрабатывает случай, когда виджет не найден.
 
@@ -303,7 +310,7 @@ class MainWindow(QtWidgets.QWidget):
                     self.back_state, widget_name, self.lump, value, widget.handle_callback_executor
                 )
                 if transition:
-                    self.open_widget(transition, value=value)
+                    self.open_widget(transition, source, value=value)
         else:
             print(f"Виджет '{widget_name}' не найден.")
 

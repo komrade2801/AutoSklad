@@ -42,6 +42,9 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
         self.timeout_back = self.__timeout_back
 
     def set_data(self, *args, **kwargs):
+        print("screen_21_summary set_data")
+        print(args)
+        print(kwargs)
         """
         Устанавливает текстовые данные для виджетов WidgetSummary.
 
@@ -57,6 +60,11 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
                 return
 
             self.listWidget.clear()  # Очищаем список перед добавлением новых данных
+
+            if args[1] and args[1] == 'btn_down':
+                data_list.sort(reverse=False, key=self.history_sort_func)
+            else:
+                data_list.sort(reverse=True, key=self.history_sort_func)
 
             for data in data_list:
                 if not isinstance(data, dict):
@@ -82,3 +90,6 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
 
     def get_data(self):
         pass
+
+    def history_sort_func(self, e):
+        return e['datetime']
