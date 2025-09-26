@@ -216,22 +216,48 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 
         result = {"groups": {}}
         for i, group in enumerate(main_groups):
-            # 3) Ищем его подгруппы
+            # 3) Ищем его подгруппы и всегда проверяем прямые инструменты
             subgroup_dict = {}
             subgroups = e_group.get_groups_by_paren_group_id(group.id)
+            direct_instruments = tool_type_crud.get_tools_by_group(group.id)
 
+            # Сначала добавляем прямые инструменты, если они есть
+            if direct_instruments:
+                values_dict = {}
+                for k, tool in enumerate(direct_instruments):
+                    if tool.count <= 0:
+                        continue
+                    # Проверить есть ли свободный инструмент.
+                    tools = tools_crud.get_tools_by_tool_type(tool.id)
+                    count_elements = 0
+                    links = tools_has_device_crud.get_tools_by_device_id(
+                        device.id)
+                    for __tool in tools:
+                        if __tool.id in links:
+                            continue
+                        count_elements += 1
+                    if count_elements == 0:
+                        continue
+
+                    key = str(k)
+                    tool_info = f"{tool.name} {tool.description}"
+                    values_dict[key] = {
+                        "tools": tool_info,
+                        "sum": str(count_elements)
+                    }
+
+                subgroup_dict["direct"] = {
+                    "SGName": "-",
+                    "value": values_dict
+                }
+
+            # Затем добавляем подгруппы, если они есть
             if subgroups:
-                # У группы есть дети — выводим их
-                subgroup_dict = {}
+                # Начинаем нумерацию после ключей предыдущих
+                current_key = len(subgroup_dict)
                 for j, subgroup in enumerate(subgroups):
                     instruments = tool_type_crud.get_tools_by_group(
                         subgroup.id)
-                    # values_dict = {
-                    #     str(k): {
-                    #         "tools": f"{tool.name} {tool.description}",
-                    #         "sum": str(tool.count)
-                    #     }
-                    #     for k, tool in enumerate(instruments)
                     values_dict = {}
                     if instruments:
                         for k, tool in enumerate(instruments):
@@ -257,50 +283,10 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                                 "sum": str(count_elements)
                             }
 
-                        subgroup_dict[str(j)] = {
+                        subgroup_dict[str(current_key + j)] = {
                             "SGName": subgroup.name,
                             "value": values_dict
                         }
-
-            else:
-                # У этой верхней группы нет подгрупп — инструментов напрямую тоже может не быть
-                instruments = tool_type_crud.get_tools_by_group(group.id)
-                values_dict = {}
-                if instruments:
-                    for k, tool in enumerate(instruments):
-
-                        if not tool.count:
-                            continue
-
-                        if tool.count <= 0:
-                            continue
-
-                        # Проверить есть ли свободный инструмент.
-                        count_elements = 0
-                        tools = tools_crud.get_tools_by_tool_type(tool.id)
-                        links = tools_has_device_crud.get_tools_by_device_id(
-                            device.id)
-                        for __tool in tools:
-                            if __tool.id in links:
-                                continue
-                            count_elements += 1
-                        if count_elements == 0:
-                            continue
-
-                        key = str(k)
-                        tool_info = f"{tool.name} {tool.description}"
-
-                        values_dict[key] = {
-                            "tools": tool_info,
-                            "sum": str(count_elements)
-                        }
-
-                    subgroup_dict = {
-                        "0": {
-                            "SGName": "-",
-                            "value": values_dict
-                        }
-                    }
 
             result["groups"][str(i)] = {
                 "name": group.name,
