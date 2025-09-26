@@ -1,0 +1,212 @@
+## 1. Создание и модификация инструментов на странице библиотеки инструментов
+
+### Процесс создания инструментов:
+
+__Frontend:__ `screen_15_tool_library.html` → Button `"Добавить инструмент"` → `"../screen_16_add_tool.html"`
+
+__Backend Endpoint:__ `server/API/backend/endpoints/tool_library.py` → POST `/tool-library/{device_number}`
+
+__Процесс:__
+
+```python
+def create_tool_library_entry(device_number: int, tool_data: ToolLibraryCreate, db: Session):
+    # 1. Validate device exists
+    devices_crud = EngineDevice()
+    device = devices_crud.get_device_by_number(device_number)
+
+    # 2. Create tool via ToolsCRUD.create_tool()
+    # (This creates actual inventory records)
+    new_tool = tools_crud.create_tool(
+        index=tool_data.index,
+        name=tool_data.name,
+        description=tool_data.description,
+        img=tool_data.img,
+        plan_id=tool_data.plan_id,  # Note: bug using tool_data.img
+        groups_id=tool_data.groups_id,
+        inventory_number=tool_data.inventory_number,
+    )
+
+    # 3. Link tool to device via Tools_has_Device table
+    tools_has_device_crud.link_tool_to_device(new_tool.id, device.id)
+
+    return new_tool
+```
+
+__Что происходит:__
+
+- Создает записи в таблице `Tools` для физического инвентаря
+- Увеличивает `ToolTypes.count` для категории типа инструмента
+- Связывает инструмент с конкретным устройством через таблицу `Tools_has_Device`
+
+### Процесс модификации инструментов:
+
+__Backend Endpoint:__ PUT `/tool-library/{device_number}/{tool_id}`
+
+__Процесс:__
+
+```python
+def update_tool_library_entry(device_number: int, tool_data: ToolLibraryUpdate):
+    # 1. Validate tool belongs to device
+    if not tools_has_device_crud.check_tool_belongs_to_device(tool_id, device.id):
+        raise HTTPException(403, "Tool doesn't belong to device")
+
+    # 2. Update tool data via ToolsCRUD.update_tool_from_data()
+    updated_tool = tools_crud.update_tool_from_data(tool_id, data_dict)
+
+    return updated_tool
+```
+
+__Что происходит:__
+
+- Обновляет поля записи в таблице `Tools` (name, description, inventory_number, etc.)
+- НЕ связывает/отвязывает от устройства или не изменяет ToolTypes.count
+
+## 2. Процесс запуска массовой загрузки
+
+__Frontend:__ `screen_15_tool_library.html` → Select tools → `screen_2_mass_load.html` → `"Сохранить загрузку"`
+
+__Backend Endpoint:__ POST `/mass_load_tools/{device_number}`
+
+__Что происходит при запуске массовой загрузки:__
+
+```python
+def save_mass_load(device_number: int, mass_load: MassLoadCreate):
+    # 1. Authorization check
+    validation = auth_service.validation_user(request)
+
+    # 2. Create MassLoad record
+    mass_load_id = max(e_mass_load.get_all_ids()) + 1
+    e_mass_load.add_mass_load(mass_load_id, description)
+
+    # 3. Process each tool in mass_load.operation:
+    for cell_number, history in mass_load.operation.items():
+        # Find existing tool by matching name
+        tool_type = e_tool_types.find_by_full_name(history.tool)
+        # Get tools of that type, finding first non-Loaded one
+        db_tools = e_tools.get_tools_by_tool_type(tool_type.id)
+        tool_to_load = next(t for t in db_tools
+                          if not e_load.find_by_tools_id(t.id))
+
+        # Link tool to device
+        e_tools_has_device.add_link(tool_to_load.id, device.id)
+
+        # Update cell slot to reference tool
+        e_cells.update_cell(cell_id, tools_id=tool_to_load.id)
+
+        # Create Load record (bulk operation)
+        e_load.add_load(load_id, tools_id=tool_to_load.id,
+                       mass_load_id=mass_load.id, cell_id=cell.id)
+
+        # Create LoadOperation for tracking
+        e_load_operation.add_operation(
+            operation_id, load_id=load_id, tools_id=tool_to_load.id,
+            status_id="mass_load_init", history_id=new_history.id
+        )
+
+        # Link operation to device
+        e_operation_has_device.add_link(operation_id, device.id)
+
+        # Create history record
+        e_stories.add_history(operation_id, description="Mass load initiated")
+```
+
+__Результат в базе данных:__
+
+- Инструменты связаны с устройством через `Tools_has_Device`
+- Инструменты назначены конкретным ячейкам через `Cell.tools_id`
+- Записи `Load` созданы для отслеживания массовых операций
+- `LoadOperations` со статусом "mass_load_init"
+- Инструменты исключены из списков "доступных" до завершения массовой загрузки
+
+## 3. Операции потребления на клиенте вендинга
+
+__Когда пользователь забирает инструмент (операция drop):__
+
+```python
+# From tools.py POST /tools/{device_number}
+def link_tool_to_device(device_number: int, tool_id: int):
+    # 1. Find available tool of requested type
+    # 2. Update tool's ToolLocation status from "stock" to "machine"
+    tool_location_crud.update_status(tool_id, status_id=2)
+    # 3. Create DropOperations record
+    # 4. This tool is now "in use" by a user
+```
+
+__Что происходит:__
+
+1. Инструмент физически выдается из машины
+2. `ToolLocation.status_id` изменяется (концептуально "выдан пользователю")
+3. Создаются записи операций для аудита
+4. Инструмент больше не доступен для других операций, пока не будет возвращен
+
+## 4. Пояснение таблиц базы данных
+
+### __Таблица: Tools__ (`server/DB/Models/Tools.py`)
+
+```sql
+CREATE TABLE Tools (
+    id INTEGER PRIMARY KEY,
+    inventory_number STRING,      -- Physical barcode/inventory ID
+    plan_id INTEGER,              -- Blueprint this tool belongs to
+    tool_type_id INTEGER,         -- FK to ToolTypes
+    name VARCHAR(45),             -- Tool name
+    description TEXT,             -- Tool description
+    count INTEGER,                -- Quantity (usually 1 for inventory)
+    img VARCHAR(45),              -- Image file path
+    groups_id INTEGER             -- FK to Groups
+);
+```
+
+__Назначение:__
+
+- Записи инвентаря отдельных инструментов
+- Каждый физический инструмент получает свою запись
+- Основной учет запасов для доступных инструментов
+- Используется для отслеживания конкретных единиц инструментов через операции
+
+### __Таблица: ToolTypes__ (`server/DB/Models/ToolTypes.py`)
+
+```sql
+CREATE TABLE ToolTypes (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(45),             -- Tool type name (e.g., "Screwdriver")
+    description TEXT,             -- Type description
+    count INTEGER,                -- Total stock of this type
+    img VARCHAR(45),              -- Type image
+    groups_id INTEGER             -- FK to Groups
+);
+```
+
+__Назначение:__
+
+- Классифицирует инструменты по типу/семейству
+- Отслеживает общее количество запасов по типу
+- Используется для группировки в отображениях UI
+- Ссылка для операций классификации инструментов
+
+### __Таблица: ToolLocation__ (*упоминается, но не определена в моделях*)
+
+```sql
+-- Conceptual schema based on code references:
+CREATE TABLE ToolLocation (
+    tool_id INTEGER PRIMARY KEY,
+    status_id INTEGER,            -- FK to Status (1=stock, 2=machine, etc.)
+    -- Other location tracking fields...
+);
+```
+
+__Назначение:__
+
+- Отслеживает операционный статус отдельных инструментов
+- "stock" = на складе, "machine" = загружен, "issued" = у пользователя
+- Контролирует доступность инструментов в рабочих процессах
+- Критично для предотвращения двойного распределения
+
+## Сводка рабочего процесса
+
+1. __Создание:__ Инструмент добавлен → запись в `Tools` + `ToolTypes.count++` + связь с устройством
+2. __Массовая загрузка:__ Инструменты "зарезервированы" → связаны с устройством + созданы `LoadOperations` + исключены из доступности
+3. __Потребление:__ Инструмент выдан → изменен `ToolLocation.status` + записаны операции
+4. __Доступность:__ Рассчитывается динамически как `ToolTypes.count - linked_tools - pending_operations`
+
+Эта система обеспечивает точный учет инвентаря по всему процессу управления жизненным циклом инструментов.
