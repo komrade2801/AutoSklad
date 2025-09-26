@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from io import BytesIO
 # from fastapi.responses import JSONResponse
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File #, Body, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File  # , Body, Form
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -14,7 +14,8 @@ from API.backend.request_models import (
     ToolLibraryCreate,  # Модель для создания записи
     ToolLibraryUpdate  # Модель для обновления записи
 )
-from API.backend.upload.config import update_field_map, load_field_map  # , DEFAULT_FIELD_MAP
+# , DEFAULT_FIELD_MAP
+from API.backend.upload.config import update_field_map, load_field_map
 from API.backend.upload.mappers import normalize_record  # , ColumnsMapModel
 
 # from DB.Data.db_depends import get_db
@@ -24,6 +25,8 @@ from DB.Engine.ToolTypesCRUD import EngineToolTypes
 from DB.Engine.ToolsCRUD import EngineTools
 from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
 from DB.Engine.GroupCRUD import EngineGroup
+from DB.Engine.StatusCRUD import EngineStatus
+from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
 from typing import Dict, Optional, Any
 from fastapi import Form
 
@@ -38,7 +41,8 @@ REQUIRED = [
 @tool_library_router.post("/upload")
 async def upload_xlsx(
         file: UploadFile = File(...),
-        columns_map: Optional[str] = Form(None, description="JSON‑строка с дополнительным маппингом"),
+        columns_map: Optional[str] = Form(
+            None, description="JSON‑строка с дополнительным маппингом"),
         db: Session = Depends(get_db)
 ):
     # 1) Попытаться распарсить columns_map, но не падать, если оно не JSON
@@ -77,7 +81,8 @@ async def upload_xlsx(
     for idx, rec in enumerate(records, start=1):
         try:
 
-            norm, last_seen = normalize_record(rec, REQUIRED, field_map, last_seen)
+            norm, last_seen = normalize_record(
+                rec, REQUIRED, field_map, last_seen)
             inv = norm["tool_inventory_number"]
 
             if inv and inv in seen_inv:
@@ -137,11 +142,11 @@ async def upload_xlsx(
                     inventory_number=inv,
                     plan_id=norm.get("tool_plan_id"),
                     tool_type_id=tool_type.id,
-                    name = tool_type.name,
-                    description = tool_type.description,
-                    count = tool_type.count + 1,
-                    img = tool_type.img,
-                    groups_id = tool_type.groups_id,
+                    name=tool_type.name,
+                    description=tool_type.description,
+                    count=tool_type.count + 1,
+                    img=tool_type.img,
+                    groups_id=tool_type.groups_id,
                 )
             else:
                 for i in range(0, tool_type.count):
@@ -158,7 +163,6 @@ async def upload_xlsx(
                         groups_id=tool_type.groups_id,
                     )
             processed += 1
-
 
         except (ValueError, SQLAlchemyError) as e:
             db.rollback()
@@ -222,12 +226,30 @@ def get_tool_library(device_number: int, db: Session = Depends(get_db)):
     if not tools:
         raise HTTPException(status_code=404, detail="Инструменты не найдены")
 
+    # Get status for pending mass load
+    e_load_operations = EngineLoadOperations()
+    e_status = EngineStatus()
+    mass_load_init_status = e_status.find_by_name("mass_load_init")
+    if not mass_load_init_status:
+        mass_load_init_status = None
+    else:
+        mass_load_init_status = mass_load_init_status.id
+
     # Группируем: { group_name: { tool_type_name: [tool.name, ...] } }
     grouped: Dict[str, Dict[str, list]] = {}
     for tool in tools:
+        # Check if tool has pending mass load operation
+        if mass_load_init_status:
+            operations = e_load_operations.get_operations_by_tool(tool.id)
+            has_pending_load = any(
+                op.status_id == mass_load_init_status for op in operations)
+            if has_pending_load:
+                continue  # Skip tools with pending mass load
+
         # Получаем группу инструмента
         tool_type = tool_type_crud.get(tool.tool_type_id)
-        group = group_crud.get_group_by_id(tool_type.groups_id) if tool_type.groups_id else None
+        group = group_crud.get_group_by_id(
+            tool_type.groups_id) if tool_type.groups_id else None
         group_name = group.name if group else "Unknown"
         # Получаем тип инструмента (подгруппу)
         # tool_type = tool_type_crud.get_tools_norm_by_tool_id(tool.id)
@@ -237,7 +259,8 @@ def get_tool_library(device_number: int, db: Session = Depends(get_db)):
             grouped[group_name] = {}
         if sg_name not in grouped[group_name]:
             grouped[group_name][sg_name] = []
-        grouped[group_name][sg_name].append({"description": tool_type.description, "inventory": tool.inventory_number, "id": tool.id})
+        grouped[group_name][sg_name].append(
+            {"description": tool_type.description, "inventory": tool.inventory_number, "id": tool.id})
 
     # Преобразуем сгруппированные данные в требуемую структуру с числовыми индексами
     groups_output: Dict[str, Any] = {}
@@ -284,7 +307,8 @@ def create_tool_library_entry(device_number: int, tool_data: ToolLibraryCreate, 
         inventory_number=tool_data.inventory_number,
     )  # name, plan_id, groups_id
     if not new_tool:
-        raise HTTPException(status_code=400, detail="Не удалось создать инструмент")
+        raise HTTPException(
+            status_code=400, detail="Не удалось создать инструмент")
 
     tools_has_device_crud.link_tool_to_device(new_tool.id, device.id)
     return new_tool
@@ -309,7 +333,8 @@ def update_tool_library_entry(device_number: int, tool_id: int, tool_data: ToolL
         raise HTTPException(status_code=404, detail="Устройство не найдено")
 
     if not tools_has_device_crud.check_tool_belongs_to_device(tool_id, device.id):
-        raise HTTPException(status_code=403, detail="Инструмент не принадлежит данному устройству")
+        raise HTTPException(
+            status_code=403, detail="Инструмент не принадлежит данному устройству")
     tool = tools_crud.get_tool_by_id(tool_id=tool_id)
     updated_tool = tools_crud.update_tool_from_data(
         tool_id=tool_id,
@@ -345,7 +370,8 @@ def delete_tool_library_entry(device_number: int, tool_id: int, db: Session = De
         raise HTTPException(status_code=404, detail="Устройство не найдено")
 
     if not tools_has_device_crud.check_tool_belongs_to_device(tool_id, device.id):
-        raise HTTPException(status_code=403, detail="Инструмент не принадлежит данному устройству")
+        raise HTTPException(
+            status_code=403, detail="Инструмент не принадлежит данному устройству")
 
     deleted = tools_crud.delete_tool(tool_id)
     if not deleted:

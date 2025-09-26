@@ -130,7 +130,8 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
 
     # 2. Берём все связи Cell ←→ Device
     e_chd = EngineCellHasDevice()
-    linked_cells = e_chd.get_cells_by_device_id(device.id)  # предполагается list of models, у которых .cell_id
+    # предполагается list of models, у которых .cell_id
+    linked_cells = e_chd.get_cells_by_device_id(device.id)
 
     # linked_ids = linked_cells
 
@@ -182,7 +183,8 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                 if load and not load == []:
                     mass_load_id = str(load[0].mass_load_id)
 
-                mass_load_max_id = str(max(e_mass_load.get_all_ids(), default=0))
+                mass_load_max_id = str(
+                    max(e_mass_load.get_all_ids(), default=0))
 
                 if not cell:
                     continue
@@ -194,8 +196,10 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                 if block:
                     tool = e_tools.get_tool_by_id(cell.tools_id)
                     # название инструмента — inventory_number, а не тип
-                    tool_name = e_tool_types.get_tool_type_by_id(tool.tool_type_id).name or ""
-                    plan = e_plan.get(tool.plan_id) if tool and tool.plan_id else None
+                    tool_name = e_tool_types.get_tool_type_by_id(
+                        tool.tool_type_id).name or ""
+                    plan = e_plan.get(
+                        tool.plan_id) if tool and tool.plan_id else None
                     plan_name = plan.name if plan else ""
                 else:
                     tool_name = "None"
@@ -211,7 +215,8 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                     id=cell.number,
                     type=cell_type,
                     backgroundColor=bg,
-                    content=Content(tool=tool_name, plan=plan_name, mass_load=mass_load_id + ":" + mass_load_max_id),
+                    content=Content(tool=tool_name, plan=plan_name,
+                                    mass_load=mass_load_id + ":" + mass_load_max_id),
                     block=block
                 )
             except Exception as e:
@@ -250,7 +255,8 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
 
         device = e_device.get_device_by_number(device_number)
         if not device:
-            raise HTTPException(status_code=404, detail="Устройство не найдено")
+            raise HTTPException(
+                status_code=404, detail="Устройство не найдено")
 
         last_mass_load_id = max(e_mass_load.get_all_ids(), default=0)
         loads_by_mass_loads = e_load.get_loads_by_mass_load_id(
@@ -260,7 +266,8 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
         load_operations = e_load_operations.get_operations_by_load_id(load)
         if load_operations:
             loads_by_mass_load = max(load_operations, key=lambda rec: rec.id)
-            operations_has_device = e_load_operations_has_device.get_by_device(device.id)
+            operations_has_device = e_load_operations_has_device.get_by_device(
+                device.id)
 
             # loads_by_mass_load = loads_by_mass_loads[0]  # .first()
             load = e_load.get_load_by_id(loads_by_mass_load.load_id)
@@ -333,7 +340,8 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
             for group_idx, (group_name, group_data) in enumerate(plan_data["groups"].items()):
                 value_dict = {}
                 for tool_idx, (tool_name, count) in enumerate(group_data["value"].items()):
-                    value_dict[str(tool_idx)] = {"id": tool_idx, "tools": tool_name, "sum": count}
+                    value_dict[str(tool_idx)] = {
+                        "id": tool_idx, "tools": tool_name, "sum": count}
 
                 groups_dict[str(group_idx)] = {
                     "name": group_data["name"],
@@ -356,7 +364,6 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
         )
 
 
-
 @mass_load_router.post("/mass_load_tools/{device_number}")
 def save_mass_load(
     request: Request,
@@ -367,13 +374,15 @@ def save_mass_load(
     # 1) авторизация
     validation = auth_service.validation_user(request)
     if isinstance(validation, RedirectResponse) or ("status" in getattr(validation, "data", {})):
-        raise HTTPException(status_code=402, detail="Неавторизованный доступ запрещён")
+        raise HTTPException(
+            status_code=402, detail="Неавторизованный доступ запрещён")
 
     # 2) получаем устройство
     e_device = EngineDevice()
     device = e_device.get_device_by_number(device_number)
     if not device:
-        raise HTTPException(status_code=404, detail="Устройство не обнаружено!")
+        raise HTTPException(
+            status_code=404, detail="Устройство не обнаружено!")
 
     # 3) создаём остальные движки
     e_plan = EnginePlan()
@@ -396,12 +405,10 @@ def save_mass_load(
     mass_load_id = None
     new_mass_load = None
     loads: list = []
-    tool_type_back = None
     cell_backs: list = []
     device_id = device.id
     operation_ids: list[int] = []
     story_ids: list[int] = []
-    name_steps = 1
 
     try:
         # 5) создаём запись MassLoad
@@ -421,68 +428,39 @@ def save_mass_load(
             request_cell = story.cell
             request_tool = story.tool
             request_plan = story.plan
-            tool_names = request_tool.split(" ")
 
-            # подбор типа инструмента
-            tool_type = None
-            tool_types = None
-            tool_name = ""
-            for name in tool_names:
-                if not tool_name:
-                    tool_name = name
-                tool_types = e_tool_types.find_by_name(tool_name)
-                if not tool_types:
-                    break
-                if name not in tool_name:
-                    tool_name = f"{tool_name} {name}"
-                    name_steps += 1
-            if not tool_types:
-                raise HTTPException(status_code=404, detail="Подходящий инструмент не найден")
-            for t in tool_types:
-
-                if name_steps >= len(tool_names):
-                    name_steps = len(tool_names) - 1
-                if name_steps < 0:
-                    raise HTTPException(status_code=404, detail="Не удалось разобрать название инструмента")
-
-                if tool_names[name_steps] in t.description or tool_names[name_steps] in t.name:
-                    tool_type = t
-                    break
+            # подбор типа инструмента по точному совпадению full name
+            tool_type = e_tool_types.find_by_full_name(request_tool)
             if not tool_type:
-                raise HTTPException(status_code=404, detail="Подходящий инструмент не найден")
-
-            # делаем backup и уменьшаем счётчик
-            tool_type_back = e_tool_types.get_tool_type_by_id(tool_type.id)
-            e_tool_types.update_tool_type(
-                tool_type_id=tool_type.id,
-                name=tool_type.name,
-                description=tool_type.description,
-                count=tool_type.count - 1,
-                img=tool_type.img,
-                groups_id=tool_type.groups_id,
-            )
+                raise HTTPException(
+                    status_code=404, detail=f"Подходящий инструмент '{request_tool}' не найден")
 
             # выбираем конкретный инструмент
             db_tools = e_tools.get_tools_by_tool_type(tool_type.id)
             load_id = max(e_load.get_all_ids(), default=0) + 1
-            tool_to_load = next((t for t in db_tools if not e_load.find_by_tools_id(t.id)), None)
+            tool_to_load = next(
+                (t for t in db_tools if not e_load.find_by_tools_id(t.id)), None)
             if not tool_to_load:
-                raise HTTPException(status_code=404, detail="Подходящий инструмент не найден")
+                raise HTTPException(
+                    status_code=404, detail="Подходящий инструмент не найден")
 
             # получаем и обновляем cell
             cell = e_cells.get_cell_by_number(int(request_cell))
             if not cell:
-                raise HTTPException(status_code=404, detail="Система не инициирована")
+                raise HTTPException(
+                    status_code=404, detail="Система не инициирована")
 
             mass_load_status = e_status.find_by_name("mass_load_init")
             if not mass_load_status:
                 idx = max(e_status.get_all_ids(), default=0) + 1
-                e_status.add(index=idx, stype="mass_load_init", description="Инициализирована массовая загрузка")
+                e_status.add(index=idx, stype="mass_load_init",
+                             description="Инициализирована массовая загрузка")
                 mass_load_status = e_status.get_status_by_id(idx)
             status_load = e_status.find_by_name("mass_load_init")
 
             # привязываем инструмент к устройству
-            e_tools_has_device.add_link(tools_id=tool_to_load.id, device_id=device.id)
+            e_tools_has_device.add_link(
+                tools_id=tool_to_load.id, device_id=device.id)
             if not e_tools_has_device.this_tool_is_linked(tool_to_load.id):
                 raise HTTPException(
                     status_code=500,
@@ -510,7 +488,8 @@ def save_mass_load(
             )
             load = e_load.get_load_by_id(load_id)
             if not load:
-                raise HTTPException(status_code=500, detail="Не удалось получить Load после создания")
+                raise HTTPException(
+                    status_code=500, detail="Не удалось получить Load после создания")
             loads.append(load)
 
             # привязываем cell к устройству
@@ -521,7 +500,8 @@ def save_mass_load(
             story_ids.append(story_id)
             user = e_user.get_user_by_barcode(validation.user_barcode)
             if not user:
-                raise HTTPException(status_code=402, detail="Пользователь не найден")
+                raise HTTPException(
+                    status_code=402, detail="Пользователь не найден")
             e_stories.add_history(
                 history_id=story_id,
                 user_id=user.id,
@@ -535,7 +515,8 @@ def save_mass_load(
             )
             new_history = e_stories.get_history_by_id(story_id)
             if not new_history:
-                raise HTTPException(status_code=500, detail="Не удалось получить History после добавления")
+                raise HTTPException(
+                    status_code=500, detail="Не удалось получить History после добавления")
 
             # создаём LoadOperation и привязываем к устройству
             operation_id = max(e_load_operation.get_all_ids(), default=0) + 1
@@ -551,8 +532,10 @@ def save_mass_load(
             )
             operation = e_load_operation.get_load_by_id(operation_id)
             if not operation:
-                raise HTTPException(status_code=500, detail="Не удалось получить Operation после добавления")
-            e_operation_has_device.add_link(load_operations_id=operation_id, device_id=device.id)
+                raise HTTPException(
+                    status_code=500, detail="Не удалось получить Operation после добавления")
+            e_operation_has_device.add_link(
+                load_operations_id=operation_id, device_id=device.id)
 
         return {"status": "ok", "message": new_mass_load.description}
 
@@ -561,16 +544,19 @@ def save_mass_load(
         # откат в обратном порядке
         try:
             for op_id in operation_ids:
-                e_operation_has_device.delete_link(load_operations_id=op_id, device_id=device_id)
+                e_operation_has_device.delete_link(
+                    load_operations_id=op_id, device_id=device_id)
             for op_id in operation_ids:
                 e_load_operation.delete(index=op_id)
             for st_id in story_ids:
                 e_stories.delete(st_id)
             for cb in cell_backs:
-                e_cell_has_device.delete_link(cell_id=cb.id, device_id=device_id)
+                e_cell_has_device.delete_link(
+                    cell_id=cb.id, device_id=device_id)
             for ld in loads:
                 e_load.delete(ld.id)
-                e_tools_has_device.delete_link(tools_id=ld.tools_id, device_id=device_id)
+                e_tools_has_device.delete_link(
+                    tools_id=ld.tools_id, device_id=device_id)
             for cb in cell_backs:
                 e_cells.update_cell(
                     cell_id=cb.id,
@@ -580,20 +566,12 @@ def save_mass_load(
                     tools_id=cb.tools_id,
                     status_id=cb.status_id,
                 )
-            if tool_type_back is not None:
-                e_tool_types.update_tool_type(
-                    tool_type_id=tool_type_back.id,
-                    name=tool_type_back.name,
-                    description=tool_type_back.description,
-                    count=tool_type_back.count,
-                    img=tool_type_back.img,
-                    groups_id=tool_type_back.groups_id,
-                )
+
             if mass_load_id is not None:
                 e_mass_load.delete(mass_load_id)
         except Exception:
             print(traceback.format_exc())
             pass
 
-        raise HTTPException(status_code=500, detail=f"Не удалось сохранить массовую загрузку: {e}")
- 
+        raise HTTPException(
+            status_code=500, detail=f"Не удалось сохранить массовую загрузку: {e}")

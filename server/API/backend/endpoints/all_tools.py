@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 
-from API.backend.request_models import ToolsCreate, ToolsAddResponse, AllGroupsResponse  # InventoryResponse,
+# InventoryResponse,
+from API.backend.request_models import ToolsCreate, ToolsAddResponse, AllGroupsResponse
 # from DB.Data.db_depends import get_db
 from DB.session import get_db
 from DB.Engine.DeviceCRUD import EngineDevice
@@ -109,7 +110,8 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
         # 1. Найти или создать верхнюю группу
         top_group = group_crud.find(data.group, data.description or "")
         if not top_group:
-            raise HTTPException(status_code=400, detail="Не удалось создать или найти группу")
+            raise HTTPException(
+                status_code=400, detail="Не удалось создать или найти группу")
 
         # Гарантируем, что родитель верхней группы = 0
         if top_group.paren_group_id not in (None, 0):
@@ -124,7 +126,8 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
         if data.subgroup:
             subgroup = group_crud.find(data.subgroup, data.description or "")
             if not subgroup:
-                raise HTTPException(status_code=400, detail="Не удалось создать или найти подгруппу")
+                raise HTTPException(
+                    status_code=400, detail="Не удалось создать или найти подгруппу")
 
             # Привязываем подгруппу к верхней группе
             if subgroup.paren_group_id != top_group.id:
@@ -221,7 +224,8 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                 # У группы есть дети — выводим их
                 subgroup_dict = {}
                 for j, subgroup in enumerate(subgroups):
-                    instruments = tool_type_crud.get_tools_by_group(subgroup.id)
+                    instruments = tool_type_crud.get_tools_by_group(
+                        subgroup.id)
                     # values_dict = {
                     #     str(k): {
                     #         "tools": f"{tool.name} {tool.description}",
@@ -237,7 +241,8 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                             # Проверить есть ли свободный инструмент.
                             tools = tools_crud.get_tools_by_tool_type(tool.id)
                             count_elements = 0
-                            links = tools_has_device_crud.get_tools_by_device_id(device.id)
+                            links = tools_has_device_crud.get_tools_by_device_id(
+                                device.id)
                             for __tool in tools:
                                 if __tool.id in links:
                                     continue
@@ -247,10 +252,9 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 
                             key = str(k)
                             tool_info = f"{tool.name} {tool.description}"
-                            count_str = str(tool.count)
                             values_dict[key] = {
                                 "tools": tool_info,
-                                "sum": count_str
+                                "sum": str(count_elements)
                             }
 
                         subgroup_dict[str(j)] = {
@@ -274,7 +278,8 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                         # Проверить есть ли свободный инструмент.
                         count_elements = 0
                         tools = tools_crud.get_tools_by_tool_type(tool.id)
-                        links = tools_has_device_crud.get_tools_by_device_id(device.id)
+                        links = tools_has_device_crud.get_tools_by_device_id(
+                            device.id)
                         for __tool in tools:
                             if __tool.id in links:
                                 continue
@@ -284,11 +289,10 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 
                         key = str(k)
                         tool_info = f"{tool.name} {tool.description}"
-                        count_str = str(tool.count)
 
                         values_dict[key] = {
                             "tools": tool_info,
-                            "sum": count_str
+                            "sum": str(count_elements)
                         }
 
                     subgroup_dict = {
@@ -339,7 +343,8 @@ async def get_tools_status(db: Session = Depends(get_db)):
         for tool in tools:
             loads.append(e_load_operations.get_operations_by_tool(tool.id))
             drops.append(e_drop_operations.get_operations_by_tool(tool.id))
-            consumptions.append(e_consumption_operations.get_operations_by_tool(tool_type.id))
+            consumptions.append(
+                e_consumption_operations.get_operations_by_tool(tool_type.id))
 
         # 4. Обработка операций
         all_ops = sorted(

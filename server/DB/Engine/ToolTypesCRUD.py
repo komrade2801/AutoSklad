@@ -17,7 +17,7 @@ class EngineToolTypes(BaseCRUD):
     Для работы с инструментами данного типа (связь с таблицей Tool) используется свойство модели tools.
     """
 
-    def __init__(self, session_db: Session=None):
+    def __init__(self, session_db: Session = None):
         super().__init__(session=session_db, model=ToolTypes)
 
     def add_tool_type(self,
@@ -58,24 +58,24 @@ class EngineToolTypes(BaseCRUD):
         return self.get(tool_type_id)
 
     def update_tool_type(self,
-                tool_type_id: int,
-                name: str,
-                description: str,
-                count: int,
-                img: str,
-                groups_id: int
-            ) -> bool:
+                         tool_type_id: int,
+                         name: str,
+                         description: str,
+                         count: int,
+                         img: str,
+                         groups_id: int
+                         ) -> bool:
         """
         Обновляет данные типа инструмента.
         """
         return self.update(
-                index=tool_type_id,
-                name=name,
-                description=description,
-                count=count,
-                img=img,
-                groups_id=groups_id,
-            )
+            index=tool_type_id,
+            name=name,
+            description=description,
+            count=count,
+            img=img,
+            groups_id=groups_id,
+        )
 
     def delete_tool_type(self, tool_type_id: int) -> bool:
         """
@@ -106,11 +106,25 @@ class EngineToolTypes(BaseCRUD):
             return self._cache[key]
 
         with self.transaction() as db:
-            result = db.query(self.model).filter(self.model.name.ilike(f"%{name}%")).all()
+            result = db.query(self.model).filter(
+                self.model.name.ilike(f"%{name}%")).all()
 
         self._cache[key] = result
         return result
 
+    def find_by_full_name(self, full_name: str) -> Optional[ToolTypes]:
+        """
+        Find tool type by exact full name (name + " " + description).
+        """
+        full_name = full_name.strip()
+        # Use loop to handle empty descriptions properly
+        all_tt = self.all()
+        for tt in all_tt:
+            tt_full = f"{tt.name} {tt.description}".strip(
+            ) if tt.description else tt.name
+            if tt_full == full_name:
+                return tt
+        return None
 
     def get_tools_by_group(self, index) -> List[ToolTypes]:
         """
