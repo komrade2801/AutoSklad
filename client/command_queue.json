@@ -1,0 +1,622 @@
+[
+  {
+    "id": "99a1d733-351a-4046-aec2-23238b9416bd",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 3,
+      "datetime": "2025-09-28T03:53:34.100666",
+      "Status": {
+        "id": 5,
+        "stype": "mass_load_init",
+        "description": "Объявлена массовая загрузка",
+        "created_at": "2025-09-26 17:46:03.470901"
+      },
+      "description": "Готов к выдаче",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 4
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T00:53:34.103568Z"
+  },
+  {
+    "id": "9898c790-d6e7-4ce6-819f-7fd19159f56a",
+    "table": "LoadOperations",
+    "operation": "add",
+    "data": {
+      "id": 3,
+      "date": "2025-09-28T03:53:34.111666",
+      "load_id": 1,
+      "load_tools_id": 4,
+      "status_id": 3,
+      "history_id": 3,
+      "description": ""
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T00:53:34.113606Z"
+  },
+  {
+    "id": "22e5e021-8162-447c-a15b-4a122b178941",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 4,
+      "datetime": "2025-09-28T03:53:34.121621",
+      "Status": {
+        "id": 5,
+        "stype": "mass_load_init",
+        "description": "Объявлена массовая загрузка",
+        "created_at": "2025-09-26 17:46:03.470901"
+      },
+      "description": "Готов к выдаче",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T00:53:34.122666Z"
+  },
+  {
+    "id": "73cab0ff-a2ef-4683-8d93-e572e9340082",
+    "table": "LoadOperations",
+    "operation": "add",
+    "data": {
+      "id": 4,
+      "date": "2025-09-28T03:53:34.130596",
+      "load_id": 2,
+      "load_tools_id": 1,
+      "status_id": 3,
+      "history_id": 4,
+      "description": ""
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T00:53:34.131680Z"
+  },
+  {
+    "id": "c28c8966-3ef2-4ca5-b3fb-c7a92ed38d06",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "description": "Старт",
+      "groups_id": 0,
+      "tools_id": 0,
+      "status_id": 0
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:32:13.079665Z"
+  },
+  {
+    "id": "1491c0c8-0319-4651-811b-42f0c799cf7d",
+    "table": "Status",
+    "operation": "add",
+    "data": {
+      "id": 8,
+      "stype": "consumption",
+      "description": "Инструмент выдан!",
+      "created_at": "2025-09-28T14:32:13.128904"
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:32:13.132904Z"
+  },
+  {
+    "id": "7761dbfe-5916-4006-b76f-fdfd344de3ae",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 1,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:32:13.149905Z"
+  },
+  {
+    "id": "7915db5c-e731-4fd7-832c-9717f43bca96",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 5,
+      "datetime": "2025-09-28T14:32:13.160905",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:32:13.163904Z"
+  },
+  {
+    "id": "23f964f9-2812-4748-9516-013364dedec2",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 1,
+      "date": "2025-09-28T14:32:13.172905",
+      "consumption_id": 1,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 5,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:32:13.174954Z"
+  },
+  {
+    "id": "872ba126-f92f-4041-bfc6-44fb9eebcdf5",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 2,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:41:07.778832Z"
+  },
+  {
+    "id": "6229b6e0-c009-4580-b1e6-7830cb994174",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 6,
+      "datetime": "2025-09-28T14:41:07.788832",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:41:07.790832Z"
+  },
+  {
+    "id": "848655c9-3ebd-4c1a-a531-780420861a9c",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 2,
+      "date": "2025-09-28T14:41:07.799861",
+      "consumption_id": 2,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 6,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:41:07.802868Z"
+  },
+  {
+    "id": "2a04336e-7b7f-4ebf-8c59-cb24911b8734",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 3,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:41:54.338881Z"
+  },
+  {
+    "id": "da5f152e-7aca-4f77-aed6-de2dc3b30ff1",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 7,
+      "datetime": "2025-09-28T14:41:54.349880",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:41:54.351880Z"
+  },
+  {
+    "id": "563724b1-07a3-40ff-974a-2940072a47d2",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 3,
+      "date": "2025-09-28T14:41:54.361916",
+      "consumption_id": 3,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 7,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:41:54.364880Z"
+  },
+  {
+    "id": "f0f99925-5b00-4654-ad76-64c6e3333ad8",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 4,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:43:19.846758Z"
+  },
+  {
+    "id": "414906ff-6071-47c8-951f-f84f58f710dd",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 8,
+      "datetime": "2025-09-28T14:43:19.856760",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:43:19.858760Z"
+  },
+  {
+    "id": "663b3abd-c1b9-4b8b-af71-8512ff1f86dc",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 4,
+      "date": "2025-09-28T14:43:19.868789",
+      "consumption_id": 4,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 8,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:43:19.869789Z"
+  },
+  {
+    "id": "2a13e648-5f61-4f40-b439-da0cd1f880b5",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "groups_id": 0,
+      "tools_id": 0,
+      "status_id": 0
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:51:11.846294Z"
+  },
+  {
+    "id": "65b0654a-96f6-4dd9-9213-548b22dde55f",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 5,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:51:11.861293Z"
+  },
+  {
+    "id": "29b0f046-7a6a-4276-a280-46440b22d448",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 9,
+      "datetime": "2025-09-28T14:51:11.869303",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:51:11.871303Z"
+  },
+  {
+    "id": "3646961c-792c-4ec1-bfd0-45adda93050f",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 5,
+      "date": "2025-09-28T14:51:11.879294",
+      "consumption_id": 5,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 9,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T11:51:11.881306Z"
+  },
+  {
+    "id": "9e85a071-939d-419f-bdc2-d39d1e20b0b2",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "groups_id": 0,
+      "tools_id": 0,
+      "status_id": 0
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:02:10.995979Z"
+  },
+  {
+    "id": "115af85e-456d-4dbf-8cf8-5296731b3c6d",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 6,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:02:11.011979Z"
+  },
+  {
+    "id": "91f89c84-fd94-4afc-bb1d-0fa047e1227b",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 10,
+      "datetime": "2025-09-28T15:02:11.022991",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:02:11.024987Z"
+  },
+  {
+    "id": "008be32c-28ff-45f0-8ab5-995bb6b8acb9",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 6,
+      "date": "2025-09-28T15:02:11.033979",
+      "consumption_id": 6,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 10,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:02:11.035979Z"
+  },
+  {
+    "id": "cf3bb011-d9ca-494b-b200-5684b63f8b17",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "groups_id": 0,
+      "tools_id": 0,
+      "status_id": 0
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:05:02.795796Z"
+  },
+  {
+    "id": "fe4324fe-0191-4810-a14a-5c6dd2a84b26",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 7,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:05:02.807796Z"
+  },
+  {
+    "id": "435614ea-c50a-48b1-bb7f-a247c560328a",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 11,
+      "datetime": "2025-09-28T15:05:02.817795",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:05:02.819796Z"
+  },
+  {
+    "id": "07afa42e-d066-4743-b269-3d96d186fe9f",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 7,
+      "date": "2025-09-28T15:05:02.828797",
+      "consumption_id": 7,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 11,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:05:02.831795Z"
+  },
+  {
+    "id": "35acf5fb-8341-4c1a-a594-8f9e9a1593c8",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "groups_id": 0,
+      "tools_id": 0,
+      "status_id": 0
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:06:31.417827Z"
+  },
+  {
+    "id": "385129af-a4cf-43bf-83ec-db9de4be5799",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 8,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:06:31.432826Z"
+  },
+  {
+    "id": "d182d94e-502a-4437-8329-7124f0f8d441",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 12,
+      "datetime": "2025-09-28T15:06:31.443862",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:06:31.446858Z"
+  },
+  {
+    "id": "c0503edb-1fed-4351-b2c5-0a8282422d48",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 8,
+      "date": "2025-09-28T15:06:31.455826",
+      "consumption_id": 8,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 12,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:06:31.457868Z"
+  },
+  {
+    "id": "26eb4987-592e-401e-b65b-7144493c3ee6",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 3,
+      "description": "Старт",
+      "groups_id": 0,
+      "tools_id": 0,
+      "status_id": 0
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:07:23.968342Z"
+  },
+  {
+    "id": "abb75e06-8c5b-470e-bf33-24fbdb5487fe",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 9,
+      "cell_id": 3,
+      "tools_id": 4
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:07:23.980343Z"
+  },
+  {
+    "id": "6906eb58-5e09-4a58-8a88-8b1fcacf54ce",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 13,
+      "datetime": "2025-09-28T15:07:23.989342",
+      "Status": 8,
+      "description": "Инструмент 4 выдано пользователю 2.",
+      "user_id": 2,
+      "user_role_id": 2,
+      "tools_id": 4
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:07:23.991342Z"
+  },
+  {
+    "id": "5b2e5607-73b1-490f-b384-31f8a7b4e803",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 9,
+      "date": "2025-09-28T15:07:23.997361",
+      "consumption_id": 9,
+      "consumption_tools_id": 4,
+      "status_id": 8,
+      "history_id": 13,
+      "description": "Инструмент 4 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:07:23.999372Z"
+  },
+  {
+    "id": "334c6622-3d8e-42ad-91f3-37197ff64767",
+    "table": "Cell",
+    "operation": "update",
+    "data": {
+      "index": 2,
+      "groups_id": 0,
+      "tools_id": 0,
+      "status_id": 0
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:17:47.836356Z"
+  },
+  {
+    "id": "d5e554dc-ecc8-438e-832c-527fe53e7b21",
+    "table": "Consumption",
+    "operation": "add",
+    "data": {
+      "id": 10,
+      "cell_id": 2,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:17:47.852230Z"
+  },
+  {
+    "id": "fd81ea64-6dde-4352-b604-ac81ffe0a6a8",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "id": 14,
+      "datetime": "2025-09-28T15:17:47.863202",
+      "Status": 8,
+      "description": "Инструмент 1 выдано пользователю 6.",
+      "user_id": 6,
+      "user_role_id": 6,
+      "tools_id": 1
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:17:47.865202Z"
+  },
+  {
+    "id": "e9ffee49-471a-47b2-8c7b-97062ce88928",
+    "table": "OperationsConsumption",
+    "operation": "add",
+    "data": {
+      "id": 10,
+      "date": "2025-09-28T15:17:47.873203",
+      "consumption_id": 10,
+      "consumption_tools_id": 1,
+      "status_id": 8,
+      "history_id": 14,
+      "description": "Инструмент 1 потребление зафиксировано."
+    },
+    "status": "done",
+    "timestamp": "2025-09-28T12:17:47.875203Z"
+  }
+]
