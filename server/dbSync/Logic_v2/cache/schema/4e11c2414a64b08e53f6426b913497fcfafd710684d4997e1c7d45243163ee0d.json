@@ -1,0 +1,171 @@
+{
+  "Error": {
+    "id": "id",
+    "error_type": "error_type",
+    "message": "message",
+    "timestamp": "timestamp"
+  },
+  "Group": {
+    "id": "id",
+    "name": "name",
+    "description": "description",
+    "paren_group_id": "paren_group_id"
+  },
+  "Help": {
+    "id": "id",
+    "text": "text",
+    "data": "data"
+  },
+  "MassDrop": {
+    "id": "id",
+    "description": "description",
+    "created_at": "created_at"
+  },
+  "MassLoad": {
+    "id": "id",
+    "description": "description",
+    "created_at": "created_at"
+  },
+  "Plan": {
+    "id": "id",
+    "enterprise": "enterprise",
+    "barcode": "barcode",
+    "name": "name",
+    "description": "description",
+    "designation": "designation",
+    "index_list": "index_list",
+    "list_count": "list_count",
+    "parent_plan_id": "parent_plan_id"
+  },
+  "Role": {
+    "id": "id",
+    "name": "name",
+    "description": "description",
+    "parent_role_id": "parent_role_id"
+  },
+  "Status": {
+    "id": "id",
+    "stype": "stype",
+    "description": "description",
+    "created_at": "created_at"
+  },
+  "Rights": {
+    "id": "id",
+    "name": "name",
+    "description": "description",
+    "role_id": "role_id"
+  },
+  "User": {
+    "id": "id",
+    "barcode": "barcode",
+    "code": "code",
+    "first_name": "first_name",
+    "password": "password",
+    "second_name": "second_name",
+    "family": "family",
+    "role_id": "role_id"
+  },
+  "Identification": {
+    "id": "id",
+    "datetime": "datetime",
+    "status": "status",
+    "description": "description",
+    "user_id": "user_id"
+  },
+  "Tools": {
+    "id": "id",
+    "plan_id": "plan_id",
+    "name": "name",
+    "description": "description",
+    "img": "img",
+    "groups_id": "groups_id",
+    "barcode": "barcode",
+    "inventory_number": "inventory_number",
+    "tool_type_id": "tool_type_id"
+  },
+  "Cell": {
+    "id": "id",
+    "number": "number",
+    "description": "description",
+    "groups_id": "groups_id",
+    "tools_id": "tools_id",
+    "status_id": "status_id",
+    "index": "id"
+  },
+  "History": {
+    "id": "id",
+    "datetime": "datetime",
+    "status": "status",
+    "description": "description",
+    "user_id": "user_id",
+    "user_role_id": "user_role_id",
+    "tools_id": "tools_id"
+  },
+  "Consumption": {
+    "id": "id",
+    "cell_id": "cell_id",
+    "tools_id": "tools_id"
+  },
+  "Drop": {
+    "id": "id",
+    "description": "description",
+    "created_at": "created_at",
+    "cell_id": "cell_id",
+    "mass_drop_id": "mass_drop_id",
+    "tools_id": "tools_id"
+  },
+  "Load": {
+    "id": "id",
+    "description": "description",
+    "tools_id": "tools_id",
+    "mass_load_id": "mass_load_id",
+    "cell_id": "cell_id"
+  },
+  "DropOperations": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "history_id": "history_id",
+    "status_id": "status_id",
+    "tools_id": "tools_id",
+    "drop_id": "drop_id"
+  },
+  "LoadOperations": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "load_id": "load_id",
+    "load_tools_id": "load_tools_id",
+    "status_id": "status_id",
+    "history_id": "history_id"
+  },
+  "OperationsConsumption": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "consumption_id": "consumption_id",
+    "history_id": "history_id",
+    "consumption_tools_id": "consumption_tools_id",
+    "status_id": "status_id"
+  },
+  "ToolTypes": {
+    "id": "id",
+    "name": "name",
+    "description": "description",
+    "count": "count",
+    "img": "img",
+    "groups_id": "groups_id"
+  },
+  "ToolsHasDevice": {
+    "tools_id": "tools_id",
+    "device_id": "device_id"
+  },
+  "LoadOperationsHasDevice": {
+    "load_operations_id": "load_operations_id",
+    "device_id": "device_id"
+  },
+  "OperationsConsumptionHasDevice": {
+    "operations_consumption_id": "operations_consumption_id",
+    "device_id": "device_id"
+  }
+}
