@@ -16,10 +16,15 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
         self.event_select_tool = lambda *args, **kwargs: print(*args, **kwargs)
 
     def set_data(self, *args, **kwargs):
+        print("WidgetSelectTool set_data")
+        print(args)
+        print(kwargs)
         """Устанавливает текст. Реализуется в каждом экране."""
         self.lbl_number_tool.setText(args[0].name)
+        self.group_name.setText(args[1].name)
+        self.cell_number.setText(str(args[2].number))
         self.name = args[0].name
-        self.lbl_status.setText("2")
+        # self.lbl_status.setText("2")
         self.status = args[0].id
 
 
@@ -39,4 +44,4 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
         """Обработка нажатия мыши на виджет."""
         super().mousePressEvent(event)  # Сохраняем стандартное поведение
         self.widget_clicked.emit()  # Генерируем сигнал клика по виджету
-        self.event_select_tool((self.status, self.name), "btn_tool_name")
+        self.event_select_tool((self.status, self.name, self.group_name.text()), "btn_tool_name")

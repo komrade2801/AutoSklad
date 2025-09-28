@@ -1,7 +1,7 @@
 import traceback
 
-from GUI.BaseScreen import BaseScreen
-from GUI.ui_classes.Ui_screen_10_confirmation import Ui_screen_10_confirmation
+from .BaseScreen import BaseScreen
+from .ui_classes.Ui_screen_10_confirmation import Ui_screen_10_confirmation
 from PyQt5.QtCore import QEvent
 
 class screen_10_confirmation(BaseScreen, Ui_screen_10_confirmation):
@@ -12,6 +12,9 @@ class screen_10_confirmation(BaseScreen, Ui_screen_10_confirmation):
         self.tool_id = None
 
     def set_data(self, *args, **kwargs):
+        print("screen_10_confirmation set_data")
+        print(args)
+        print(kwargs)
         """Устанавливает текст. Реализуется в каждом экране."""
         try:
             value = args[0]
@@ -19,6 +22,7 @@ class screen_10_confirmation(BaseScreen, Ui_screen_10_confirmation):
             self.name = value[1]
             self.tool_id = value[0]
             self.lbl_tool_number.setText(self.name)
+            self.lbl_name_group.setText(value[2])
         except Exception as e:...
             # print(e)
             # print(args)

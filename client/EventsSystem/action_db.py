@@ -180,7 +180,7 @@ class ActionMapper:
             'write_db_rights_by_user_id': lambda user_id, rights_data: self.write_db_rights_by_user_id(user_id, rights_data),
             'read_db_rights_by_user_id': lambda user_id: self.read_db_rights_by_user_id(user_id),
             # 'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
-            'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
+            'read_db_rights_tool': lambda tool_id, name, group_name: self.read_db_rights_tool(tool_id, name, group_name),
             'read_db_get_cell': lambda tool_id, tool_name: self.read_db_get_cell(tool_id, tool_name),
             # "": None,
             'read_db_user_operations': lambda user_id: self.read_db_user_operations(user_id),
@@ -273,10 +273,10 @@ class ActionMapper:
         # Возвращаем номер первой найденной ячейки
         return {"trigger": "send_number", "number": cells[0].number, "tool_name": tool_name} if cells else None
 
-    def read_db_rights_tool(self, tool_id, name):
-        print(f"read_db_rights_tool tool_id {tool_id}, name {name}")
+    def read_db_rights_tool(self, tool_id, name, group_name):
+        print(f"read_db_rights_tool tool_id {tool_id}, name {name}, group_name {group_name}")
         self.select_tool = self.e_tools.get_tool_by_id(tool_id)
-        return tool_id, name
+        return tool_id, name, group_name
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
         print(f"write_db_tool_consumption")
@@ -491,6 +491,14 @@ class ActionMapper:
         :return: Список объектов Tools, готовых к выдаче.
         """
 
+        # Лямбда для создания словаря инструментов
+        def create_tool_dict(cell, tool):
+            return {
+                "group": self.e_group.get_group_by_id(tool.groups_id),
+                "tool": tool,
+                "cell": cell,
+            }
+
         # TODO: Вынести в утилитарный класс
         def add_all_parent_groups(group_list:list[Group], parent_group_id: int, group: Group, group_id: int):
             if parent_group_id == 0 and parent_group_id != group_id:
@@ -563,7 +571,8 @@ class ActionMapper:
             if len(load_operations) == 0 or load_operations == []:
                 continue
             # Если инструмент прошёл все проверки, добавляем его в список
-            valid_tools.append(tool)
+            # valid_tools.append(tool)
+            valid_tools.append(create_tool_dict(cell, tool))
         return valid_tools, group_name
 
     def read_db_plan_operations(self, plans_id: int) -> list[dict]:

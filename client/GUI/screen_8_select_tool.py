@@ -40,9 +40,10 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
             self.listWidget.clear()  # Очищаем список перед добавлением новых данных
             try:
                 for tool in tools:
+                    print(f"tool: {tool}")
                     # Создаём кастомный виджет
                     widget = WidgetSelectTool()
-                    widget.set_data(tool)  # Передаём данные в кастомный виджет
+                    widget.set_data(tool["tool"], tool["group"], tool["cell"])  # Передаём данные в кастомный виджет
                     widget.event_select_tool = self.handle_select_tool
                     # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
                     list_item = QListWidgetItem(self.listWidget)
@@ -61,11 +62,14 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
         print(f"screen_8_select_tool get_data. value {self.value}")
         try:
             if self.value:
-                return {"tool_id": self.value[0], "name": self.value[1]}
+                return {"tool_id": self.value[0], "name": self.value[1], "group_name": self.value[2]}
         except:
             print(traceback.format_exc())
 
     def handle_select_tool(self, *args, **kwargs):
+        print("screen_8_select_tool handle_select_tool")
+        print(args)
+        print(kwargs)
         self.value, self.trigger = args
         self.event_select_tool(self.value[0], self.trigger)
 
