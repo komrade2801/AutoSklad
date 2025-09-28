@@ -1,6 +1,6 @@
 import datetime
 import traceback
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Any
 import dbSync
 # ----------------------------------- 1
 from DB.Engine.HelpCRUD import EngineHelp
@@ -43,7 +43,9 @@ from DB.Models.LoadOperations import LoadOperations
 from DB.Models.MassDrop import MassDrop
 from DB.Models.OperationsConsumption import OperationsConsumption
 from DB.Models.Tools import Tools
+from DB.Models.Group import Group
 from DB.Models.User import User
+from sphinx.cmd.quickstart import valid_dir
 
 
 class MassDropToolPlanIDNoneError(Exception):
@@ -166,7 +168,7 @@ class ActionMapper:
         }
         self.__actions = {
             'write_db_help': lambda message: self.e_help.add_help_entry(message, data=datetime.datetime.now()),
-            'read_db_help': lambda index: self.e_help.get_help_by_id(self.e_help.get_all_ids()[index]),
+            'read_db_help': lambda index: self.e_help.get_help_by_id(self.e_help.get_all_ids()[index]) if self.e_help.count() > 0 else None,
             "count_db_help": lambda: self.e_help.count(),  # Чтение сообщений из таблицы Help
             # "": None,
             'write_db_users': lambda user_data: self.write_db_users(user_data),
@@ -272,10 +274,12 @@ class ActionMapper:
         return {"trigger": "send_number", "number": cells[0].number, "tool_name": tool_name} if cells else None
 
     def read_db_rights_tool(self, tool_id, name):
+        print(f"read_db_rights_tool tool_id {tool_id}, name {name}")
         self.select_tool = self.e_tools.get_tool_by_id(tool_id)
         return tool_id, name
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
+        print(f"write_db_tool_consumption")
         """
         Записывает факт расхода инструмента в базу данных.
         user_id: Идентификатор пользователя, который получил инструмент.
@@ -364,7 +368,8 @@ class ActionMapper:
 
         return {'trigger': 'view_ok'}
 
-    def read_db_tools_collection(self, group_id: int, group_name) -> list[Type[Tools]]:
+    def read_db_tools_collection(self, group_id: int, group_name) -> tuple[list[Any], Any] | Any:
+        print(f"action_db read_db_tools_collection, {group_id}, {group_name}")
         """
         Возвращает коллекцию валидных инструментов, связанных с указанной группой,
         включая количество похожих инструментов и их характеристики.
@@ -372,15 +377,38 @@ class ActionMapper:
         :param group_id: ID группы, для которой извлекаются инструменты.
         :return: Список инструментов в формате словарей.
         """
+
+        # TODO: Вынести в утилитарный класс
+        def add_all_parent_groups(group_list:list[Group], parent_group_id: int, group: Group, group_id: int):
+            if parent_group_id == 0 and parent_group_id != group_id:
+                return
+            if parent_group_id == group_id:
+                group_list.append(group)
+            else:
+                parent_group = self.e_group.get_group_by_id(parent_group_id)
+                add_all_parent_groups(group_list, parent_group.paren_group_id, group, group_id)
+
         try:
-            # Получаем инструменты из указанной группы
-            tools = self.e_tools.get_tools_by_group(group_id)
-            return tools
+            group_list = []
+
+            # Получаем все подгруппы указанной группы
+            groups = self.e_group.get_all_groups()
+            for group in groups:
+                add_all_parent_groups(group_list, group.paren_group_id, group, group_id)
+            print(f"group_list: {group_list}")
+
+            tools = []
+
+            for group in group_list:
+                # Получаем инструменты из указанной группы
+                tools.extend(self.e_tools.get_tools_by_group(group.id))
+            return tools, group_name
         except Exception as e:
             print(
                 f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
             print(traceback.format_exc())
-            return []
+            return [], group_name
+
 
     def read_db_tools_by_group_id(self, group_id: int) -> list[Tools]:
         """
@@ -401,6 +429,7 @@ class ActionMapper:
             return []
 
     def read_db_tools_by_plans_id(self, plan_id: int):
+        print(f"read_db_tools_by_plans_id. plan_id: {plan_id}")
         """
         Извлекает список инструментов, связанных с указанным планом (plan_id), из таблицы Tools.
 
@@ -462,8 +491,36 @@ class ActionMapper:
         :return: Список объектов Tools, готовых к выдаче.
         """
 
-        # Получение всех инструментов, связанных с указанной группой
-        tools = self.e_tools.get_tools_by_group(group_id)
+        # TODO: Вынести в утилитарный класс
+        def add_all_parent_groups(group_list:list[Group], parent_group_id: int, group: Group, group_id: int):
+            if parent_group_id == 0 and parent_group_id != group_id:
+                return
+            if parent_group_id == group_id:
+                group_list.append(group)
+            else:
+                parent_group = self.e_group.get_group_by_id(parent_group_id)
+                add_all_parent_groups(group_list, parent_group.paren_group_id, group, group_id)
+
+        try:
+            group_list = []
+
+            # Получаем все подгруппы указанной группы
+            groups = self.e_group.get_all_groups()
+            for group in groups:
+                add_all_parent_groups(group_list, group.paren_group_id, group, group_id)
+            print(f"group_list: {group_list}")
+
+            tools = []
+
+            for group in group_list:
+                # Получаем инструменты из указанной группы
+                tools.extend(self.e_tools.get_tools_by_group(group.id))
+        except Exception as e:
+            print(
+                f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
+            print(traceback.format_exc())
+            tools = []
+
         valid_tools = []
 
         # for tool in tools:
@@ -1392,6 +1449,7 @@ class ActionMapper:
             return []
 
     def read_db_plan_id(self, barcode):
+        print(f"read_db_plan_id. barcode: {barcode}")
         """
         Получает идентификатор чертежа по штрих-коду из базы данных.
 
@@ -1400,13 +1458,55 @@ class ActionMapper:
         """
         try:
             # Получаем чертеж по штрих-коду
-            plan = self.e_plan.get_plan_by_barcode(barcode)
+            # plan = self.e_plan.get_plan_by_barcode(barcode)
+            #
+            # if plan:
+            #     return plan  # Возвращаем идентификатор чертежа
+            # else:
+            #     print(f"Чертеж с штрих-кодом {barcode} не найден.")
+            #     return None
 
-            if plan:
-                return plan  # Возвращаем идентификатор чертежа
-            else:
-                print(f"Чертеж с штрих-кодом {barcode} не найден.")
+            # TODO: временная заглушка на поиск инструмента вместо чертежа
+            """
+            1. Выполяется поиск всех инструментов по штрихкоду
+            2. Выполяется поиск всех ячеек, где есть эти инструменты, и статус = готов к выдаче
+            3. Выбирается первая ячейка
+            """
+            tools = self.e_tools.get_tools_by_barcode(barcode)
+            print(f"tools: {tools}")
+
+            valid_cells = []
+            valid_tool_name = ""
+            valid_tool = None
+
+            for tool in tools:
+                cells = self.e_cell.get_cells_by_tool(tool.id)
+                print(f"cells: {cells}")
+                for cell in cells:
+                    if cell.status_id == 3:
+                        valid_cells.append(cell)
+                        valid_tool = tool
+
+            if not valid_tool:
                 return None
+
+            valid_tool_name = valid_tool.name
+            self.select_tool = valid_tool
+
+
+            print(f"valid_cells: {valid_cells}")
+
+            if len(valid_cells) == 0:
+                return None
+            else:
+                cell_number = valid_cells[0].number
+                # Если результат пустой, возвращаем None
+                if not cell_number:
+                    return {"trigger": "err_data"}
+
+                # Предполагается, что инструмент связан с одной ячейкой
+                # Возвращаем номер первой найденной ячейки
+                return {"trigger": "send_number", "number": cell_number, "tool_name": valid_tool_name} if cell_number else None
 
         except Exception as e:
             print(f"Ошибка при чтении идентификатора чертежа: {e}")
@@ -1745,11 +1845,20 @@ class ActionMapper:
 
         return True
 
-    def read_db_mass_load_tools(self, *args, **kwargs) -> List[int]:
+    def read_db_mass_load_tools(self, *args, **kwargs) -> List[dict]:
         """
         Извлекает номера ячеек, связанных с последними операциями массовой загрузки инструментов.
         :return: Список номеров ячеек.
         """
+
+        # Лямбда для создания словаря ячейки
+        def create_cell_dict(cell):
+            return {
+                "group_name": self.e_group.get_group_by_id(cell.groups_id).name,
+                "tools_name": self.e_tools.get_tool_by_id(cell.tools_id).name,
+                "cell_number": cell.number,
+            }
+
         try:
             # 1. Найти статус с типом "mass_load_init"
             status = self.e_status.all()
@@ -1758,6 +1867,10 @@ class ActionMapper:
 
             if not status_id:
                 raise ValueError("Статус 'mass_load_init' не найден.")
+
+            if self.e_mass_load.count() == 0:
+                print(f"Данные о массовой загрузке отсутствуют")
+                return []
 
             mass_load_id = max(self.e_mass_load.get_all_ids())
             loads = self.e_load.find_by_mass_load_id(mass_load_id)
@@ -1772,12 +1885,16 @@ class ActionMapper:
                     cells_ids.append(load.cell_id)
 
             # Получение идентификаторов загрузок
-            cell_numbers = []
+            cell_list = []
             for _id in cells_ids:
                 cell = self.e_cell.get_cell_by_id(_id)
-                cell_numbers.append(cell.number)
 
-            return cell_numbers
+                tool = self.e_tools.get_tool_by_id(cell.tools_id)
+                group = self.e_group.get_group_by_id(cell.groups_id)
+
+                cell_list.append(create_cell_dict(cell))
+
+            return cell_list
 
         except Exception as e:
             print(f"Ошибка при выполнении запроса: {e}")
