@@ -2,11 +2,11 @@ import traceback
 
 from PyQt5.QtWidgets import QListWidgetItem
 
-from GUI.BaseScreen import BaseScreen
-from GUI.ui_classes.Ui_screen_8_select_tool import Ui_screen_8_select_tool
+from .BaseScreen import BaseScreen
+from .ui_classes.Ui_screen_8_select_tool import Ui_screen_8_select_tool
 from PyQt5.QtCore import QEvent
 
-from GUI.widgets.widget_select_tool import WidgetSelectTool
+from .widgets.widget_select_tool import WidgetSelectTool
 
 
 class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
@@ -25,6 +25,9 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
         Ожидается, что данные передаются в виде:
         [{'id': 1, 'name': 'Group Name', 'description': 'Description', 'status': 0}, ...]
         """
+        print("screen_8_select_tool set_data")
+        print(args)
+        print(kwargs)
         try:
             if not args[0]:
                 return
@@ -55,6 +58,7 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
             print(traceback.format_exc())
 
     def get_data(self, *args, **kwargs):
+        print(f"screen_8_select_tool get_data. value {self.value}")
         try:
             if self.value:
                 return {"tool_id": self.value[0], "name": self.value[1]}

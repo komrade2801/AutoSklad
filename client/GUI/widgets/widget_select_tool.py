@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_8_9_tool import Ui_widget_8_9_tool
+from ..BaseScreen import BaseScreen
+from ..widgets.ui_classes.widget_8_9_tool import Ui_widget_8_9_tool
 
 
 class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
@@ -33,7 +33,7 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
 
     def sizeHint(self):
         """Возвращает рекомендуемый размер виджета."""
-        return QtCore.QSize(440, 80)
+        return QtCore.QSize(440, 65)
 
     def mousePressEvent(self, event):
         """Обработка нажатия мыши на виджет."""
