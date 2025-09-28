@@ -1,12 +1,4 @@
 {
-  "Device": {
-    "id": "id",
-    "number": "number",
-    "name": "name",
-    "description": "description",
-    "details": "details",
-    "create": "create"
-  },
   "Error": {
     "id": "id",
     "error_type": "error_type",
@@ -24,10 +16,15 @@
     "text": "text",
     "data": "data"
   },
-  "Page": {
+  "MassDrop": {
     "id": "id",
-    "name": "name",
-    "description": "description"
+    "description": "description",
+    "created_at": "created_at"
+  },
+  "MassLoad": {
+    "id": "id",
+    "description": "description",
+    "created_at": "created_at"
   },
   "Plan": {
     "id": "id",
@@ -42,9 +39,9 @@
   },
   "Role": {
     "id": "id",
-    "Name": "Name",
-    "Description": "Description",
-    "ParentRole_id": "ParentRole_id"
+    "name": "name",
+    "description": "description",
+    "parent_role_id": "parent_role_id"
   },
   "Status": {
     "id": "id",
@@ -52,88 +49,39 @@
     "description": "description",
     "created_at": "created_at"
   },
-  "Type": {
-    "id": "id",
-    "name": "name",
-    "operation": "operation"
-  },
-  "mass_drop": {
-    "id": "id",
-    "description": "description",
-    "created_at": "created_at"
-  },
-  "mass_load": {
-    "id": "id",
-    "description": "description",
-    "created_at": "created_at"
-  },
-  "Error_has_Device": {
-    "error_id": "error_id",
-    "device_id": "device_id"
-  },
   "Rights": {
     "id": "id",
-    "Name": "Name",
-    "Description": "Description",
-    "Role_id": "Role_id",
-    "Page_id": "Page_id"
-  },
-  "ToolTypes": {
-    "id": "id",
     "name": "name",
     "description": "description",
-    "count": "count",
-    "img": "img",
-    "groups_id": "groups_id"
+    "role_id": "role_id"
   },
   "User": {
     "id": "id",
     "barcode": "barcode",
-    "Code": "Code",
-    "FirstName": "FirstName",
+    "code": "code",
+    "first_name": "first_name",
     "password": "password",
-    "SecondName": "SecondName",
-    "Family": "Family",
-    "Role_id": "Role_id"
-  },
-  "mass_drop_has_Device": {
-    "mass_drop_id": "mass_drop_id",
-    "device_id": "device_id"
-  },
-  "mass_load_has_Device": {
-    "mass_load_id": "mass_load_id",
-    "device_id": "device_id"
-  },
-  "ActualNorm": {
-    "id": "id",
-    "User_id": "User_id",
-    "day": "day"
-  },
-  "Command": {
-    "id": "id",
-    "user_id": "user_id",
-    "device_id": "device_id",
-    "type_id": "type_id",
-    "Status_id": "Status_id",
-    "name": "name",
-    "create": "create"
+    "second_name": "second_name",
+    "family": "family",
+    "role_id": "role_id"
   },
   "Identification": {
     "id": "id",
     "datetime": "datetime",
-    "Status": "Status",
-    "Description": "Description",
-    "User_id": "User_id"
+    "status": "status",
+    "description": "description",
+    "user_id": "user_id"
   },
   "Tools": {
     "id": "id",
-    "inventory_number": "inventory_number",
     "plan_id": "plan_id",
+    "name": "name",
+    "description": "description",
+    "img": "img",
+    "groups_id": "groups_id",
+    "barcode": "barcode",
+    "inventory_number": "inventory_number",
     "tool_type_id": "tool_type_id"
-  },
-  "ActualNormHasDevice": {
-    "actual_norm_id": "actual_norm_id",
-    "device_id": "device_id"
   },
   "Cell": {
     "id": "id",
@@ -141,39 +89,17 @@
     "description": "description",
     "groups_id": "groups_id",
     "tools_id": "tools_id",
-    "status_id": "status_id"
+    "status_id": "status_id",
+    "index": "id"
   },
   "History": {
     "id": "id",
     "datetime": "datetime",
-    "Status": "Status",
-    "Description": "Description",
+    "status": "status",
+    "description": "description",
     "user_id": "user_id",
     "user_role_id": "user_role_id",
     "tools_id": "tools_id"
-  },
-  "ToolLocation": {
-    "tools_id": "tools_id",
-    "status_id": "status_id"
-  },
-  "ToolsNorm": {
-    "id": "id",
-    "summa": "summa",
-    "summa_of_periods": "summa_of_periods",
-    "description": "description",
-    "type_periods": "type_periods",
-    "summa_of_use": "summa_of_use",
-    "start_date": "start_date",
-    "tools_id": "tools_id",
-    "actual_norm_id": "actual_norm_id"
-  },
-  "Tools_has_Device": {
-    "tools_id": "tools_id",
-    "device_id": "device_id"
-  },
-  "Cell_has_Device": {
-    "Cell_id": "Cell_id",
-    "Device_id": "Device_id"
   },
   "Consumption": {
     "id": "id",
@@ -195,6 +121,24 @@
     "mass_load_id": "mass_load_id",
     "cell_id": "cell_id"
   },
+  "DropOperations": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "history_id": "history_id",
+    "status_id": "status_id",
+    "tools_id": "tools_id",
+    "drop_id": "drop_id"
+  },
+  "LoadOperations": {
+    "id": "id",
+    "date": "date",
+    "description": "description",
+    "load_id": "load_id",
+    "load_tools_id": "load_tools_id",
+    "status_id": "status_id",
+    "history_id": "history_id"
+  },
   "OperationsConsumption": {
     "id": "id",
     "date": "date",
@@ -204,34 +148,24 @@
     "consumption_tools_id": "consumption_tools_id",
     "status_id": "status_id"
   },
-  "dropOperations": {
+  "ToolTypes": {
     "id": "id",
-    "date": "date",
+    "name": "name",
     "description": "description",
-    "history_id": "history_id",
-    "status_id": "status_id",
+    "count": "count",
+    "img": "img",
+    "groups_id": "groups_id"
+  },
+  "ToolsHasDevice": {
     "tools_id": "tools_id",
-    "drop_id": "drop_id"
-  },
-  "loadOperations": {
-    "id": "id",
-    "date": "date",
-    "description": "description",
-    "load_id": "load_id",
-    "load_tools_id": "load_tools_id",
-    "status_id": "status_id",
-    "history_id": "history_id"
-  },
-  "OperationsConsumption_has_Device": {
-    "operations_consumption_id": "operations_consumption_id",
     "device_id": "device_id"
   },
-  "dropOperations_has_Device": {
-    "dropOperations_id": "dropOperations_id",
-    "Device_id": "Device_id"
+  "LoadOperationsHasDevice": {
+    "load_operations_id": "load_operations_id",
+    "device_id": "device_id"
   },
-  "loadOperations_has_Device": {
-    "loadOperations_id": "loadOperations_id",
+  "OperationsConsumptionHasDevice": {
+    "operations_consumption_id": "operations_consumption_id",
     "device_id": "device_id"
   }
 }

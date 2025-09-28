@@ -8,7 +8,8 @@
   "Group": {
     "id": "id",
     "name": "name",
-    "description": "description"
+    "description": "description",
+    "paren_group_id": "paren_group_id"
   },
   "Help": {
     "id": "id",
@@ -73,9 +74,7 @@
   },
   "Tools": {
     "id": "id",
-    "inventory_number": "inventory_number",
     "plan_id": "plan_id",
-    "tool_type_id": "tool_type_id",
     "name": "name",
     "description": "description",
     "img": "img",
