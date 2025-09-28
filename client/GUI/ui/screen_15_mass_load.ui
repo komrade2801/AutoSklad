@@ -115,6 +115,15 @@
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -202,6 +211,15 @@
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </inactive>
@@ -293,6 +311,15 @@
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </disabled>
     </palette>
    </property>
@@ -318,8 +345,8 @@ color: rgb(0, 49, 114);</string>
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>img/btn_ico_up.png</normaloff>img/btn_ico_up.png</iconset>
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/up.png</normaloff>:/icons/up.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -489,6 +516,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -576,6 +612,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </inactive>
@@ -667,6 +712,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </disabled>
     </palette>
    </property>
@@ -692,8 +746,8 @@ color: rgb(0, 49, 114);</string>
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>img/btn_ico_back.png</normaloff>img/btn_ico_back.png</iconset>
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -702,7 +756,7 @@ color: rgb(0, 49, 114);</string>
     </size>
    </property>
   </widget>
-  <widget class="QPushButton" name="btn_ok">
+  <widget class="QPushButton" name="btn_load_ok">
    <property name="geometry">
     <rect>
      <x>124</x>
@@ -801,6 +855,15 @@ color: rgb(0, 49, 114);</string>
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -888,6 +951,15 @@ color: rgb(0, 49, 114);</string>
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </inactive>
@@ -979,6 +1051,15 @@ color: rgb(0, 49, 114);</string>
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </disabled>
     </palette>
    </property>
@@ -1005,7 +1086,8 @@ color: rgb(0, 49, 114);</string>
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>img/btn_ico_ok.png</normaloff>img/btn_ico_ok.png</iconset>
+     <normalon>:/icons/ok.png</normalon>
+    </iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -1144,6 +1226,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -1231,6 +1322,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </inactive>
@@ -1322,6 +1422,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </disabled>
     </palette>
    </property>
@@ -1347,8 +1456,8 @@ color: rgb(0, 49, 114);</string>
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>img/btn_ico_down.png</normaloff>img/btn_ico_down.png</iconset>
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/down.png</normaloff>:/icons/down.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -1357,18 +1466,28 @@ color: rgb(0, 49, 114);</string>
     </size>
    </property>
   </widget>
-  <widget class="QWidget" name="gridLayoutWidget">
+  <widget class="QListWidget" name="listWidget">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>5</x>
-     <y>90</y>
-     <width>466</width>
-     <height>646</height>
+     <y>100</y>
+     <width>471</width>
+     <height>631</height>
     </rect>
    </property>
-   <layout class="QGridLayout" name="gridLayout"/>
+   <property name="whatsThis">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));</string>
+   </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../img/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
