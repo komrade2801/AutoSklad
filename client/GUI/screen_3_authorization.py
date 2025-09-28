@@ -64,6 +64,10 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
 
     def on_login_changed(self, text):
         print(f"on_login_changed. Input text: {text}")
+        if len(text)==0:
+            print(f"clear login text: {text}")
+            self.login = ''
+            return
         if ((len(text) >= self.trigger_length_login) and
                 (len(text) < self.trigger_max_length_login)):
             self.login = text  # Обновляем переменную
@@ -78,10 +82,15 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         # Обновляем переменную
         try:
             if len(text)==0:
+                print(f"clear password text: {text}")
+                self.psw = ''
                 return
-            char = text[len(text)-1]
-            if char != "*":
-                self.psw = self.psw + char
+            elif len(text)==1 and text != "*":
+                self.psw = text
+            else:
+                char = text[len(text)-1]
+                if char != "*":
+                    self.psw = self.psw + char
             self.edit_psw.setText("*"*len(text))
         except:
             print(len(text))
@@ -195,15 +204,15 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             print(traceback.format_exc())
 
     def get_data(self):
-        # print(f"Before clearing: login={self.login}, password={self.psw}")
+        print(f"Before clearing: login={self.login}, password={self.psw}")
 
         # if self.psw == '':
         #     return
         arr = {"login": self.login, "password": self.psw}
         # print(f"Returning: {arr}")
-        if self.login != '' and self.psw != '':
-            self.login = ''
-            self.psw = ''
+        # if self.login != '' and self.psw != '':
+        #     self.login = ''
+        #     self.psw = ''
         return arr
 
     def handle_callback_executor(self, *args, **kwargs):
