@@ -193,7 +193,7 @@ class SchemaCache:
         if cache_dir is None:
             # Получаем текущую папку скрипта и добавляем относительный путь
             base_dir = os.path.dirname(os.path.abspath(__file__))  # Путь к текущему файлу
-            cache_dir = os.path.join(base_dir, 'dbSync', 'Logic_v2', 'cache', 'schema')  # Строим новый путь
+            cache_dir = os.path.join(base_dir, 'cache', 'schema')  # Строим новый путь
 
         self.cache_dir = cache_dir
         self.max_size = max_size
