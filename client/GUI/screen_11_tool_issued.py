@@ -24,19 +24,23 @@ class screen_11_tool_issued(BaseScreen, Ui_screen_11_tool_issued):
             self.event_timeout_back("timeout_back")
 
     def showEvent(self, event):
+        print(f"screen_11_tool_issued showEvent. event: {event}")
         """Событие, которое срабатывает, когда виджет показывается."""
         super().showEvent(event)
         self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
 
     def hideEvent(self, event):
+        print(f"screen_11_tool_issued hideEvent. event: {event}")
         """Событие, которое срабатывает, когда виджет скрывается."""
         super().hideEvent(event)
         self.visibility_timer.stop()
         self.timeout_back = self.__timeout_back
     def set_data(self, *args, **kwargs):
+        print(f"screen_11_tool_issued set_data. args: {args}, kwargs: {kwargs}")
         """Устанавливает текст. Реализуется в каждом экране."""
         pass
 
     def get_data(self):
+        print(f"screen_11_tool_issued get_data")
         pass

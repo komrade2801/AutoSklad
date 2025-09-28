@@ -60,10 +60,11 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
             self._barcode_timer.start()  # Перезапускаем таймер при каждом нажатии
 
     def _process_barcode(self):
+        print(f"_process_barcode. buffer: {self._barcode_buffer}")
         if self._barcode_buffer:
             barcode={'barcode':self._barcode_buffer}
-            self.event_enter_barcode(barcode)
             self._barcode_buffer = ""
+            self.event_enter_barcode(barcode)
 
     def update_icon(self):
         # Установка нового pixmap
@@ -89,4 +90,6 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
                 print(traceback.format_exc())
 
     def get_data(self):
+        print(f"get_data. Before clear: {self._barcode_buffer}")
+        self._barcode_buffer = ""
         pass
