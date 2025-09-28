@@ -119,6 +119,15 @@ class EngineTools(BaseCRUD):
         """
         return self.session.query(Tools).filter(Tools.plan_id == plan_id).all()
 
+    def get_tools_by_barcode(self, barcode: str) -> list[Type[Tools]]:
+        """
+        Возвращает список инструментов, связанных с определенным планом.
+
+        :param barcode: Штрихкод инструмента.
+        :return: Список объектов Tools, связанных со штрихкодом.
+        """
+        return self.session.query(Tools).filter(Tools.barcode == barcode).all()
+
     def get_tool_history(self, tool_id: int) -> List[History]:
         """
         Возвращает историю, связанную с указанным инструментом.
