@@ -2,12 +2,11 @@ import traceback
 
 from PyQt5.QtWidgets import QListWidgetItem
 
-from GUI.BaseScreen import BaseScreen
-from GUI.ui_classes.Ui_screen_19_management_group import Ui_screen_19_management_group
+from .BaseScreen import BaseScreen
+from .ui_classes.Ui_screen_19_management_group import Ui_screen_19_management_group
 from PyQt5.QtCore import QEvent
 
-from GUI.widgets.widget_select_group import WidgetSelectGroup
-
+from .widgets.widget_select_group import WidgetSelectGroup
 
 class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
     def __init__(self):
@@ -36,6 +35,9 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
         print(f"Группа с ID {group_id} выбрана.")
 
     def set_data(self, *args, **kwargs):
+        print("screen_19_management_group set_data")
+        print(args)
+        print(kwargs)
         """Устанавливает текст. Реализуется в каждом экране.
         Отображает данные в listWidget.
 
@@ -51,10 +53,14 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
         self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:
             for group_id, group_data in groups.items():
+                group = group_data['group']
+
+                if group.paren_group_id != 0:
+                    continue
                 # Создаём кастомный виджет
                 widget = WidgetSelectGroup(self.trigger_name)
                 # Передаём данные в кастомный виджет
-                widget.set_data(group_data['group'])
+                widget.set_data(group)
                 # Подключаем обработчик сигнала
                 widget.key_pressed.connect(self.on_group_selected)
                 widget.event_select_group = self.handle_select_group

@@ -2,11 +2,11 @@ import traceback
 
 from PyQt5.QtWidgets import QListWidgetItem
 
-from GUI.BaseScreen import BaseScreen
-from GUI.ui_classes.Ui_screen_20_management_tool import Ui_screen_20_management_tool
+from .BaseScreen import BaseScreen
+from .ui_classes.Ui_screen_20_management_tool import Ui_screen_20_management_tool
 from PyQt5.QtCore import QEvent
 
-from GUI.widgets.widget_count_tool import WidgetCountTool
+from .widgets.widget_count_tool import WidgetCountTool
 
 
 class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
@@ -17,7 +17,10 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
 
         self.value = None
         self.trigger = None
+
     def populate_list(self):
+        print("screen_20_management_tool populate_list")
+        print(self.groups)
         for group in self.groups:
             widget = WidgetCountTool()
             widget.set_data(group, 0)
@@ -29,6 +32,9 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
             self.listWidget.setItemWidget(list_item, widget)
 
     def set_data(self, *args, **kwargs):
+        print("screen_20_management_tool set_data")
+        print(args)
+        print(kwargs)
         """Устанавливает текст. Реализуется в каждом экране.
         Устанавливает текст. Реализуется в каждом экране.
         Отображает данные в listWidget.
@@ -36,11 +42,18 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
         Ожидается, что данные передаются в виде:
         [{'id': 1, 'name': 'Group Name', 'description': 'Description', 'status': 0}, ...]
         """
-        tools = args[0]
+        if not args[0]:
+            return
+        tools = args[0][0]
         if not tools:
             return
+
+        name = args[0][1]
+        self.lbl_name_group.setText(name)
+
         self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:
+            print(tools)
             for tool in tools:
                 # Создаём кастомный виджет
                 widget = WidgetCountTool()
@@ -62,7 +75,9 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
         self.event_select_management_group(self.value[0], self.trigger)
 
     def get_data(self):
+        print(f"screen_20_management_tool get_data. value {self.value}")
         try:
-            return {"group_id": self.value[0], "group_name": self.value[1]}
+            if self.value:
+                return {"group_id": self.value[0], "group_name": self.value[1]}
         except:
             print(traceback.format_exc())
