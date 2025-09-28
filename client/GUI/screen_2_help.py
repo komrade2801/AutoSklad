@@ -15,7 +15,8 @@ class screen_2_help(BaseScreen, Ui_screen_2_help):
     def get_data(self):
         return self.index
 
-    def set_data(self, data):
+    def set_data(self, data, source):
+        print(f"set_data. Input data: {data}, source: {source}")
         if isinstance(data, Help):
             self.text_window.setText(data.text)
 
