@@ -28,21 +28,21 @@ class EngineGroup(BaseCRUD):
                   index: Optional[int],
                   name: Optional[str] = None,
                   description: Optional[str] = None,
-                  status: Optional[int] = None
+                  paren_group_id: Optional[int] = None
                   ) -> bool:
         """
          Добавляет новую группу в таблицу Group.
         :param index: Уникальный идентификатор.
         :param name: Название группы.
         :param description: Описание группы.
-        :param status: Статус группы (например, активна/не активна).
+        :param paren_group_id: Родительская группа
         :return: True если группа успешно добавлена, иначе False.
         """
         return self.add(
             id=index,
             name=name,
             description=description,
-            status=status
+            paren_group_id=paren_group_id
         )
 
     def get_group_by_id(self, group_id: int) -> Optional[Group]:
@@ -55,14 +55,14 @@ class EngineGroup(BaseCRUD):
         return self.get(group_id)
 
     def update_group(self, group_id: int, name: Optional[str] = None, description: Optional[str] = None,
-                     status: Optional[int] = None) -> bool:
+                     paren_group_id: Optional[int] = None) -> bool:
         """
         Обновляет данные группы по уникальному идентификатору.
 
         :param group_id: Уникальный идентификатор группы.
         :param name: Новое название группы.
         :param description: Новое описание группы.
-        :param status: Новый статус группы.
+        :param paren_group_id: Новый статус группы.
         :return: True если группа успешно обновлена, иначе False.
         """
         updates = {}
@@ -70,8 +70,8 @@ class EngineGroup(BaseCRUD):
             updates['name'] = name
         if description is not None:
             updates['description'] = description
-        if status is not None:
-            updates['Status'] = status
+        if paren_group_id is not None:
+            updates["paren_group_id"] = paren_group_id
         return self.update(group_id, **updates)
 
     def delete_group(self, group_id: int) -> bool:
@@ -91,14 +91,14 @@ class EngineGroup(BaseCRUD):
         """
         return self.all()
 
-    def get_groups_by_status(self, status: int) -> List[Group]:
+    def get_groups_by_paren_group_id(self, paren_group_id: int) -> List[Group]:
         """
         Получает все группы с определённым статусом.
 
-        :param status: Статус группы (например, активна/не активна).
+        :param paren_group_id: Статус группы (например, активна/не активна).
         :return: Список объектов Group с заданным статусом.
         """
-        return self.session.query(self.model).filter_by(status=status).all()
+        return self.session.query(self.model).filter_by(paren_group_id=paren_group_id).all()
 
     def get_cells_by_group(self, group_id: int) -> Optional[List]:
         """

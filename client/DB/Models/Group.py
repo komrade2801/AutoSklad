@@ -28,7 +28,7 @@ class Group(Base, Model):
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment='Уникальный идентификатор группы (первичный ключ)')
     name = Column(String(100), nullable=True, comment='Название группы')  # Увеличен размер для более длинных названий
     description = Column(String(450), nullable=True, comment='Описание группы')  # Описание группы
-    status = Column(Integer, nullable=True, comment='Статус группы (например, активна/не активна)')
+    paren_group_id = Column(Integer, nullable=True, comment="Код родительской группы")
 
     @property
     def cells(self):
@@ -49,7 +49,7 @@ class Group(Base, Model):
     # Индексы
     __table_args__ = (
         Index('idx_group_name', 'name', unique=False),
-        Index('idx_group_status', 'status', unique=False),
+        Index("idx_group_paren_group_id", "paren_group_id", unique=False),
     )
 
     def __repr__(self):
@@ -58,7 +58,7 @@ class Group(Base, Model):
                 f"id={self.id}, "
                 f"name={self.name}, "
                 f"description={self.description}, "
-                f"status={self.status}"
+                f"paren_group_id={self.paren_group_id}"
                 f")>")
 
 # Внешние связи
