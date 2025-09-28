@@ -4,11 +4,11 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QListWidgetItem
 
 from DB.Models.Group import Group
-from GUI.BaseScreen import BaseScreen
-from GUI.ui_classes.Ui_screen_7_select_group import Ui_screen_7_select_group
+from .BaseScreen import BaseScreen
+from .ui_classes.Ui_screen_7_select_group import Ui_screen_7_select_group
 from PyQt5.QtCore import QEvent
 
-from GUI.widgets.widget_select_group import WidgetSelectGroup
+from .widgets.widget_select_group import WidgetSelectGroup
 
 
 class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
@@ -34,6 +34,9 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         print(f"Группа с ID {group_id} выбрана.")
 
     def set_data(self, *args, **kwargs):
+        print("screen_7_select_group set_data")
+        print(args)
+        print(kwargs)
         """Устанавливает текст. Реализуется в каждом экране."""
         """
         Отображает данные в listWidget.
@@ -52,6 +55,9 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:
             for group in groups:
+
+                if group.paren_group_id != 0:
+                    continue
                 # Создаём кастомный виджет
                 widget = WidgetSelectGroup(self.trigger_name)
                 widget.set_data(group)  # Передаём данные в кастомный виджет
