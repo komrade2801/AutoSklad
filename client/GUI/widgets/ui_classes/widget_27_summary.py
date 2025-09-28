@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'widgets\widget_27_summary.ui'
+# Form implementation generated from reading ui file 'ui\widgets\widget_27_summary.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -14,12 +14,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_widget_27_summary(object):
     def setupUi(self, widget_27_summary):
         widget_27_summary.setObjectName("widget_27_summary")
-        widget_27_summary.resize(438, 154)
+        widget_27_summary.resize(440, 154)
         widget_27_summary.setLayoutDirection(QtCore.Qt.LeftToRight)
         widget_27_summary.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));")
         self.operation_description = QtWidgets.QLabel(widget_27_summary)
         self.operation_description.setEnabled(True)
-        self.operation_description.setGeometry(QtCore.QRect(5, 40, 421, 30))
+        self.operation_description.setGeometry(QtCore.QRect(5, 40, 431, 30))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
         font.setPointSize(12)
@@ -44,10 +44,10 @@ class Ui_widget_27_summary(object):
         self.operation_description.setObjectName("operation_description")
         self.title = QtWidgets.QLabel(widget_27_summary)
         self.title.setEnabled(True)
-        self.title.setGeometry(QtCore.QRect(5, 0, 428, 36))
+        self.title.setGeometry(QtCore.QRect(5, 0, 431, 36))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
-        font.setPointSize(16)
+        font.setPointSize(15)
         font.setBold(True)
         font.setWeight(75)
         self.title.setFont(font)
@@ -171,7 +171,7 @@ class Ui_widget_27_summary(object):
         self.user_name.setObjectName("user_name")
         self.datetime = QtWidgets.QLabel(widget_27_summary)
         self.datetime.setEnabled(True)
-        self.datetime.setGeometry(QtCore.QRect(240, 120, 191, 30))
+        self.datetime.setGeometry(QtCore.QRect(280, 120, 151, 30))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
         font.setPointSize(10)
@@ -419,7 +419,7 @@ class Ui_widget_27_summary(object):
         self.tools_name.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.tools_name.setObjectName("tools_name")
         self.user_type = QtWidgets.QLabel(widget_27_summary)
-        self.user_type.setGeometry(QtCore.QRect(260, 95, 60, 30))
+        self.user_type.setGeometry(QtCore.QRect(280, 95, 41, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 49, 114))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -532,7 +532,7 @@ class Ui_widget_27_summary(object):
         self.user_type.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.user_type.setObjectName("user_type")
         self.role_name = QtWidgets.QLabel(widget_27_summary)
-        self.role_name.setGeometry(QtCore.QRect(300, 95, 130, 30))
+        self.role_name.setGeometry(QtCore.QRect(319, 95, 111, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 49, 114))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -642,7 +642,7 @@ class Ui_widget_27_summary(object):
         self.role_name.setFont(font)
         self.role_name.setStyleSheet("color: rgb(0, 49, 114);\n"
 "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
-        self.role_name.setAlignment(QtCore.Qt.AlignCenter)
+        self.role_name.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.role_name.setObjectName("role_name")
         self.title.raise_()
         self.operation_description.raise_()

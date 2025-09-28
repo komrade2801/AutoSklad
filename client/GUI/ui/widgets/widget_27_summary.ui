@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>438</width>
+    <width>440</width>
     <height>154</height>
    </rect>
   </property>
@@ -27,7 +27,7 @@
     <rect>
      <x>5</x>
      <y>40</y>
-     <width>421</width>
+     <width>431</width>
      <height>30</height>
     </rect>
    </property>
@@ -91,14 +91,14 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
     <rect>
      <x>5</x>
      <y>0</y>
-     <width>428</width>
+     <width>431</width>
      <height>36</height>
     </rect>
    </property>
    <property name="font">
     <font>
      <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <pointsize>15</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
@@ -449,9 +449,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    </property>
    <property name="geometry">
     <rect>
-     <x>240</x>
+     <x>280</x>
      <y>120</y>
-     <width>191</width>
+     <width>151</width>
      <height>30</height>
     </rect>
    </property>
@@ -1158,9 +1158,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
   <widget class="QLabel" name="user_type">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>280</x>
      <y>95</y>
-     <width>60</width>
+     <width>41</width>
      <height>30</height>
     </rect>
    </property>
@@ -1484,9 +1484,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
   <widget class="QLabel" name="role_name">
    <property name="geometry">
     <rect>
-     <x>300</x>
+     <x>319</x>
      <y>95</y>
-     <width>130</width>
+     <width>111</width>
      <height>30</height>
     </rect>
    </property>
@@ -1804,7 +1804,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
     <string>User</string>
    </property>
    <property name="alignment">
-    <set>Qt::AlignCenter</set>
+    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
    </property>
   </widget>
   <zorder>title</zorder>

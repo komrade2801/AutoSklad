@@ -2,8 +2,8 @@ import datetime
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_27_summary import Ui_widget_27_summary as Ui
+from ..BaseScreen import BaseScreen
+from .ui_classes.widget_27_summary import Ui_widget_27_summary as Ui
 
 
 class WidgetSummary(BaseScreen, Ui):
@@ -49,7 +49,7 @@ class WidgetSummary(BaseScreen, Ui):
 
     def sizeHint(self):
         """Возвращает рекомендуемый размер виджета."""
-        return QtCore.QSize(470, 154)
+        return QtCore.QSize(440, 154)
 
     def mousePressEvent(self, event):
         """Обработка нажатия мыши на виджет."""

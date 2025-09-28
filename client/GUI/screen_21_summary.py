@@ -2,11 +2,11 @@ import traceback
 
 from PyQt5.QtWidgets import QListWidgetItem
 
-from GUI.BaseScreen import BaseScreen
-from GUI.ui_classes.Ui_screen_21_summary import Ui_screen_21_summary
+from .BaseScreen import BaseScreen
+from .ui_classes.Ui_screen_21_summary import Ui_screen_21_summary
 from PyQt5.QtCore import QEvent, QTimer
 
-from GUI.widgets.widget_summary import WidgetSummary
+from .widgets.widget_summary import WidgetSummary
 
 
 class screen_21_summary(BaseScreen, Ui_screen_21_summary):
