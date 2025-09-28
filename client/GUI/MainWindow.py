@@ -66,6 +66,7 @@ class MainWindow(QtWidgets.QWidget):
 
         # Создание экранов
         self.create_widgets()
+        self.last_widget_value = {}
         self.open_widget(self.lump.state(), None, None)
         self.action_callback = None
         self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
@@ -144,13 +145,15 @@ class MainWindow(QtWidgets.QWidget):
 
     def handle_controller_serial_response(self, response):
         """Обрабатываем полученный ответ"""
-        print(f"MainWindow получен: {response}")
+        print(f"MainWindow controller_serial получен: {response}")
+        print(f"MainWindow value: {self.last_widget_value}")
         self.button_clicked(response, None)
 
 
     def handle_barcode_manager_response(self, response):
         """Обрабатываем полученный ответ"""
-        print(f"MainWindow получен: {response}")
+        print(f"MainWindow barcode_manager получен: {response}")
+        print(f"MainWindow value: {self.last_widget_value}")
         self.value['barcode'] = response
         self.button_clicked('barcode', None)
 
@@ -191,6 +194,7 @@ class MainWindow(QtWidgets.QWidget):
         self.lump.trigger(button_name)
         state = self.lump.state()
         print("button_clicked", button_name, "state", state, 'button_name: ', button_name)
+        print(f"MainWindow value: {self.last_widget_value}")
         if state != self.back_state:
             # if 'btn_back' in button_name and self.lump.state() != self.lump.machine.initial:
             #     self.open_back_widget()
@@ -203,6 +207,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def open_back_widget(self, value: Any = None):
         print("open_back_widget value", value)
+        print(f"MainWindow value: {self.last_widget_value}")
         """
         Возвращает к предыдущему экрану, используя навигационный стек.
         :param value: (Опционально) данные для передачи при возврате.
@@ -216,6 +221,8 @@ class MainWindow(QtWidgets.QWidget):
 
     def open_widget(self, widget_name: str, source: str = None, value: Any = None):
         print("open_widget", widget_name, 'source: ', source)
+        self.last_widget_value = value
+        print(f"MainWindow value: {self.last_widget_value}")
         """
         Открывает виджет с указанным именем, скрывая остальные.
 
@@ -263,6 +270,7 @@ class MainWindow(QtWidgets.QWidget):
         :param source: Имя источника перехода на виджет (кнопка).
         """
         print(f"_handle_widget_data. Widget: {widget}. source: {source}")
+        print(f"MainWindow value: {self.last_widget_value}")
 
         # write = widget.is_write()
         # read  = widget.is_read()
@@ -275,6 +283,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def _handle_cmd(self, widget_name: str, source: str = None, value: Any = None):
         print("_handle_cmd widget_name", widget_name)
+        print(f"MainWindow value: {self.last_widget_value}")
         """
         Обрабатывает случай, когда виджет не найден.
 
@@ -284,9 +293,11 @@ class MainWindow(QtWidgets.QWidget):
         if self.lump.machine.initial != widget_name and callable(self.action_callback):
             value, transition = self.action_callback(self.back_state, widget_name, self.lump, value, None)
             if transition:
-                self.open_widget(transition, None, value=value)
+                self.open_widget(transition, source, value=value)
 
     def _handle_widget_not_found(self, widget_name: str, source: str = None, value: Any = None):
+        print(f"_handle_widget_not_found. widget_name: {widget_name}, source: {source}, action_callback: {self.action_callback}, trigger: {self.lump.trigger}")
+        print(f"MainWindow value: {self.last_widget_value}")
         """
         Обрабатывает случай, когда виджет не найден.
 
