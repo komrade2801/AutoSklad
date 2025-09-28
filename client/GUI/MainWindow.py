@@ -242,7 +242,7 @@ class MainWindow(QtWidgets.QWidget):
 
                         if key in self.value:
                             value = {key: self.value[key]}
-                    value = self._handle_widget_data(widget, source, value)
+                    # value = self._handle_widget_data(widget, source, value)
                     # Передаем данные в виджет и сохраняем текущее состояние
                     self.current_value = self._handle_widget_data(widget, source, value)
 
@@ -287,7 +287,6 @@ class MainWindow(QtWidgets.QWidget):
                 self.open_widget(transition, None, value=value)
 
     def _handle_widget_not_found(self, widget_name: str, source: str = None, value: Any = None):
-        print("_handle_widget_not_found widget_name", widget_name, "source", source)
         """
         Обрабатывает случай, когда виджет не найден.
 
