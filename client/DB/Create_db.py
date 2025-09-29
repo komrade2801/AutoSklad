@@ -189,54 +189,6 @@ def execute():
         PAGE_DIR = BASE_DIR / "frontend/page"
 
         update_progress("Страницы добавлены!", "complete", 11)
-        """
-            id	    number	    name	                description	        details	                        create
-            1	    1	        Основной вендинг	    Главный цех	        {                               2025-02-18                
-                                                                              "signature": {
-                                                                                "serial_number": 1,
-                                                                                "cells": {
-                                                                                  "length": 150,
-                                                                                  "columns": 10,
-                                                                                  "rows": 15
-                                                                                }
-                                                                              },
-                                                                              "server":{
-                                                                                "ip": "192.168.5.70",
-                                                                                "port": 80,
-                                                                                "token": "token11111",
-                                                                                "secret": "g\\xa8\\xc9\\x04H\\xf0F\\xe1\\xfb\\xb6J\\xbc\\xae\\xfaP\\xec'\\x08\\xcb\\xa1\\xfc\\xbe\\xea\\x96'",
-                                                                                "aes": "16byteslongkey!!",
-                                                                                "sender_timeout": "30",
-                                                                                "receiver_timeout": "60"
-                                                                              },
-                                                                              "network": {
-                                                                                "ip": "192.168.5.70",
-                                                                                "port": 81
-                                                                              },
-                                                                              "serial": {
-                                                                                "port": "COM29",
-                                                                                "baudrate": "9600"
-                                                                              },
-                                                                                "barcode": {
-                                                                                  "port": "COM1",
-                                                                                  "baudrate": "9600"
-                                                                                },
-                                                                                "dev": {
-                                                                                  "ttyUSB": "/dev/ttyUSB0",
-                                                                                  "serial": "/dev/serial0"
-                                                                                },
-                                                                                "key":{
-                                                                                  "aes": ""
-                                                                                },
-                                                                                "locks": {
-                                                                                  "load_locked": 0,
-                                                                                  "drop_locked": 0
-                                                                                },
-                                                                                "logs": {
-                                                                                  "critical_errors": []
-                                                                                }
-                                                                              }
-        """
         date_str = '2025-02-18'
         # вариант 1: получить datetime.date
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -313,12 +265,12 @@ def execute():
         }
 
         test_users = [
-            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим', 'second_name': 'Кудрявцев', 'family': 'Single', 'password': 1111, 'role_id': 1},
-            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон', 'second_name': 'Пестова', 'family': 'Single', 'password': 2222, 'role_id': 2},
-            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий', 'second_name': 'Комаров', 'family': 'Single', 'password': 3333, 'role_id': 3},
-            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица', 'second_name': 'Устинова', 'family': 'Single', 'password': 4444, 'role_id': 4},
-            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей', 'second_name': 'Никифорова', 'family': 'Single', 'password': 5555, 'role_id': 5},
-            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий', 'second_name': 'Фомичев', 'family': 'Single', 'password': 6666, 'role_id': 6}
+            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим', 'second_name': 'Кудрявцев', 'family': 'Иванов', 'password': 1111, 'role_id': 1},
+            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон', 'second_name': 'Пестова', 'family': 'Игоревна', 'password': 2222, 'role_id': 2},
+            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий', 'second_name': 'Комаров', 'family': 'Александрович', 'password': 3333, 'role_id': 3},
+            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица', 'second_name': 'Устинова', 'family': 'Максимовна', 'password': 4444, 'role_id': 4},
+            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей', 'second_name': 'Никифорова', 'family': 'Дмитриевна', 'password': 5555, 'role_id': 5},
+            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий', 'second_name': 'Фомичев', 'family': 'Дмитриевна', 'password': 6666, 'role_id': 6}
         ]
 
         for user in test_users:
