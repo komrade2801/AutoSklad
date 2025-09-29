@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>login.png</file>
+    <file>avatar.png</file>
     <file>ok.png</file>
     <file>unlock.png</file>
     <file>unlock2.png</file>
