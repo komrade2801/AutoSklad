@@ -31,6 +31,7 @@ class Tools(Base, Model):
     # Поля таблицы
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment="Уникальный идентификатор инструмента")
     inventory_number = Column(String, nullable=True, comment="Инвентарный номер")
+    barcode = Column(String(45), nullable=True, comment="Баркод инструмента")
     plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Идентификатор чертежа")
     tool_type_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=True, comment="Ключ на тип инструмента")
     name = Column(String(45), nullable=True, comment="Название инструмента")
@@ -76,11 +77,12 @@ class Tools(Base, Model):
         return (f"<{self.__tablename__}("
                 f"id={self.id}, "
                 f"inventory_number={self.inventory_number}, "
+                f"barcode={self.barcode}, "
                 f"plan_id={self.plan_id}, "
                 f"tool_type_id={self.tool_type_id}, "
-                f"name={self.name}"
-                f"description={self.description}"
-                f"count={self.count}"
-                f"img={self.img}"
+                f"name={self.name}, "
+                f"description={self.description}, "
+                f"count={self.count}, "
+                f"img={self.img}, "
                 f"groups_id={self.groups_id}"
                 f")>")

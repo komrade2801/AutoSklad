@@ -41,6 +41,7 @@ class EngineTools(BaseCRUD):
     def add_tool(self,
                  tool_id: int,
                  inventory_number: str,
+                 barcode: Optional[str] = None,
                  plan_id: Optional[int] = None,
                  tool_type_id: Optional[int] = None,
                  name: Optional[str] = "",
@@ -63,9 +64,12 @@ class EngineTools(BaseCRUD):
         :param img:  Изображение, связанное с типом.
         :param groups_id:  Идентификатор группы (если есть).
         """
+        if barcode is None:
+            barcode = inventory_number
         return self.add(
             index=tool_id,
             inventory_number=inventory_number,
+            barcode=barcode,
             plan_id=plan_id,
             tool_type_id=tool_type_id,
             name=name,
@@ -83,19 +87,26 @@ class EngineTools(BaseCRUD):
 
     def update_tool(self,
                     tool_id: int,
-                    inventory_number: int,
-                    plan_id: int,
-                    tool_type_id: int,
+                    inventory_number: str = None,
+                    barcode: str = None,
+                    plan_id: int = None,
+                    tool_type_id: int = None,
+                    **kwargs
                     ) -> bool:
         """
         Обновляет данные инструмента.
         """
-        return self.update(
-            index=tool_id,
-            inventory_number=inventory_number,
-            plan_id=plan_id,
-            tool_type_id=tool_type_id,
-        )
+        update_data = {}
+        if inventory_number is not None:
+            update_data['inventory_number'] = inventory_number
+        if barcode is not None:
+            update_data['barcode'] = barcode
+        if plan_id is not None:
+            update_data['plan_id'] = plan_id
+        if tool_type_id is not None:
+            update_data['tool_type_id'] = tool_type_id
+        update_data.update(kwargs)
+        return self.update(index=tool_id, **update_data)
 
     def delete_tool(self, tool_id: int) -> bool:
         """
@@ -232,6 +243,7 @@ class EngineTools(BaseCRUD):
             self.add_tool(
                 tool_id=index,
                 inventory_number=inventory_number,
+                barcode=inventory_number,  # Set barcode equal to inventory_number
                 plan_id=plan_id,
                 tool_type_id=tool_type.id,
                 name=name,
@@ -242,6 +254,7 @@ class EngineTools(BaseCRUD):
             )
 
         tool["id"] = index
+        tool["barcode"] = inventory_number
         tool["inventory_number"] = inventory_number
         tool["name"] = tool_type.name
         tool["description"] = tool_type.description
