@@ -5,9 +5,12 @@
 # from EventsSystem.state_router import StateRouter
 # from GUI.helper.MyLineEdit import MyLineEdit
 # from PyQt5.QtWidgets import QApplication
+import os
 import sys
 import traceback
 from typing import Any
+
+import psutil
 from PyQt5 import QtWidgets, QtCore
 
 from Core import platforms
@@ -332,3 +335,14 @@ class MainWindow(QtWidgets.QWidget):
         """
         print(f"Ошибка при обработке кнопки: {error}")
 
+    def kill_proc_tree(self, pid, including_parent=True):
+        parent = psutil.Process(pid)
+        for child in parent.children(recursive=True):
+            child.kill()
+        if including_parent:
+            parent.kill()
+
+    def closeEvent(self, event):
+        print(f"closeEvent: {event}")
+        event.accept()
+        self.kill_proc_tree(os.getpid())

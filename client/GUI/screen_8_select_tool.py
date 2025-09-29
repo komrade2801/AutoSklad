@@ -62,7 +62,7 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
         print(f"screen_8_select_tool get_data. value {self.value}")
         try:
             if self.value:
-                return {"tool_id": self.value[0], "name": self.value[1], "group_name": self.value[2]}
+                return {"tool_id": self.value[0], "name": self.value[1], "group_name": self.value[2], "tool_description": self.value[3]}
         except:
             print(traceback.format_exc())
 

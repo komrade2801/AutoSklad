@@ -180,7 +180,7 @@ class ActionMapper:
             'write_db_rights_by_user_id': lambda user_id, rights_data: self.write_db_rights_by_user_id(user_id, rights_data),
             'read_db_rights_by_user_id': lambda user_id: self.read_db_rights_by_user_id(user_id),
             # 'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
-            'read_db_rights_tool': lambda tool_id, name, group_name: self.read_db_rights_tool(tool_id, name, group_name),
+            'read_db_rights_tool': lambda tool_id, name, group_name, tool_description: self.read_db_rights_tool(tool_id, name, group_name, tool_description),
             'read_db_get_cell': lambda tool_id, tool_name: self.read_db_get_cell(tool_id, tool_name),
             # "": None,
             'read_db_user_operations': lambda user_id: self.read_db_user_operations(user_id),
@@ -273,10 +273,10 @@ class ActionMapper:
         # Возвращаем номер первой найденной ячейки
         return {"trigger": "send_number", "number": cells[0].number, "tool_name": tool_name} if cells else None
 
-    def read_db_rights_tool(self, tool_id, name, group_name):
-        print(f"read_db_rights_tool tool_id {tool_id}, name {name}, group_name {group_name}")
+    def read_db_rights_tool(self, tool_id, name, group_name, tool_description):
+        print(f"read_db_rights_tool tool_id {tool_id}, name {name}, group_name {group_name}, tool_description {tool_description}")
         self.select_tool = self.e_tools.get_tool_by_id(tool_id)
-        return tool_id, name, group_name
+        return tool_id, name, group_name, tool_description
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
         print(f"write_db_tool_consumption")
