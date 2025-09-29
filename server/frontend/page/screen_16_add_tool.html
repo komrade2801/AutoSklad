@@ -266,11 +266,35 @@
     <script>
         // Функция, собирающая данные из формы и таблицы, формирующая JSON и отправляющая его на сервер
         function collectDataAndSend() {
-            const group = document.getElementById("search_group").value.trim();
+            // Получение значений из полей формы
+            const groupInput = document.getElementById("search_group");
+            const toolNameInput = document.getElementById("tool_name");
+            const countInput = document.getElementById("tool_count");
+
+            const group = groupInput.value.trim();
             const subgroup = document.getElementById("search_subgroup").value.trim();
-            const tool_name = document.getElementById("tool_name").value.trim();
+            const tool_name = toolNameInput.value.trim();
             const description = document.getElementById("tool_description").value.trim();
-            const count = parseInt(document.getElementById("tool_count").value, 10);
+            const count = parseInt(countInput.value, 10);
+
+            // Валидация обязательных полей
+            if (group === '') {
+                alert('Группа инструмента не может быть пустой');
+                groupInput.focus();
+                return;
+            }
+
+            if (tool_name === '') {
+                alert('Наименование инструмента не может быть пустым');
+                toolNameInput.focus();
+                return;
+            }
+
+            if (isNaN(count) || count <= 0) {
+                alert('Количество инструмента должно быть положительным числом');
+                countInput.focus();
+                return;
+            }
 
             const tableRows = document.querySelectorAll("#tools_table tbody tr");
             const tools = {};
