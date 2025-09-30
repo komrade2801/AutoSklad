@@ -44,6 +44,7 @@ from DB.Models.History import History  # ----------------------------- 17
 from DB.Models.DropOperations import DropOperations  # --------------- 18
 from DB.Models.OperationsConsumption import OperationsConsumption  # - 19
 from DB.Models.LoadOperations import LoadOperations  # --------------- 20
+from DB.Models.ToolTypes import ToolTypes  # ---------------- 21
 from sqlalchemy import create_engine
 from DB.Data.base import Base
 import os
@@ -89,12 +90,14 @@ def run_setup_process():
         progress_data["status"] = "error"
 
 
-
 def rebuild_db():
     # 1) Determine the module folder and path to DB/Data
-    current_dir = os.path.dirname(os.path.abspath(__file__))      # .../Vending/DB
-    project_root = os.path.dirname(current_dir)                    # .../Vending
-    data_dir     = os.path.join(project_root, "DB", "Data")        # .../Vending/DB/Data
+    current_dir = os.path.dirname(
+        os.path.abspath(__file__))      # .../Vending/DB
+    project_root = os.path.dirname(
+        current_dir)                    # .../Vending
+    # .../Vending/DB/Data
+    data_dir = os.path.join(project_root, "DB", "Data")
 
     # 2) Ensure that the directory exists
     os.makedirs(data_dir, exist_ok=True)
@@ -114,7 +117,8 @@ def rebuild_db():
             print(f"Error removing database file: {e}")
             print(traceback.format_exc())
     else:
-        print(f"No existing database file found; creating new one at: {db_filename}")
+        print(
+            f"No existing database file found; creating new one at: {db_filename}")
 
     # 6) Create an empty file
     try:
@@ -137,6 +141,7 @@ def rebuild_db():
     finally:
         engine.dispose()
 
+
 def execute():
     try:
 
@@ -154,7 +159,8 @@ def execute():
         e_load_operations = EngineLoadOperations(SessionLocal(engine()))
         e_mass_drop = EngineMassDrop(SessionLocal(engine()))
         e_mass_load = EngineMassLoad(SessionLocal(engine()))
-        e_operations_consumption = EngineOperationsConsumption(SessionLocal(engine()))
+        e_operations_consumption = EngineOperationsConsumption(
+            SessionLocal(engine()))
         e_plan = EnginePlan(SessionLocal(engine()))
         e_rights = EngineRights(SessionLocal(engine()))
         e_role = EngineRole(SessionLocal(engine()))
@@ -246,7 +252,8 @@ def execute():
 
                 persent = ((number / cell_length) * 100)
 
-                update_progress(f"Ячейка {number} из {cell_length} добавлена!", "complete", persent)
+                update_progress(
+                    f"Ячейка {number} из {cell_length} добавлена!", "complete", persent)
 
         roles_and_pages = {
             'Developer': ['Выдача инструмента', 'История операций', 'История ошибок', 'Выгрузка №', 'Выгрузка №', 'История выгрузок', 'Загрузка №', 'Загрузка №', 'История загрузок',
@@ -265,12 +272,18 @@ def execute():
         }
 
         test_users = [
-            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим', 'second_name': 'Кудрявцев', 'family': 'Иванов', 'password': 1111, 'role_id': 1},
-            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон', 'second_name': 'Пестова', 'family': 'Игоревна', 'password': 2222, 'role_id': 2},
-            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий', 'second_name': 'Комаров', 'family': 'Александрович', 'password': 3333, 'role_id': 3},
-            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица', 'second_name': 'Устинова', 'family': 'Максимовна', 'password': 4444, 'role_id': 4},
-            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей', 'second_name': 'Никифорова', 'family': 'Дмитриевна', 'password': 5555, 'role_id': 5},
-            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий', 'second_name': 'Фомичев', 'family': 'Дмитриевна', 'password': 6666, 'role_id': 6}
+            {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим',
+                'second_name': 'Кудрявцев', 'family': 'Иванов', 'password': 1111, 'role_id': 1},
+            {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Платон',
+                'second_name': 'Пестова', 'family': 'Игоревна', 'password': 2222, 'role_id': 2},
+            {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий',
+                'second_name': 'Комаров', 'family': 'Александрович', 'password': 3333, 'role_id': 3},
+            {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица',
+                'second_name': 'Устинова', 'family': 'Максимовна', 'password': 4444, 'role_id': 4},
+            {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Михей',
+                'second_name': 'Никифорова', 'family': 'Дмитриевна', 'password': 5555, 'role_id': 5},
+            {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий',
+                'second_name': 'Фомичев', 'family': 'Дмитриевна', 'password': 6666, 'role_id': 6}
         ]
 
         for user in test_users:
@@ -315,7 +328,8 @@ def clear_command_queue_cache():
     Очищает файл command_queue.json, записывая в него пустой список.
     Если файла нет — создаёт его.
     """
-    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)  # убедиться, что папка есть
+    CACHE_PATH.parent.mkdir(
+        parents=True, exist_ok=True)  # убедиться, что папка есть
     with CACHE_PATH.open('w', encoding='utf-8') as f:
         json.dump([], f, ensure_ascii=False, indent=2)
 

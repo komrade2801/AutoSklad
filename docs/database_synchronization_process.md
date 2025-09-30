@@ -1,0 +1,202 @@
+# Процесс синхронизации баз данных между сервером и клиентом
+
+## Обзор
+Процесс синхронизации представляет собой двунаправленную (bidirectional) синхронизацию на основе журнала изменений (changelog-based synchronization) между серверной БД и клиентскими устройствами. Система обеспечивает eventual consistency с обработкой конфликтов, повторными попытками и безопасной передачей данных.
+
+## Архитектура
+- **Модель данных**: Используется отдельная SQLite-база `sync.db` для хранения состояний синхронизации.
+- **Компоненты**: Наследование от паттернов Command Pattern, Observer, Scheduler.
+- **Безопасность**: AES-256 шифрование, HMAC-подпись, JWT-аутентификация.
+- **Платформа**: Python, SQLAlchemy, APScheduler, FastAPI (для сервера).
+
+## Файлы и структура проекта
+### Серверные файлы
+- `server/dbSync/sync_db.py`: Инициализация sync БД на сервере.
+- `server/dbSync/Runner.py`: Аналогичен клиентскому, но для серверной стороны.
+- Аналогичная структура `server/dbSync/engines/`, `Logic_v2/` и т.д.
+
+### Клиентские файлы
+- `client/dbSync/sync_db.py`: Инициализация sync БД на клиенте.
+- `client/dbSync/Runner.py`: Главный оркестратор синхронизации.
+- `client/dbSync/Model/base.py`: Базовая модель SQLAlchemy.
+- `client/dbSync/Model/Command.py`: Модель команд синхронизации.
+- `client/dbSync/Model/Record.py`: Модель данных записей.
+- `client/dbSync/Model/CommandStatus.py`: Модель статусов команд.
+- `client/dbSync/Model/SyncConfig.py`: Конфигурация включенных таблиц.
+- `client/dbSync/setup.py`: Функции инициализации компонентов.
+- `client/dbSync/constants.py`: Перечисления констант (CommandStatusEnum).
+- `client/dbSync/Logic_v2/`:
+  - `SyncProcessor.py`: Центральный процессор операций.
+  - `CommandSender.py`: Компонент push-процесса.
+  - `CommandReceiver.py`: Компонент pull-процесса.
+  - `TransportService.py`: Сервис HTTP-транспорта с шифрованием.
+  - `SchemaCache.py`: Кэш маппингов схем.
+  - `SchemaAnalyzer.py`: Анализатор схем БД.
+  - `DataMapper.py`: Маппинг полей между схемами.
+  - `DataTransformer.py`: Трансформация данных.
+  - `ConflictManager.py`: Обнаружение и разрешение конфликтов.
+  - `BatchProcessor.py`: Пакетное выполнение операций.
+  - `RetryManager.py`: Управление повторными попытками.
+  - `SyncMonitor.py`: Мониторинг операций.
+  - `JSONSchemaValidator.py`: Валидация JSON-схем.
+  - `DiagnosticLogger.py`: Детальное логирование.
+  - `SyncManager.py`: Управление синхронизацией.
+  - `CommandQueue.py`: Очередь локальных команд.
+
+### Engines
+- `client/dbSync/Engines/CommandEngine.py`: CRUD-операции для commands.
+- `client/dbSync/Engines/RecordEngine.py`: CRUD для records.
+- `client/dbSync/Engines/CommandStatusEngine.py`: CRUD для статусов.
+- `client/dbSync/Engines/SyncConfigEngine.py`: CRUD для конфигурации.
+
+## Модели данных
+
+### Sync.db Структура
+SQLite-база с WAL-режимом, NullPool, check_same_thread=False для многопоточности.
+
+#### Таблица `Command`
+- `id` (INTEGER, PRIMARY KEY): Уникальный ID команды.
+- `table_name` (STRING): Имя целевой таблицы.
+- `operation` (STRING): CREATE, UPDATE, DELETE (ограничено CHECK).
+- `record_id` (INTEGER): ID затрагиваемой записи.
+- `created_at` (DATE, server_default=NOW()): Время создания.
+- `device_number` (INTEGER): ID устройства.
+
+#### Таблица `Record`
+- `id` (INTEGER, PRIMARY KEY)
+- `command_id` (INTEGER, FOREIGN KEY → Command.id, CASCADE DELETE)
+- `data_json` (TEXT): Сериализованные данные в JSON
+- `last_modified` (DATE, DEFAULT NOW, UPDATE NOW)
+
+#### Таблица `CommandStatus`
+- `id` (INTEGER, PRIMARY KEY)
+- `command_id` (INTEGER, FOREIGN KEY → Command.id, CASCADE DELETE)
+- `status` (STRING): PENDING, IN_PROGRESS, COMPLETED, FAILED
+- `updated_at` (DATE, DEFAULT NOW, UPDATE)
+
+#### Таблица `SyncConfig`
+- `table_name` (STRING, PRIMARY KEY)
+- `enabled` (BOOLEAN, DEFAULT TRUE)
+
+## Ключевые функции и классы
+
+### Инициализация
+- `init_sync_db(force_recreate=False)` in `sync_db.py`: Создает/пересоздает sync.db с таблицами.
+- `get_sync_session()` in `sync_db.py`: Фабрика сессий для sync.db.
+- `start_sync(device_id, ...)` in `Runner.py`: Запуск синхронизации для устройства.
+- `create_sync_components(device_id, ...)` in `Runner.py`: Инициализация всех компонентов.
+
+### Handshake
+- `SyncProcessor.process_schema(src_schema, client_schema_hash)`: Согласует схему клиента и сервера.
+- `SchemaAnalyzer.generate_mapping(client_schema, server_schema)`: Генерирует маппинг полей.
+- `SchemaCache.get/set(hash)`: Кэширует маппинги по хэшу.
+
+### Push (Отправка изменений)
+- `CommandSender.send_pending()`: Берёт pending из очереди, отправляет batch.
+- `TransportService.send_push(endpoint, payload)`: HTTP POST с AES+HASH.
+- `SyncProcessor.process_push(device, commands, schema_hash)`: Применяет команды на получателе.
+- `ConflictManager.detect_data_conflict(existing, local)`: Обнаружение конфликтов.
+- `BatchProcessor.execute_batch(ops)`: Атомарное выполнение в БД.
+
+### Pull (Получение изменений)
+- `CommandReceiver.fetch_and_apply()`: Запрашивает и применяет новые команды.
+- `CommandReceiver._load_last_synced()`: Читает timestamp из `last_synced.txt`.
+- `SyncProcessor.prepare_pull(device, since, schema_hash)`: Подготавливает команд для клиента.
+- `SyncProcessor._process_single(cmd, mapping)`: Обрабатывает одну команду.
+
+### Управление конфликтами
+- `ConflictManager.detect_structure_conflict(client_fields, server_fields)`: Структурные конфликты.
+- `ConflictManager.apply_data_strategy(existing, local)`: Разрешение merge/override.
+- `MergeFieldsStrategy.merge(existing, local, field)`: Стратегия объединения.
+
+### Transport
+- `TransportService._encrypt(plaintext)`: AES-CBC с padding.
+- `TransportService._decrypt(ciphertext)`: Расшифровка.
+- `TransportService._sign_hmac(payload)`: HMAC-SHA256 подпись.
+
+### Очереди и планировка
+- `CommandQueue.add_command(table, operation, data)`: Добавление локальной команды.
+- `CommandQueue.get_pending_commands()`: Получение ожидающих.
+- `CommandQueue.mark_as_done/failed(id)`: Обновление статуса.
+- `RetryManager.schedule_retry(command, delay)`: Планировка retry.
+- APScheduler job_send/job_fetch каждые sender_timeout/receiver_timeout.
+
+## Поэтапный процесс синхронизации
+
+### Этап 1: Инициализация
+1. Вызов `start_sync(device_id, host, port, token, secret, aes, sender_timeout, receiver_timeout)`.
+2. Создание компонентов через `create_sync_components()`.
+3. Запуск APScheduler с jobs: `job_send` (push каждые sender_timeout), `job_fetch` (pull каждые receiver_timeout).
+4. Компоненты: SyncProcessor, CommandSender, CommandReceiver, TransportService, CRUD-engines, etc.
+
+### Этап 2: Handshake
+1. `CommandSender._ensure_handshake()` или аналоги.
+2. Клиент: `SyncManager.get_local_schema()` → локальная схема.
+3. `TransportService.send_schema("/sync/handshake", schema, device=device_id)`: POST с шифрованием.
+4. Сервер: `SyncProcessor.process_schema(schema, hash)` → `SchemaAnalyzer.generate_mapping()` → кэш.
+5. Возврат `mapping` и `schema_hash`.
+6. Клиент: `SyncProcessor.update_schema(mapping, hash)` → `DataMapper.update_field_mappings()`.
+
+### Этап 3: Push-процесс (клиент → сервер)
+1. `job_send` → `CommandSender.send_pending()`.
+2. `CommandQueue.get_pending_commands()` → список команд.
+3. Формирование payload: `{"device": id, "schema_hash": hash, "commands": list}`.
+4. `TransportService.send_push("/sync/push", payload)`: POST с AES+HASH.
+5. Сервер принимает, дешифрует, валидирует.
+6. `SyncProcessor.process_push(device, commands, hash)`:
+   - `json_validator.validate(commands, "push_commands")`.
+   - Фильтрация дубликатов.
+   - Для каждой команды: `data_transformer.preprocess/clean/validate`.
+   - `conflict_manager.detect_structure_conflict` → `mapping_config.on_conflict`.
+   - `data_mapper.map_incoming` на серверную схему.
+   - `conflict_manager.detect_data_conflict` → стратегия (например, MergeFieldsStrategy).
+   - `batch_processor.execute_batch([{cmd, table, data, operation}])` → SQL в work.db.
+   - Обновление статусов в sync.db: `CommandStatusCRUD.add_status()`.
+7. Возврат статусов команд.
+8. Клиент: `mark_as_done/failed`.
+9. При ошибках: `retry_manager.schedule_retry`.
+
+### Этап 4: Pull-процесс (сервер → клиент)
+1. `job_fetch` → `CommandReceiver.fetch_and_apply()`.
+2. Чтение `last_synced` из `last_synced.txt`.
+3. `TransportService.send_pull("/sync/pull", params={"device":id, "since": since, "schema_hash":hash})`: GET.
+4. Сервер: `SyncProcessor.prepare_pull(device, since, hash)`:
+   - Запрос из sync.db: `CommandCRUD.get_pending_for_device(device)`.
+   - Join с `RecordCRUD.get_bulk_records()`.
+   - Для каждой: `data_mapper.map_outgoing` → `data_transformer.postprocess`.
+   - Сбор `{id, table, operation, data, last_modified}`.
+5. Возврат `{schema_hash, commands}`.
+6. Клиент получает, для каждой команды: `SyncProcessor.process_push(device, [cmd], hash)` (локально применяется тот же процесс).
+   - В работе БД клиента: создание/обновление записей.
+7. Обновление `last_synced = max(last_modified)`, запись в файл.
+
+### Этап 5: Локальная обработка
+- Местные изменения: Декораторы → `SyncProcessor.enqueue_local_command(cmd)` → `CommandQueue.add_command()`.
+- Ожидают в pending для следующего push.
+
+### Этап 6: Мониторинг и ошибки
+- `SyncMonitor.record_success/failure(duration)`.
+- `DiagnosticLogger.log_info/error/context`.
+- `ConflictManager`: стратегии: ServerWins, ClientWins, MergeFields.
+- Retry: экспоненциальный backoff в `RetryManager`.
+- При network errors: повтор в APScheduler.
+
+## Базы данных
+- **Sync.db**: Локальная на клиенте/сервере, хранение команд, записей, статусов.
+- **Work.db**: Основная БД приложения (клиентская, серверная), куда применяются изменения.
+- WAL-режим: `PRAGMA journal_mode=WAL`.
+- Многопоточность: NullPool, no check_same_thread.
+
+## Безопасность
+- **Шифрование**: AES-256-CBC с подкреплением в send_push/schema/pull, дешифровка в receive.
+- **Подпись**: HMAC-SHA256 в заголовке X-Signature.
+- **Аутентификация**: JWT в Authorization header.
+- **Валидация**: JSONSchema для handshake, push_commands, push_response, pull_response.
+
+## Настройка
+- `sender_timeout`: Интервал push (сек).
+- `receiver_timeout`: Интервал pull (сек).
+- Ключи: aes_key, hmac_secret, jwt_token.
+- Host/port: endpoints сервера.
+
+Эта документация охватывает полный цикл синхронизации с ссылками на файлы, функции и базы данных.

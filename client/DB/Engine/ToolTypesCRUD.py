@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List, Type  # , Type
-from DB.Engine.CRUD import BaseCRUD
+from DB.BaseCRUD import CoreEngine
 from DB.Models.ToolTypes import ToolTypes
 
 
-class EngineToolTypes(BaseCRUD):
+class EngineToolTypes(CoreEngine):
     """
     Класс EngineToolTypes обеспечивает операции с таблицей ToolTypes, которая содержит:
        - id,
@@ -20,33 +20,27 @@ class EngineToolTypes(BaseCRUD):
     def __init__(self, session_db: Session = None):
         super().__init__(session=session_db, model=ToolTypes)
 
-    def add_tool_type(self, *args, **kwargs) -> bool:
+    def add_tool_type(self,
+                      tool_type_id: int,
+                      name: str,
+                      description: Optional[str] = None,
+                      count: Optional[int] = None,
+                      img: Optional[str] = None,
+                      groups_id: Optional[int] = None
+                      ) -> bool:
         """
         Добавляет новый тип инструмента.
 
-        Поддерживает параметры: id, tool_type_id (id принимает приоритет), name, description, count, img, groups_id.
+        :param tool_type_id: Идентификатор типа.
+        :param name: Название типа инструмента.
+        :param description: Описание типа инструмента.
+        :param count: Количество инструментов данного типа.
+        :param img: Изображение, связанное с типом.
+        :param groups_id: Идентификатор группы (если есть).
+        :return: True, если операция успешна.
         """
-        if args:
-            raise ValueError("Use keyword arguments only")
-
-        # Extract id, preferring 'id' over 'tool_type_id'
-        tt_id = kwargs.get('id') or kwargs.get('tool_type_id')
-        if tt_id is None:
-            raise ValueError("id or tool_type_id must be provided")
-
-        # Extract other fields
-        name = kwargs.get('name')
-        if name is None:
-            raise ValueError("name must be provided")
-
-        description = kwargs.get('description')
-        count = kwargs.get('count')
-        img = kwargs.get('img')
-        groups_id = kwargs.get('groups_id')
-
-        # Use self.add to trigger sync
         return self.add(
-            index=tt_id,
+            index=tool_type_id,
             name=name,
             description=description,
             count=count,
@@ -60,32 +54,19 @@ class EngineToolTypes(BaseCRUD):
         """
         return self.get(tool_type_id)
 
-    def update_tool_type(self, *args, **kwargs) -> bool:
+    def update_tool_type(self,
+                         tool_type_id: int,
+                         name: str,
+                         description: str,
+                         count: int,
+                         img: str,
+                         groups_id: int
+                         ) -> bool:
         """
         Обновляет данные типа инструмента.
-
-        Поддерживает параметры: id, tool_type_id (id принимает приоритет), name, description, count, img, groups_id.
         """
-        if args:
-            raise ValueError("Use keyword arguments only")
-
-        # Extract id, preferring 'id' over 'tool_type_id'
-        tt_id = kwargs.get('id') or kwargs.get('tool_type_id')
-        if tt_id is None:
-            raise ValueError("id or tool_type_id must be provided")
-
-        # Ensure 'id' is in kwargs for sync compatibility
-        kwargs['id'] = tt_id
-
-        # Extract fields, allowing None for optional sync updates
-        name = kwargs.get('name')
-        description = kwargs.get('description')
-        count = kwargs.get('count')
-        img = kwargs.get('img')
-        groups_id = kwargs.get('groups_id')
-
         return self.update(
-            index=tt_id,
+            index=tool_type_id,
             name=name,
             description=description,
             count=count,
