@@ -274,7 +274,8 @@ class ActionMapper:
         return {"trigger": "send_number", "number": cells[0].number, "tool_name": tool_name} if cells else None
 
     def read_db_rights_tool(self, tool_id, name, group_name, tool_description):
-        print(f"read_db_rights_tool tool_id {tool_id}, name {name}, group_name {group_name}, tool_description {tool_description}")
+        print(
+            f"read_db_rights_tool tool_id {tool_id}, name {name}, group_name {group_name}, tool_description {tool_description}")
         self.select_tool = self.e_tools.get_tool_by_id(tool_id)
         return tool_id, name, group_name, tool_description
 
@@ -379,14 +380,15 @@ class ActionMapper:
         """
 
         # TODO: Вынести в утилитарный класс
-        def add_all_parent_groups(group_list:list[Group], parent_group_id: int, group: Group, group_id: int):
+        def add_all_parent_groups(group_list: list[Group], parent_group_id: int, group: Group, group_id: int):
             if parent_group_id == 0 and parent_group_id != group_id:
                 return
             if parent_group_id == group_id:
                 group_list.append(group)
             else:
                 parent_group = self.e_group.get_group_by_id(parent_group_id)
-                add_all_parent_groups(group_list, parent_group.paren_group_id, group, group_id)
+                add_all_parent_groups(
+                    group_list, parent_group.paren_group_id, group, group_id)
 
         try:
             group_list = []
@@ -394,7 +396,8 @@ class ActionMapper:
             # Получаем все подгруппы указанной группы
             groups = self.e_group.get_all_groups()
             for group in groups:
-                add_all_parent_groups(group_list, group.paren_group_id, group, group_id)
+                add_all_parent_groups(
+                    group_list, group.paren_group_id, group, group_id)
             print(f"group_list: {group_list}")
 
             tools = []
@@ -402,13 +405,20 @@ class ActionMapper:
             for group in group_list:
                 # Получаем инструменты из указанной группы
                 tools.extend(self.e_tools.get_tools_by_group(group.id))
-            return tools, group_name
+
+            # Filter tools to only those with cells having status_id in {3,7}
+            valid_tools = []
+            for tool in tools:
+                cells = self.e_cell.get_cells_by_tool(tool.id)
+                if any(c.status_id in {3, 7} for c in cells if c.status_id):
+                    valid_tools.append(tool)
+
+            return valid_tools, group_name
         except Exception as e:
             print(
                 f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
             print(traceback.format_exc())
             return [], group_name
-
 
     def read_db_tools_by_group_id(self, group_id: int) -> list[Tools]:
         """
@@ -500,14 +510,15 @@ class ActionMapper:
             }
 
         # TODO: Вынести в утилитарный класс
-        def add_all_parent_groups(group_list:list[Group], parent_group_id: int, group: Group, group_id: int):
+        def add_all_parent_groups(group_list: list[Group], parent_group_id: int, group: Group, group_id: int):
             if parent_group_id == 0 and parent_group_id != group_id:
                 return
             if parent_group_id == group_id:
                 group_list.append(group)
             else:
                 parent_group = self.e_group.get_group_by_id(parent_group_id)
-                add_all_parent_groups(group_list, parent_group.paren_group_id, group, group_id)
+                add_all_parent_groups(
+                    group_list, parent_group.paren_group_id, group, group_id)
 
         try:
             group_list = []
@@ -515,7 +526,8 @@ class ActionMapper:
             # Получаем все подгруппы указанной группы
             groups = self.e_group.get_all_groups()
             for group in groups:
-                add_all_parent_groups(group_list, group.paren_group_id, group, group_id)
+                add_all_parent_groups(
+                    group_list, group.paren_group_id, group, group_id)
             print(f"group_list: {group_list}")
 
             tools = []
@@ -673,33 +685,33 @@ class ActionMapper:
                 description = op.description
 
                 if status.stype == "mass_load_init":
-                     description = f"Загрузка инструмента в ячейку {add_cell_number(op)}"
+                    description = f"Загрузка инструмента в ячейку {add_cell_number(op)}"
                 elif status.stype == "consumption":
-                     description = f"Выдача инструмента из ячейки {add_cell_number(op)}"
+                    description = f"Выдача инструмента из ячейки {add_cell_number(op)}"
                 elif status.stype == "mass_load_ready":
-                     description = f"Инструмент помещён в ячейку {add_cell_number(op)}"
+                    description = f"Инструмент помещён в ячейку {add_cell_number(op)}"
 
                 # print(f"history: {history}, op: {op}")
 
                 # print(f"user: {user}, tool: {self.e_tools.get_tool_by_id(history.tools_id)}, op: {add_cell_number(op)}")
 
                 return {
-                "datetime": history.datetime,
-                "user_name": f"{user.second_name} {user.first_name} {user.family}",
-                # "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
-                # "user_family": self.e_user.get_user_by_id(history.user_id).family,
-                "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
-                # "history_description": history.description,
-                "tools_name": self.e_tools.get_tool_by_id(history.tools_id).name,
-                "group_name": self.e_group.get_group_by_id(self.e_tools.get_tool_by_id(history.tools_id).groups_id).name,
-                # "plan_name": self.e_plan.get_plan_by_id(self.e_tools.get_tool_by_id(history.tools_id).plan_id).name,
-                # "operation_description": op.description,
-                # "load_description": self.e_load.get_load_by_id(op.load_id).description if hasattr(op, "load_id") else None,
-                # "cell_number": add_cell_number(op),
-                # "mass_load_description": mass_load_description(op),
-                "title": status.description,
-                "operation_description": description
-            }
+                    "datetime": history.datetime,
+                    "user_name": f"{user.second_name} {user.first_name} {user.family}",
+                    # "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
+                    # "user_family": self.e_user.get_user_by_id(history.user_id).family,
+                    "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
+                    # "history_description": history.description,
+                    "tools_name": self.e_tools.get_tool_by_id(history.tools_id).name,
+                    "group_name": self.e_group.get_group_by_id(self.e_tools.get_tool_by_id(history.tools_id).groups_id).name,
+                    # "plan_name": self.e_plan.get_plan_by_id(self.e_tools.get_tool_by_id(history.tools_id).plan_id).name,
+                    # "operation_description": op.description,
+                    # "load_description": self.e_load.get_load_by_id(op.load_id).description if hasattr(op, "load_id") else None,
+                    # "cell_number": add_cell_number(op),
+                    # "mass_load_description": mass_load_description(op),
+                    "title": status.description,
+                    "operation_description": description
+                }
 
             def mass_load_description(op):
                 if isinstance(op, OperationsConsumption):
@@ -731,8 +743,10 @@ class ActionMapper:
 
                 for history in user_history:
                     # # Добавляем операции из LoadOperations
-                    load_operations = self.e_load_operations.get_operations_by_history_id(history.id)
-                    operations.extend([create_operation_dict(history, op) for op in load_operations])
+                    load_operations = self.e_load_operations.get_operations_by_history_id(
+                        history.id)
+                    operations.extend([create_operation_dict(
+                        history, op) for op in load_operations])
                     #
                     # # Добавляем операции из DropOperations
                     # drop_operations = self.e_drop_operations.get_operations_by_history_id(history.id)
@@ -1085,34 +1099,42 @@ class ActionMapper:
     def read_db_group_collection(self, index):
         """
         Получает коллекцию объектов, связанных с группами из базы данных.
+        Filters to only include root groups that have tools in cells with status_id 3 or 7.
 
         :return: Словарь, где ключи - идентификаторы групп, а значения - связанные объекты (Tools, Cells и т.д.).
         """
         try:
             group_collection = {}
+            valid_root_groups = set()
 
-            # Получаем все группы
-            groups = self.e_group.get_all_groups()
+            # Get all cells with status_id in {3,7}
+            cells = self.e_cell.all()
+            for cell in cells:
+                if cell.status_id in {3, 7} and cell.tools_id:
+                    tool = self.e_tools.get_tool_by_id(cell.tools_id)
+                    if tool and tool.groups_id:
+                        # Trace to root
+                        current_id = tool.groups_id
+                        while current_id:
+                            group = self.e_group.get_group_by_id(current_id)
+                            if not group:
+                                break
+                            if group.paren_group_id == 0:
+                                valid_root_groups.add(group.id)
+                                break
+                            current_id = group.paren_group_id
 
-            if not groups:
-                print("Нет доступных групп в базе данных.")
-                return group_collection
-
-            for group in groups:
-                group_id = group.id
-
-                # Получаем инструменты, связанные с группой
-                tools = self.e_group.get_tools_by_group(group_id)
-
-                # Получаем ячейки, связанные с группой
-                cells = self.e_group.get_cells_by_group(group_id)
-
-                # Формируем коллекцию для данной группы
-                group_collection[group_id] = {
-                    "group": group,
-                    "tools": tools,
-                    "cells": cells
-                }
+            # Populate group_collection only for valid_root_groups
+            for group_id in valid_root_groups:
+                group = self.e_group.get_group_by_id(group_id)
+                if group:
+                    tools = self.e_tools.get_tools_by_group(group_id)
+                    cells = self.e_cell.get_cells_by_group(group_id)
+                    group_collection[group_id] = {
+                        "group": group,
+                        "tools": tools,
+                        "cells": cells
+                    }
 
             return group_collection
 
@@ -1223,7 +1245,8 @@ class ActionMapper:
             role = self.e_role.get_role_by_id(user.role_id)
             self.current_user = user
             self.current_role = role
-            print(f"read_db_authorization. current_user: {user}, current_role: {role}")
+            print(
+                f"read_db_authorization. current_user: {user}, current_role: {role}")
             # # Возвращаем явный триггер для роутера по имени роли
             # user_name = (getattr(user, 'first_name', '') or '')
             # role_name = (getattr(role, 'name', '') or '').lower()
@@ -1501,7 +1524,6 @@ class ActionMapper:
 
             valid_tool_name = valid_tool.name
             self.select_tool = valid_tool
-
 
             print(f"valid_cells: {valid_cells}")
 
