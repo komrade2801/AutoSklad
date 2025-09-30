@@ -57,7 +57,7 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
             for tool in tools:
                 # Создаём кастомный виджет
                 widget = WidgetCountTool()
-                widget.set_data(tool.name, len(tools))  # Передаём данные в кастомный виджет
+                widget.set_data(tool.name, 1)  # Передаём данные в кастомный виджет
                 widget.event_select_management_group = self.handle_select_group
                 # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
                 list_item = QListWidgetItem(self.listWidget)
