@@ -346,12 +346,12 @@ color: rgb(0, 49, 114);</string>
    </property>
    <property name="icon">
     <iconset resource="../img/resources.qrc">
-     <normaloff>:/icons/up.png</normaloff>:/icons/up.png</iconset>
+     <normaloff>:/icons/sort_name.png</normaloff>:/icons/sort_name.png</iconset>
    </property>
    <property name="iconSize">
     <size>
-     <width>51</width>
-     <height>51</height>
+     <width>37</width>
+     <height>37</height>
     </size>
    </property>
   </widget>
@@ -1457,12 +1457,12 @@ color: rgb(0, 49, 114);</string>
    </property>
    <property name="icon">
     <iconset resource="../img/resources.qrc">
-     <normaloff>:/icons/down.png</normaloff>:/icons/down.png</iconset>
+     <normaloff>:/icons/sort_number.png</normaloff>:/icons/sort_number.png</iconset>
    </property>
    <property name="iconSize">
     <size>
-     <width>51</width>
-     <height>51</height>
+     <width>37</width>
+     <height>37</height>
     </size>
    </property>
   </widget>
