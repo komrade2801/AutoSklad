@@ -381,11 +381,9 @@ class ActionMapper:
 
         # TODO: Вынести в утилитарный класс
         def add_all_parent_groups(group_list: list[Group], parent_group_id: int, group: Group, group_id: int):
-            if parent_group_id == 0 and parent_group_id != group_id:
-                return
             if parent_group_id == group_id:
                 group_list.append(group)
-            else:
+            elif parent_group_id != 0 :
                 parent_group = self.e_group.get_group_by_id(parent_group_id)
                 add_all_parent_groups(
                     group_list, parent_group.paren_group_id, group, group_id)
@@ -396,7 +394,10 @@ class ActionMapper:
             # Получаем все подгруппы указанной группы
             groups = self.e_group.get_all_groups()
             for group in groups:
-                add_all_parent_groups(
+                if group.id == group_id:
+                    group_list.append(group)
+                else:
+                    add_all_parent_groups(
                     group_list, group.paren_group_id, group, group_id)
             print(f"group_list: {group_list}")
 
@@ -408,6 +409,7 @@ class ActionMapper:
 
             # Filter tools to only those with cells having status_id in {3,7}
             valid_tools = []
+            print(f"tools: {tools}")
             for tool in tools:
                 cells = self.e_cell.get_cells_by_tool(tool.id)
                 if any(c.status_id in {3, 7} for c in cells if c.status_id):
@@ -511,11 +513,9 @@ class ActionMapper:
 
         # TODO: Вынести в утилитарный класс
         def add_all_parent_groups(group_list: list[Group], parent_group_id: int, group: Group, group_id: int):
-            if parent_group_id == 0 and parent_group_id != group_id:
-                return
             if parent_group_id == group_id:
                 group_list.append(group)
-            else:
+            elif parent_group_id != 0 :
                 parent_group = self.e_group.get_group_by_id(parent_group_id)
                 add_all_parent_groups(
                     group_list, parent_group.paren_group_id, group, group_id)
@@ -526,7 +526,10 @@ class ActionMapper:
             # Получаем все подгруппы указанной группы
             groups = self.e_group.get_all_groups()
             for group in groups:
-                add_all_parent_groups(
+                if group.id == group_id:
+                    group_list.append(group)
+                else:
+                    add_all_parent_groups(
                     group_list, group.paren_group_id, group, group_id)
             print(f"group_list: {group_list}")
 
@@ -1877,6 +1880,7 @@ class ActionMapper:
         return True
 
     def read_db_mass_load_tools(self, *args, **kwargs) -> List[dict]:
+        print(f"read_db_mass_load_tools. args: {args}, kwargs: {kwargs} ")
         """
         Извлекает номера ячеек, связанных с последними операциями массовой загрузки инструментов.
         :return: Список номеров ячеек.
