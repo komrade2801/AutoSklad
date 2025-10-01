@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List, Type  # , Type
-from DB.BaseCRUD import CoreEngine
+from DB.Engine.BaseCRUD import BaseCRUD
 from DB.Models.ToolTypes import ToolTypes
 
 
-class EngineToolTypes(CoreEngine):
+class EngineToolTypes(BaseCRUD):
     """
     Класс EngineToolTypes обеспечивает операции с таблицей ToolTypes, которая содержит:
        - id,
@@ -40,7 +40,7 @@ class EngineToolTypes(CoreEngine):
         :return: True, если операция успешна.
         """
         return self.add(
-            index=tool_type_id,
+            id=tool_type_id,
             name=name,
             description=description,
             count=count,
@@ -66,7 +66,7 @@ class EngineToolTypes(CoreEngine):
         Обновляет данные типа инструмента.
         """
         return self.update(
-            index=tool_type_id,
+            tool_type_id,
             name=name,
             description=description,
             count=count,
