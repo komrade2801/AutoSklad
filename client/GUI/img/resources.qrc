@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>sort_name.png</file>
+    <file>sort_number.png</file>
     <file>login.png</file>
     <file>avatar.png</file>
     <file>ok.png</file>

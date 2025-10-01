@@ -29,6 +29,11 @@ class screen_15_mass_load(BaseScreen, Ui_screen_15_mass_load):
             cell_list = args[0]
             self.lbl_group_count.setText(f"Ячеек: {len(cell_list)}")
 
+            if args[1] and args[1] == 'btn_down':
+                cell_list.sort(reverse=False, key=self.mass_load_sort_by_cell_func)
+            else:
+                cell_list.sort(reverse=False, key=self.mass_load_sort_by_tool_func)
+
             self.listWidget.clear()  # Очищаем список перед добавлением новых данных
             try:
                 for cell_data in cell_list:
@@ -54,3 +59,9 @@ class screen_15_mass_load(BaseScreen, Ui_screen_15_mass_load):
     def get_data(self):
         print("screen_15_mass_load get_data")
         pass
+
+    def mass_load_sort_by_cell_func(self, e):
+        return e['cell_number']
+
+    def mass_load_sort_by_tool_func(self, e):
+        return e['tools_name']
