@@ -30,7 +30,7 @@ from DB.Engine.StatusCRUD import EngineStatus
 # from DB.Engine.ToolLocationCRUD import EngineToolLocation
 from DB.Engine.ToolsCRUD import EngineTools
 # from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
-# from DB.Engine.ToolTypesCRUD import EngineToolTypes
+from DB.Engine.ToolTypesCRUD import EngineToolTypes
 # from DB.Engine.TypeCRUD import EngineType
 from DB.Engine.UserCRUD import EngineUser
 # from DB.Engine.PageCRUD import EnginePage
@@ -45,7 +45,8 @@ class NormalizedLookup:
         for key in original_dict:
             nkey = self._normalize(key)
             if nkey in self.normalized_map:
-                raise KeyError(f"Key collision: {key} and {self.normalized_map[nkey]} normalize to same value")
+                raise KeyError(
+                    f"Key collision: {key} and {self.normalized_map[nkey]} normalize to same value")
             self.normalized_map[nkey] = key
 
     def _normalize(self, key):
@@ -90,7 +91,7 @@ crud_source = {
     # "ToolLocation": EngineToolLocation,
     "Tools": EngineTools,
     # "ToolsHasDevice": EngineToolsHasDevice,
-    "ToolTypes": None,
+    "ToolTypes": EngineToolTypes,
     # "Type": EngineType,
     "User": EngineUser,
     # "Page": EnginePage,
@@ -141,7 +142,6 @@ class CrudRegistry(dict):
             snake_key = normalize_to_snake(camel_key)
             if snake_key not in self:
                 self[snake_key] = cls
-
 
     def get(self, key, default=None):
         # Попробовать оригинальный ключ напрямую

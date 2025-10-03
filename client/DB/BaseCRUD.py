@@ -104,7 +104,11 @@ class CoreEngine:
             except NoResultFound:
                 result = None
 
-        self._cache[key] = result
+        # Cache only positive hits; avoid negative caching of None to prevent stale misses
+        if result is not None:
+            self._cache[key] = result
+        else:
+            self._cache.pop(key, None)
         return result
 
     def all(self) -> List[T]:
@@ -246,7 +250,8 @@ class CoreEngine:
 
             return fn
 
-        raise AttributeError(f"{type(self).__name__!r} has no attribute {name!r}")
+        raise AttributeError(
+            f"{type(self).__name__!r} has no attribute {name!r}")
 
     # ————— Методы изменения (сброс кеша) —————
 
@@ -257,7 +262,6 @@ class CoreEngine:
         :param kwargs: Поля и значения для создания объекта.
         :return: True при успешном добавлении.
         """
-
 
         with self.transaction() as db:
 
