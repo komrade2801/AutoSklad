@@ -13,14 +13,14 @@
 
   **Для сервера:**
   - cd server
-  - python3 -m venv venv
+  - python -m venv venv
   - source venv/bin/activate  # Linux/macOS; Windows PowerShell: .\venv\Scripts\Activate.ps1
   - python -m pip install --upgrade pip wheel
   - pip install -r requirements.txt
 
   **Для клиента:**
   - cd client
-  - python3 -m venv venv
+  - python -m venv venv
   - source venv/bin/activate  # Linux/macOS; Windows PowerShell: .\venv\Scripts\Activate.ps1
   - python -m pip install --upgrade pip wheel
   - pip install -r requirements.txt
@@ -28,12 +28,8 @@
 
 ## 2. Инструкция по удалению баз данных для чистого старта
 - Откройте терминал в корне проекта
-- del server\DB\vending.db
-- del server\DB\web-vending.db
-- del server\DB\sync.db
-- del client\DB\vending.db
-
-Или для Linux: rm server/DB/{vending,web-vending,sync}.db client/DB/vending.db
+- ./cleanup_databases.ps1
+- Далее подтвердите удаление найденных файлов в терминале
 
 Это удаляет базы данных для полной переинициализации.
 

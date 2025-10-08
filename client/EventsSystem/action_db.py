@@ -1078,6 +1078,12 @@ class ActionMapper:
                     if cell:
                         result = result and self.e_cell.update_cell(
                             **(cell.to_dict()))
+
+            # Очистка кешей затрагиваемых моделей для актуальности данных
+            self.e_mass_load._cache.clear()  # Для MassLoad (get_all_ids, all)
+            self.e_load._cache.clear()       # Для Load (find_by_mass_load_id, get)
+            logging.info("Cache cleared for mass load confirmation")
+
             return result
         except Exception as e:
             print(e)

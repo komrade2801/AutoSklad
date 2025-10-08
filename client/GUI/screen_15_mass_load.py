@@ -24,9 +24,7 @@ class screen_15_mass_load(BaseScreen, Ui_screen_15_mass_load):
         print(args)
         print(kwargs)
         try:
-            if not args[0]:
-                return
-            cell_list = args[0]
+            cell_list = args[0] if len(args) > 0 and args[0] is not None else []
             self.lbl_group_count.setText(f"Ячеек: {len(cell_list)}")
 
             if args[1] and args[1] == 'btn_down':
