@@ -25,11 +25,8 @@ class WidgetMassLoadTool(BaseScreen, Ui):
         print(cell_data)
         """Устанавливает текстовые данные для отображения."""
         for key, value in cell_data.items():
-            print(f"trying to set {key} to {value}")
             # Проверяем, существует ли атрибут с таким именем
             if hasattr(self, key):
-                print(f"set {key} to {value}")
-
                 widget = getattr(self, key)  # Получаем атрибут
                 # Проверяем, имеет ли атрибут метод `setText`
                 if hasattr(widget, 'setText') and callable(widget.setText):
