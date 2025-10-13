@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 
-from API.backend.request_models import CellUpdate
+from server.API.backend.request_models import CellUpdate
 # , Type
-from DB.Engine.CRUD import BaseCRUD
-from DB.Models.Cell import Cell
+from ..Engine.CRUD import BaseCRUD
+from ..Models.Cell import Cell
 
 class EngineCell(BaseCRUD):
     """

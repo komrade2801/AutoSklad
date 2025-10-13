@@ -6,8 +6,8 @@
 
 from sqlalchemy import Column, Integer, ForeignKey, String, Index
 from sqlalchemy.orm import relationship
-from DB.Data.base import Base
-from DB.Models.BaseModel import Model
+from ..Data.base import Base
+from ..Models.BaseModel import Model
 
 
 class Cell(Base, Model):
@@ -20,18 +20,18 @@ class Cell(Base, Model):
     number = Column(Integer, nullable=True, unique=True, comment="Номер ячейки")
     description = Column(String(255), nullable=True, comment="Описание ячейки или дополнительные детали")
     groups_id = Column(Integer, ForeignKey("Group.id"), nullable=True, comment="Внешний ключ на таблицу Group")
-    tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=False)
-    status_id = Column(Integer, ForeignKey("Status.id"), nullable=False, comment="Внешний ключ на таблицу Status")
+    tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=True)
+    status_id = Column(Integer, ForeignKey("Status.id"), nullable=True, comment="Внешний ключ на таблицу Status")
 
     @property
     def devices(self):
-        from DB.Models.CellHasDevice import CellHasDevice
+        from ..Models.CellHasDevice import CellHasDevice
         return relationship(CellHasDevice, back_populates="Cell")
 
     @property
     def status(self):
         if "Status" not in Base.metadata.tables:
-            from DB.Models.Status import Status
+            from ..Models.Status import Status
         else:
             Status = Base.metadata.tables["Status"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Status, back_populates="DropOperations")
@@ -39,7 +39,7 @@ class Cell(Base, Model):
     @property
     def groups(self):
         if "Groups" not in Base.metadata.tables:
-            from DB.Models.Group import Group
+            from ..Models.Group import Group
         else:
             Group = Base.metadata.tables["Groups"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Group, back_populates="Cells")
@@ -47,7 +47,7 @@ class Cell(Base, Model):
     @property
     def tools(self):
         if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+            from ..Models.Tools import Tools
         else:
             Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Tools, back_populates="Cells")
