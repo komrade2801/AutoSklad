@@ -9,8 +9,6 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from GUI.ico.btn_ico_back import Back
-from GUI.ico.ico_avatar import Avatar
 
 
 class Ui_screen_26_admin(object):
@@ -810,8 +808,8 @@ class Ui_screen_26_admin(object):
         self.btn_back.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
 "color: rgb(0, 49, 114);")
         self.btn_back.setText("")
-        icon = QtGui.QIcon()  # "img/btn_ico_back.png"
-        icon.addPixmap(QtGui.QPixmap(Back().get_pixmap()), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap("ui\\img/btn_ico_back.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.btn_back.setIcon(icon)
         self.btn_back.setIconSize(QtCore.QSize(51, 51))
         self.btn_back.setObjectName("btn_back")
@@ -1159,8 +1157,8 @@ class Ui_screen_26_admin(object):
         self.lbl_info_ico = QtWidgets.QLabel(screen_26_admin)
         self.lbl_info_ico.setGeometry(QtCore.QRect(95, 0, 280, 290))
         self.lbl_info_ico.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
-        self.lbl_info_ico.setText("")  # "img/ico_avatar.png"
-        self.lbl_info_ico.setPixmap(QtGui.QPixmap(Avatar().get_pixmap()))
+        self.lbl_info_ico.setText("")
+        self.lbl_info_ico.setPixmap(QtGui.QPixmap("ui\\img/ico_avatar.png"))
         self.lbl_info_ico.setScaledContents(True)
         self.lbl_info_ico.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_info_ico.setObjectName("lbl_info_ico")

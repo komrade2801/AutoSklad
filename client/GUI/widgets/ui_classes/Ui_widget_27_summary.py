@@ -658,7 +658,7 @@ class Ui_widget_27_summary(object):
 
     def retranslateUi(self, widget_27_summary):
         _translate = QtCore.QCoreApplication.translate
-        widget_27_summary.setWindowTitle(_translate("widget_27_summary", "widget_27_8_21_err_timeout"))
+        widget_27_summary.setWindowTitle(_translate("widget_27_summary", "widget_27_summary"))
         self.operation_description.setText(_translate("widget_27_summary", "Массовая загрузка 12"))
         self.title.setText(_translate("widget_27_summary", "<html><head/><body><p>Инструмент выдан пользователю</p></body></html>"))
         self.user_name.setText(_translate("widget_27_summary", "Михаил Михайлов"))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui\widgets\widget_8_9_tool.ui'
+# Form implementation generated from reading ui file 'ui\widgets\widget_tool_type.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -11,13 +11,13 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_widget_8_9_tool(object):
-    def setupUi(self, widget_8_9_tool):
-        widget_8_9_tool.setObjectName("widget_8_9_tool")
-        widget_8_9_tool.resize(440, 65)
-        widget_8_9_tool.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));")
-        self.lbl_number_tool = QtWidgets.QLabel(widget_8_9_tool)
-        self.lbl_number_tool.setGeometry(QtCore.QRect(10, 5, 331, 30))
+class Ui_widget_tool_type(object):
+    def setupUi(self, widget_tool_type):
+        widget_tool_type.setObjectName("widget_tool_type")
+        widget_tool_type.resize(450, 70)
+        widget_tool_type.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));")
+        self.lbl_number_tool = QtWidgets.QLabel(widget_tool_type)
+        self.lbl_number_tool.setGeometry(QtCore.QRect(10, 10, 331, 31))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -128,9 +128,9 @@ class Ui_widget_8_9_tool(object):
 "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_number_tool.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.lbl_number_tool.setObjectName("lbl_number_tool")
-        self.lbl_status = QtWidgets.QLabel(widget_8_9_tool)
+        self.lbl_status = QtWidgets.QLabel(widget_tool_type)
         self.lbl_status.setEnabled(True)
-        self.lbl_status.setGeometry(QtCore.QRect(355, 5, 80, 30))
+        self.lbl_status.setGeometry(QtCore.QRect(340, 10, 101, 30))
         font = QtGui.QFont()
         font.setFamily("Dubai")
         font.setPointSize(12)
@@ -141,32 +141,8 @@ class Ui_widget_8_9_tool(object):
         self.lbl_status.setStyleSheet("color: rgb(78, 155, 229);\n"
 "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_status.setObjectName("lbl_status")
-        self.cell_number = QtWidgets.QLabel(widget_8_9_tool)
-        self.cell_number.setGeometry(QtCore.QRect(390, 30, 41, 30))
-        font = QtGui.QFont()
-        font.setFamily("Arial Black")
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.cell_number.setFont(font)
-        self.cell_number.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
-        self.cell_number.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-        self.cell_number.setObjectName("cell_number")
-        self.lbl_info = QtWidgets.QLabel(widget_8_9_tool)
-        self.lbl_info.setGeometry(QtCore.QRect(290, 30, 60, 30))
-        font = QtGui.QFont()
-        font.setFamily("Arial Black")
-        font.setPointSize(10)
-        font.setBold(True)
-        font.setWeight(75)
-        self.lbl_info.setFont(font)
-        self.lbl_info.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
-        self.lbl_info.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
-        self.lbl_info.setObjectName("lbl_info")
-        self.group_name = QtWidgets.QLabel(widget_8_9_tool)
-        self.group_name.setGeometry(QtCore.QRect(10, 30, 271, 30))
+        self.group_name = QtWidgets.QLabel(widget_tool_type)
+        self.group_name.setGeometry(QtCore.QRect(10, 39, 431, 21))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 49, 114))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -276,9 +252,11 @@ class Ui_widget_8_9_tool(object):
         self.group_name.setFont(font)
         self.group_name.setStyleSheet("color: rgb(0, 49, 114);\n"
 "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
+        self.group_name.setLineWidth(1)
         self.group_name.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.group_name.setIndent(-1)
         self.group_name.setObjectName("group_name")
-        self.tool_description = QtWidgets.QLabel(widget_8_9_tool)
+        self.tool_description = QtWidgets.QLabel(widget_tool_type)
         self.tool_description.setGeometry(QtCore.QRect(10, 70, 271, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 49, 114))
@@ -392,15 +370,13 @@ class Ui_widget_8_9_tool(object):
         self.tool_description.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.tool_description.setObjectName("tool_description")
 
-        self.retranslateUi(widget_8_9_tool)
-        QtCore.QMetaObject.connectSlotsByName(widget_8_9_tool)
+        self.retranslateUi(widget_tool_type)
+        QtCore.QMetaObject.connectSlotsByName(widget_tool_type)
 
-    def retranslateUi(self, widget_8_9_tool):
+    def retranslateUi(self, widget_tool_type):
         _translate = QtCore.QCoreApplication.translate
-        widget_8_9_tool.setWindowTitle(_translate("widget_8_9_tool", "widget_8_9_tool"))
-        self.lbl_number_tool.setText(_translate("widget_8_9_tool", "PSTR 0315 F60 KKX"))
-        self.lbl_status.setText(_translate("widget_8_9_tool", "<html><head/><body><p align=\"center\">Доступен</p></body></html>"))
-        self.cell_number.setText(_translate("widget_8_9_tool", "999"))
-        self.lbl_info.setText(_translate("widget_8_9_tool", "Ячейка:"))
-        self.group_name.setText(_translate("widget_8_9_tool", "Фреза концевая"))
-        self.tool_description.setText(_translate("widget_8_9_tool", "Описание"))
+        widget_tool_type.setWindowTitle(_translate("widget_tool_type", "widget_tool_type"))
+        self.lbl_number_tool.setText(_translate("widget_tool_type", "PSTR 0315 F60 KKX"))
+        self.lbl_status.setText(_translate("widget_tool_type", "<html><head/><body><p align=\"center\">Доступен</p></body></html>"))
+        self.group_name.setText(_translate("widget_tool_type", "Фреза концевая"))
+        self.tool_description.setText(_translate("widget_tool_type", "Описание"))
