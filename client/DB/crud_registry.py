@@ -1,38 +1,39 @@
 # DB/crud_registry.py
-from DB.Engine.CellCRUD import EngineCell
+from .Engine.CellCRUD import EngineCell
 # from DB.Engine.CellHasDeviceCRUD import EngineCellHasDevice
-from DB.Engine.ConsumptionCRUD import EngineConsumption
+from .Engine.ConsumptionCRUD import EngineConsumption
 # from DB.Engine.DeviceCRUD import EngineDevice
-from DB.Engine.DropCRUD import EngineDrop
-from DB.Engine.DropOperationsCRUD import EngineDropOperations
+from .Engine.DropCRUD import EngineDrop
+from .Engine.DropOperationsCRUD import EngineDropOperations
 # from DB.Engine.DropOperationsHasDeviceCRUD import EngineDropOperationsHasDevice
-from DB.Engine.ErrorsCRUD import EngineError
+from .Engine.ErrorsCRUD import EngineError
 # from DB.Engine.ErrorHasDeviceCRUD import EngineErrorHasDevice
-from DB.Engine.GroupCRUD import EngineGroup
-from DB.Engine.HelpCRUD import EngineHelp
-from DB.Engine.HistoryCRUD import EngineHistory
-from DB.Engine.IdentificationCRUD import EngineIdentification
-from DB.Engine.LoadCRUD import EngineLoad
-from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
+from .Engine.GroupCRUD import EngineGroup
+from .Engine.HelpCRUD import EngineHelp
+from .Engine.HistoryCRUD import EngineHistory
+from .Engine.IdentificationCRUD import EngineIdentification
+from .Engine.LoadCRUD import EngineLoad
+from .Engine.LoadOperationsCRUD import EngineLoadOperations
 # from DB.Engine.LoadOperationsHasDeviceCRUD import EngineLoadOperationsHasDevice
-from DB.Engine.MassDropCRUD import EngineMassDrop
-from DB.Engine.MassLoadCRUD import EngineMassLoad
+from .Engine.MassDropCRUD import EngineMassDrop
+from .Engine.MassLoadCRUD import EngineMassLoad
 # from DB.Engine.MassDropHasDeviceCRUD import EngineMassDropHasDevice
 # from DB.Engine.MassLoadHasDeviceCRUD import EngineMassLoadHasDevice
-from DB.Engine.OperationsConsumptionCRUD import EngineOperationsConsumption
+from .Engine.OperationsConsumptionCRUD import EngineOperationsConsumption
 # from DB.Engine.OperationsConsumptionHasDeviceCRUD import EngineOperationsConsumptionHasDevice
-from DB.Engine.PlanCRUD import EnginePlan
+from .Engine.PlanCRUD import EnginePlan
+from .Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 # from DB.Engine.ActualNormCRUD import EngineActualNorm
 # from DB.Engine.ActualNormHasDeviceCRUD import EngineActualNormHasDevice
-from DB.Engine.RightsCRUD import EngineRights
-from DB.Engine.RoleCRUD import EngineRole
-from DB.Engine.StatusCRUD import EngineStatus
+from .Engine.RightsCRUD import EngineRights
+from .Engine.RoleCRUD import EngineRole
+from .Engine.StatusCRUD import EngineStatus
 # from DB.Engine.ToolLocationCRUD import EngineToolLocation
-from DB.Engine.ToolsCRUD import EngineTools
+from .Engine.ToolsCRUD import EngineTools
 # from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
-from DB.Engine.ToolTypesCRUD import EngineToolTypes
+from .Engine.ToolTypesCRUD import EngineToolTypes
 # from DB.Engine.TypeCRUD import EngineType
-from DB.Engine.UserCRUD import EngineUser
+from .Engine.UserCRUD import EngineUser
 # from DB.Engine.PageCRUD import EnginePage
 import re
 
@@ -83,6 +84,7 @@ crud_source = {
     "OperationsConsumption": EngineOperationsConsumption,
     # "OperationsConsumptionHasDevice": EngineOperationsConsumptionHasDevice,
     "Plan": EnginePlan,
+    "PlanToolTypes": EnginePlanToolTypes,
     # "ActualNorm": EngineActualNorm,
     # "ActualNormHasDevice": EngineActualNormHasDevice,
     "Rights": EngineRights,

@@ -54,6 +54,8 @@ from threading import RLock
 
 from config import config_path, db_path
 
+from server.DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
+
 # Глобальное хранилище прогресса
 progress_data = {
     "status": "idle",
@@ -162,6 +164,7 @@ def execute():
         e_operations_consumption = EngineOperationsConsumption(
             SessionLocal(engine()))
         e_plan = EnginePlan(SessionLocal(engine()))
+        e_plan_tool_types = EnginePlanToolTypes(SessionLocal(engine()))
         e_rights = EngineRights(SessionLocal(engine()))
         e_role = EngineRole(SessionLocal(engine()))
         e_status = EngineStatus(SessionLocal(engine()))
@@ -182,6 +185,7 @@ def execute():
         e_mass_load.delete_all()
         e_operations_consumption.delete_all()
         e_plan.delete_all()
+        e_plan_tool_types.delete_all()
         e_rights.delete_all()
         e_role.delete_all()
         e_status.delete_all()
@@ -242,9 +246,9 @@ def execute():
                 e_cell.add_cell(
                     index=index,
                     number=number,
-                    tools_id=0,
-                    status_id=0,
-                    groups_id=0,
+                    tools_id=None,
+                    status_id=None,
+                    groups_id=None,
                     description='Старт',
                 )
 
