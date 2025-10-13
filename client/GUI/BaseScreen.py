@@ -20,6 +20,7 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
         self.event_input_name_code = None
         self.event_select_group = None
         self.event_select_tool = None
+        self.event_select_plan = None
         self.on_serial_data_received = None
         self.event_enter_barcode = None
         self.event_select_management_group = None

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from StateMachine.screens import screen
+from client.StateMachine.screens import screen
 
 states = [
     {'name': 'screen_1_welcome'},
@@ -68,7 +68,7 @@ states = [
     {'name': 'cmd_ping'},
     {'name': 'screen_27_history_err'},
     {'name': 'write_db_err_login'},
-    {'name': 'screen_9_select_tool_for_plan'},
+    {'name': 'screen_9_select_tool_by_plan'},
     {'name': 'screen_29_serial_options'},
     {'name': 'screen_6_user'},
     {'name': 'screen_28_net_options'},
@@ -121,7 +121,10 @@ states = [
     {'name': 'screen_17_mass_drop'},
     {'name': 'write_cnf_lock_drop'},
     {'name': 'screen_25_history_by_user'},
+    {'name': 'read_db_get_plan_tools'},
     {'name': 'screen_20_management_tool'},
+    {'name': 'read_db_plan'},
+    {'name': 'screen_33_select_plan'},
 ]
 
 transitions = [
@@ -247,11 +250,11 @@ transitions = [
     {'trigger': 'btn_up', 'source': 'screen_27_history_err', 'dest': 'read_db_err_history'},
     {'trigger': 'timeout_back', 'source': 'screen_27_history_err', 'dest': 'screen_1_welcome'},
     {'trigger': 'view_err_login', 'source': 'write_db_err_login', 'dest': 'screen_4_authorization_err'},
-    {'trigger': 'btn_back', 'source': 'screen_9_select_tool_for_plan', 'dest': 'screen_1_welcome'},
-    {'trigger': 'btn_down', 'source': 'screen_9_select_tool_for_plan', 'dest': 'read_db_get_tools'},
-    {'trigger': 'btn_up', 'source': 'screen_9_select_tool_for_plan', 'dest': 'read_db_get_tools'},
-    {'trigger': 'timeout_back', 'source': 'screen_9_select_tool_for_plan', 'dest': 'screen_1_welcome'},
-    {'trigger': 'btn_tool_name', 'source': 'screen_9_select_tool_for_plan', 'dest': 'read_db_rights_tool'},
+    {'trigger': 'btn_down', 'source': 'screen_9_select_tool_by_plan', 'dest': 'read_db_get_tools'},
+    {'trigger': 'btn_up', 'source': 'screen_9_select_tool_by_plan', 'dest': 'read_db_get_tools'},
+    {'trigger': 'timeout_back', 'source': 'screen_9_select_tool_by_plan', 'dest': 'screen_1_welcome'},
+    {'trigger': 'btn_tool_name', 'source': 'screen_9_select_tool_by_plan', 'dest': 'read_db_rights_tool'},
+    {'trigger': 'btn_back', 'source': 'screen_9_select_tool_by_plan', 'dest': 'read_db_plan'},
     {'trigger': 'timeout_back', 'source': 'screen_29_serial_options', 'dest': 'screen_1_welcome'},
     {'trigger': 'test', 'source': 'screen_29_serial_options', 'dest': 'cmd_test_is_free'},
     {'trigger': 'btn_ok', 'source': 'screen_29_serial_options', 'dest': 'write_cnf_serial'},
@@ -268,12 +271,12 @@ transitions = [
     {'trigger': 'err_barcode', 'source': 'read_db_plan_id', 'dest': 'write_db_err_barcode_plan'},
     {'trigger': 'user_name', 'source': 'read_db_user_from_barcode', 'dest': 'screen_6_user'},
     {'trigger': 'err_barcode', 'source': 'read_db_user_from_barcode', 'dest': 'write_db_err_barcode_user'},
-    {'trigger': 'view_tools', 'source': 'read_db_get_tools', 'dest': 'screen_9_select_tool_for_plan'},
+    {'trigger': 'view_tools', 'source': 'read_db_get_tools', 'dest': 'screen_9_select_tool_by_plan'},
     {'trigger': 'err_get_tools_by_plan_id', 'source': 'read_db_get_tools', 'dest': 'write_db_err_get_tools_by_plan_id'},
     {'trigger': 'view_tool_groups', 'source': 'read_db_groups', 'dest': 'screen_7_select_group'},
     {'trigger': 'view_cnf_serial', 'source': 'read_cnf_serial', 'dest': 'screen_29_serial_options'},
     {'trigger': 'edit_psw', 'source': 'screen_3_authorization', 'dest': 'cmd_keyboard_toggle'},
-    {'trigger': 'btn_login', 'source': 'screen_3_authorization', 'dest': 'read_db_authorization'},
+    {'trigger': 'btn_authorization', 'source': 'screen_3_authorization', 'dest': 'read_db_authorization'},
     {'trigger': 'timeout_back', 'source': 'screen_3_authorization', 'dest': 'screen_1_welcome'},
     {'trigger': 'btn_back', 'source': 'screen_3_authorization', 'dest': 'screen_1_welcome'},
     {'trigger': 'edit_login', 'source': 'screen_3_authorization', 'dest': 'cmd_keyboard_toggle'},
@@ -355,6 +358,7 @@ transitions = [
     {'trigger': 'btn_mass_drop', 'source': 'screen_14_stockman', 'dest': 'read_cnf_lock_drop'},
     {'trigger': 'btn_back', 'source': 'screen_14_stockman', 'dest': 'screen_1_welcome'},
     {'trigger': 'btn_warehouse_group', 'source': 'screen_14_stockman', 'dest': 'read_db_group_collection'},
+    {'trigger': 'btn_select_plan', 'source': 'screen_14_stockman', 'dest': 'read_db_plan'},
     {'trigger': 'view_plan_operations', 'source': 'read_db_plan_operations', 'dest': 'screen_24_history_by_plan'},
     {'trigger': 'unlock', 'source': 'read_cnf_lock_load', 'dest': 'read_db_mass_load_tools'},
     {'trigger': 'lock', 'source': 'read_cnf_lock_load', 'dest': 'screen_14_stockman'},
@@ -389,8 +393,13 @@ transitions = [
     {'trigger': 'btn_up', 'source': 'screen_25_history_by_user', 'dest': 'read_db_user_operations'},
     {'trigger': 'timeout_back', 'source': 'screen_25_history_by_user', 'dest': 'screen_1_welcome'},
     {'trigger': 'btn_down', 'source': 'screen_25_history_by_user', 'dest': 'read_db_user_operations'},
+    {'trigger': 'view_tools', 'source': 'read_db_get_plan_tools', 'dest': 'screen_9_select_tool_by_plan'},
     {'trigger': 'btn_back', 'source': 'screen_20_management_tool', 'dest': 'screen_1_welcome'},
     {'trigger': 'timeout_back', 'source': 'screen_20_management_tool', 'dest': 'screen_1_welcome'},
     {'trigger': 'btn_up', 'source': 'screen_20_management_tool', 'dest': 'read_db_tools_collection'},
     {'trigger': 'btn_down', 'source': 'screen_20_management_tool', 'dest': 'read_db_tools_collection'},
+    {'trigger': 'view_plans', 'source': 'read_db_plan', 'dest': 'screen_33_select_plan'},
+    {'trigger': 'btn_back', 'source': 'screen_33_select_plan', 'dest': 'screen_14_stockman'},
+    {'trigger': 'timeout_back', 'source': 'screen_33_select_plan', 'dest': 'screen_1_welcome'},
+    {'trigger': 'btn_plan_name', 'source': 'screen_33_select_plan', 'dest': 'read_db_get_plan_tools'},
 ]

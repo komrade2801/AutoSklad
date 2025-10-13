@@ -11,8 +11,8 @@
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Index
 from sqlalchemy.orm import relationship
-from DB.Data.base import Base
-from DB.Models.BaseModel import Model
+from ..Data.base import Base
+from ..Models.BaseModel import Model
 
 
 #  print("Plan")
@@ -37,7 +37,7 @@ class Plan(Base, Model):
     @property
     def tools(self):
         if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+            from ..Models.Tools import Tools
         else:
             Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Tools, back_populates="Plans")
@@ -45,7 +45,7 @@ class Plan(Base, Model):
     @property
     def stories(self):
         if "Stories" not in Base.metadata.tables:
-            from DB.Models.History import History
+            from ..Models.History import History
         else:
             History = Base.metadata.tables["Stories"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(History, back_populates="Plans")

@@ -129,6 +129,9 @@ class MainWindow(QtWidgets.QWidget):
         if self.widgets[source].event_select_tool:
             self.widgets[source].event_select_tool = (lambda checked, btn_name="btn_tool_name": self.button_clicked(btn_name, dest))
 
+        if self.widgets[source].event_select_plan:
+            self.widgets[source].event_select_plan = (lambda checked, btn_name="btn_plan_name": self.button_clicked(btn_name, dest))
+
         if self.widgets[source].event_enter_barcode:
             self.widgets[source].event_enter_barcode = (lambda barcode=0, btn_name="barcode": self.button_clicked(btn_name, dest, value=barcode))
 

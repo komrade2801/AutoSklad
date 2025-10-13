@@ -111,6 +111,8 @@ class MainWindow(QtWidgets.QWidget):
             self.widgets[source].event_select_group = (lambda checked, btn_name="btn_select_group_names": self.button_clicked(btn_name, dest))
         if self.widgets[source].event_select_tool:
             self.widgets[source].event_select_tool = (lambda checked, btn_name="btn_tool_name": self.button_clicked(btn_name, dest))
+        if self.widgets[source].event_select_plan:
+            self.widgets[source].event_select_plan = (lambda checked, btn_name="btn_plan_name": self.button_clicked(btn_name, dest))
 
         button = self.widgets[source].findChild(QtWidgets.QPushButton, trigger)
         if button:

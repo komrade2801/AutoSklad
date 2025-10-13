@@ -6,7 +6,7 @@ from GUI.screen_5_identification_err import screen_5_identification_err
 from GUI.screen_6_user import screen_6_user
 from GUI.screen_7_select_group import screen_7_select_group
 from GUI.screen_8_select_tool import screen_8_select_tool
-from GUI.screen_9_select_tool_for_plan_by_barcode import screen_9_select_tool_for_plan_by_barcode
+from GUI.screen_9_select_tool_by_plan import screen_9_select_tool_by_plan
 from GUI.screen_10_confirmation import screen_10_confirmation
 from GUI.screen_11_tool_issued import screen_11_tool_issued
 from GUI.screen_12_no_tool import screen_12_no_tool
@@ -30,6 +30,7 @@ from GUI.screen_29_serial_options import screen_29_serial_options
 from GUI.screen_30_shutdown import screen_30_shutdown
 from GUI.screen_31_reboot import screen_31_reboot
 from GUI.screen_32_wait import screen_32_wait
+from GUI.screen_33_select_plan import screen_33_select_plan
 screen_register = {
         "screen_1_welcome": screen_1_welcome,
         "screen_2_help": screen_2_help,
@@ -39,7 +40,7 @@ screen_register = {
         "screen_6_user": screen_6_user,
         "screen_7_select_group": screen_7_select_group,
         "screen_8_select_tool": screen_8_select_tool,
-        "screen_9_select_tool_for_plan_by_barcode": screen_9_select_tool_for_plan_by_barcode,
+        "screen_9_select_tool_by_plan": screen_9_select_tool_by_plan,
         "screen_10_confirmation": screen_10_confirmation,
         "screen_11_tool_issued": screen_11_tool_issued,
         "screen_12_no_tool": screen_12_no_tool,
@@ -63,4 +64,5 @@ screen_register = {
         "screen_30_shutdown": screen_30_shutdown,
         "screen_31_reboot": screen_31_reboot,
         "screen_32_wait": screen_32_wait,
+        "screen_33_select_plan": screen_33_select_plan,
     }

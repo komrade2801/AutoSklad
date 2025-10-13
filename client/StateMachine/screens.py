@@ -37,5 +37,6 @@ screen = {
     'screen_6_user': ['btn_ico_back', 'btn_back', 'btn_select_group'],
     'screen_7_select_group': ['btn_ico_up', 'btn_back', 'btn_ico_back', 'btn_down', 'btn_up', 'btn_ico_down'],
     'screen_8_select_tool': ['btn_ico_up', 'btn_back', 'btn_ico_back', 'btn_down', 'btn_up', 'btn_ico_down'],
-    'screen_9_select_tool_for_plan_by_barcode': ['btn_ico_up', 'btn_back', 'btn_ico_back', 'btn_down', 'btn_up', 'btn_ico_down'],
+    'screen_9_select_tool_by_plan': ['btn_ico_up', 'btn_back', 'btn_ico_back', 'btn_down', 'btn_up', 'btn_ico_down'],
+    'screen_33_select_plan': ['btn_back'],
 }

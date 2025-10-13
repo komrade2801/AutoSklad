@@ -6,15 +6,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 # from typing import List
 
-from API.backend.request_models import PlanResponse, Plan, PlanCreate, PlanUpdate
+from ..request_models import PlanResponse, Plan, PlanCreate, PlanUpdate
 # # from DB.Data.db_depends import get_db
 # from DB.session import get_db
-from DB.session import get_db
-from DB.Engine.PlanCRUD import EnginePlan
-from DB.Engine.DeviceCRUD import EngineDevice
-from DB.Engine.ToolTypesCRUD import EngineToolTypes
-from DB.Engine.ToolsCRUD import EngineTools
-from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
+from server.DB.session import (get_db)
+# from DB.session import get_db
+from server.DB.Engine.PlanCRUD import EnginePlan
+from server.DB.Engine.DeviceCRUD import EngineDevice
+from server.DB.Engine.ToolTypesCRUD import EngineToolTypes
+from server.DB.Engine.ToolsCRUD import EngineTools
+from server.DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
+from server.DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
@@ -34,6 +36,7 @@ all_plans_router = APIRouter(tags=["All Plans"])
 
 @all_plans_router.get("/get_all_plans/{device_number}", response_model=PlanResponse)
 def get_all_plans(device_number: int, db: Session = Depends(get_db)):
+    print(f"get_all_plans Device number: {device_number}")
     """
     Получает чертежи для устройства по серийному номеру.
     Связь реализуется через таблицу Tools: выбираем инструменты устройства и собираем уникальные plan_id.
@@ -43,25 +46,29 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
     tools_crud = EngineTools()
     plans_crud = EnginePlan()
     tool_types_crud = EngineToolTypes()
+    plan_tool_types_crud = EnginePlanToolTypes()
 
-    device = devices_crud.get_device_by_number(device_number)
-    if not device:
-        raise HTTPException(status_code=404, detail="Устройство не найдено")
+    # device = devices_crud.get_device_by_number(device_number)
+    # if not device:
+    #     raise HTTPException(status_code=404, detail="Устройство не найдено")
+    #
+    # tool_ids = tools_has_device_crud.get_tools_by_device_id(device.id)
+    # if not tool_ids:
+    #     raise HTTPException(status_code=404, detail="Нет инструментов, связанных с данным устройством")
+    #
+    # tools = tools_crud.get_tools_by_ids(tool_ids)
+    # if not tools:
+    #     raise HTTPException(status_code=404, detail="Инструменты не найдены")
+    #
+    # # Собираем уникальные идентификаторы Чертёжов из инструментов
+    # plan_ids = list({tool.plan_id for tool in tools if tool.plan_id is not None})
+    # if not plan_ids:
+    #     raise HTTPException(status_code=200, detail="Чертёжы для данного устройства не найдены")
+    #
+    # plans = plans_crud.get_plans_by_ids(plan_ids)
 
-    tool_ids = tools_has_device_crud.get_tools_by_device_id(device.id)
-    if not tool_ids:
-        raise HTTPException(status_code=404, detail="Нет инструментов, связанных с данным устройством")
-
-    tools = tools_crud.get_tools_by_ids(tool_ids)
-    if not tools:
-        raise HTTPException(status_code=404, detail="Инструменты не найдены")
-
-    # Собираем уникальные идентификаторы Чертёжов из инструментов
-    plan_ids = list({tool.plan_id for tool in tools if tool.plan_id is not None})
-    if not plan_ids:
-        raise HTTPException(status_code=200, detail="Чертёжы для данного устройства не найдены")
-
-    plans = plans_crud.get_plans_by_ids(plan_ids)
+    plans = plans_crud.get_all_plans()
+    print(f"plans: {plans}")
     if not plans:
         raise HTTPException(status_code=404, detail="Чертёжы не найдены")
     plan_dicts = {}
@@ -80,16 +87,21 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
         plan_dicts["list_count"] = plan.list_count
         plan_dicts["parent_plan_id"] = plan.parent_plan_id
         plan_dicts["parent_plan"] = plan.parent_plan
-        tools = tools_crud.get_tools_by_plan(plan.id)
-        for tool in tools:
-            tool_type = tool_types_crud.get_tool_type_by_id(tool_type_id=tool.tool_type_id)
-            tool_by_plan["id"] = tool.id
+        # tools = tools_crud.get_tools_by_plan(plan.id)
+        plan_tool_types = plan_tool_types_crud.get_plan_tool_types_by_plan_id(plan.id)
+        print(f"plan: {plan}, plan_tool_types: {plan_tool_types}")
+        for plan_tool_type in plan_tool_types:
+            tool_type = tool_types_crud.get_tool_type_by_id(tool_type_id=plan_tool_type.tool_types_id)
+            print(f"tool_type: {tool_type}")
+
+            tool_by_plan["id"] = tool_type.id
             # tool_by_plan["barcode"] = tool_type.barcode
             tool_by_plan["name"] = tool_type.name
             tool_by_plan["description"] = tool_type.description
             tool_by_plan["img"] = tool_type.img
-            tool_by_plan["plan_id"] = tool.plan_id
+            tool_by_plan["plan_id"] = plan.id
             tool_by_plan["groups_id"] = tool_type.groups_id
+            tool_by_plan["tool_types_count"] = plan_tool_type.tool_types_count
             tools_by_plan.append(tool_by_plan)
             tool_by_plan = {}
         plan_dicts["tools"] = tools_by_plan
@@ -215,8 +227,10 @@ def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_
     создание Чертёжа осуществляется независимо, а привязка к устройству может быть реализована
     на уровне инструмента (через поле plan_id в Tools).
     """
+    print(f"create_plan Device number: {device_number}, plan: {plan}")
     devices_crud = EngineDevice()
     plans_crud = EnginePlan()
+    plan_tool_types_crud = EnginePlanToolTypes()
     tools_has_device_crud = EngineToolsHasDevice()
     tools_crud = EngineTools()
     tool_types_crud = EngineToolTypes()
@@ -249,42 +263,51 @@ def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_
 
         for count, name in enumerate(plan.tools):
             # tool[""]
-            tool_types_name = name['name'].split(' ')[0]
+            # tool_types_name = name['name'].split(' ')[0]
+            tool_types_name = name['name']
             tool_quantity = name['quantity']
             quantity = 0
             tool_types = tool_types_crud.find_by_name(tool_types_name)
+            print(f"create_plan tool_types_name: {tool_types_name}, tool_quantity: {tool_quantity}, tool_types: {tool_types}")
             # tool_types_ids = tool_types_crud.get_all_ids()
             # for index in tool_types_ids:
             #     tool_types = tool_types_crud.get_tool_type_by_id(tool_type_id=index)
             #     if tool_types.name in tool_types_name:
             for tool_type in tool_types:
                 tools = tools_crud.get_tools_by_tool_type(tool_type.id)
-                links = tools_has_device_crud.get_tools_by_device_id(device.id)
-                for __tool in tools:
-                    if __tool.id in links:
-                        continue
-                    if not __tool.plan_id:
-                        if quantity <= tool_quantity:
-                            tools_crud.update_tool(
-                                tool_id=__tool.id,
-                                inventory_number=__tool.inventory_number,
-                                plan_id=plan_id,
-                                tool_type_id=__tool.tool_type_id,
-                            )
-                            tool_ids.append(__tool.id)
-                            tools_has_device_crud.add_link(
-                                tools_id=__tool.id,
-                                device_id=device.id
-                            )
-                            quantity += 1
-                            tool_types_crud.update_tool_type(
-                                tool_type_id=tool_type.id,
-                                name=tool_type.name,
-                                description=tool_type.description,
-                                count=tool_type.count - quantity,
-                                img=tool_type.img,
-                                groups_id=tool_type.groups_id,
-                            )
+                print(f"create_plan tool_type: {tool_type}, tools: {tools}")
+
+                plan_tool_types_crud_id = max(plan_tool_types_crud.get_all_ids(), default=0) + 1
+
+                plan_tool_types_crud.create_plan_tool_types(plan_tool_types_crud_id, tool_type.id, tool_quantity, plan_id)
+
+
+                # links = tools_has_device_crud.get_tools_by_device_id(device.id)
+                # for __tool in tools:
+                #     if __tool.id in links:
+                #         continue
+                    # if not __tool.plan_id:
+                    #     if quantity <= tool_quantity:
+                    #         tools_crud.update_tool(
+                    #             tool_id=__tool.id,
+                    #             inventory_number=__tool.inventory_number,
+                    #             plan_id=plan_id,
+                    #             tool_type_id=__tool.tool_type_id,
+                    #         )
+                    #         tool_ids.append(__tool.id)
+                    #         tools_has_device_crud.add_link(
+                    #             tools_id=__tool.id,
+                    #             device_id=device.id
+                    #         )
+                    #         quantity += 1
+                    #         tool_types_crud.update_tool_type(
+                    #             tool_type_id=tool_type.id,
+                    #             name=tool_type.name,
+                    #             description=tool_type.description,
+                    #             count=tool_type.count - quantity,
+                    #             img=tool_type.img,
+                    #             groups_id=tool_type.groups_id,
+                    #         )
 
         if not result:
             raise HTTPException(status_code=400, detail="Не удалось создать Чертёж")

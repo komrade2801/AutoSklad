@@ -1,15 +1,16 @@
 import datetime
 import traceback
 from typing import List, Optional, Type, Any
-import dbSync
+from client import dbSync
 # ----------------------------------- 1
-from DB.Engine.HelpCRUD import EngineHelp
+from client.DB.Engine.HelpCRUD import EngineHelp
+# from DB.Engine.HelpCRUD import EngineHelp
 # -------------------------------- 2
 from DB.Engine.ErrorsCRUD import EngineError
 # ----------------------------------- 3
 from DB.Engine.RoleCRUD import EngineRole
 # ----------------------------------- 4
-from DB.Engine.PlanCRUD import EnginePlan
+from client.DB.Engine.PlanCRUD import EnginePlan
 # --------------------------------- 5
 from DB.Engine.GroupCRUD import EngineGroup
 # ------------------------------- 6
@@ -24,7 +25,7 @@ from DB.Engine.IdentificationCRUD import EngineIdentification  # ---------------
 # --------------------------------- 12
 from DB.Engine.ToolsCRUD import EngineTools
 # ----------------------------------- 13
-from DB.Engine.CellCRUD import EngineCell
+from client.DB.Engine.CellCRUD import EngineCell
 # ----------------------------------- 14
 from DB.Engine.LoadCRUD import EngineLoad
 # ----------------------------------- 15
@@ -46,6 +47,9 @@ from DB.Models.Tools import Tools
 from DB.Models.Group import Group
 from DB.Models.User import User
 from sphinx.cmd.quickstart import valid_dir
+
+from client.DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
+from client.DB.Engine.ToolTypesCRUD import EngineToolTypes
 
 
 class MassDropToolPlanIDNoneError(Exception):
@@ -124,6 +128,8 @@ class ActionMapper:
         self.e_error = EngineError(session=self.session_local)
         self.e_role = EngineRole(session=self.session_local)
         self.e_plan = EnginePlan(session=self.session_local)
+        self.e_tool_types = EngineToolTypes(session=self.session_local)
+        self.e_plan_tool_types = EnginePlanToolTypes(session=self.session_local)
         self.e_group = EngineGroup(session=self.session_local)
         self.e_rights = EngineRights(session=self.session_local)
         self.e_mass_drop = EngineMassDrop(session=self.session_local)
@@ -190,7 +196,9 @@ class ActionMapper:
             # "": None,
             'write_db_plans': lambda plans_data: self.write_db_plans(plans_data),
             'read_db_plan_id': lambda barcode: self.read_db_plan_id(barcode),
-            'read_db_plans': lambda: self.read_db_plans(),
+            'read_db_plans': lambda: self.read_db_plans(1),
+            'read_db_plan': lambda index: self.read_db_plans(index),
+            'read_db_get_plan_tools': lambda plan_id, plan_designation, plan_name: self.read_db_get_plan_tools(plan_id, plan_designation, plan_name),
             # "": None,
             'read_db_group_collection': lambda index: self.read_db_group_collection(index),
             'read_db_groups': lambda index: self.read_db_groups(),
@@ -1456,7 +1464,26 @@ class ActionMapper:
             print(traceback.format_exc())
             return []
 
-    def read_db_plans(self):
+    def read_db_get_plan_tools(self, plan_id, plan_designation, plan_name):
+        print(f"read_db_get_plan_tools plan_designation {plan_designation}, plan_name {plan_name}")
+
+        plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+
+        plan_tool_list = []
+
+        for plan_tool_type in plan_tool_types:
+            tool_object = {}
+            tool_type = self.e_tool_types.get_tool_type_by_id(plan_tool_type.tool_types_id)
+
+            tool_object["tool_type"] = tool_type
+            tool_object["count"] = plan_tool_type.tool_types_count
+
+            plan_tool_list.append(tool_object)
+
+        return plan_tool_list, plan_designation, plan_name
+
+    def read_db_plans(self, index):
+        print(f"read_db_plans index {index}")
         """
         Читает данные о всех чертежах из таблицы Plan.
 
@@ -1466,6 +1493,7 @@ class ActionMapper:
         try:
             # Получаем список всех чертежей
             plans = self.e_plan.get_all_plans()
+            print(f"plans {plans}")
 
             # Формируем список словарей с данными о чертежах
             plans_data = []
@@ -1477,10 +1505,11 @@ class ActionMapper:
                     'name': plan.name,
                     'description': plan.description,
                     'designation': plan.designation,
-                    'list_id': plan.list_id,
+                    'index_list': plan.index_list,
                     'list_count': plan.list_count,
                     'parent_plan_id': plan.parent_plan_id
                 })
+            print(f"plans_data {plans_data}")
 
             return plans_data
 

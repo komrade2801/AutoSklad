@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 
 # from DB.Data.db import SessionLocal
-from DB.Engine.BaseCRUD import BaseCRUD
-from DB.Models.Plan import Plan
+from ..Engine.BaseCRUD import BaseCRUD
+from ..Models.Plan import Plan
 
 
 class EnginePlan(BaseCRUD):
