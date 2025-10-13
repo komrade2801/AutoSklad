@@ -24,7 +24,7 @@
     <rect>
      <x>5</x>
      <y>90</y>
-     <width>450</width>
+     <width>471</width>
      <height>650</height>
     </rect>
    </property>
@@ -33,19 +33,6 @@
    </property>
    <property name="styleSheet">
     <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));</string>
-   </property>
-  </widget>
-  <widget class="QScrollBar" name="ScrollBar">
-   <property name="geometry">
-    <rect>
-     <x>460</x>
-     <y>90</y>
-     <width>15</width>
-     <height>650</height>
-    </rect>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Vertical</enum>
    </property>
   </widget>
   <widget class="QLabel" name="lbl_info_2">
@@ -144,8 +131,8 @@ color: rgb(0, 49, 114);</string>
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>img/btn_ico_down.png</normaloff>img/btn_ico_down.png</iconset>
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/down.png</normaloff>:/icons/down.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -188,8 +175,8 @@ color: rgb(0, 49, 114);</string>
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>img/btn_ico_up.png</normaloff>img/btn_ico_up.png</iconset>
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/up.png</normaloff>:/icons/up.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -232,8 +219,8 @@ color: rgb(0, 49, 114);</string>
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>img/btn_ico_back.png</normaloff>img/btn_ico_back.png</iconset>
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -243,6 +230,8 @@ color: rgb(0, 49, 114);</string>
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../img/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

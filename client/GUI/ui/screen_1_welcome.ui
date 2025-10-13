@@ -115,6 +115,15 @@
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -204,6 +213,15 @@
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </inactive>
      <disabled>
       <colorrole role="WindowText">
@@ -291,6 +309,15 @@
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </disabled>
@@ -413,6 +440,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -502,6 +538,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </inactive>
      <disabled>
       <colorrole role="WindowText">
@@ -589,6 +634,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </disabled>
@@ -711,6 +765,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -800,6 +863,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </inactive>
      <disabled>
       <colorrole role="WindowText">
@@ -887,6 +959,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </disabled>
@@ -1012,6 +1093,15 @@ color: rgb(0, 49, 114);</string>
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </active>
      <inactive>
       <colorrole role="WindowText">
@@ -1099,6 +1189,15 @@ color: rgb(0, 49, 114);</string>
           </color>
          </gradientstop>
         </gradient>
+       </brush>
+      </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
        </brush>
       </colorrole>
      </inactive>
@@ -1190,6 +1289,15 @@ color: rgb(0, 49, 114);</string>
         </gradient>
        </brush>
       </colorrole>
+      <colorrole role="PlaceholderText">
+       <brush brushstyle="NoBrush">
+        <color alpha="128">
+         <red>0</red>
+         <green>49</green>
+         <blue>114</blue>
+        </color>
+       </brush>
+      </colorrole>
      </disabled>
     </palette>
    </property>
@@ -1218,11 +1326,17 @@ color: rgb(0, 49, 114);</string>
   <widget class="QLabel" name="lbl_info_ico">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>40</y>
-     <width>464</width>
-     <height>371</height>
+     <x>73</x>
+     <y>50</y>
+     <width>333</width>
+     <height>342</height>
     </rect>
+   </property>
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
    </property>
    <property name="styleSheet">
     <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));</string>
@@ -1234,13 +1348,15 @@ color: rgb(0, 49, 114);</string>
     <enum>Qt::AutoText</enum>
    </property>
    <property name="pixmap">
-    <pixmap>img/logo.png</pixmap>
+    <pixmap resource="../img/resources.qrc">:/icons/logo.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="../img/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
