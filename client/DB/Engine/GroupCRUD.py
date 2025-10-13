@@ -3,8 +3,8 @@ from typing import Optional, List
 
 from .CellCRUD import EngineCell
 from .ToolsCRUD import EngineTools
-from ..Engine.BaseCRUD import BaseCRUD  # Импортируем BaseCRUD
-from ..Models.Group import Group  # Импортируем модель Error
+from DB.Engine.BaseCRUD import BaseCRUD  # Импортируем BaseCRUD
+from DB.Models.Group import Group  # Импортируем модель Error
 
 
 class EngineGroup(BaseCRUD):
