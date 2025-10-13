@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_20_count_tool import Ui_widget_20_count_tool
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_20_count_tool import Ui_widget_20_count_tool
 
 
 class WidgetCountTool(BaseScreen, Ui_widget_20_count_tool):

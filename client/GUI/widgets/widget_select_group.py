@@ -1,10 +1,10 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_7_19_select_group import Ui_widget_7_19_select_group
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_select_group import Ui_widget_select_group
 
 
-class WidgetSelectGroup(BaseScreen, Ui_widget_7_19_select_group):
+class WidgetSelectGroup(BaseScreen, Ui_widget_select_group):
     key_pressed = pyqtSignal(str)
     widget_clicked = pyqtSignal()  # Сигнал для кликов по виджету
 
@@ -44,7 +44,8 @@ class WidgetSelectGroup(BaseScreen, Ui_widget_7_19_select_group):
 
     def sizeHint(self):
         """Возвращает рекомендуемый размер виджета."""
-        return QtCore.QSize(440, 80)
+        print(f"sizeHint: {self.width()}, {self.height()}")
+        return QtCore.QSize(self.width(), self.height())
 
     def mousePressEvent(self, event):
         """Обработка нажатия мыши на виджет."""

@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from ..BaseScreen import BaseScreen
-from ..widgets.ui_classes.widget_15_mass_load import Ui_widget_15_mass_load as Ui
+from .ui_classes.Ui_widget_15_mass_load import Ui_widget_15_mass_load as Ui
 
 
 class WidgetMassLoadTool(BaseScreen, Ui):

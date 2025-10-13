@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_27_8_21_err_timeout import Ui_widget_27_8_21_err_timeout as Ui
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_27_8_21_err_timeout import Ui_widget_27_8_21_err_timeout as Ui
 
 
 class WidgetErrTimeout(BaseScreen, Ui):

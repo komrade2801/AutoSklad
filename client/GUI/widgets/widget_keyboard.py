@@ -1,7 +1,7 @@
 from PyQt5.QtCore import pyqtSignal
 
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_3_29_keyboard import Ui_widget_3_29_keyboard
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_3_29_keyboard import Ui_widget_3_29_keyboard
 
 
 class WidgetKeyboard(BaseScreen, Ui_widget_3_29_keyboard):

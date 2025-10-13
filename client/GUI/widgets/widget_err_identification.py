@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_27_1_21_err_identification import Ui_widget_27_1_21_err_identification as Ui
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_27_1_21_err_identification import Ui_widget_27_1_21_err_identification as Ui
 
 
 class WidgetErrIdentification(BaseScreen, Ui):

@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_27_9_and_21_err_port_busy import Ui_widget_27_9_21_err_port_busy as Ui
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_27_9_and_21_err_port_busy import Ui_widget_27_9_21_err_port_busy as Ui
 
 
 class WidgetErrPortBusy(BaseScreen, Ui):

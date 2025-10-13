@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_23_number_plan import Ui_widget_23_number_plan as Ui
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_23_number_plan import Ui_widget_23_number_plan as Ui
 
 
 class WidgetNumberPlan(BaseScreen, Ui):

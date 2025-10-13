@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from ..BaseScreen import BaseScreen
-from ..widgets.ui_classes.widget_8_9_tool import Ui_widget_8_9_tool
+from .ui_classes.Ui_widget_8_9_tool import Ui_widget_8_9_tool
 
 
 class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):

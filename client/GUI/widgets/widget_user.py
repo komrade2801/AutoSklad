@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
-from GUI.BaseScreen import BaseScreen
-from GUI.widgets.ui_classes.widget_22_user import Ui_widget_22_user as Ui
+from ..BaseScreen import BaseScreen
+from .ui_classes.Ui_widget_22_user import Ui_widget_22_user as Ui
 
 
 class WidgetUser(BaseScreen, Ui):
