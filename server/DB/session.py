@@ -2,8 +2,7 @@
 from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker, Session
 
-from DB.Data.base import Base
-from DB.Data.sqlite_db import SessionLocal, get_engine
+from .Data.sqlite_db import SessionLocal, get_engine
 
 
 # FastAPI-зависимость
