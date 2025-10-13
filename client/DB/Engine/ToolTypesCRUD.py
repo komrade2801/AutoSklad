@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List, Type  # , Type
-from DB.Engine.BaseCRUD import BaseCRUD
-from DB.Models.ToolTypes import ToolTypes
+from ..Engine.BaseCRUD import BaseCRUD
+from ..Models.ToolTypes import ToolTypes
 
 
 class EngineToolTypes(BaseCRUD):
@@ -17,8 +17,8 @@ class EngineToolTypes(BaseCRUD):
     Для работы с инструментами данного типа (связь с таблицей Tool) используется свойство модели tools.
     """
 
-    def __init__(self, session_db: Session = None):
-        super().__init__(session=session_db, model=ToolTypes)
+    def __init__(self, session: Session = None):
+        super().__init__(session=session, model=ToolTypes)
 
     def add_tool_type(self,
                       tool_type_id: int,

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List, Type  # , Type
-from DB.Engine.CRUD import BaseCRUD
-from DB.Models.ToolTypes import ToolTypes
+from ..Engine.CRUD import BaseCRUD
+from ..Models.ToolTypes import ToolTypes
 
 
 class EngineToolTypes(BaseCRUD):
@@ -59,6 +59,12 @@ class EngineToolTypes(BaseCRUD):
         Получает тип инструмента по его идентификатору.
         """
         return self.get(tool_type_id)
+
+    def get_tool_types_by_ids(self, tool_type_ids: List[int]) -> List[ToolTypes]:
+        """
+        Возвращает инструменты по списку идентификаторов.
+        """
+        return self.session.query(ToolTypes).filter(ToolTypes.id.in_(tool_type_ids)).all()
 
     def update_tool_type(self, *args, **kwargs) -> bool:
         """

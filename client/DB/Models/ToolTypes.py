@@ -15,8 +15,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from DB.Data.base import Base
-from DB.Models.BaseModel import Model
+from ..Data.base import Base
+from ..Models.BaseModel import Model
 
 
 # if "Plan" not in Base.metadata.tables:

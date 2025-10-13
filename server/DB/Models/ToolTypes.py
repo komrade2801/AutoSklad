@@ -1,6 +1,6 @@
 """
 Этот модуль содержит определение класса TableTools, который представляет
-таблицу "Tools" в базе данных. Класс предназначен для хранения информации
+таблицу "TableTools" в базе данных. Класс предназначен для хранения информации
 об инструментах, связанных с планами, включая такие детали, как название,
 описание, штрих-код и изображения, а также способы их группировки.
 """
@@ -15,8 +15,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 
-from DB.Data.base import Base
-from DB.Models.BaseModel import Model
+from ..Data.base import Base
+from ..Models.BaseModel import Model
 
 
 # if "Plan" not in Base.metadata.tables:
@@ -41,7 +41,7 @@ class ToolTypes(Base, Model):
     @property
     def tools(self):
         if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+            from ..Models.Tools import Tools
         else:
             Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Tools, back_populates="ToolTypes")
@@ -49,7 +49,7 @@ class ToolTypes(Base, Model):
     @property
     def groups(self):
         if "Groups" not in Base.metadata.tables:
-            from DB.Models.Group import Group
+            from ..Models.Group import Group
         else:
             Group = Base.metadata.tables["Groups"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Group, back_populates="ToolTypes")
