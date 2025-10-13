@@ -1,5 +1,5 @@
-from StateMachine.state_map import states,transitions
-from StateMachine.screens import screen
+from .state_map import states,transitions
+from .screens import screen
 
 class Triggers(object):
     def e_state(self):
