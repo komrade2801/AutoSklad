@@ -246,9 +246,20 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         print("Triggers:", triggers)
         print("User:", user)
         print("Role:", role)
-        for trigger in triggers:
-            dest = trigger['dest']
-            name = role.name
-            if name.lower() in dest.lower():
-                print('trigger', trigger['trigger'])
-                return trigger['trigger']
+        role_name = role.name.lower()
+        # Маппинг ролей к триггерам для корректного выбора destination
+        role_to_trigger = {
+            'stockman': 'type_storekeeper',
+            'user': 'test_user',
+            'admin': 'view_type_admin',
+            'developer': 'view_type_admin',  # Developer имеет админские права
+            'engineer': 'test_user',  # Если понадобится
+            'manager': 'type_storekeeper'  # Если понадобится
+        }
+        if role_name in role_to_trigger:
+            trigger_name = role_to_trigger[role_name]
+            print(f'trigger: {trigger_name}')
+            return trigger_name
+        else:
+            print(f'No matching trigger for role: {role_name}')
+            return 'err_authorization'

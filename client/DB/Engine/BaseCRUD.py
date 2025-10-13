@@ -12,7 +12,7 @@ T = TypeVar('T')
 
 class BaseCRUD(CoreEngine):
 
-    def __init__(self, session: Session, model: Type[T], *, cache_maxsize: int = 1000, cache_ttl: int = 300):
+    def __init__(self, session: Session, model: Type[T], *, cache_maxsize: int = 1000, cache_ttl: int = 10):
         """
         Инициализация класса BaseCRUD.
         :param session: Объект сессии SQLAlchemy для выполнения операций с базой данных.
