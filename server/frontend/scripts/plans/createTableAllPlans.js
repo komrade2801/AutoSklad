@@ -64,6 +64,7 @@ export function createTableAllPlans(containerId, jsonAllPlans) {
 
     let tbody = document.createElement("tbody");
     Object.values(jsonAllPlans).forEach(plan => {
+        console.log(plan);
         let row = document.createElement("tr");
         [plan.enterprise, plan.name, plan.numberPlan].forEach(value => {
         //[plan.nameProject, plan.numberPlan, plan.nameDetail].forEach(value => {, plan.description, plan.barcode
@@ -76,7 +77,7 @@ export function createTableAllPlans(containerId, jsonAllPlans) {
         let buttonTools = document.createElement("button");
         buttonTools.textContent = "Список инструмента";
         buttonTools.addEventListener('click', function() {
-            openModalTools();
+            openModalTools(plan.numberPlan, plan.tools);
         });
         actionTd.appendChild(buttonTools);
 
@@ -100,7 +101,20 @@ export function createTableAllPlans(containerId, jsonAllPlans) {
 
 
     // Функция для открытия модального окна
-function openModalTools() {
+function openModalTools(plan_name, plan_tools) {
+    // Подставляем ID в текст
+    document.getElementById('modal_plan_tools_id').textContent = plan_name;
+
+    let tool_list_element = document.getElementById('tool_list');
+    tool_list_element.innerHTML = '';
+
+    plan_tools.forEach(tool => {
+        const tool_row = document.createElement('div');
+        tool_row.style = 'padding-top: 20px;'
+        tool_row.innerHTML = tool.name + '\t-\t' + tool.tool_types_count + ' шт.';
+        tool_list_element.appendChild(tool_row);
+    })
+
     showTool('flex');  // Открываем модальное окно
 }
 

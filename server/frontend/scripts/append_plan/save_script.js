@@ -66,7 +66,7 @@
         enterprise: enterpriseValue || "string",
         barcode: "",
         name: nameValue || "string",
-        description: "string",
+        description: descriptionValue || "string",
         designation: designationValue || "string",
         index_list: 0,
         list_count: 0,

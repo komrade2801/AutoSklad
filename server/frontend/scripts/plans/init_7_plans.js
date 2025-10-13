@@ -45,23 +45,28 @@ function processAllPlans(allPlans) {
   }
   else{
     // 1. Собираем ВСЕ уникальные имена инструментов из всех планов
-    const allToolNames = new Set();
-    allPlans.forEach(plan => {
-        plan.tools.forEach(tool => {
-            allToolNames.add(tool.name); // Или другое поле, например, tool.type + " " + tool.size
-        });
-    });
+//    const allToolNames = new Set();
+//    allPlans.forEach(plan => {
+//        plan.tools.forEach(tool => {
+//            allToolNames.add(tool.name); // Или другое поле, например, tool.type + " " + tool.size
+//        });
+//    });
 
     // 2. Формируем итоговый объект
     const jsonAllPlans = {};
     allPlans.forEach((plan, index) => {
+        console.log(plan, " - ", index)
         // Создаем объект tools с динамическими ключами
-        const tools = {};
-        allToolNames.forEach(toolName => {
-            // Проверяем, есть ли инструмент в текущем плане
-            const toolInPlan = plan.tools.find(t => t.name === toolName);
-            tools[toolName] = toolInPlan ? "1" : "None"; // Логика может быть сложнее
-        });
+//        const tools = {};
+//        plan.tools.forEach(tool => {
+//            console.log(tool)
+//            tools[tool.name] = tool.tool_types_count; // Логика может быть сложнее
+//        });
+//        allToolNames.forEach(toolName => {
+//            // Проверяем, есть ли инструмент в текущем плане
+//            const toolInPlan = plan.tools.find(t => t.name === toolName);
+//            tools[toolName] = toolInPlan ? "1" : "None"; // Логика может быть сложнее
+//        });
 
         // Формируем запись плана
         jsonAllPlans[index] = {
@@ -70,7 +75,7 @@ function processAllPlans(allPlans) {
             numberPlan: plan.designation,
             name: plan.name,
             description: plan.description,
-            tools: tools
+            tools: plan.tools
         };
     });
 
