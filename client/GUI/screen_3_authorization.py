@@ -1,9 +1,9 @@
 import traceback
 
-from GUI.BaseScreen import BaseScreen
-from GUI.ui_classes.Ui_screen_3_authorization import Ui_screen_3_authorization
-from GUI.helper.MyLineEdit import MyLineEdit
-from GUI.widgets.widget_keyboard import WidgetKeyboard
+from .BaseScreen import BaseScreen
+from .ui_classes.Ui_screen_3_authorization import Ui_screen_3_authorization
+from .helper.MyLineEdit import MyLineEdit
+from .widgets.widget_keyboard import WidgetKeyboard
 from PyQt5.QtCore import QEvent
 from PyQt5.QtCore import QTimer
 
