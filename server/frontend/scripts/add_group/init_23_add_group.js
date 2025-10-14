@@ -31,7 +31,7 @@ function initialization(element_name) {
       document.getElementById('upload-form').submit();
     });
 
-    var select_element = document.getElementById('select_group');
+    var select_element = document.getElementById('select_parent_group');
     let device_number = 1;
     loadGroupsData(select_element, device_number);
 

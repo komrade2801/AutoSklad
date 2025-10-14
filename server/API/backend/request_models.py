@@ -23,6 +23,13 @@ class GroupModel(BaseModel):
     name: str
     subgroup: Dict[str, SubGroupModel]
 
+class AllGroupOnlyModel(BaseModel):
+    id: int
+    name: str
+    parent: int
+
+class AllGroupsOnlyResponse(BaseModel):
+    groups: Dict[str, AllGroupOnlyModel]
 
 class AllGroupsResponse(BaseModel):
     groups: Dict[str, GroupModel]
@@ -192,10 +199,20 @@ class CellUpdate(BaseModel):
     tools_id: Optional[int]
     status_id: Optional[int]
 
+class GroupsCreate(BaseModel):
+    group_name: str
+    parent_group: int
+    description: str
+    img: str
+
+# Модель ответа для добавления групп
+class GroupsAddResponse(BaseModel):
+    status: int
+    message: str
+
 
 class ToolsCreate(BaseModel):
-    group: str
-    subgroup: str
+    group_id: int
     tool_name: str
     description: str
     count: int
