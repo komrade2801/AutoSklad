@@ -9,14 +9,14 @@ from sqlalchemy.orm import Session
 from ..request_models import PlanResponse, Plan, PlanCreate, PlanUpdate
 # # from DB.Data.db_depends import get_db
 # from DB.session import get_db
-from server.DB.session import (get_db)
+from DB.session import get_db
 # from DB.session import get_db
-from server.DB.Engine.PlanCRUD import EnginePlan
-from server.DB.Engine.DeviceCRUD import EngineDevice
-from server.DB.Engine.ToolTypesCRUD import EngineToolTypes
-from server.DB.Engine.ToolsCRUD import EngineTools
-from server.DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
-from server.DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
+from DB.Engine.PlanCRUD import EnginePlan
+from DB.Engine.DeviceCRUD import EngineDevice
+from DB.Engine.ToolTypesCRUD import EngineToolTypes
+from DB.Engine.ToolsCRUD import EngineTools
+from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
+from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont

@@ -11,8 +11,8 @@
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Index
 from sqlalchemy.orm import relationship
-from ..Data.base import Base
-from ..Models.BaseModel import Model
+from DB.Data.base import Base
+from DB.Models.BaseModel import Model
 
 
 # print("Plan")

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from client.StateMachine.screens import screen
+from StateMachine.screens import screen
 
 states = [
     {'name': 'screen_1_welcome'},

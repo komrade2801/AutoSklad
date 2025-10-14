@@ -76,7 +76,7 @@ def map_builder():
     state_map_path = os.path.join(script_dir, "state_map.py")
     with open(state_map_path, 'w', encoding='utf-8') as f:
         f.write('# -*- coding: utf-8 -*-\n\n')
-        f.write('from client.StateMachine.screens import screen\n\n')
+        f.write('from StateMachine.screens import screen\n\n')
         f.write('states = [\n')
         for state in fsm_dict['states']:
             f.write(f"    {{'name': '{state['name']}'}},\n")

@@ -54,7 +54,7 @@ from threading import RLock
 
 from config import config_path, db_path
 
-from server.DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
+from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 
 # Глобальное хранилище прогресса
 progress_data = {

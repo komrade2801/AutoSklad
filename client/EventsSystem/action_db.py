@@ -1,16 +1,16 @@
 import datetime
 import traceback
 from typing import List, Optional, Type, Any
-from client import dbSync
+import dbSync
 # ----------------------------------- 1
-from client.DB.Engine.HelpCRUD import EngineHelp
+from DB.Engine.HelpCRUD import EngineHelp
 # from DB.Engine.HelpCRUD import EngineHelp
 # -------------------------------- 2
 from DB.Engine.ErrorsCRUD import EngineError
 # ----------------------------------- 3
 from DB.Engine.RoleCRUD import EngineRole
 # ----------------------------------- 4
-from client.DB.Engine.PlanCRUD import EnginePlan
+from DB.Engine.PlanCRUD import EnginePlan
 # --------------------------------- 5
 from DB.Engine.GroupCRUD import EngineGroup
 # ------------------------------- 6
@@ -25,7 +25,7 @@ from DB.Engine.IdentificationCRUD import EngineIdentification  # ---------------
 # --------------------------------- 12
 from DB.Engine.ToolsCRUD import EngineTools
 # ----------------------------------- 13
-from client.DB.Engine.CellCRUD import EngineCell
+from DB.Engine.CellCRUD import EngineCell
 # ----------------------------------- 14
 from DB.Engine.LoadCRUD import EngineLoad
 # ----------------------------------- 15
@@ -48,8 +48,8 @@ from DB.Models.Group import Group
 from DB.Models.User import User
 from sphinx.cmd.quickstart import valid_dir
 
-from client.DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
-from client.DB.Engine.ToolTypesCRUD import EngineToolTypes
+from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
+from DB.Engine.ToolTypesCRUD import EngineToolTypes
 
 
 class MassDropToolPlanIDNoneError(Exception):
