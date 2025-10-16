@@ -135,7 +135,7 @@ class BatchProcessor:
 
     def _apply_single(self, op: Operation) -> Dict[str, Any]:
         """
-        Обёртка для SyncManager.process_command().
+        Обёртка для SyncManager.process_sync_command() for sync operations.
         Позволяет обработать возвращаемое значение (например, новый PK при insert).
 
         :param op: Operation
@@ -151,9 +151,10 @@ class BatchProcessor:
             payload["id"] = op["id"]
         import dbSync
         dbSync.init_db = True
-        result = self.sync_manager.process_command(payload)
+        # Use process_sync_command with sync_context=True for sync operations
+        result = self.sync_manager.process_sync_command(payload, sync_context=True)
         dbSync.init_db = False
-        # Ожидаем, что process_command вернёт new_id для insert
+        # Ожидаем, что process_sync_command вернёт new_id для insert
         print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][_apply_single][INFO] - command_id: {op["command_id"]}. [{datetime.now()}]')
         return result or {}
 

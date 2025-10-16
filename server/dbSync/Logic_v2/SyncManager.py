@@ -106,7 +106,30 @@ class SyncManager:
         self._parse_incoming_datetimes(table, data)
 
         if op_lower in ("insert", "add"):
-            return self._handle_insert(crud, table, data, rec_id)
+            return self._handle_insert(crud, table, data, rec_id, sync_context=False)
+        elif op_lower == "update":
+            return self._handle_update(crud, data, rec_id)
+        elif op_lower == "delete":
+            return self._handle_delete(crud, rec_id)
+        else:
+            raise ValueError(f"Операция {op_lower} не поддерживается")
+
+    def process_sync_command(self, command: Dict[str, Any], sync_context: bool = True) -> Any:
+        """
+        Process command during sync operations with special handling for count fields.
+
+        :param command: Sync command dictionary
+        :param sync_context: True if called during sync, False for normal operations
+        """
+        table, op_lower, data, rec_id = self._parse_command(command)
+
+        crud = self._get_crud(table)
+        # Парсим даты
+        # self._parse_dates(data)
+        self._parse_incoming_datetimes(table, data)
+
+        if op_lower in ("insert", "add"):
+            return self._handle_insert(crud, table, data, rec_id, sync_context=sync_context)
         elif op_lower == "update":
             return self._handle_update(crud, data, rec_id)
         elif op_lower == "delete":
@@ -158,31 +181,33 @@ class SyncManager:
         else:
             raise
 
-    def _handle_insert(self, crud, table, data, rec_id):
+    def _handle_insert(self, crud, table, data, rec_id, sync_context=False):
         """
-        Обрабатывает операцию вставки (INSERT) для указанной таблицы.
+        Handle INSERT/ADD operations.
 
-        Специальная логика:
-        1. Для таблиц Tools/Consumption: инкремент счётчика при существующей записи
-        2. UPSERT-логика при существующем rec_id
-        3. Чистая вставка с обработкой индекса
-
-        Приоритеты для index:
-        - Если clean_data содержит 'index' - используем его
-        - Если нет - используем rec_id (если он int)
-        - Если ни один вариант недоступен - ошибка
-
-        После вставки получаем созданный объект через get() для сериализации
+        :param crud: CRUD instance for table
+        :param table: Table name
+        :param data: Data to insert
+        :param rec_id: Record ID if provided
+        :param sync_context: True if called during sync, False for normal operations
         """
-        # 1) Спец‑случай с инкрементом
-        if table in ("Tools", "Consumption") and "count" in data and rec_id is not None:
+        print(f'[COUNT_FIX][SERVER] _handle_insert called for table {table}, rec_id={rec_id}, sync_context={sync_context}')
+        print(f'[COUNT_FIX][SERVER] data keys: {list(data.keys())}, count value: {data.get("count")}')
+
+        # 1) Спец‑случай с инкрементом - только for non-sync operations (normal tool usage)
+        if table in ("Tools", "Consumption") and "count" in data and rec_id is not None and not sync_context:
             existing = crud.get(rec_id)
             if existing:
+                print(f'[COUNT_FIX][SERVER] Incrementing count for existing tool {rec_id}: {existing.count} + {data["count"]} = {existing.count + data["count"]}')
                 return self._increment_count(crud, rec_id, data["count"])
+
+        # For sync operations, bypass count increment logic
+        if table in ("Tools", "Consumption") and sync_context:
+            print(f'[COUNT_FIX][SERVER] Sync context - setting exact count value instead of incrementing')
 
         # 2) Если запись уже есть — делать UPSERT‑логику
         if rec_id is not None and crud.get(rec_id):
-            return self._upsert_update(crud, rec_id, data)
+            return self._upsert_update(crud, rec_id, data, sync_context=sync_context)
 
         # 3) Чистый INSERT
         clean_data = {k: v for k, v in data.items() if k != "id"}
@@ -210,7 +235,7 @@ class SyncManager:
         # Возвращаем сериализованную запись
         result = self._serialize(instance)
 
-        # 3) Генерация события "после вставки"
+        # 4) Генерация события "после вставки"
         try:
             from dbSync.Logic_v2.sync_events import fire_after_insert
             fire_after_insert(table, result)
@@ -225,12 +250,17 @@ class SyncManager:
         crud.update(index=rec_id, count=new_count)
         return self._serialize(crud.get(rec_id))
 
-    def _upsert_update(self, crud, rec_id, data):
+    def _upsert_update(self, crud, rec_id, data, sync_context=False):
         """Если запись есть — сравниваем и либо возвращаем, либо обновляем."""
         current = crud.get(rec_id).to_dict()
         incoming = {k: data[k] for k in data if k in current}
-        if incoming == {k: current[k] for k in incoming}:
-            return self._serialize(crud.get(rec_id))
+
+        # For sync operations, always update without checking for changes
+        # For normal operations, check for changes first
+        if not sync_context:
+            if incoming == {k: current[k] for k in incoming}:
+                return self._serialize(crud.get(rec_id))
+
         crud.update(index=rec_id, **incoming)
         return self._serialize(crud.get(rec_id))
 
