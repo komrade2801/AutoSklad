@@ -363,7 +363,7 @@ class Ui_screen_16_mass_load_ok(object):
         self.lbl_info_ico.setGeometry(QtCore.QRect(115, 100, 250, 250))
         self.lbl_info_ico.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_info_ico.setText("")
-        self.lbl_info_ico.setPixmap(QtGui.QPixmap("ui\\img/ico_ok.png"))
+        self.lbl_info_ico.setPixmap(QtGui.QPixmap(":/icons/ok.png"))
         self.lbl_info_ico.setScaledContents(True)
         self.lbl_info_ico.setObjectName("lbl_info_ico")
         self.lbl_info_2 = QtWidgets.QLabel(screen_16_mass_load_ok)

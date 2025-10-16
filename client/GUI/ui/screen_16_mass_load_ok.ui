@@ -1021,7 +1021,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>img/ico_ok.png</pixmap>
+    <pixmap resource="../img/resources.qrc">:/icons/ok.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
