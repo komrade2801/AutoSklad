@@ -27,9 +27,6 @@ function initialization(element_name) {
     }
     nav_btn_add(element_name);
     navbar_add(element_name);
-      document.querySelector('input[name="file"]').addEventListener('change', function() {
-      document.getElementById('upload-form').submit();
-    });
 
     var select_element = document.getElementById('select_parent_group');
     let device_number = 1;
