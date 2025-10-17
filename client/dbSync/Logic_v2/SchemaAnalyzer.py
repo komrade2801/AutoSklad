@@ -124,12 +124,17 @@ class SchemaAnalyzer:
         for table, src_fields in src.items():
             dst_fields = dst.get(table, {})
             field_map: Dict[str, str] = {}
+
+            # Apply field aliases first
+            for (alias_table, alias_field), target_field in (field_aliases or {}).items():
+                if alias_table == table and alias_field in src_fields and target_field in dst_fields:
+                    field_map[alias_field] = target_field
+
+            # Then do exact field name matches
             for field in src_fields:
-                if field in dst_fields:
+                if field in dst_fields and field not in field_map:
                     field_map[field] = field
-                else:
-                    # можно вставить fuzzy matching здесь
-                    pass
+
             if field_map:
                 result[table] = field_map
         return result

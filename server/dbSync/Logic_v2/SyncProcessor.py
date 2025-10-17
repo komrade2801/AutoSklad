@@ -395,6 +395,10 @@ class SyncProcessor:
                 op = cmd["operation"].upper()
                 data = cmd.get("data", {}) or {}
                 rec_id = data.get("id")
+
+                print(f'[DIAGNOSTIC][SERVER] Command operation: {op}, rec_id: {rec_id}')
+                print(f'[DIAGNOSTIC][SERVER] Command data keys: {list(data.keys())}')
+
                 # если это ADD с заданным ID, и запись на сервере уже точно совпадает — пропускаем
                 if op == "ADD" and rec_id is not None:
                     existing = self.sync_manager.get_current_data(
@@ -402,10 +406,20 @@ class SyncProcessor:
                         work_session=self.work_session,
                         rec_id=rec_id
                     )
-                    if existing is not None and all(existing.get(k) == v for k, v in data.items()):
-                        print(f"[SyncProcessor] Пропускаем дубликат ADD для {cmd['table']} id={rec_id}")
-                        continue
+                    print(f'[DIAGNOSTIC][SERVER] Existing data lookup for ADD operation: {existing}')
+
+                    if existing is not None:
+                        print('[DIAGNOSTIC][SERVER] Existing record found, checking for duplicates')
+                        if all(existing.get(k) == v for k, v in data.items() if k not in ("id", "index")):
+                            print(f"[SyncProcessor] Пропускаем дубликат ADD для {cmd['table']} id={rec_id}")
+                            continue
+                        else:
+                            print(f"[DIAGNOSTIC][SERVER] Record exists but differs, will update via upsert")
+                    else:
+                        print('[DIAGNOSTIC][SERVER] No existing record, will create new')
                 filtered.append(cmd)
+
+            print(f'[DIAGNOSTIC][SERVER] Commands after filtering: {len(filtered)} (before: {len(commands)})')
 
             # если после фильтрации нечего делать — сразу уходим
             if not filtered:
@@ -521,6 +535,11 @@ class SyncProcessor:
             rec_id = cmd.get("id")
             raw = cmd.get("data", {})
 
+            # DIAGNOSTIC LOGGING: Record ID extraction and source
+            print(f'[DIAGNOSTIC][SERVER] Command ID extraction: cmd.get("id")={cmd.get("id")}, final rec_id={rec_id}')
+            print(f'[DIAGNOSTIC][SERVER] Raw data keys: {list(raw.keys())}')
+            print(f'[DIAGNOSTIC][SERVER] Current device ID: {self.current_device_id}')
+
             cleaned = self.data_transformer.preprocess(table, raw)
             if not self.data_transformer.validate(table, cleaned):
                 return {"command_id": cmd["id"], "success": False, "error": "Validation failed"}
@@ -538,19 +557,24 @@ class SyncProcessor:
             raw = cmd.get("data", {})
             merged = {**raw, **local}
             cmd['data'] = merged
+
+            # DIAGNOSTIC LOGGING: Existing data lookup
+            print(f'[DIAGNOSTIC][SERVER] Merged data keys: {list(merged.keys())}')
+            print(f'[DIAGNOSTIC][SERVER] About to lookup existing data for table={table}, rec_id={rec_id}')
+
             # data conflicts
-            # TODO: передать в _Session сессию основной базы данных.
             existing = self.sync_manager.get_current_data(table=table, work_session=get_db_session(), rec_id=rec_id)
+            print(f'[DIAGNOSTIC][SERVER] Existing data lookup result: {existing}')
+
             if existing and self.conflict_manager.detect_data_conflict(existing, local):
+                print('[DIAGNOSTIC][SERVER] Data conflict detected, applying strategy')
                 local = self.conflict_manager.apply_data_strategy(existing, local)
+            else:
+                print('[DIAGNOSTIC][SERVER] No data conflict or no existing record')
+
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Command processed. [{datetime.now()}]')
-            # return {"command_id": cmd["id"],
-            #         "table": table,
-            #         "operation": cmd["operation"],
-            #         "data": local,
-            #         "id": rec_id,
-            #         "success": True
-            #     }
+            print(f'[DIAGNOSTIC][SERVER] Final result: success=True, rec_id={rec_id}')
+
             return {
                 "command_id": cmd["id"],
                 "id": rec_id,
@@ -653,4 +677,3 @@ class SyncProcessor:
                 "Не удалось поставить локальную команду в очередь.",
                 {"error": str(e), "traceback": traceback.format_exc()}
             )
-
