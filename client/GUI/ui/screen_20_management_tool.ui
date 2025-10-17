@@ -116,7 +116,7 @@
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -214,7 +214,7 @@
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -312,7 +312,7 @@
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -327,7 +327,6 @@
     <font>
      <family>Arial Black</family>
      <pointsize>20</pointsize>
-     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -455,7 +454,7 @@ color: rgb(0, 49, 114);</string>
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -553,7 +552,7 @@ color: rgb(0, 49, 114);</string>
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -651,7 +650,7 @@ color: rgb(0, 49, 114);</string>
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -666,7 +665,6 @@ color: rgb(0, 49, 114);</string>
     <font>
      <family>Arial Black</family>
      <pointsize>20</pointsize>
-     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -813,7 +811,7 @@ color: rgb(0, 49, 114);</string>
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -911,7 +909,7 @@ color: rgb(0, 49, 114);</string>
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -1009,7 +1007,7 @@ color: rgb(0, 49, 114);</string>
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -1024,7 +1022,6 @@ color: rgb(0, 49, 114);</string>
     <font>
      <family>Arial Black</family>
      <pointsize>20</pointsize>
-     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -1069,7 +1066,6 @@ color: rgb(0, 49, 114);</string>
     <font>
      <family>Arial Black</family>
      <pointsize>24</pointsize>
-     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -1100,7 +1096,6 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
     <font>
      <family>Arial Black</family>
      <pointsize>19</pointsize>
-     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -1215,7 +1210,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -1313,7 +1308,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -1411,7 +1406,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
        </brush>
       </colorrole>
       <colorrole role="PlaceholderText">
-       <brush brushstyle="NoBrush">
+       <brush brushstyle="SolidPattern">
         <color alpha="128">
          <red>0</red>
          <green>49</green>
@@ -1426,7 +1421,6 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
     <font>
      <family>Arial Black</family>
      <pointsize>20</pointsize>
-     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
