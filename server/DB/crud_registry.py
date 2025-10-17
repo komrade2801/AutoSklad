@@ -22,6 +22,7 @@ from DB.Engine.MassLoadCRUD import EngineMassLoad
 from DB.Engine.OperationsConsumptionCRUD import EngineOperationsConsumption
 # from DB.Engine.OperationsConsumptionHasDeviceCRUD import EngineOperationsConsumptionHasDevice
 from DB.Engine.PlanCRUD import EnginePlan
+from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 # from DB.Engine.ActualNormCRUD import EngineActualNorm
 # from DB.Engine.ActualNormHasDeviceCRUD import EngineActualNormHasDevice
 from DB.Engine.RightsCRUD import EngineRights
@@ -83,6 +84,7 @@ crud_source = {
     "OperationsConsumption": EngineOperationsConsumption,
     # "OperationsConsumptionHasDevice": EngineOperationsConsumptionHasDevice,
     "Plan": EnginePlan,
+    "PlanToolTypes": EnginePlanToolTypes,
     # "ActualNorm": EngineActualNorm,
     # "ActualNormHasDevice": EngineActualNormHasDevice,
     "Rights": EngineRights,

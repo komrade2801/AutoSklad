@@ -12,6 +12,15 @@ class ToolEntry(BaseModel):
     tools: str
     sum: str  # Если значение должно быть числовым, можно изменить на int
 
+class ToolTypesModel(BaseModel):
+    id: int
+    name: str
+    description: str
+    count: int
+    amount: int
+
+class AllToolTypesResponse(BaseModel):
+    tools: Dict[int, ToolTypesModel]
 
 class SubGroupModel(BaseModel):
     SGName: str
