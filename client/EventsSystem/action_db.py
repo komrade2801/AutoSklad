@@ -1104,9 +1104,40 @@ class ActionMapper:
 
         :return: Список словарей с информацией о группах (id, name, description, status).
         """
+
+        # TODO: Вынести в утилитарный класс
+        def sum_parent_count(group_count_dict: dict[Group, int], group: Group, count):
+            if group.paren_group_id == 0:
+                if group_count_dict.get(group) is not None:
+                    group_count_dict[group] += count
+                else:
+                    group_count_dict[group] = count
+            else:
+                parent_group = self.e_group.get_group_by_id(group.paren_group_id)
+                sum_parent_count(
+                    group_count_dict, parent_group, count)
+
         try:
+
+            group_count_dict = {}
+
+            # Получаем все подгруппы указанной группы
             groups = self.e_group.get_all_groups()
-            return groups  # group_list
+            for group in groups:
+                tool_types = self.e_tool_types.get_tools_by_group(group.id)
+
+                count = 0
+
+                for tool_type in tool_types:
+                    count += tool_type.count
+
+                print(f"group: {group}, count: {count}")
+
+                sum_parent_count(group_count_dict, group, count)
+
+            print(f"group_count_dict: {group_count_dict}")
+
+            return group_count_dict
 
         except Exception as e:
             print(f"Ошибка при получении списка групп: {e}")
