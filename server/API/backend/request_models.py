@@ -304,10 +304,19 @@ class HistoryLoadUpdate(BaseModel):
     tool_id: Optional[int]
     timestamp: Optional[datetime]
 
+class HistoryOperationEntry(BaseModel):
+    id: int
+    name_operation: str
+    date: str
+    tool: str
+    plan: str
+    user: str
+    device: str
 
 # Модели для операций
 class HistoryOperationResponse(BaseModel):
-    operation: Dict[str, Any]
+    # operation: Dict[str, Any]
+    operation: List[Any]
 
 
 class HistoryOperation(BaseModel):

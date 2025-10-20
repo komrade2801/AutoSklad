@@ -54,17 +54,30 @@ def get_history_operation(device_number: int):
         print(traceback.format_exc())
         operations_list = []
 
-    operations: Dict[str, dict] = {}
+    # operations: Dict[str, dict] = {}
+    # if operations_list:
+    #     for idx, op in enumerate(operations_list):
+    #         operations[str(idx)] = {
+    #             "date": op.get("date", "None"),
+    #             "name_operation": op.get("name_operation", "None"),
+    #             "tool": op.get("tool", "None"),
+    #             "plan": op.get("plan", "None"),
+    #             "user": op.get("user", "None"),
+    #             "device": device.name or "Unknown"
+    #         }
+
+    operations = []
     if operations_list:
         for idx, op in enumerate(operations_list):
-            operations[str(idx)] = {
+            operations.append({
+                "id": op.get("id", "None"),
                 "date": op.get("date", "None"),
                 "name_operation": op.get("name_operation", "None"),
                 "tool": op.get("tool", "None"),
                 "plan": op.get("plan", "None"),
                 "user": op.get("user", "None"),
                 "device": device.name or "Unknown"
-            }
+            })
 
     return {"operation": operations}
 
