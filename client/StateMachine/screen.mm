@@ -10,7 +10,7 @@
 <arrowlink DESTINATION="ID_11064524" MIDDLE_LABEL="timer_event" STARTINCLINATION="13.5 pt;-10.5 pt;" ENDINCLINATION="61.5 pt;111.75 pt;"/>
 <arrowlink DESTINATION="ID_1378258859" MIDDLE_LABEL="btn_help" STARTINCLINATION="99.75 pt;-229.49999 pt;" ENDINCLINATION="159 pt;129.75 pt;"/>
 <font SIZE="14"/>
-<hook NAME="MapStyle" background="#ffffffff" zoom="0.3664447">
+<hook NAME="MapStyle" background="#ffffffff">
     <properties show_icon_for_attributes="true" edgeColorConfiguration="#808080ff,#ff0000ff,#0000ffff,#00ff00ff,#ff00ffff,#00ffffff,#7c0000ff,#00007cff,#007c00ff,#7c007cff,#007c7cff,#7c7c00ff" show_tags="UNDER_NODES" show_note_icons="true" associatedTemplateLocation="template:/standard-1.6.mm" fit_to_viewport="false" showTagCategories="false" show_icons="BESIDE_NODES"/>
     <tags category_separator="::"/>
 
@@ -699,13 +699,13 @@
 <font NAME="Arial Black" SIZE="8"/>
 <hook NAME="FreeNode"/>
 </node>
-<node TEXT="read_cnf_lock_load" LOCALIZED_STYLE_REF="defaultstyle.floating" POSITION="bottom_or_right" ID="ID_470099509" CREATED="1726665826288" MODIFIED="1741374895202" HGAP_QUANTITY="-270.74999 pt" VSHIFT_QUANTITY="364.49999 pt" BACKGROUND_COLOR="#ff9900">
-<arrowlink DESTINATION="ID_854561512" MIDDLE_LABEL="unlock" STARTINCLINATION="-103.5 pt;0 pt;" ENDINCLINATION="0 pt;53.25 pt;"/>
+<node TEXT="read_cnf_lock_load" LOCALIZED_STYLE_REF="defaultstyle.floating" POSITION="bottom_or_right" ID="ID_470099509" CREATED="1726665826288" MODIFIED="1760516342884" HGAP_QUANTITY="-270.74999 pt" VSHIFT_QUANTITY="364.49999 pt" BACKGROUND_COLOR="#ff9900">
+<arrowlink DESTINATION="ID_854561512" MIDDLE_LABEL="unlock" STARTINCLINATION="-103.5 pt;0 pt;" ENDINCLINATION="4.5 pt;66.75 pt;"/>
 <arrowlink COLOR="#cc0000" TRANSPARENCY="255" DESTINATION="ID_1982948206" MIDDLE_LABEL="lock" STARTINCLINATION="47.25 pt;0 pt;" ENDINCLINATION="-48 pt;2.25 pt;"/>
 <font NAME="Arial Black" SIZE="8"/>
 <hook NAME="FreeNode"/>
 </node>
-<node TEXT="screen_16_mass_load_ok" LOCALIZED_STYLE_REF="defaultstyle.floating" POSITION="bottom_or_right" ID="ID_1574263126" CREATED="1726591130448" MODIFIED="1727511120951" HGAP_QUANTITY="-638.99998 pt" VSHIFT_QUANTITY="395.24999 pt" BACKGROUND_COLOR="#99ccff">
+<node TEXT="screen_16_mass_load_ok" LOCALIZED_STYLE_REF="defaultstyle.floating" POSITION="bottom_or_right" ID="ID_1574263126" CREATED="1726591130448" MODIFIED="1760516338973" HGAP_QUANTITY="-638.99998 pt" VSHIFT_QUANTITY="395.24999 pt" BACKGROUND_COLOR="#99ccff">
 <arrowlink COLOR="#006600" TRANSPARENCY="255" DESTINATION="ID_696401721" MIDDLE_LABEL="btn_back" STARTINCLINATION="407.24999 pt;-46.5 pt;" ENDINCLINATION="-32.25 pt;36.75 pt;"/>
 <arrowlink COLOR="#0000cc" TRANSPARENCY="255" DESTINATION="ID_696401721" MIDDLE_LABEL="timeout_back" STARTINCLINATION="342.74999 pt;0 pt;" ENDINCLINATION="-33.75 pt;81 pt;"/>
 <hook NAME="FreeNode"/>
