@@ -106,7 +106,7 @@ Provides REST API endpoints for all business logic operations.
 
 #### Mass Operations:
 - **`mass_load_router`**: Bulk tool loading
-- **`mass_drop_router``: Bulk tool dropping
+- **`mass_drop_router`**: Bulk tool dropping
 - **`json_random_load_router`**: Random load operations
 
 #### Device Management:
@@ -147,36 +147,200 @@ Comprehensive database layer with support for SQLite and MySQL.
 
 ## 6. Synchronization Service (`dbSync/`)
 
-Handles bidirectional data synchronization between server and client devices.
+Comprehensive bidirectional data synchronization system managing multi-device data consistency through command-based synchronization protocol.
 
-### Structure:
-- **`Transport/routers.py`**: HTTP sync endpoints (`/sync/push`, `/sync/pull`, `/sync/handshake`)
-- **`Logic_v2/`**: Core sync logic with conflict management
-- **`Runner.py`**: Background sync thread management
-- **`Models/`**: Sync-specific models and schemas
+### Architecture Overview
 
-### Key Components:
-- **CommandQueue**: Background task processing
-- **CDCService**: Change Data Capture handling
-- **ConflictManager**: Sync conflict resolution
-- **DataMapper**: Schema mapping between databases
-- **RetryManager**: Failed sync retry logic
-- **JSONSchemaValidator**: Sync payload validation
+The synchronization service implements a sophisticated **Command Pattern** architecture where all data changes are captured as commands that flow bidirectionally between server and client devices. This ensures eventual consistency across distributed warehouse systems.
 
-### Sync Endpoints:
-- **`/push?device=<id>`**: Receives commands from client with AES encryption
-- **`/pull?device=<id>`**: Sends pending commands to client
-- **`/handshake`**: Schema synchronization and validation
+### Core Components
 
-### Encryption:
-- **AES-CBC** encryption for all sync communication
-- 16-byte keys (configured in `options.py`)
-- PKCS7 padding for variable-length data
+#### Command-Based Synchronization Architecture:
+- **`SyncProcessor`**: Central coordinator handling handshake, push, and pull operations with conflict resolution
+- **`CommandQueue`**: In-memory queues for staging commands before sync operations
+- **`CommandRunner`**: Background thread managing per-device synchronization cycles
+- **`TransportService`**: HTTP client with AES-encrypted communication to remote sync endpoints
 
-### Thread Management:
-- Per-device sync threads (started in lifespan handler)
-- Background queues for async processing
-- Automatic thread cleanup on shutdown
+#### Data Processing Pipeline:
+- **`DataMapper`**: Translates field mappings between differing database schemas
+- **`DataTransformer`**: Handles business logic validation and data preprocessing/postprocessing
+- **`ConflictManager`**: Detects and resolves data conflicts using configurable strategies
+- **`BatchProcessor`**: Executes atomic database operations in transaction blocks
+- **`RetryManager`**: Manages failed sync attempts with exponential backoff
+
+#### Schema Management:
+- **`SchemaCache`**: SHA256-hashed cache of schema mappings to avoid repeated analysis
+- **`SchemaAnalyzer`**: Generates field mappings between client/server schema differences
+- **`JSONSchemaValidator`**: Validates incoming/outgoing JSON payloads against predefined schemas
+
+### Synchronization Protocol & Workflow
+
+#### 1. Initial Handshake (`/sync/handshake`)
+**Purpose**: Establishes schema compatibility and creates field mappings between client and server databases.
+
+**Process**:
+1. Client sends SHA256 hash of its database schema (table field definitions)
+2. Server validates schema JSON structure
+3. Server checks `SchemaCache` for existing mapping by hash
+4. If cache miss: `SchemaAnalyzer` generates field mappings between client and server schemas
+5. Mappings stored in cache under client schema hash
+6. Server returns `{mapping: {...}, schema_hash: "client_hash"}`
+7. Client stores mappings for data transformation during sync
+
+#### 2. Pull Operation (`/sync/pull?device=<id>&since=<timestamp>`)
+**Purpose**: Server sends pending changes to client for local application.
+
+**Process**:
+1. Client requests pull with `since` timestamp (last successful sync)
+2. Server queries `Command` table for pending commands on device queue
+3. Retrieves associated data from `Record` table for each command
+4. Applies `DataMapper` to transform server data → client format using cached mappings
+5. Applies `DataTransformer.postprocess()` for business rule adjustments
+6. Returns `{"schema_hash": "client_hash", "commands": [{id, table, operation, data, last_modified}]}`
+
+#### 3. Push Operation (`/sync/push?device=<id>`)
+**Purpose**: Client sends local changes to server for global synchronization.
+
+**Process**:
+1. Client encrypts command list with AES-CBC and sends via HTTP
+2. Server validates JSON schema and decrypts payload
+3. **Duplicate Filter**: Checks for existing records (prevents duplicate ADD operations)
+4. **Preprocessing**: Each command validated and preprocessed through `DataTransformer`
+5. **Conflict Detection**: `ConflictManager` identifies structural/data conflicts
+6. **Data Mapping**: Converts client field names to server equivalents
+7. **Batch Execution**: `BatchProcessor` applies changes atomically in transactions
+8. **Status Update**: Command statuses logged to `CommandStatus` table
+9. **Retry Planning**: Failed commands scheduled for retry with `RetryManager`
+10. Returns `[{"id": "cmd_id", "status": "COMPLETED|FAILED", "error": "..."}]`
+
+### Command Queue System (`command_queue.json`)
+
+The command queue is a **persistence layer** for sync commands, ensuring no commands are lost during server restarts or network interruptions.
+
+#### Stored Command Structure:
+```json
+{
+  "id": "uuid",                 // Unique command identifier
+  "table": "Tools",             // Target database table
+  "operation": "add|update|delete", // CRUD operation type
+  "data": { ... },              // Record data payload
+  "status": "pending|done|failed", // Processing status
+  "timestamp": "RFC3339"        // When command was created
+}
+```
+
+#### Queue Purpose & Data Flow:
+1. **Client-Side Generation**: UI/database changes captured via decorators/interceptors
+2. **Queue Persistence**: Commands stored in `command_queue.json` for crash recovery
+3. **Sync Transmission**: AES-encrypted commands pushed to server's `/sync/push`
+4. **Server Processing**: Commands validated, applied to main database
+5. **Status Response**: Client receives completion status per command
+6. **Queue Cleanup**: Successfully processed commands removed from queue
+
+#### Example Command Records:
+- `{"table": "Tools", "operation": "add", "data": {"name": "Drill 5mm"}, "status": "done", "timestamp": "2025-09-26T16:51:32Z"}`
+- `{"table": "Cell", "operation": "update", "data": {"id": 3, "status_id": 5, "tools_id": 4}, "status": "done", "timestamp": "2025-09-27T12:18:57Z"}`
+- `{"table": "History", "operation": "add", "data": {"user_id": 1, "tools_id": 4, "description": "Tool issued"}, "status": "done", "timestamp": "2025-09-27T12:18:57Z"}`
+
+### Database Models for Sync
+
+#### Command Table Structure:
+```sql
+CREATE TABLE Command (
+  id INTEGER PRIMARY KEY,
+  table_name VARCHAR NOT NULL,    -- Target table name
+  operation VARCHAR NOT NULL,     -- add|update|delete
+  record_id INTEGER,              -- Affected record ID (for updates/deletes)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  device_number INTEGER NOT NULL  -- Source device ID
+);
+```
+
+#### Record Table Structure:
+```sql
+CREATE TABLE Record (
+  id INTEGER PRIMARY KEY,
+  command_id INTEGER REFERENCES Command(id),
+  table_name VARCHAR NOT NULL,
+  record_id INTEGER,              -- The actual data record ID
+  data BLOB,                      -- JSON-serialized record data
+  last_modified TIMESTAMP
+);
+```
+
+#### CommandStatus Table Structure:
+```sql
+CREATE TABLE CommandStatus (
+  id INTEGER PRIMARY KEY,
+  command_id INTEGER REFERENCES Command(id),
+  status VARCHAR NOT NULL,        -- pending|processing|completed|failed
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  error_message TEXT              -- Optional error details
+);
+```
+
+### Encryption & Security
+
+#### AES-CBC Encryption Protocol:
+- **Key Source**: Configured in `options.py` (`AES_KEY`)
+- **IV Generation**: Random 16-byte IV prepended to ciphertext
+- **Encryption**: AES-CBC with PKCS7 padding
+- **Transport**: Base64-encoded for HTTP transport
+- **Authentication**: Device ID parameters for routing
+
+#### Secure Communication Flow:
+1. Client encrypts sync payload: `AES_ENCRYPT(IV + data, AES_KEY)`
+2. HTTP POST to `/sync/push?device=<id>` with encrypted body
+3. Server derives key from config and decrypts
+4. Response encrypted with new IV and returned
+5. Client decrypts to get sync status results
+
+### Threading & Performance
+
+#### Per-Device Threading Model:
+- **Main Thread**: Server lifespan launches device-specific threads
+- **Sync Thread/Thread**: Dedicated thread per vendor device
+- **Scheduler Threads**: Background job scheduling for sync cycles
+- **HTTP Threads**: FastAPI thread pool for concurrent sync requests
+
+#### Sync Scheduling:
+- **Sender Job**: Every `SENDER_TIMEOUT` seconds (default 30), pending commands pushed
+- **Receiver Job**: Every `RECEIVER_TIMEOUT` seconds (default 60), server pulls new data
+- **Retry Schedule**: Failed pushes retried with exponential backoff via RetryManager
+
+### Error Handling & Resilience
+
+#### Conflict Resolution Strategies:
+- **Structure Conflicts**: SchemaAnalyzer generates field mappings
+- **Data Conflicts**: `ConflictManager` applies merge strategies (server-wins, client-wins, etc.)
+- **Validation Failures**: Commands marked failed with detailed error messages
+- **Network Failures**: Automatic retry with increasing delays
+- **Schema Changes**: Handshake renegotiation on schema mismatch
+
+### Monitoring & Diagnostics
+
+#### SyncMonitor Metrics:
+- Success/failure counts per operation type
+- Average operation duration
+- Failed command analysis
+
+#### DiagnosticLogger Events:
+- Handshake schema validation results
+- Push/pull operation timing
+- Command processing status
+- Conflict detections and resolutions
+
+### Integration Points
+
+#### With FastAPI Server:
+- **Lifespan Handler**: Launches device sync threads on startup
+- **Router Mounting**: `/sync` endpoints route to `sync_router`
+- **Database Sessions**: Shared work database access
+
+#### With Main Database:
+- **Change Capture**: Transaction post-hooks create sync commands
+- **Atomic Operations**: Batch changes apply in database transactions
+- **Constraint Validation**: Database foreign keys enforced during sync
 
 ## 7. Core Utilities (`Core/`)
 

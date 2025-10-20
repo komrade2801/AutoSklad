@@ -57,31 +57,283 @@ A local web server integrated into the client application for synchronization fu
 
 ## 3. Synchronization Service (`dbSync/`)
 
-Comprehensive bidirectional synchronization system between client and server.
+Comprehensive bidirectional data synchronization system managing data consistency between local client databases and central server through command-based synchronization protocol.
 
-### Core Components:
-- **`Logic_v2/`**: Advanced sync logic with conflict resolution
-  - **`CommandQueue.py`**: Background processing queues
-  - **`ConflictManager.py`**: Sync conflict strategies
-  - **`DataMapper.py`**: Database schema mapping
-  - **`JSONSchemaValidator.py`**: Sync payload validation
-  - **`SyncManager.py`**: Overall synchronization orchestration
-  - **`TransportService.py`**: HTTP client for server communication
+### Architecture Overview
 
-- **`Engines/`**: Data transformation engines per entity type
-  - **`CRUD.py`**: Generic database operations
-  - **`CommandEngine.py`**: Command processing
-  - **`RecordEngine.py`**: Record synchronization
+The client synchronization service implements a **Command Queue Pattern** where all local database changes are captured as commands, queued for transmission, and synchronized with the server through encrypted HTTP communication. This enables offline operation with eventual consistency.
 
-- **`Model/`**: Synchronization data models and schemas
-- **`setup.py`, `sync_db.py`**: Initialization and bootstrap logic
+### Core Sync Components Structure
 
-### Key Features:
-- **AES Encryption**: All client-server communication encrypted
-- **Background Processing**: Non-blocking sync operations
-- **Conflict Resolution**: Automatic merge strategies for data conflicts
-- **Schema Validation**: JSON schema validation for sync payloads
-- **Retry Logic**: Failed sync automatic retries
+#### Command-Based Architecture:
+- **`SyncProcessor`**: Client-side coordinator handling command processing and server communication
+- **`CommandQueue`**: In-memory command staging with JSON persistence for crash recovery
+- **`CommandRunner`**: Background sync thread orchestrating push/pull cycles
+- **`TransportService`**: AES-encrypted HTTP client for server endpoint communication
+
+#### Data Processing Pipeline:
+- **`DataMapper`**: Translates data between client-server schema formats using cached mappings
+- **`DataTransformer`**: Applies business rules and validation during sync operations
+- **`ConflictManager`**: Handles data conflicts from bidirectional sync operations
+- **`BatchProcessor`**: Executes local database changes in atomic transactions
+- **`RetryManager`**: Manages re-sync of failed operations with exponential backoff
+
+#### Schema & Validation:
+- **`SchemaCache`**: Client-side SHA256-hashed mapping cache for schema translations
+- **`SchemaAnalyzer`**: Generates field mappings from handshake responses
+- **`JSONSchemaValidator`**: Validates incoming/outgoing sync payloads against schemas
+
+### Synchronization Workflow & Protocols
+
+#### 1. Handshake Phase (`/sync/handshake`)
+**Purpose**: Establishes client-server compatibility and obtains field mapping schema.
+
+**Client Process**:
+1. Client sends SHA256 hash of its database schema (table structures)
+2. Receives field mapping object from server (`{mapping: {...}, schema_hash: "hash"}`)
+3. `SchemaCache` stores mappings under server-returned hash
+4. Cached mappings used for all subsequent data transformations
+
+**Server Response Format**:
+```json
+{
+  "mapping": {
+    "Tools": {"name": "tools_name", "type_id": "type_id"},
+    "User": {"login": "user_login", "role": "user_role"}
+  },
+  "schema_hash": "client_hash"
+}
+```
+
+#### 2. Pull Operation (`/sync/pull?device=<id>&since=<timestamp>`)
+**Purpose**: Client receives pending server changes for local application.
+
+**Client Process**:
+1. Background sync thread requests pull with last sync timestamp
+2. AES-encrypted HTTP request sent to server
+3. Receives encrypted command list to apply locally
+4. Decrypts and applies commands through `SyncProcessor.process_pull()`
+5. Updates local database with server changes
+6. Records sync completion timestamp for next pull
+
+**Server Response Format**:
+```json
+{
+  "schema_hash": "<client_hash>",
+  "commands": [
+    {
+      "id": "uuid",
+      "table": "Tools",
+      "operation": "add",
+      "data": {"name": "Drill", "count": 1},
+      "last_modified": "2025-09-27T12:18:57Z"
+    }
+  ]
+}
+```
+
+#### 3. Push Operation (`/sync/push?device=<id>`)
+**Purpose**: Client sends local changes to server for global synchronization.
+
+**Client Process**:
+1. Background thread gathers pending commands from `command_queue.json`
+2. Applies client→server data transformations using cached schema mappings
+3. AES encrypts command batch and sends to `/sync/push`
+4. Receives encrypted status response with per-command success/failure
+5. Updates local queue based on server acknowledgment
+6. Failed commands rescheduled via `RetryManager`
+
+**Push Command Batch Format**:
+```json
+{
+  "device": 1,
+  "schema_hash": "<server_hash>",
+  "commands": [
+    {
+      "id": "uuid",
+      "table": "Tools",
+      "operation": "add",
+      "data": {"name": "Hammer", "inventory_number": "123"}
+    },
+    {
+      "id": "uuid2",
+      "table": "History",
+      "operation": "add",
+      "data": {"user_id": 1, "action": "tool_issued"}
+    }
+  ]
+}
+```
+
+**Server Status Response Format**:
+```json
+[
+  {"id": "uuid", "status": "COMPLETED"},
+  {"id": "uuid2", "status": "FAILED", "error": "Validation error"}
+]
+```
+
+### Command Queue System (`command_queue.json`)
+
+The command queue serves as **persistent staging area** for all local database changes pending synchronization with the server.
+
+#### Command Structure in JSON:
+```json
+{
+  "id": "uuid",                    // Globally unique command identifier
+  "table": "Tools|User|Cell",      // Database table being modified
+  "operation": "add|update|delete", // CRUD operation type
+  "data": {                        // Full record data payload
+    "name": "Drill Press",
+    "inventory_number": "DM-001",
+    "count": 5
+  },
+  "status": "pending|sent|done",   // Sync processing status
+  "timestamp": "RFC3339"           // Command creation time
+}
+```
+
+#### Queue Lifecycle & Data Flow:
+1. **Command Generation**: Database changes captured via event handlers/decorators
+2. **Queue Persistence**: Commands immediately written to `command_queue.json`
+3. **Background Processing**: Sync thread reads pending commands periodically
+4. **Schema Mapping**: Command data transformed using cached handshake mappings
+5. **AES Encryption**: Prepared batch encrypted before HTTP transmission
+6. **Server Submission**: Encrypted payload sent to `/sync/push?device=<id>`
+7. **Status Processing**: Server response decrypted, statuses applied to queue
+8. **Queue Cleanup**: Successfully synced commands (`status: "done"`) removed
+
+#### Real Example Command Records:
+```json
+[
+  {
+    "id": "e53d46a6-4821-44aa-848a-e27b443198c8",
+    "table": "Tools",
+    "operation": "add",
+    "data": {
+      "index": 3,
+      "inventory_number": "",
+      "plan_id": null,
+      "tool_type_id": 1,
+      "name": "Фреза 5х30мм",
+      "description": "",
+      "count": 3,
+      "img": "",
+      "groups_id": 2
+    },
+    "status": "done",
+    "timestamp": "2025-09-26T16:51:32.002044Z"
+  },
+  {
+    "id": "60a59368-dec0-4a4d-9ede-70f13797c361",
+    "table": "History",
+    "operation": "add",
+    "data": {
+      "index": 1,
+      "datetime": "2025-09-27T15:18:57.959816",
+      "status": 0,
+      "description": "Массовая загрузка инициирована",
+      "user_id": 1,
+      "user_role_id": 1,
+      "tools_id": 4
+    },
+    "status": "done",
+    "timestamp": "2025-09-27T12:18:57.960827Z"
+  }
+]
+```
+
+### Database Models for Sync
+
+#### Client-Side Command Storage Schema:
+```sql
+CREATE TABLE Command (
+  id INTEGER PRIMARY KEY,
+  table_name VARCHAR NOT NULL,    -- Target table name
+  operation VARCHAR NOT NULL,     -- add|update|delete
+  record_id INTEGER,              -- Local record ID
+  created_at TIMESTAMP,
+  status VARCHAR,                 -- pending|sent|done|failed
+  error_message TEXT,
+  sync_attempts INTEGER DEFAULT 0
+);
+```
+
+### Encryption & Security
+
+#### AES-CBC Communication Protocol:
+- **Shared Secret**: Symmetric key configured in `config.json` (`aes` field)
+- **IV Management**: Random 16-byte initialization vectors for each message
+- **PKCS7 Padding**: Variable-length message padding for block cipher
+- **Authentication**: Device ID in URL parameters for endpoint routing
+
+#### Bidirectional Communication Flow:
+1. **Client Transmission**: `AES_ENCRYPT(IV + JSON_batch, client_aes_key)`
+2. **Server Reception**: Uses same key from server config to decrypt
+3. **Server Response**: `AES_ENCRYPT(IV2 + JSON_statuses, client_aes_key)`
+4. **Client Decryption**: Decrypts status array to update local command statuses
+
+### Threading & Scheduling
+
+#### Client-Side Threading Architecture:
+- **GUI Thread**: Qt event loop for user interface interactions
+- **FastAPI Thread**: Local web server for embedded sync endpoints
+- **Sync Thread**: Background synchronization thread (`UvicornThread` wrapper)
+- **Database Threads**: Serial/hardware I/O threads with Qt signal communication
+
+#### Sync Scheduling Model:
+- **Push Interval**: Every `sender_timeout` seconds (default 30s), commands pushed
+- **Pull Interval**: Every `receiver_timeout` seconds (default 60s), changes pulled
+- **Retry Scheduling**: Failed syncs resubmitted with exponential backoff delays
+- **Queue Processing**: Continuous monitoring of command queue for new operations
+
+### Error Handling & Conflict Resolution
+
+#### Network Failure Handling:
+- **Timeout Management**: Configurable send/receive timeouts with automatic retry
+- **Connection Recovery**: Automatic reconnection attempts on network interruptions
+- **Duplicate Prevention**: Command deduplication prevents repeated submissions
+- **Queue Persistence**: Commands survive application restarts via JSON file
+
+#### Data Conflict Strategies:
+- **Server Priority**: In conflicting updates, server version typically wins
+- **Manual Resolution**: Administrative interface for complex conflict cases
+- **Version Stamping**: Timestamp-based conflict detection and resolution
+- **Rollback Support**: Failed operations can rollback local changes if needed
+
+### Monitoring & Diagnostics
+
+#### Client-Side Monitoring:
+- **Sync Status Tracking**: Command queue status monitoring in application logs
+- **Performance Metrics**: Sync operation timing and success rates
+- **Error Reporting**: Failed sync attempts logged with detailed error messages
+- **Network Monitoring**: Connection health and latency tracking
+
+#### Diagnostic Features:
+- **Mock Mode Integration**: `AUTOSKLAD_USE_MOCKS=1` enables offline development
+- **Verbose Logging**: Detailed sync operation logging for troubleshooting
+- **Health Checkpoints**: Regular validation of sync system status
+- **Performance Profiling**: Measurement of sync operation performance metrics
+
+### Integration with Client Architecture
+
+#### With Qt Application (`main.py`):
+- **Thread Launch**: Sync thread initialized during Qt app startup sequence
+- **Shared Resources**: Database sessions shared between GUI and sync threads
+- **Signal Communication**: Qt signals bridge hardware events to sync processing
+- **Shutdown Coordination**: Graceful stop coordination between GUI and sync threads
+
+#### With Local Database:
+- **Change Interception**: Decorators/triggers capture database changes
+- **Queue Population**: Successful commit creates command in queue file
+- **Concurrent Access**: SQLite WAL mode enables multi-threaded database access
+- **Transaction Coordination**: Sync operations coordinate with user UI transactions
+
+#### With Hardware Systems:
+- **Command Generation**: Hardware actions (tool loading/dispensing) create sync commands
+- **Real-Time Sync**: Critical operations trigger immediate sync attempts
+- **Offline Buffering**: Hardware operation succeeds locally even without network
+- **Sync Prioritization**: Critical state changes prioritized over background operations
 
 ## 4. Hardware Managers
 
