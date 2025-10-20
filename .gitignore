@@ -30,3 +30,12 @@ modules.xml
 vcs.xml
 *.iml
 inspectionProfiles/
+
+# Игнорировать тестовые логи
+server/tests/logs/
+
+# Игнорировать кэш синхронизации
+server/dbSync/Logic_v2/cache/
+server/dbSync/Logic_v2/cache/schema/
+client/dbSync/Logic_v2/cache/
+client/dbSync/Logic_v2/cache/schema/
