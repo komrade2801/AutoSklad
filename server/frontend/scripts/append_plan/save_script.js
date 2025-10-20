@@ -48,7 +48,7 @@
 
     toolDivs.forEach(div => {
         const nameDiv = div.querySelector(".toolName") || div.firstChild;
-        const input = div.querySelector(".input_sum");
+        const input = div.querySelector(".input_amount");
 
         if (nameDiv && input) {
           const toolName = nameDiv.textContent.trim();

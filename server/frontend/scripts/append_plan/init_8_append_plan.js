@@ -19,19 +19,22 @@ import { navbar_add } from '../navbar.js';
 //export const jsonObjectTools = generateJsonTool(8, 4, 2);
 //export const jsonCellsDrop = generateJsonCellsDrop(32, 32, jsonObjectTools);
 //export const jsonToolForDrop = generateJsonToolsDrop(jsonCellsDrop)
+window.tool_library = {}
+window.jsonLibrary = {};           // turn0search0
 window.jsonPlan = {};
-window.tool_library = {};           // turn0search0
 
 // Функция для получения JSON-данных через эндпоинт
 export async function fetchToolLibraryData(device_number) {
-    const url = "../backend/get_groups_from_db?device_number="+device_number;
+    console.log('fetchToolLibraryData');
+    const url = "../backend/get_tool_types_from_db?device_number="+device_number;
     try {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error("Ошибка сети, статус: ${response.status}");
         }
         const jsonData = await response.json();
-        window.tool_library = jsonData;
+        console.log('window.tool_library');
+        console.log(jsonData);
         return jsonData;
     } catch (error) {
         console.error("Ошибка получения данных:", error);
@@ -43,6 +46,7 @@ export function initToolsData(device_number) {
     return fetchToolLibraryData(device_number)
       .then(data => {
         window.tool_library = data;               // turn1search0
+        window.jsonLibrary = data;
         return data;
       })
       .catch(err => {
@@ -52,6 +56,7 @@ export function initToolsData(device_number) {
   }
 
 function initialization(element_name) {
+    console.log('initialization');
     if (localStorage.getItem('token') === null){
         console.log('token не обнаружен в хранилище!');
         window.location.href='/';

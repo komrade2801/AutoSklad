@@ -1,5 +1,5 @@
 /* Только для .custom-spinner-input */
-.input_sum {
+.input_amount {
   -webkit-appearance: none;
   appearance: none;
   position: relative;
@@ -9,8 +9,8 @@
 }
 
 /* Стрелочки в WebKit-браузерах */
-.input_sum::-webkit-inner-spin-button,
-.input_sum::-webkit-outer-spin-button {
+.input_amount::-webkit-inner-spin-button,
+.input_amount::-webkit-outer-spin-button {
   -webkit-appearance: inner-spin-button;
   display: block;
   width: auto;
@@ -22,10 +22,10 @@
 }
 
 /* Стрелочки в Firefox */
-.input_sum {
+.input_amount {
   -moz-appearance: textfield;
 }
-.input_sum::-moz-number-spin-box {
+.input_amount::-moz-number-spin-box {
   -moz-appearance: number-input;
   background: transparent;
 }

@@ -9,16 +9,18 @@ import { generateTools } from './generateTools.js';
 
 
 // Функция для генерации JSON-Plan со списком инструментов к добавляемому чертежу
-export function updateJsonPlan(toolName) {
-    console.log(toolName);
+export function updateJsonPlan(toolId) {
+    console.log(toolId);
+    const tool = window.tool_library.tools[toolId]
+    console.log(tool);
     if (!window.jsonPlan) 
       window.jsonPlan = {};
     if (!window.jsonPlan.tools) 
       window.jsonPlan.tools = {};
     // Если уже добавлен — ничего не делаем
-    if(window.jsonPlan.tools.hasOwnProperty(toolName)) 
+    if(window.jsonPlan.tools.hasOwnProperty(toolId))
       return;
-    window.jsonPlan.tools[toolName] = "1";
+    window.jsonPlan.tools[toolId] = tool;
     console.log(window.jsonPlan);
     generateToolsSelection(); // пересобираем интерфейс выбора
 }
@@ -27,25 +29,45 @@ export function updateJsonPlan(toolName) {
 
 //Функция для удаления инструмента из списка при перетаскивании
 export function deleteTool(toolNameToDelete, containerId, jsonToolLibrary) {
-  for (const groupKey in jsonToolLibrary.groups) {
-    const groupData = jsonToolLibrary.groups[groupKey];
-    for (const subgroupKey in groupData.subgroup) {
-      const subgroupData = groupData.subgroup[subgroupKey];
-      const values = subgroupData.value;
-      for (const valueKey in values) {
-        const valueData = values[valueKey];
-        if (valueData.tools === toolNameToDelete) {
+
+    const elementToDelete = document.querySelector("#" + toolNameToDelete);
+    console.log(elementToDelete)
+//    elementToDelete.remove();
+
+    for (const toolId in jsonToolLibrary.tools) {
+        const toolData = jsonToolLibrary.tools[toolId];
+
+        if (toolData.name === toolNameToDelete) {
             // Удаляем инструмент
-            delete values[valueKey];
+            delete jsonToolLibrary.tools[toolId]
+            console.log('deleted: ' + toolId)
             // Обновляем интерфейс
-            window.tool_library = jsonToolLibrary;
+            window.jsonLibrary = jsonToolLibrary;
             generateTools(containerId, jsonToolLibrary);
             initializeDragAndDrop();
             return; // Прерываем, как только нашли и удалили инструмент
         }
-      }
     }
-  }
+
+//  for (const groupKey in jsonToolLibrary.groups) {
+//    const groupData = jsonToolLibrary.groups[groupKey];
+//    for (const subgroupKey in groupData.subgroup) {
+//      const subgroupData = groupData.subgroup[subgroupKey];
+//      const values = subgroupData.value;
+//      for (const valueKey in values) {
+//        const valueData = values[valueKey];
+//        if (valueData.tools === toolNameToDelete) {
+//            // Удаляем инструмент
+//            delete values[valueKey];
+//            // Обновляем интерфейс
+//            window.tool_library = jsonToolLibrary;
+//            generateTools(containerId, jsonToolLibrary);
+//            initializeDragAndDrop();
+//            return; // Прерываем, как только нашли и удалили инструмент
+//        }
+//      }
+//    }
+//  }
 }
 
 
@@ -59,8 +81,10 @@ export function initializeDragAndDrop() {
       draggable.setAttribute("draggable", true);
       draggable.addEventListener("dragstart", (event) => {
         const toolName = draggable.querySelector(".toolName").textContent;
+        const toolId = draggable.getAttribute('data-value-index');
         if (toolName) {
           event.dataTransfer.setData("toolName", toolName);
+          event.dataTransfer.setData("toolId", toolId);
         }
       });
       draggable.dataset.initialized = "true";
@@ -74,8 +98,9 @@ export function initializeDragAndDrop() {
     selectionContainer.addEventListener("drop", (event) => {
       event.preventDefault();
       const toolName = event.dataTransfer.getData("toolName");
-      updateJsonPlan(toolName); // добавит, если ещё не было
-      let jsonToolLibrary = window.tool_library;
+      const toolId = event.dataTransfer.getData("toolId");
+      updateJsonPlan(toolId); // добавит, если ещё не было
+      let jsonToolLibrary = window.jsonLibrary;
       deleteTool(toolName, "tools", jsonToolLibrary); // удаляет из оригинального списка
     });
     selectionContainer.dataset.initialized = "true";

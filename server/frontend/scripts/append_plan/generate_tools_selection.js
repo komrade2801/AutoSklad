@@ -3,6 +3,7 @@ import { initializeDragAndDrop } from './drag_and_drop.js';
 
 
 export function generateToolsSelection() {
+  console.log('generateToolsSelection');
   const container = document.getElementById("selection_tools");
   container.innerHTML = "";
 
@@ -11,8 +12,11 @@ export function generateToolsSelection() {
     return;
   }
 
-  Object.entries(window.jsonPlan.tools).forEach(([toolName, sum]) => {
-    if (toolName !== "groups") {
+  for (const toolId in window.jsonPlan.tools) {
+    const toolData = window.jsonPlan.tools[toolId];
+    if (toolData.name !== "groups") {
+
+        console.log(toolData);
       
       const toolDiv = document.createElement("div");
 
@@ -26,7 +30,7 @@ export function generateToolsSelection() {
 
       // Устанавливаем стили для имени инструмента
       const toolNameDiv = document.createElement("div");
-      toolNameDiv.textContent = toolName;
+      toolNameDiv.textContent = toolData.name;
       toolNameDiv.style.display = 'flex';
       toolNameDiv.style.width = '100%';
       toolNameDiv.style.height = '30px';
@@ -43,30 +47,13 @@ export function generateToolsSelection() {
 
       toolDiv.appendChild(toolNameDiv);
 
-      // Получаем максимально допустимое значение sum из jsonToolLibrary
-      let maxSum = 1;
-      let jsonToolLibrary = window.tool_library;
-      for (const groupKey in jsonToolLibrary.groups) {
-        const group = jsonToolLibrary.groups[groupKey];
-        for (const subgroupKey in group.subgroup) {
-          const subgroup = group.subgroup[subgroupKey];
-          for (const valueKey in subgroup.value) {
-            const item = subgroup.value[valueKey];
-            if (item.tools === toolName) {
-              maxSum = parseInt(item.sum, 10);
-              break;
-            }
-          }
-        }
-      }
-
       //Создаём поле ввода количества инструмента
       const input = document.createElement("input");
-      input.className = "form-control me-2 input_sum";
+      input.className = "form-control me-2 input_amount";
       input.type = "number";
-      input.min = "1";
-      input.max = maxSum.toString();
-      input.value = sum || "1";
+      input.min = 1;
+      input.max = toolData.count;
+      input.value = 1;
 
       //Устанавливаем стили для ввода количества
       input.style.width = "70px";
@@ -77,11 +64,13 @@ export function generateToolsSelection() {
 
       //Устанавливаем обработчик события ввода
       input.addEventListener("input", (e) => {
+        console.log('input: ', e);
         let val = parseInt(e.target.value, 10);
+        console.log(val);
         if (isNaN(val) || val < 1) val = 1;
-        if (val > maxSum) val = maxSum;
+        if (val > toolData.count) val = toolData.count;
         e.target.value = val;
-        window.jsonPlan.tools[toolName] = val.toString();
+        window.jsonPlan.tools[toolId].amount = val;
       });
 
 
@@ -109,42 +98,13 @@ export function generateToolsSelection() {
 
       // Добавляем обработчик события для deleteButton
       deleteButton.addEventListener('click', () => {
-        // Удаляем из jsonPlan
-        delete window.jsonPlan.tools[toolName];
+            // Удаляем из jsonPlan
+            delete window.jsonPlan.tools[toolId];
 
-        // Возвращаем в jsonToolLibrary
-        for (const groupKey in window.tool_library.groups) {
-          const group = window.tool_library.groups[groupKey];
-          for (const subgroupKey in group.subgroup) {
-            const subgroup = group.subgroup[subgroupKey];
-            const values = subgroup.value;
-            const keys = Object.keys(values);
-            const nextIndex = keys.length ? Math.max(...keys.map(Number)) + 1 : 0;
-
-            let restored = false;
-
-            for (const valueKey in values) {
-              const item = values[valueKey];
-              if (item.tools === toolName) {
-                restored = true;
-                break;
-              }
-            }
-
-            if (!restored) {
-              // Восстанавливаем с суммой maxSum
-              subgroup.value[nextIndex] = {
-                tools: toolName,
-                sum: maxSum.toString()
-              };
-              break;
-            }
-          }
-        }
+            window.jsonLibrary.tools[toolId] = toolData;
 
         // Обновляем интерфейс
-        // let jsonToolLibrary = window.tool_library;
-        generateTools("tools", window.tool_library);
+        generateTools("tools", window.jsonLibrary);
         generateToolsSelection();
         initializeDragAndDrop();
       });
@@ -153,5 +113,5 @@ export function generateToolsSelection() {
       toolDiv.appendChild(deleteButton);
       container.appendChild(toolDiv);
     }
-  });
+  }
 }

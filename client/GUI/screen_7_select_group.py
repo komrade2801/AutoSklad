@@ -49,24 +49,24 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         if not groups:
             return
         print(groups)
-        if not isinstance(groups, list):
+        if not isinstance(groups, dict):
             return
-        print(groups[0])
-        print(isinstance(groups[0], Group))
-        print(type(Group))
-        if not isinstance(groups[0], Group):
-            return
+        # print(groups[0])
+        # print(isinstance(groups[0], Group))
+        # print(type(Group))
+        # if not isinstance(groups[0], Group):
+        #     return
 
         self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:
-            for group in groups:
+            for group, count in groups.items():
                 print(group)
 
                 if group.paren_group_id != 0:
                     continue
                 # Создаём кастомный виджет
                 widget = WidgetSelectGroup(self.trigger_name)
-                widget.set_data(group)  # Передаём данные в кастомный виджет
+                widget.set_data(group, count)  # Передаём данные в кастомный виджет
                 widget.event_select_group = self.handle_select_group
                 print(widget)
                 # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета

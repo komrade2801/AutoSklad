@@ -261,11 +261,11 @@ def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_
         )
         # tools_has_device_crud
 
-        for count, name in enumerate(plan.tools):
+        for idx, tool in enumerate(plan.tools):
             # tool[""]
             # tool_types_name = name['name'].split(' ')[0]
-            tool_types_name = name['name']
-            tool_quantity = name['quantity']
+            tool_types_name = tool['name']
+            tool_quantity = tool['quantity']
             quantity = 0
             tool_types = tool_types_crud.find_by_name(tool_types_name)
             print(f"create_plan tool_types_name: {tool_types_name}, tool_quantity: {tool_quantity}, tool_types: {tool_types}")

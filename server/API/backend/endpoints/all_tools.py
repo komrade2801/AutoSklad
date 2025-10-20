@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any
 
 # InventoryResponse,
-from API.backend.request_models import ToolsCreate, ToolsAddResponse, AllGroupsResponse
+from API.backend.request_models import ToolsCreate, ToolsAddResponse, AllGroupsResponse, AllToolTypesResponse
 # from DB.Data.db_depends import get_db
 from DB.session import get_db
 from DB.Engine.DeviceCRUD import EngineDevice
@@ -272,6 +272,43 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                 "name": group.name,
                 "subgroup": subgroup_dict
             }
+
+        return result
+
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ошибка формирования JSON: {e}"
+        )
+
+@all_tools_router.get(
+    "/get_tool_types_from_db",
+    response_model=AllToolTypesResponse,
+    status_code=status.HTTP_200_OK,
+    responses={400: {"description": "Ошибка формирования JSON"}}
+)
+def get_tool_types_from_db(device_number: int, db: Session = Depends(get_db)):
+    try:
+        devices_crud = EngineDevice()
+        tools_has_device_crud = EngineToolsHasDevice()
+        tools_crud = EngineTools()
+        tool_type_crud = EngineToolTypes()
+        e_group = EngineGroup()
+
+        tool_types = tool_type_crud.get_all_tool_types()
+
+        tool_dict = {}
+        for i, tool_type in enumerate(tool_types):
+
+            tool_dict[tool_type.id] = {
+                'id': tool_type.id,
+                'name': tool_type.name,
+                'description': tool_type.description,
+                'count': tool_type.count,
+                'amount': 1,
+            }
+        result = {"tools": tool_dict}
 
         return result
 
