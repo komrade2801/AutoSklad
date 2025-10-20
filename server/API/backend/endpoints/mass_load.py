@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 import dbSync
 from API.backend.endpoints.color_map import STATUS_COLORS
 from Core.authorization import AuthService
+from DB.Engine.HelpCRUD import EngineHelp
 # from DB.Data.db_depends import get_db
 from DB.session import get_db
 from DB.Engine.CellCRUD import EngineCell
@@ -155,7 +156,7 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
         Определяет stype по status_id, затем отдаёт цвет из STATUS_COLORS.
         """
         try:
-            status = EngineStatus().get(status_id)
+            status = e_status.get(status_id)
         except SQLAlchemyError:
             return STATUS_COLORS.get("__default__")
 
@@ -170,6 +171,8 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
     # 4. Сборка JSON
     result_rows: Dict[str, RowResponse] = {}
 
+    mass_load_max_id = e_mass_load.get_max_id()
+
     for r in range(1, rows + 1):
         cells_in_row: Dict[str, CellResponse] = {}
         for c in range(1, cols + 1):
@@ -182,9 +185,6 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
 
                 if load and not load == []:
                     mass_load_id = str(load[0].mass_load_id)
-
-                mass_load_max_id = str(
-                    max(e_mass_load.get_all_ids(), default=0))
 
                 if not cell:
                     continue
@@ -216,7 +216,7 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                     type=cell_type,
                     backgroundColor=bg,
                     content=Content(tool=tool_name, plan=plan_name,
-                                    mass_load=mass_load_id + ":" + mass_load_max_id),
+                                    mass_load=mass_load_id + ":" + str(mass_load_max_id)),
                     block=block
                 )
             except Exception as e:
@@ -258,7 +258,7 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
             raise HTTPException(
                 status_code=404, detail="Устройство не найдено")
 
-        last_mass_load_id = max(e_mass_load.get_all_ids(), default=0)
+        last_mass_load_id = e_mass_load.get_max_id()
         loads_by_mass_loads = e_load.get_loads_by_mass_load_id(
             mass_load_id=last_mass_load_id
         )

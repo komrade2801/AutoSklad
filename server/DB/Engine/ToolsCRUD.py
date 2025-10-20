@@ -28,14 +28,14 @@ class EngineTools(BaseCRUD):
     """
 
     def __init__(self, session_db: Session = None):
-        self.e_load_operations = EngineLoadOperations()
-        self.e_load = EngineLoad()
+        # self.e_load_operations = EngineLoadOperations()
+        # self.e_load = EngineLoad()
         self.e_load_operations_has_device = EngineLoadOperationsHasDevice()
         self.e_tool_types = EngineToolTypes()
         self.e_tool_has_device = EngineToolsHasDevice()
-        self.e_drop = EngineDrop()
-        self.e_drop_operations = EngineDropOperations()
-        self.e_drop_operations_has_device = EngineDropOperationsHasDevice()
+        # self.e_drop = EngineDrop()
+        # self.e_drop_operations = EngineDropOperations()
+        # self.e_drop_operations_has_device = EngineDropOperationsHasDevice()
         super().__init__(session=session_db, model=Tools)
 
     def add_tool(self,
@@ -299,7 +299,7 @@ class EngineTools(BaseCRUD):
         """
         Привязывает инструмент к ячейке через ToolsHasDevice.
         """
-        return self.e_tool_has_device.add_link(tool_id=tool_id, device_id=cell_id)
+        return self.e_tool_has_device.add_link(tools_id=tool_id, device_id=cell_id)
 
     def unlink_tool_from_cell(self, tool_id: int) -> bool:
         """

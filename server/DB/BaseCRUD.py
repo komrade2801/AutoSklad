@@ -12,7 +12,7 @@ base_crud.py
 - Внутренний кеш с TTL и ограничением размера (_cache), автоматически инвалидация при изменении данных.
 """
 
-from sqlalchemy import ClauseElement
+from sqlalchemy import ClauseElement, func
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError, IntegrityError
 from typing import Type, TypeVar, List, Optional, Generator
@@ -329,6 +329,16 @@ class CoreEngine:
         with self.transaction() as db:
             ids = db.query(self.model.id).all()
         return [i[0] for i in ids]
+
+    def get_max_id(self) -> int:
+        """
+        Получает максимальный id в таблице.
+
+        :return: Целое число — max id
+        """
+        with self.transaction() as db:
+            id = db.query(func.max(self.model.id)).scalar()
+        return 0 if id is None else id
 
     def count(self) -> int:
         """
