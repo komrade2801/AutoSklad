@@ -6,7 +6,8 @@ from .BaseScreen import BaseScreen
 from .ui_classes.Ui_screen_8_select_tool import Ui_screen_8_select_tool
 from PyQt5.QtCore import QEvent
 
-from .widgets.widget_select_tool import WidgetSelectTool
+# from .widgets.widget_select_tool import WidgetSelectTool
+from .widgets.widget_tool_type import WidgetToolType
 
 
 class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
@@ -42,8 +43,8 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
                 for tool in tools:
                     print(f"tool: {tool}")
                     # Создаём кастомный виджет
-                    widget = WidgetSelectTool()
-                    widget.set_data(tool["tool"], tool["group"], tool["cell"])  # Передаём данные в кастомный виджет
+                    widget = WidgetToolType()
+                    widget.set_data(tool)  # Передаём данные в кастомный виджет
                     widget.event_select_tool = self.handle_select_tool
                     # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
                     list_item = QListWidgetItem(self.listWidget)
@@ -62,7 +63,7 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
         print(f"screen_8_select_tool get_data. value {self.value}")
         try:
             if self.value:
-                return {"tool_id": self.value[0], "name": self.value[1], "group_name": self.value[2], "tool_description": self.value[3]}
+                return {"tool_type_id": self.value[0], "name": self.value[1], "group_name": self.value[2], "tool_description": self.value[3]}
         except:
             print(traceback.format_exc())
 

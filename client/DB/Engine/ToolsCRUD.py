@@ -88,45 +88,54 @@ class EngineTools(BaseCRUD):
         """
         return self.all()
 
-    def get_tools_with_relations(self) -> list[Type[Tools]]:
+    def get_tools_with_relations(self) -> List[Tools]:
         """
         Возвращает список всех инструментов с их связанными данными.
 
         :return: Список объектов Tools со связанными данными.
         """
-        return self.session.query(Tools).options(
+        return self.session.query(self.model).options(
             joinedload(Tools.plans),
             joinedload(Tools.groups),
             joinedload(Tools.cells),
             joinedload(Tools.stories)
         ).all()
 
-    def get_tools_by_group(self, group_id: int) -> list[Type[Tools]]:
+    def get_tools_by_group(self, group_id: int) -> List[Tools]:
         """
         Возвращает список инструментов, связанных с определенной группой.
 
         :param group_id: Уникальный идентификатор группы.
         :return: Список объектов Tools, связанных с группой.
         """
-        return self.session.query(Tools).filter(Tools.groups_id == group_id).all()
+        return self.session.query(self.model).filter_by(groups_id = group_id).all()
 
-    def get_tools_by_plan(self, plan_id: int) -> list[Type[Tools]]:
+    def get_tools_by_plan(self, plan_id: int) -> List[Tools]:
         """
         Возвращает список инструментов, связанных с определенным планом.
 
         :param plan_id: Уникальный идентификатор плана.
         :return: Список объектов Tools, связанных с планом.
         """
-        return self.session.query(Tools).filter(Tools.plan_id == plan_id).all()
+        return self.session.query(self.model).filter_by(plan_id = plan_id).all()
 
-    def get_tools_by_barcode(self, barcode: str) -> list[Type[Tools]]:
+    def get_tools_by_barcode(self, barcode: str) -> List[Tools]:
         """
         Возвращает список инструментов, связанных с определенным планом.
 
         :param barcode: Штрихкод инструмента.
         :return: Список объектов Tools, связанных со штрихкодом.
         """
-        return self.session.query(Tools).filter(Tools.barcode == barcode).all()
+        return self.session.query(self.model).filter_by(barcode = barcode).all()
+
+    def get_tools_by_tool_type_id(self, tool_type_id: int) -> List[Tools]:
+        """
+        Возвращает список инструментов, связанных с определенным планом.
+
+        :param tool_type_id: Идентификатор инструмента.
+        :return: Список объектов Tools, связанных с планом.
+        """
+        return self.session.query(self.model).filter_by(tool_type_id = tool_type_id).all()
 
     def get_tool_history(self, tool_id: int) -> List[History]:
         """

@@ -158,16 +158,16 @@ class EngineCell(BaseCRUD):
         """
         return self.delete(cell_id)
 
-    def get_cells_by_group(self, group_id: int) -> list[Type[Cell]]:
+    def get_cells_by_group(self, group_id: int) -> List[Cell]:
         """
         Возвращает список всех ячеек, принадлежащих указанной группе.
 
         :param group_id: Уникальный идентификатор группы.
         :return: Список объектов Cell.
         """
-        return self.session.query(Cell).filter(Cell.groups_id == group_id).all()
+        return self.session.query(self.model).filter_by(groups_id = group_id).all()
 
-    def get_cells_by_tool(self, tool_id: int) -> list[Cell]:  #
+    def get_cells_by_tool(self, tool_id: int) -> List[Cell]:  #
         """
         Возвращает список всех ячеек, связанных с указанным инструментом.
 

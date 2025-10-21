@@ -156,6 +156,8 @@ class ActionMapper:
         self.current_rights = None
         self.select_group = None
         self.select_plans = None
+        self.plan_cell_list = None
+        self.select_cell = None
         self.__actions_bad = {
             'write_db_tool_consumption': {'trigger': 'view_err'},
             'read_db_user_from_barcode': {'trigger': 'err_barcode'},
@@ -164,6 +166,7 @@ class ActionMapper:
             'write_db_rights_by_user_id': {'trigger': 'write_err'},
             'read_db_rights_tool': {'trigger': 'err_rights'},
             'read_db_get_cell': {'trigger': 'err_data'},
+            'read_db_get_cells': {'trigger': 'err_data'},
             'write_db_plans': {'trigger': 'write_err'},
             'read_db_plan_id': {'trigger': 'err_barcode'},
             'read_db_get_tools': {'trigger': 'err_get_tools_by_plan_id'},
@@ -186,8 +189,10 @@ class ActionMapper:
             'write_db_rights_by_user_id': lambda user_id, rights_data: self.write_db_rights_by_user_id(user_id, rights_data),
             'read_db_rights_by_user_id': lambda user_id: self.read_db_rights_by_user_id(user_id),
             # 'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
-            'read_db_rights_tool': lambda tool_id, name, group_name, tool_description: self.read_db_rights_tool(tool_id, name, group_name, tool_description),
+            'read_db_rights_tool': lambda tool_type_id, name, group_name, tool_description: self.read_db_rights_tool(tool_type_id, name, group_name, tool_description),
             'read_db_get_cell': lambda tool_id, tool_name: self.read_db_get_cell(tool_id, tool_name),
+            'read_db_get_cells': lambda plan_id: self.read_db_get_cells(plan_id),
+            'read_db_get_more_cells': lambda cells_list, trigger='': self.read_db_get_more_cells(cells_list),
             # "": None,
             'read_db_user_operations': lambda user_id: self.read_db_user_operations(user_id),
             'read_db_plan_operations': lambda plans_id: self.read_db_plan_operations(plans_id),
@@ -263,6 +268,7 @@ class ActionMapper:
         return err_error
 
     def read_db_get_cell(self, tool_id, tool_name=None):
+        print(f"read_db_get_cell {tool_id} {tool_name}")
         """
         Читает номер ячейки (cell.number) по ID инструмента.
 
@@ -281,14 +287,97 @@ class ActionMapper:
         # Возвращаем номер первой найденной ячейки
         return {"trigger": "send_number", "number": cells[0].number, "tool_name": tool_name} if cells else None
 
-    def read_db_rights_tool(self, tool_id, name, group_name, tool_description):
+    def read_db_get_cells(self, plan_id):
+        print(f"read_db_get_cells {plan_id}")
+        """
+        Читает номер ячеек (cell.number) по ID чертежа.
+
+        :param plan_id: Уникальный идентификатор чертежа.
+        :return: Список номеров ячеек (cell.number) или None, если не найдено.
+        """
+        # Получаем все ячейки, связанные с данным чертежом
+
+        plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+
+        cells_list = []
+
+        needed_tools = 0
+        for plan_tool_type in plan_tool_types:
+            tool_type = self.e_tool_types.get_tool_type_by_id(plan_tool_type.tool_types_id)
+
+            needed_tools += plan_tool_type.tool_types_count
+
+            tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+
+            found_tools = 0
+            for tool in tools:
+                cells = self.e_cell.get_cells_by_tool(tool.id)
+
+                # Если ячейка не найдена, возвращаем ошибку
+                if not cells or not cells[0]:
+                    continue
+
+                # Предполагается, что инструмент связан с одной ячейкой
+                # Возвращаем номер первой найденной ячейки
+                if cells[0].status_id in [3, 7]:
+                    cells_list.append(cells[0])
+                    found_tools += 1
+                    if found_tools == plan_tool_type.tool_types_count:
+                        break
+
+        # Если результат пустой, возвращаем None
+        print(f"needed by plan: {needed_tools}, found: {len(cells_list)}")
+        if not cells_list or needed_tools > len(cells_list):
+            return {"trigger": "err_data"}
+
+        # return {"trigger": "get_more_cells", "cells_list": cells_list} if cells_list else None
+        # return {"cells_list": cells_list} if cells_list else None
+        self.plan_cell_list = cells_list
+        return {"cells_list": cells_list} if cells_list else None
+
+    def read_db_get_more_cells(self, cells_list):
+        print(f"read_db_get_more_cells {cells_list}")
+        print(f"self.plan_cell_list {self.plan_cell_list}")
+        """
+        Читает номер первой ячейки (cell.number) из списка, удаляет из списка, если выдано.
+
+        :param cells_list: список ячеек.
+        :return: Номер ячейки (cell.number) или None, если не найдено.
+        """
+
+        # если список пустой, то возвращается ок
+        if not self.plan_cell_list:
+            return {"trigger": "view_ok"}
+
+        self.select_cell = self.plan_cell_list.pop(0)
+
+        return {"trigger": "send_number", "number": self.select_cell.number, "tool_name": "Инструмент"} if self.select_cell else None
+
+    def read_db_rights_tool(self, tool_type_id, name, group_name, tool_description):
         print(
-            f"read_db_rights_tool tool_id {tool_id}, name {name}, group_name {group_name}, tool_description {tool_description}")
-        self.select_tool = self.e_tools.get_tool_by_id(tool_id)
-        return tool_id, name, group_name, tool_description
+            f"read_db_rights_tool tool_type_id {tool_type_id}, name {name}, group_name {group_name}, tool_description {tool_description}")
+
+        tools = self.e_tools.get_tools_by_tool_type_id(tool_type_id)
+        print(f"tools {tools}")
+        if tools:
+            for tool in tools:
+                cells = self.e_cell.get_cells_by_tool(tool.id)
+                if cells:
+                    cell = cells[0]
+                    if cell.status_id in [3, 7]:
+                        self.select_tool = tool
+                        self.select_cell = cell
+                        return self.select_tool.id, name, group_name, tool_description
+
+            print(f"Ячейки, содержащие \"{name}\" не найдены.")
+            return {'trigger': 'err_rights'}
+
+        else:
+            print(f"Свободные инструменты \"{name}\" не найдены.")
+            return {'trigger': 'err_rights'}
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
-        print(f"write_db_tool_consumption")
+        print(f"write_db_tool_consumption {index}, {args}, {kwargs}, {self.select_tool}, {self.select_cell}")
         """
         Записывает факт расхода инструмента в базу данных.
         user_id: Идентификатор пользователя, который получил инструмент.
@@ -298,14 +387,21 @@ class ActionMapper:
 
         dbSync.init_db = False
 
-        # Проверить наличие инструмента в ячейке
-        cells = self.e_cell.get_cells_by_tool(self.select_tool.id)
-        cell = None
-        if cells != []:
-            cell = cells[0]
-        if not cell:
+        # # Проверить наличие инструмента в ячейке
+        # cells = self.e_cell.get_cells_by_tool(self.select_tool.id)
+        # cell = None
+        # if cells != []:
+        #     cell = cells[0]
+
+        if not self.select_tool:
+            self.select_tool = self.e_tools.get_tool_by_id(self.select_cell.tools_id)
+
+        cell = self.select_cell
+        if not cell.tools_id:
+            # print(
+            #     f"Инструмент с идентификатором {self.select_tool.id} не найдено ни в одной ячейке.")
             print(
-                f"Инструмент с идентификатором {self.select_tool.id} не найдено ни в одной ячейке.")
+                f"В ячейке {self.select_cell.number} не найдено инструментов.")
             return {'trigger': 'view_err'}
         # Очистить ячейку (удалить инструмент из неё)
         cleared = self.e_cell.update_cell(
@@ -375,7 +471,12 @@ class ActionMapper:
             print("Не удалось записать потребление операции.")
             return {'trigger': 'view_err'}
 
-        return {'trigger': 'view_ok'}
+        if not self.plan_cell_list:
+            print("write_db_tool_consumption trigger")
+            return {'trigger': 'view_ok'}
+        else:
+            print("write_db_tool_consumption cell_list")
+            return {'trigger': 'get_more_cells', 'cells_list': self.plan_cell_list}
 
     def read_db_tools_collection(self, group_id: int, group_name) -> tuple[list[Any], Any] | Any:
         print(f"action_db read_db_tools_collection, {group_id}, {group_name}")
@@ -519,6 +620,13 @@ class ActionMapper:
                 "cell": cell,
             }
 
+        def create_tool_types_dict(tool_type, count):
+            return {
+                "group": self.e_group.get_group_by_id(tool_type.groups_id),
+                "tool": tool_type,
+                "count": count,
+            }
+
         # TODO: Вынести в утилитарный класс
         def add_all_parent_groups(group_list: list[Group], parent_group_id: int, group: Group, group_id: int):
             if parent_group_id == group_id:
@@ -541,62 +649,75 @@ class ActionMapper:
                     group_list, group.paren_group_id, group, group_id)
             print(f"group_list: {group_list}")
 
-            tools = []
+            # tools = []
+            tool_types = []
 
             for group in group_list:
                 # Получаем инструменты из указанной группы
-                tools.extend(self.e_tools.get_tools_by_group(group.id))
+                # tools.extend(self.e_tools.get_tools_by_group(group.id))
+                tool_types.extend(self.e_tool_types.get_tool_types_by_group(group.id))
         except Exception as e:
             print(
                 f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
             print(traceback.format_exc())
-            tools = []
+            # tools = []
+            tool_types = []
 
-        valid_tools = []
+        valid_tool_types = []
 
         # for tool in tools:
         #     print(" Эталон tool id " + str(tool.id))
 
-        for tool in tools:
-            # Проверка статуса инструмента в таблице Cell
-            cells = self.e_cell.get_cells_by_tool(tool.id)
-            cell = None
-            if cells != []:
-                cell = cells[0]
-            if cell and cell.status_id:
-                status = self.e_status.get_status_by_id(cell.status_id)
-                if status.stype not in ["mass_load_ready", "load_ready"]:
-                    continue
-            # Проверка операций в таблице DropOperations
-            drop_operations = self.e_drop_operations.get_operations_by_tool(
-                tool.id)
-            if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
-                continue
-            # Проверка операций в таблице OperationsConsumption
-            consumption_operations = self.e_operations_consumption.get_operations_by_tool(
-                tool.id)
-            if consumption_operations:
-                continue
-            # Проверка операций в таблице LoadOperations
-            load_operations = self.e_load_operations.get_operations_by_tool(
-                tool.id)
-            found = False  # предполагаем, что ни один статус не подходит
+        for tool_type in tool_types:
+            tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+            valid_tools = []
+            # valid_tools_count
+            for tool in tools:
+                # Проверка статуса инструмента в таблице Cell
+                cells = self.e_cell.get_cells_by_tool(tool.id)
+                cell = None
+                if cells:
+                    cell = cells[0]
+                if cell and cell.status_id:
+                    status = self.e_status.get_status_by_id(cell.status_id)
+                    if status.stype not in ["mass_load_ready", "load_ready"]:
+                        continue
 
-            for op in load_operations:
-                status = self.e_status.get_status_by_id(
-                    op.status_id)  # получаем объект статуса
-                if status.stype in ["mass_load_ready", "load_ready"]:  # проверка нужного типа
-                    found = True
-                    break  # нашли хотя бы один — дальше не надо
+                    # Проверка операций в таблице DropOperations
+                    drop_operations = self.e_drop_operations.get_operations_by_tool(
+                        tool.id)
+                    if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
+                        continue
+                    # Проверка операций в таблице OperationsConsumption
+                    consumption_operations = self.e_operations_consumption.get_operations_by_tool(
+                        tool.id)
+                    if consumption_operations:
+                        continue
+                    # Проверка операций в таблице LoadOperations
+                    load_operations = self.e_load_operations.get_operations_by_tool(
+                        tool.id)
+                    found = False  # предполагаем, что ни один статус не подходит
 
-            if not found:
-                continue
-            if len(load_operations) == 0 or load_operations == []:
-                continue
-            # Если инструмент прошёл все проверки, добавляем его в список
-            # valid_tools.append(tool)
-            valid_tools.append(create_tool_dict(cell, tool))
-        return valid_tools, group_name
+                    for op in load_operations:
+                        status = self.e_status.get_status_by_id(
+                            op.status_id)  # получаем объект статуса
+                        if status.stype in ["mass_load_ready", "load_ready"]:  # проверка нужного типа
+                            found = True
+                            break  # нашли хотя бы один — дальше не надо
+
+                    if not found:
+                        continue
+                    if len(load_operations) == 0 or load_operations == []:
+                        continue
+                    # Если инструмент прошёл все проверки, добавляем его в список
+                    # valid_tools.append(tool)
+                    valid_tools.append(create_tool_dict(cell, tool))
+
+            print(f"tool_type: {tool_type}, valid_tools: {valid_tools}")
+
+            if valid_tools:
+                valid_tool_types.append(create_tool_types_dict(tool_type, len(valid_tools)))
+        return valid_tool_types, group_name
 
     def read_db_plan_operations(self, plans_id: int) -> list[dict]:
         """
@@ -1110,7 +1231,7 @@ class ActionMapper:
             if group.paren_group_id == 0:
                 if group_count_dict.get(group) is not None:
                     group_count_dict[group] += count
-                else:
+                elif count > 0:
                     group_count_dict[group] = count
             else:
                 parent_group = self.e_group.get_group_by_id(group.paren_group_id)
@@ -1124,12 +1245,21 @@ class ActionMapper:
             # Получаем все подгруппы указанной группы
             groups = self.e_group.get_all_groups()
             for group in groups:
-                tool_types = self.e_tool_types.get_tools_by_group(group.id)
+                tool_types = self.e_tool_types.get_tool_types_by_group(group.id)
 
                 count = 0
 
                 for tool_type in tool_types:
-                    count += tool_type.count
+
+                    tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+                    print(f"tools {tools}")
+                    if tools:
+                        for tool in tools:
+                            cells = self.e_cell.get_cells_by_tool(tool.id)
+                            if cells:
+                                cell = cells[0]
+                                if cell.status_id in [3, 7]:
+                                    count += 1
 
                 print(f"group: {group}, count: {count}")
 
@@ -1158,7 +1288,7 @@ class ActionMapper:
             # Get all cells with status_id in {3,7}
             cells = self.e_cell.all()
             for cell in cells:
-                if cell.status_id in {3, 7} and cell.tools_id:
+                if cell.status_id in [3, 7] and cell.tools_id:
                     tool = self.e_tools.get_tool_by_id(cell.tools_id)
                     if tool and tool.groups_id:
                         # Trace to root
@@ -1507,11 +1637,29 @@ class ActionMapper:
             tool_type = self.e_tool_types.get_tool_type_by_id(plan_tool_type.tool_types_id)
 
             tool_object["tool_type"] = tool_type
-            tool_object["count"] = plan_tool_type.tool_types_count
+            tool_object["total_count"] = tool_type.count
+            tool_object["plan_count"] = plan_tool_type.tool_types_count
+
+            tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+            tool_load_count = 0
+            for tool in tools:
+                cells = self.e_cell.get_cells_by_tool(tool.id)
+                for cell in cells:
+                    if cell.status_id in [3, 7]:
+                        tool_load_count += 1
+
+            tool_object["load_count"] = tool_load_count
+
+            if plan_tool_type.tool_types_count <= tool_load_count:
+                has_tools = True
+            else:
+                has_tools = False
+
+            tool_object["has_tools"] = has_tools
 
             plan_tool_list.append(tool_object)
 
-        return plan_tool_list, plan_designation, plan_name
+        return plan_tool_list, plan_designation, plan_name, plan_id
 
     def read_db_plans(self, index):
         print(f"read_db_plans index {index}")

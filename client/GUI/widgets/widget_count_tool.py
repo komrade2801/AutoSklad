@@ -25,6 +25,7 @@ class WidgetCountTool(BaseScreen, Ui_widget_20_count_tool):
 
     def get_data(self):
         pass
+
     def sizeHint(self):
         """Возвращает рекомендуемый размер виджета."""
-        return QtCore.QSize(440, 135)
+        return QtCore.QSize(self.width(), self.height())

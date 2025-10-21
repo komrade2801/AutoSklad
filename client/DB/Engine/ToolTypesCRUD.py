@@ -123,16 +123,16 @@ class EngineToolTypes(BaseCRUD):
                 return tt
         return None
 
-    def get_tools_by_group(self, index) -> List[ToolTypes]:
+    def get_tool_types_by_group(self, index) -> List[ToolTypes]:
         """
         Получает все инструменты, относящиеся к типам из указанной группы.
 
         :param index: Идентификатор группы.
         :return: Список инструментов (Tools), связанных с группой.
         """
-        return self.session.query(ToolTypes).filter(ToolTypes.groups_id == index).all()
+        return self.session.query(self.model).filter_by(groups_id = index).all()
 
-    def get_by_group(self, group_id: int) -> list[Type[ToolTypes]]:
+    def get_by_group(self, group_id: int) -> List[ToolTypes]:
         """
         Получает все записи ToolTypes, у которых groups_id == group_id.
 
@@ -141,7 +141,7 @@ class EngineToolTypes(BaseCRUD):
         """
         return (
             self.session
-            .query(ToolTypes)
-            .filter(ToolTypes.groups_id == group_id)
+            .query(self.model)
+            .filter_by(groups_id = group_id)
             .all()
         )

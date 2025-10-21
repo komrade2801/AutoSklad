@@ -1,10 +1,10 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from ..BaseScreen import BaseScreen
-from .ui_classes.Ui_widget_8_9_tool import Ui_widget_8_9_tool
+from .ui_classes.Ui_widget_tool_type import Ui_widget_tool_type
 
 
-class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
+class WidgetToolType(BaseScreen, Ui_widget_tool_type):
     key_pressed = pyqtSignal(str)
     widget_clicked = pyqtSignal()  # Сигнал для кликов по виджету
 
@@ -12,23 +12,23 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
         super().__init__()
         self.setupUi(self)
         self.name = ""
-        self.status = -1
+        self.tool_type_id = -1
         self.event_select_tool = lambda *args, **kwargs: print(*args, **kwargs)
 
-    def set_data(self, *args, **kwargs):
-        print("WidgetSelectTool set_data")
-        print(args)
-        print(kwargs)
+    def set_data(self, tool_data):
+        print("WidgetToolType set_data")
+        print(tool_data)
+
+        tool_type = tool_data["tool"]
+
         """Устанавливает текст. Реализуется в каждом экране."""
-        self.lbl_number_tool.setText(args[0].name)
-        self.tool_description.setText(args[0].description)
-        self.group_name.setText(args[1].name)
-        self.cell_number.setText(str(args[2].number))
-        self.name = args[0].name
-        # self.lbl_status.setText("2")
-        self.status = args[0].id
-
-
+        self.lbl_number_tool.setText(tool_type.name)
+        self.tool_description.setText(tool_type.description)
+        self.group_name.setText(tool_data["group"].name)
+        self.load_count.setText(str(tool_data["count"]))
+        self.name = tool_type.name
+        self.status.setText("Доступно" if tool_data["count"] else "Отсутствует")
+        self.tool_type_id = tool_type.id
 
     def get_data(self):
         pass
@@ -45,4 +45,4 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
         """Обработка нажатия мыши на виджет."""
         super().mousePressEvent(event)  # Сохраняем стандартное поведение
         self.widget_clicked.emit()  # Генерируем сигнал клика по виджету
-        self.event_select_tool((self.status, self.name, self.group_name.text(), self.tool_description.text()), "btn_tool_name")
+        self.event_select_tool((self.tool_type_id, self.name, self.group_name.text(), self.tool_description.text()), "btn_tool_name")

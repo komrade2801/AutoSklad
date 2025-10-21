@@ -63,10 +63,10 @@ class ToolTypes(Base, Model):
     def __repr__(self):
         """Представляет объект Status в виде строки для удобства отладки."""
         return (f"<{self.__tablename__}("
-                f"id={self.id}"
-                f"name={self.name}"
-                f"description={self.description}"
-                f"count={self.count}"
-                f"img={self.img}"
+                f"id={self.id}, "
+                f"name={self.name}, "
+                f"description={self.description}, "
+                f"count={self.count}, "
+                f"img={self.img}, "
                 f"groups_id={self.groups_id}"
                 f")>")
