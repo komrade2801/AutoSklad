@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>ok_disabled.png</file>
+    <file>error.png</file>
     <file>reboot.png</file>
     <file>shutdown.png</file>
     <file>info.png</file>
