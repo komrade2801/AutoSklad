@@ -101,7 +101,7 @@ function openMassLoadInput(toolDiv, valueData, planName, plansIndex, groupIndex,
     inputDiv.style.display = 'flex';
     inputDiv.style.width = '100%';
     inputDiv.style.height = '30px';
-    inputDiv.style.backgroundColor = '#D3D3D3A0';
+    inputDiv.style.backgroundColor = '#ffffffff';
     inputDiv.style.border = '1px solid #ffffff';
     inputDiv.style.color = '#003172';
     inputDiv.style.fontWeight = 'bold';
@@ -148,7 +148,7 @@ function openMassLoadInput(toolDiv, valueData, planName, plansIndex, groupIndex,
     button.style.height = '30px';
     button.style.border = 'none';
     button.style.backgroundColor = 'transparent';
-    button.style.color = '#003172';
+    button.style.color = '#ffff'
     button.style.fontWeight = 'bold';
     button.style.fontSize = '16px';
     button.style.cursor = 'pointer';
