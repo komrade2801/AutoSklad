@@ -15,11 +15,34 @@ class Ui_screen_9_select_tool_by_plan(object):
     def setupUi(self, screen_9_select_tool_by_plan):
         screen_9_select_tool_by_plan.setObjectName("screen_9_select_tool_by_plan")
         screen_9_select_tool_by_plan.resize(480, 800)
-        screen_9_select_tool_by_plan.setStyleSheet("background-color: #1A4789;")
+        screen_9_select_tool_by_plan.setStyleSheet("QWidget{\n"
+"    background-color: #1A4789;\n"
+"}\n"
+"QLabel {\n"
+"    background: none;\n"
+"    color: #FFFFFF;\n"
+"    border-width: 0px;\n"
+"    border-radius: 0px;\n"
+"}\n"
+"#background {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #1A4789;\n"
+"    border-width: 2px;\n"
+"    border-style: groove;\n"
+"    border-color: #ff9923;\n"
+"    border-radius: 0px;\n"
+"}\n"
+"QPushButton {\n"
+"    color: #000000;\n"
+"    background-color: #86B7F4;\n"
+"    border-width: 2px;\n"
+"    border-style: outset;\n"
+"    border-color: #EAA657;\n"
+"    border-radius: 10px;\n"
+"}")
         self.listWidget = QtWidgets.QListWidget(screen_9_select_tool_by_plan)
         self.listWidget.setEnabled(True)
         self.listWidget.setGeometry(QtCore.QRect(5, 130, 471, 521))
-        self.listWidget.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.listWidget.setObjectName("listWidget")
         self.lbl_info_1 = QtWidgets.QLabel(screen_9_select_tool_by_plan)
         self.lbl_info_1.setEnabled(True)
@@ -31,40 +54,28 @@ class Ui_screen_9_select_tool_by_plan(object):
         font.setWeight(75)
         self.lbl_info_1.setFont(font)
         self.lbl_info_1.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_info_1.setStyleSheet("color: #FFFFFF;\n"
-"background-color: #1A4789;\n"
-"border-width: 0px;\n"
-"border-radius: 0px;")
         self.lbl_info_1.setObjectName("lbl_info_1")
-        self.lbl_plan_number = QtWidgets.QLabel(screen_9_select_tool_by_plan)
-        self.lbl_plan_number.setEnabled(True)
-        self.lbl_plan_number.setGeometry(QtCore.QRect(10, 85, 451, 40))
+        self.plan_name = QtWidgets.QLabel(screen_9_select_tool_by_plan)
+        self.plan_name.setEnabled(True)
+        self.plan_name.setGeometry(QtCore.QRect(10, 85, 461, 40))
         font = QtGui.QFont()
         font.setFamily("Arial")
-        font.setPointSize(19)
+        font.setPointSize(18)
         font.setBold(True)
         font.setWeight(75)
-        self.lbl_plan_number.setFont(font)
-        self.lbl_plan_number.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_plan_number.setStyleSheet("color: #FFFFFF;\n"
-"background-color: #1A4789;\n"
-"border-width: 0px;\n"
-"border-radius: 0px;")
-        self.lbl_plan_number.setObjectName("lbl_plan_number")
+        self.plan_name.setFont(font)
+        self.plan_name.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.plan_name.setObjectName("plan_name")
         self.lbl_info_2 = QtWidgets.QLabel(screen_9_select_tool_by_plan)
         self.lbl_info_2.setEnabled(True)
-        self.lbl_info_2.setGeometry(QtCore.QRect(10, 45, 161, 40))
+        self.lbl_info_2.setGeometry(QtCore.QRect(10, 50, 141, 40))
         font = QtGui.QFont()
-        font.setFamily("Arial Black")
-        font.setPointSize(19)
+        font.setFamily("Arial")
+        font.setPointSize(16)
         font.setBold(True)
         font.setWeight(75)
         self.lbl_info_2.setFont(font)
         self.lbl_info_2.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_info_2.setStyleSheet("color: #FFFFFF;\n"
-"background-color: #1A4789;\n"
-"border-width: 0px;\n"
-"border-radius: 0px;")
         self.lbl_info_2.setObjectName("lbl_info_2")
         self.btn_ok = QtWidgets.QPushButton(screen_9_select_tool_by_plan)
         self.btn_ok.setGeometry(QtCore.QRect(5, 745, 232, 50))
@@ -141,12 +152,6 @@ class Ui_screen_9_select_tool_by_plan(object):
         self.btn_ok.setFont(font)
         self.btn_ok.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_ok.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_ok.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_ok.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/icons/ok.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -227,12 +232,6 @@ class Ui_screen_9_select_tool_by_plan(object):
         self.btn_back.setFont(font)
         self.btn_back.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_back.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_back.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_back.setText("")
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(":/icons/back.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -312,10 +311,6 @@ class Ui_screen_9_select_tool_by_plan(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_info_5.setFont(font)
-        self.lbl_info_5.setStyleSheet("color: #FFFFFF;\n"
-"background-color: #1A4789;\n"
-"border-width: 0px;\n"
-"border-radius: 0px;")
         self.lbl_info_5.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_info_5.setObjectName("lbl_info_5")
         self.lbl_info_4 = QtWidgets.QLabel(screen_9_select_tool_by_plan)
@@ -391,12 +386,19 @@ class Ui_screen_9_select_tool_by_plan(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_info_4.setFont(font)
-        self.lbl_info_4.setStyleSheet("color: #FFFFFF;\n"
-"background-color: #1A4789;\n"
-"border-width: 0px;\n"
-"border-radius: 0px;")
         self.lbl_info_4.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_info_4.setObjectName("lbl_info_4")
+        self.plan_number = QtWidgets.QLabel(screen_9_select_tool_by_plan)
+        self.plan_number.setEnabled(True)
+        self.plan_number.setGeometry(QtCore.QRect(130, 50, 341, 40))
+        font = QtGui.QFont()
+        font.setFamily("Arial")
+        font.setPointSize(16)
+        font.setBold(True)
+        font.setWeight(75)
+        self.plan_number.setFont(font)
+        self.plan_number.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.plan_number.setObjectName("plan_number")
 
         self.retranslateUi(screen_9_select_tool_by_plan)
         QtCore.QMetaObject.connectSlotsByName(screen_9_select_tool_by_plan)
@@ -406,8 +408,9 @@ class Ui_screen_9_select_tool_by_plan(object):
         screen_9_select_tool_by_plan.setWindowTitle(_translate("screen_9_select_tool_by_plan", "screen_9_select_tool_by_plan"))
         self.listWidget.setWhatsThis(_translate("screen_9_select_tool_by_plan", "<html><head/><body><p><br/></p></body></html>"))
         self.lbl_info_1.setText(_translate("screen_9_select_tool_by_plan", "Доступный инструмент"))
-        self.lbl_plan_number.setText(_translate("screen_9_select_tool_by_plan", "XXXX.DDDD.DDDD.DDDD"))
+        self.plan_name.setText(_translate("screen_9_select_tool_by_plan", "XXXX.DDDD.DDDD.DDDD"))
         self.lbl_info_2.setText(_translate("screen_9_select_tool_by_plan", "Чертёж №:"))
         self.lbl_info_5.setText(_translate("screen_9_select_tool_by_plan", "Отмена"))
         self.lbl_info_4.setText(_translate("screen_9_select_tool_by_plan", "Выдать?"))
+        self.plan_number.setText(_translate("screen_9_select_tool_by_plan", "XXXX.DDDD.DDDD"))
 from ..img import resources_rc
