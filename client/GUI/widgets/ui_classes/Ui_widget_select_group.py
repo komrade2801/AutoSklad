@@ -14,26 +14,38 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_widget_select_group(object):
     def setupUi(self, widget_select_group):
         widget_select_group.setObjectName("widget_select_group")
-        widget_select_group.resize(464, 84)
-        widget_select_group.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n"
-"border-color: rgb(0, 255, 0);")
+        widget_select_group.resize(450, 80)
+        widget_select_group.setStyleSheet("QWidget{\n"
+"    background-color: #1A4789;\n"
+"}\n"
+"QLabel {\n"
+"    background: none;\n"
+"    color: #FFFFFF;\n"
+"    border-width: 0px;\n"
+"    border-radius: 0px;\n"
+"}\n"
+"#background {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #1A4789;\n"
+"    border-width: 2px;\n"
+"    border-style: groove;\n"
+"    border-color: #ff9923;\n"
+"    border-radius: 0px;\n"
+"}")
         self.lbl_photo = QtWidgets.QLabel(widget_select_group)
         self.lbl_photo.setGeometry(QtCore.QRect(5, 5, 213, 70))
-        self.lbl_photo.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_photo.setText("")
         self.lbl_photo.setPixmap(QtGui.QPixmap("C:/Users/Admin/.designer/backup/img/—Pngtree—original twist drill vector material_5752343.png"))
         self.lbl_photo.setScaledContents(True)
         self.lbl_photo.setObjectName("lbl_photo")
         self.name = QtWidgets.QLabel(widget_select_group)
-        self.name.setGeometry(QtCore.QRect(5, 5, 451, 31))
+        self.name.setGeometry(QtCore.QRect(5, 5, 430, 31))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
         font.setPointSize(14)
         font.setBold(True)
         font.setWeight(75)
         self.name.setFont(font)
-        self.name.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.name.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.name.setFrameShadow(QtWidgets.QFrame.Plain)
         self.name.setLineWidth(0)
@@ -45,13 +57,12 @@ class Ui_widget_select_group(object):
         self.name.setWordWrap(True)
         self.name.setOpenExternalLinks(False)
         self.name.setObjectName("name")
-        self.label = QtWidgets.QLabel(widget_select_group)
-        self.label.setGeometry(QtCore.QRect(2, 2, 460, 80))
-        self.label.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
-        self.label.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.label.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.label.setText("")
-        self.label.setObjectName("label")
+        self.background = QtWidgets.QLabel(widget_select_group)
+        self.background.setGeometry(QtCore.QRect(0, 0, 450, 80))
+        self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.background.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.background.setText("")
+        self.background.setObjectName("background")
         self.lbl_count = QtWidgets.QLabel(widget_select_group)
         self.lbl_count.setEnabled(True)
         self.lbl_count.setGeometry(QtCore.QRect(215, 40, 80, 30))
@@ -62,8 +73,6 @@ class Ui_widget_select_group(object):
         font.setWeight(75)
         self.lbl_count.setFont(font)
         self.lbl_count.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_count.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_count.setObjectName("lbl_count")
         self.count = QtWidgets.QLabel(widget_select_group)
         self.count.setEnabled(True)
@@ -75,10 +84,8 @@ class Ui_widget_select_group(object):
         font.setWeight(75)
         self.count.setFont(font)
         self.count.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.count.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.count.setObjectName("count")
-        self.label.raise_()
+        self.background.raise_()
         self.lbl_photo.raise_()
         self.name.raise_()
         self.lbl_count.raise_()
@@ -90,6 +97,6 @@ class Ui_widget_select_group(object):
     def retranslateUi(self, widget_select_group):
         _translate = QtCore.QCoreApplication.translate
         widget_select_group.setWindowTitle(_translate("widget_select_group", "widget_select_group"))
-        self.name.setText(_translate("widget_select_group", "Фреза"))
+        self.name.setText(_translate("widget_select_group", "Фрезы"))
         self.lbl_count.setText(_translate("widget_select_group", "Всего:"))
         self.count.setText(_translate("widget_select_group", "2545"))

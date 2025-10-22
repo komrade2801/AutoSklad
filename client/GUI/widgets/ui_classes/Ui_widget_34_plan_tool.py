@@ -15,11 +15,23 @@ class Ui_widget_34_plan_tool(object):
     def setupUi(self, widget_34_plan_tool):
         widget_34_plan_tool.setObjectName("widget_34_plan_tool")
         widget_34_plan_tool.resize(440, 75)
-        widget_34_plan_tool.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));")
+        widget_34_plan_tool.setStyleSheet("QLabel {\n"
+"    color: #FFFFFF;\n"
+"    border-width: 0px;\n"
+"    border-radius: 0px;\n"
+"}\n"
+"#background {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #1A4789;\n"
+"    border-width: 2px;\n"
+"    border-style: groove;\n"
+"    border-color: #ff9923;\n"
+"    border-radius: 0px;\n"
+"}")
         self.lbl_number_tool = QtWidgets.QLabel(widget_34_plan_tool)
         self.lbl_number_tool.setGeometry(QtCore.QRect(10, 10, 291, 30))
         palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.WindowText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -29,10 +41,10 @@ class Ui_widget_34_plan_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.ButtonText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -49,10 +61,10 @@ class Ui_widget_34_plan_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229, 128))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 128))
         brush.setStyle(QtCore.Qt.NoBrush)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.PlaceholderText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.WindowText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -62,10 +74,10 @@ class Ui_widget_34_plan_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.ButtonText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -82,10 +94,10 @@ class Ui_widget_34_plan_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229, 128))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 128))
         brush.setStyle(QtCore.Qt.NoBrush)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.PlaceholderText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.WindowText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -95,10 +107,10 @@ class Ui_widget_34_plan_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -115,7 +127,7 @@ class Ui_widget_34_plan_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229, 128))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 128))
         brush.setStyle(QtCore.Qt.NoBrush)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
         self.lbl_number_tool.setPalette(palette)
@@ -125,8 +137,6 @@ class Ui_widget_34_plan_tool(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_number_tool.setFont(font)
-        self.lbl_number_tool.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_number_tool.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.lbl_number_tool.setObjectName("lbl_number_tool")
         self.status = QtWidgets.QLabel(widget_34_plan_tool)
@@ -139,8 +149,6 @@ class Ui_widget_34_plan_tool(object):
         font.setWeight(75)
         self.status.setFont(font)
         self.status.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.status.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.status.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.status.setObjectName("status")
         self.lbl_plan_count = QtWidgets.QLabel(widget_34_plan_tool)
@@ -153,8 +161,6 @@ class Ui_widget_34_plan_tool(object):
         font.setWeight(75)
         self.lbl_plan_count.setFont(font)
         self.lbl_plan_count.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_plan_count.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_plan_count.setObjectName("lbl_plan_count")
         self.plan_count = QtWidgets.QLabel(widget_34_plan_tool)
         self.plan_count.setEnabled(True)
@@ -166,8 +172,6 @@ class Ui_widget_34_plan_tool(object):
         font.setWeight(75)
         self.plan_count.setFont(font)
         self.plan_count.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.plan_count.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.plan_count.setObjectName("plan_count")
         self.lbl_load_count = QtWidgets.QLabel(widget_34_plan_tool)
         self.lbl_load_count.setEnabled(True)
@@ -179,8 +183,6 @@ class Ui_widget_34_plan_tool(object):
         font.setWeight(75)
         self.lbl_load_count.setFont(font)
         self.lbl_load_count.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_load_count.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_load_count.setObjectName("lbl_load_count")
         self.load_count = QtWidgets.QLabel(widget_34_plan_tool)
         self.load_count.setEnabled(True)
@@ -192,9 +194,20 @@ class Ui_widget_34_plan_tool(object):
         font.setWeight(75)
         self.load_count.setFont(font)
         self.load_count.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.load_count.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.load_count.setObjectName("load_count")
+        self.background = QtWidgets.QLabel(widget_34_plan_tool)
+        self.background.setGeometry(QtCore.QRect(0, 0, 440, 75))
+        self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.background.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.background.setText("")
+        self.background.setObjectName("background")
+        self.background.raise_()
+        self.lbl_number_tool.raise_()
+        self.status.raise_()
+        self.lbl_plan_count.raise_()
+        self.plan_count.raise_()
+        self.lbl_load_count.raise_()
+        self.load_count.raise_()
 
         self.retranslateUi(widget_34_plan_tool)
         QtCore.QMetaObject.connectSlotsByName(widget_34_plan_tool)

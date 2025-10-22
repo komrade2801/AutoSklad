@@ -16,7 +16,13 @@ class MyLineEdit(QLineEdit):
         super().focusInEvent(event)
 
         self.setReadOnly(False)
-        self.setStyleSheet("color: rgb(0, 0, 0);")
+        # self.setStyleSheet("color: rgb(0, 0, 0);")
+        self.setStyleSheet("color: #000000;\n"
+            "background-color: #CAE2FF;\n"
+            "border-width: 2px;\n"
+            "border-style: groove;\n"
+            "border-color: #15293D;\n"
+            "border-radius: 0px;")
         # self.setText("")
         self.focus_in.emit(self.objectName())  # Отправляем сигнал с именем объекта
 
@@ -25,7 +31,13 @@ class MyLineEdit(QLineEdit):
         super().focusOutEvent(event)
 
         self.setReadOnly(False)
-        self.setStyleSheet("color: rgb(0, 0, 0);")
+        # self.setStyleSheet("color: rgb(0, 0, 0);")
+        self.setStyleSheet("color: #000000;\n"
+            "background-color: #CAE2FF;\n"
+            "border-width: 2px;\n"
+            "border-style: groove;\n"
+            "border-color: #15293D;\n"
+            "border-radius: 0px;")
         self.focus_out.emit(self.objectName())  # Отправляем сигнал с именем объекта
 
 

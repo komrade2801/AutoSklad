@@ -15,11 +15,23 @@ class Ui_widget_20_count_tool(object):
     def setupUi(self, widget_20_count_tool):
         widget_20_count_tool.setObjectName("widget_20_count_tool")
         widget_20_count_tool.resize(440, 75)
-        widget_20_count_tool.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));")
+        widget_20_count_tool.setStyleSheet("QLabel {\n"
+"    color: #FFFFFF;\n"
+"    border-width: 0px;\n"
+"    border-radius: 0px;\n"
+"}\n"
+"#background {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #1A4789;\n"
+"    border-width: 2px;\n"
+"    border-style: groove;\n"
+"    border-color: #ff9923;\n"
+"    border-radius: 0px;\n"
+"}")
         self.lbl_number_tool = QtWidgets.QLabel(widget_20_count_tool)
         self.lbl_number_tool.setGeometry(QtCore.QRect(5, 5, 271, 30))
         palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.WindowText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -29,10 +41,10 @@ class Ui_widget_20_count_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.ButtonText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -49,10 +61,10 @@ class Ui_widget_20_count_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229, 128))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 128))
         brush.setStyle(QtCore.Qt.NoBrush)
         palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.PlaceholderText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.WindowText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -62,10 +74,10 @@ class Ui_widget_20_count_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.ButtonText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -82,10 +94,10 @@ class Ui_widget_20_count_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229, 128))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 128))
         brush.setStyle(QtCore.Qt.NoBrush)
         palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.PlaceholderText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.WindowText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -95,10 +107,10 @@ class Ui_widget_20_count_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Text, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, brush)
         gradient = QtGui.QLinearGradient(0.0, 0.0, 1.0, 0.0)
@@ -115,7 +127,7 @@ class Ui_widget_20_count_tool(object):
         gradient.setColorAt(1.0, QtGui.QColor(255, 255, 255, 0))
         brush = QtGui.QBrush(gradient)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
-        brush = QtGui.QBrush(QtGui.QColor(78, 155, 229, 128))
+        brush = QtGui.QBrush(QtGui.QColor(255, 255, 255, 128))
         brush.setStyle(QtCore.Qt.NoBrush)
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
         self.lbl_number_tool.setPalette(palette)
@@ -125,8 +137,6 @@ class Ui_widget_20_count_tool(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_number_tool.setFont(font)
-        self.lbl_number_tool.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_number_tool.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.lbl_number_tool.setObjectName("lbl_number_tool")
         self.lbl_status = QtWidgets.QLabel(widget_20_count_tool)
@@ -139,8 +149,6 @@ class Ui_widget_20_count_tool(object):
         font.setWeight(75)
         self.lbl_status.setFont(font)
         self.lbl_status.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_status.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_status.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.lbl_status.setObjectName("lbl_status")
         self.lbl_info = QtWidgets.QLabel(widget_20_count_tool)
@@ -153,8 +161,6 @@ class Ui_widget_20_count_tool(object):
         font.setWeight(75)
         self.lbl_info.setFont(font)
         self.lbl_info.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_info.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_info.setObjectName("lbl_info")
         self.lbl_count = QtWidgets.QLabel(widget_20_count_tool)
         self.lbl_count.setEnabled(True)
@@ -166,9 +172,18 @@ class Ui_widget_20_count_tool(object):
         font.setWeight(75)
         self.lbl_count.setFont(font)
         self.lbl_count.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_count.setStyleSheet("color: rgb(0, 49, 114);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_count.setObjectName("lbl_count")
+        self.background = QtWidgets.QLabel(widget_20_count_tool)
+        self.background.setGeometry(QtCore.QRect(0, 0, 440, 75))
+        self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.background.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.background.setText("")
+        self.background.setObjectName("background")
+        self.background.raise_()
+        self.lbl_number_tool.raise_()
+        self.lbl_status.raise_()
+        self.lbl_info.raise_()
+        self.lbl_count.raise_()
 
         self.retranslateUi(widget_20_count_tool)
         QtCore.QMetaObject.connectSlotsByName(widget_20_count_tool)

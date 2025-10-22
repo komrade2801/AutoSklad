@@ -72,7 +72,8 @@ class MainWindow(QtWidgets.QWidget):
         self.last_widget_value = {}
         self.open_widget(self.lump.state(), None, None)
         self.action_callback = None
-        self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
+        # self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
+        self.setStyleSheet("background-color: #1A4789;")
         self.back_state = None
         self.value = {}
 

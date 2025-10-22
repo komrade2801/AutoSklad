@@ -15,7 +15,7 @@ class Ui_widget_3_29_keyboard(object):
     def setupUi(self, widget_3_29_keyboard):
         widget_3_29_keyboard.setObjectName("widget_3_29_keyboard")
         widget_3_29_keyboard.resize(450, 225)
-        widget_3_29_keyboard.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));")
+        widget_3_29_keyboard.setStyleSheet("background-color: #1A4789;")
         self.btn_number_7 = QtWidgets.QPushButton(widget_3_29_keyboard)
         self.btn_number_7.setEnabled(True)
         self.btn_number_7.setGeometry(QtCore.QRect(5, 115, 143, 50))
@@ -26,8 +26,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_7.setFont(font)
-        self.btn_number_7.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_7.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_7.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_7.setObjectName("btn_number_7")
         self.btn_number_9 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -40,8 +44,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_9.setFont(font)
-        self.btn_number_9.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_9.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_9.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_9.setObjectName("btn_number_9")
         self.btn_number_8 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -54,13 +62,17 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_8.setFont(font)
-        self.btn_number_8.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_8.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_8.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_8.setObjectName("btn_number_8")
         self.btn_number_0 = QtWidgets.QPushButton(widget_3_29_keyboard)
         self.btn_number_0.setEnabled(True)
-        self.btn_number_0.setGeometry(QtCore.QRect(5, 170, 221, 50))
+        self.btn_number_0.setGeometry(QtCore.QRect(5, 170, 218, 50))
         self.btn_number_0.setMinimumSize(QtCore.QSize(0, 0))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
@@ -68,8 +80,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_0.setFont(font)
-        self.btn_number_0.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_0.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_0.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_0.setObjectName("btn_number_0")
         self.btn_number_5 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -82,8 +98,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_5.setFont(font)
-        self.btn_number_5.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_5.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_5.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_5.setObjectName("btn_number_5")
         self.btn_number_4 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -96,8 +116,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_4.setFont(font)
-        self.btn_number_4.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_4.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_4.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_4.setObjectName("btn_number_4")
         self.btn_number_3 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -110,8 +134,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_3.setFont(font)
-        self.btn_number_3.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_3.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_3.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_3.setObjectName("btn_number_3")
         self.btn_number_2 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -124,8 +152,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_2.setFont(font)
-        self.btn_number_2.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_2.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_2.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_2.setObjectName("btn_number_2")
         self.btn_number_6 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -138,8 +170,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_6.setFont(font)
-        self.btn_number_6.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_6.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_6.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_6.setObjectName("btn_number_6")
         self.btn_number_1 = QtWidgets.QPushButton(widget_3_29_keyboard)
@@ -152,13 +188,17 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_number_1.setFont(font)
-        self.btn_number_1.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_number_1.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_number_1.setIconSize(QtCore.QSize(51, 51))
         self.btn_number_1.setObjectName("btn_number_1")
         self.btn_close = QtWidgets.QPushButton(widget_3_29_keyboard)
         self.btn_close.setEnabled(True)
-        self.btn_close.setGeometry(QtCore.QRect(230, 170, 216, 50))
+        self.btn_close.setGeometry(QtCore.QRect(228, 170, 218, 50))
         self.btn_close.setMinimumSize(QtCore.QSize(0, 0))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
@@ -166,8 +206,12 @@ class Ui_widget_3_29_keyboard(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_close.setFont(font)
-        self.btn_close.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_close.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_close.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/icons/back.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)

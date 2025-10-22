@@ -72,9 +72,9 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
                 (len(text) < self.trigger_max_length_login)):
             self.login = text  # Обновляем переменную
             self.event_input_name_code(self.login)
-            self.edit_login.setStyleSheet("color: rgb(0, 0, 174);")
+            self.edit_login.setStyleSheet("color: #FFFFFF;")
         elif len(text) >= self.trigger_max_length_login:
-            self.edit_login.setStyleSheet("color: rgb(174, 9, 0);")
+            self.edit_login.setStyleSheet("color: #FF0000;")
 
 
     def on_password_changed(self, text):
@@ -121,8 +121,20 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         self.edit_psw.setText("")
         self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
-        self.edit_login.setStyleSheet("color: rgb(0, 0, 0);")
-        self.edit_psw.setStyleSheet("color: rgb(0, 0, 0);")
+        # self.edit_login.setStyleSheet("color: rgb(0, 0, 0);")
+        # self.edit_psw.setStyleSheet("color: rgb(0, 0, 0);")
+        self.edit_login.setStyleSheet("color: #000000;\n"
+            "background-color: #CAE2FF;\n"
+            "border-width: 2px;\n"
+            "border-style: groove;\n"
+            "border-color: #15293D;\n"
+            "border-radius: 0px;")
+        self.edit_psw.setStyleSheet("color: #000000;\n"
+            "background-color: #CAE2FF;\n"
+            "border-width: 2px;\n"
+            "border-style: groove;\n"
+            "border-color: #15293D;\n"
+            "border-radius: 0px;")
 
 
     def hideEvent(self, event):

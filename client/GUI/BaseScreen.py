@@ -13,7 +13,8 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
         super().__init__(*args, **kwargs)
         self.__is_read = False
         self.__is_write = False
-        self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
+        # self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
+        self.setStyleSheet("background-color: #1A4789;")
         self.event_timeout_back = None
         self.event_edit_psw = None
         self.event_edit_login = None

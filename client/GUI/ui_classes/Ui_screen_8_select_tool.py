@@ -15,35 +15,20 @@ class Ui_screen_8_select_tool(object):
     def setupUi(self, screen_8_select_tool):
         screen_8_select_tool.setObjectName("screen_8_select_tool")
         screen_8_select_tool.resize(480, 800)
-        screen_8_select_tool.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));")
+        screen_8_select_tool.setStyleSheet("background-color: #1A4789;")
         self.lbl_ico = QtWidgets.QLabel(screen_8_select_tool)
         self.lbl_ico.setGeometry(QtCore.QRect(260, 60, 210, 70))
-        self.lbl_ico.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
+        self.lbl_ico.setStyleSheet("color: #FFFFFF;\n"
+"background-color: #1A4789;\n"
+"border-width: 0px;\n"
+"border-radius: 0px;")
         self.lbl_ico.setText("")
         self.lbl_ico.setPixmap(QtGui.QPixmap("C:/Users/Наташа/Desktop/гуй/img/—Pngtree—original twist drill vector material_5752343.png"))
         self.lbl_ico.setScaledContents(True)
         self.lbl_ico.setObjectName("lbl_ico")
-        self.btn_up = QtWidgets.QPushButton(screen_8_select_tool)
-        self.btn_up.setEnabled(True)
-        self.btn_up.setGeometry(QtCore.QRect(5, 745, 153, 50))
-        self.btn_up.setMinimumSize(QtCore.QSize(0, 0))
-        font = QtGui.QFont()
-        font.setFamily("Arial Black")
-        font.setPointSize(16)
-        font.setBold(True)
-        font.setWeight(75)
-        self.btn_up.setFont(font)
-        self.btn_up.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
-        self.btn_up.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/icons/up.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.btn_up.setIcon(icon)
-        self.btn_up.setIconSize(QtCore.QSize(51, 51))
-        self.btn_up.setObjectName("btn_up")
         self.btn_back = QtWidgets.QPushButton(screen_8_select_tool)
         self.btn_back.setEnabled(True)
-        self.btn_back.setGeometry(QtCore.QRect(163, 745, 154, 50))
+        self.btn_back.setGeometry(QtCore.QRect(5, 745, 470, 50))
         self.btn_back.setMinimumSize(QtCore.QSize(0, 0))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
@@ -51,12 +36,16 @@ class Ui_screen_8_select_tool(object):
         font.setBold(True)
         font.setWeight(75)
         self.btn_back.setFont(font)
-        self.btn_back.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
+        self.btn_back.setStyleSheet("color: #000000;\n"
+"background-color: #86B7F4;\n"
+"border-width: 2px;\n"
+"border-style: outset;\n"
+"border-color: #EAA657;\n"
+"border-radius: 10px;")
         self.btn_back.setText("")
-        icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap(":/icons/back.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.btn_back.setIcon(icon1)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/icons/back.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btn_back.setIcon(icon)
         self.btn_back.setIconSize(QtCore.QSize(51, 51))
         self.btn_back.setObjectName("btn_back")
         self.listWidget = QtWidgets.QListWidget(screen_8_select_tool)
@@ -64,24 +53,6 @@ class Ui_screen_8_select_tool(object):
         self.listWidget.setGeometry(QtCore.QRect(5, 130, 471, 601))
         self.listWidget.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.listWidget.setObjectName("listWidget")
-        self.btn_down = QtWidgets.QPushButton(screen_8_select_tool)
-        self.btn_down.setEnabled(True)
-        self.btn_down.setGeometry(QtCore.QRect(322, 745, 153, 50))
-        self.btn_down.setMinimumSize(QtCore.QSize(0, 0))
-        font = QtGui.QFont()
-        font.setFamily("Arial Black")
-        font.setPointSize(16)
-        font.setBold(True)
-        font.setWeight(75)
-        self.btn_down.setFont(font)
-        self.btn_down.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(131, 173, 239, 255), stop:1 rgba(120, 158, 217, 255));\n"
-"color: rgb(0, 49, 114);")
-        self.btn_down.setText("")
-        icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap(":/icons/down.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.btn_down.setIcon(icon2)
-        self.btn_down.setIconSize(QtCore.QSize(51, 51))
-        self.btn_down.setObjectName("btn_down")
         self.lbl_info_1 = QtWidgets.QLabel(screen_8_select_tool)
         self.lbl_info_1.setEnabled(True)
         self.lbl_info_1.setGeometry(QtCore.QRect(10, 5, 361, 40))
@@ -92,8 +63,10 @@ class Ui_screen_8_select_tool(object):
         font.setWeight(75)
         self.lbl_info_1.setFont(font)
         self.lbl_info_1.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_info_1.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
+        self.lbl_info_1.setStyleSheet("color: #FFFFFF;\n"
+"background-color: #1A4789;\n"
+"border-width: 0px;\n"
+"border-radius: 0px;")
         self.lbl_info_1.setObjectName("lbl_info_1")
         self.lbl_info_2 = QtWidgets.QLabel(screen_8_select_tool)
         self.lbl_info_2.setEnabled(True)
@@ -105,8 +78,10 @@ class Ui_screen_8_select_tool(object):
         font.setWeight(75)
         self.lbl_info_2.setFont(font)
         self.lbl_info_2.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_info_2.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
+        self.lbl_info_2.setStyleSheet("color: #FFFFFF;\n"
+"background-color: #1A4789;\n"
+"border-width: 0px;\n"
+"border-radius: 0px;")
         self.lbl_info_2.setObjectName("lbl_info_2")
         self.lbl_name_group = QtWidgets.QLabel(screen_8_select_tool)
         self.lbl_name_group.setEnabled(True)
@@ -118,8 +93,10 @@ class Ui_screen_8_select_tool(object):
         font.setWeight(75)
         self.lbl_name_group.setFont(font)
         self.lbl_name_group.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.lbl_name_group.setStyleSheet("color: rgb(78, 155, 229);\n"
-"background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
+        self.lbl_name_group.setStyleSheet("color: #FFFFFF;\n"
+"background-color: #1A4789;\n"
+"border-width: 0px;\n"
+"border-radius: 0px;")
         self.lbl_name_group.setObjectName("lbl_name_group")
 
         self.retranslateUi(screen_8_select_tool)
