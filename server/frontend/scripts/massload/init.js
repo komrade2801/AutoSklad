@@ -14,7 +14,8 @@ window.appData = window.appData || {};           // turn0search0
 // export const jsonObjectCells = generateJsonCells(32, 32);
 //plansCount, groupsPerPlanCount, valuesPerGroupCount
 // export let jsonObjectTools = {};// generate_json_tool();// generateJsonTool(1, 1, 1);//await fetchToolLibraryData();// 
-export const jsonObjectHistory = {};
+export let jsonObjectHistory = {};
+window.appData.history = jsonObjectHistory;
 
 // function saveJsonLegacy(data, filename = 'data.json') {
 //     const jsonStr = JSON.stringify(data, null, 2);
@@ -110,7 +111,7 @@ export async function loadToolTable(containerId, device_number) {
     // saveJsonLegacy(jsonObjectTools);
     if (jsonObjectTools) {
         createTools(containerId, jsonObjectTools);
-        createHistory('history', jsonObjectHistory);
+        createHistory('history', window.appData.history);
         initializeDragAndDrop(jsonObjectTools);
     } else {
         console.error("Не удалось загрузить данные для таблицы.");
@@ -133,7 +134,7 @@ function initialization(element_name) {
                 createCells('cells-container', window.appData.сells);
                 createTools('tools-container', window.appData.tools);
                 initializeDragAndDrop();
-                createHistory('history', jsonObjectHistory);
+                createHistory('history', window.appData.history);
             }
         });
       }

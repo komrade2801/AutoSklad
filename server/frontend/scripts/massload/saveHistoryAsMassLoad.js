@@ -1,20 +1,18 @@
-// historySender.js
-
-import { jsonObjectHistory } from './init.js';
-
 /**
  * Отправляет историю массовой загрузки на бэкенд.
  * @param {number} deviceNumber — номер устройства (подставьте ваш актуальный ID)
  */
 export function saveHistoryAsMassLoad(deviceNumber) {
   const url = `../backend/mass_load_tools/${deviceNumber}`+"?token="+localStorage.getItem("token");
+  const history = window.appData.history || {};
   console.log(url);
+  console.log('Sending history:', history);
   fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(jsonObjectHistory)
+    body: JSON.stringify(history)
   })
   .then(response => {
     if (!response.ok) {

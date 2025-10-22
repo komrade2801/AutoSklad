@@ -1,16 +1,39 @@
 // import { jsonObjectTools } from './init.js?v=1';
 // import { jsonObjectCells } from './init.js';
-import { jsonObjectHistory } from './init.js';
 import { createTools } from './createTools.js';
 import { createCells } from './createCells.js';
 import { createHistory } from './createHistory.js';
 import { searchCellById } from './searchCellById.js';
 import { deleteLoad } from './deleteLoad.js';
 
+// Экспортируем функции для использования в createTools.js
+export function updateToolsJSON(toolsData, plansIndex, groupIndex, toolIndex) {
+    updateToolsJSONMass(toolsData, plansIndex, groupIndex, toolIndex, 1);
+}
 
+export function updateToolsJSONMass(toolsData, plansIndex, groupIndex, toolIndex, subtractAmount) {
+    //console.log("updateToolsJSONMass успешно вызвана")
+    // Получаем группу и инструмент по индексу
+    const group = toolsData.plans[plansIndex].groups[groupIndex];
 
-//функция для изменения JSON-Tools с инструментами при dragg-and-dropp
-function updateToolsJSON(toolsData, plansIndex, groupIndex, toolIndex) {
+    // Получаем инструмент по индексу
+    const tool = group.value[toolIndex];
+
+    // Уменьшаем значение sum на указанное количество
+    tool.sum -= subtractAmount;
+
+    // Если sum становится 0 или меньше, удаляем инструмент из списка
+    if (tool.sum <= 0) {
+        delete group.value[toolIndex];
+    }
+
+    // Обновляем отображение элементов на странице
+    createTools('tools-container', toolsData);
+    initializeDragAndDrop();
+}
+
+//функция для изменения JSON-Tools с инструментами при dragg-and-dropp (deprecated, use Mass)
+function updateToolsJSONold(toolsData, plansIndex, groupIndex, toolIndex) {
     //console.log("updateToolsJSON успешно вызвана")
     // console.log(plansIndex)
     // console.log(groupIndex)
@@ -37,7 +60,7 @@ function updateToolsJSON(toolsData, plansIndex, groupIndex, toolIndex) {
 
 
 //функция для изменения JSON-Cells с ячейками при dragg-and-dropp
-function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
+export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
   
     //console.log("updateCellsJSON успешно вызвана")
     //console.log(cellId)
@@ -89,7 +112,7 @@ export function updateJsonHistory(jsonObjectHistory, planName, groupIndex, toolN
     // Объединяем новую операцию и сдвинутые операции
     jsonObjectHistory.operation = { ...newOperation, ...updatedOperations };
 
-    createHistory('history', jsonObjectHistory, groupIndex);
+    createHistory('history', window.appData.history || {}, groupIndex);
     initializeDragAndDrop();
 }
 
@@ -150,7 +173,7 @@ export function initializeDragAndDrop() {
 
         updateToolsJSON(toolsData, plansIndex, groupIndex, toolIndex);
         updateCellsJSON(cellData, planName, toolName, cellId);
-        updateJsonHistory(jsonObjectHistory, planName, groupIndex, toolName, cellId);
+        updateJsonHistory(window.appData.history || {}, planName, groupIndex, toolName, cellId);
         // console.log(toolsData);
       });
 
