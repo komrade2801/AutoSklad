@@ -72,7 +72,8 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
                 (len(text) < self.trigger_max_length_login)):
             self.login = text  # Обновляем переменную
             self.event_input_name_code(self.login)
-            self.edit_login.setStyleSheet("color: #FFFFFF;")
+            self.edit_login.setStyleSheet("color: #FFFFFF;\n"
+                "background-color: #1A4789;\n")
         elif len(text) >= self.trigger_max_length_login:
             self.edit_login.setStyleSheet("color: #FF0000;")
 
