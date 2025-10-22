@@ -209,7 +209,7 @@ class ActionMapper:
             'read_db_groups': lambda index: self.read_db_groups(),
             # "": None,
             'write_db_tool_consumption': lambda index=0, *args, trigger='', **kwargs: self.write_db_tool_consumption(index, *args, **kwargs),
-            'read_db_get_tools': lambda index, plan_id: self.read_db_tools_by_plans_id(plan_id),
+            'read_db_get_tools': lambda plan_id: self.read_db_tools_by_plans_id(plan_id),
             'read_db_tools_by_group_id': lambda group_id: self.read_db_tools_by_group_id(group_id),
             'read_db_tools_by_plans_id': lambda plan_id: self.read_db_tools_by_plans_id(plan_id),
             'read_db_tools_collection': lambda group_id, group_name: self.read_db_tools_collection(group_id, group_name),
@@ -560,6 +560,43 @@ class ActionMapper:
         if not plan_id:
             return {'trigger': 'err_get_tools_by_plan_id'}
         try:
+
+            plan = self.e_plan.get_plan_by_id(plan_id)
+
+            plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+
+            plan_tool_list = []
+
+            for plan_tool_type in plan_tool_types:
+                tool_object = {}
+                tool_type = self.e_tool_types.get_tool_type_by_id(plan_tool_type.tool_types_id)
+
+                tool_object["tool_type"] = tool_type
+                tool_object["total_count"] = tool_type.count
+                tool_object["plan_count"] = plan_tool_type.tool_types_count
+
+                tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+                tool_load_count = 0
+                for tool in tools:
+                    cells = self.e_cell.get_cells_by_tool(tool.id)
+                    for cell in cells:
+                        if cell.status_id in [3, 7]:
+                            tool_load_count += 1
+
+                tool_object["load_count"] = tool_load_count
+
+                if plan_tool_type.tool_types_count <= tool_load_count:
+                    has_tools = True
+                else:
+                    has_tools = False
+
+                tool_object["has_tools"] = has_tools
+
+                plan_tool_list.append(tool_object)
+
+            return plan_tool_list, plan.designation, plan.name, plan_id
+
+
             result = []
             valid_tools = []
 
@@ -1707,13 +1744,14 @@ class ActionMapper:
         """
         try:
             # Получаем чертеж по штрих-коду
-            # plan = self.e_plan.get_plan_by_barcode(barcode)
-            #
-            # if plan:
-            #     return plan  # Возвращаем идентификатор чертежа
-            # else:
-            #     print(f"Чертеж с штрих-кодом {barcode} не найден.")
-            #     return None
+            plan = self.e_plan.get_plan_by_barcode(barcode)
+
+            if plan:
+                return {'plan_id' : plan.id}  # Возвращаем идентификатор чертежа
+
+            else:
+                print(f"Чертеж с штрих-кодом {barcode} не найден.")
+                return None
 
             # TODO: временная заглушка на поиск инструмента вместо чертежа
             """

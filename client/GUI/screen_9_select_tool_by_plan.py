@@ -5,9 +5,6 @@ from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
 from .ui_classes.Ui_screen_9_select_tool_by_plan import Ui_screen_9_select_tool_by_plan
-from DB.Models.Tools import Tools
-from PyQt5.QtCore import QEvent
-from .widgets.widget_select_tool import WidgetSelectTool
 from .widgets.widget_plan_tool import WidgetPlanTool
 
 
@@ -34,8 +31,8 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         try:
             data = args[0]
 
-            plan_name = data[2]
-            self.lbl_plan_number.setText(plan_name)
+            self.plan_number.setText(data[1])
+            self.plan_name.setText(data[2])
 
             self.plan_id_val = data[3]
 
@@ -49,8 +46,7 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
             for tool_data in tools:
                 print(tool_data)
 
-                if not tool_data['has_tools']:
-                    has_all_tools = False
+                has_tools = tool_data['has_tools']
 
                 # Создаём кастомный виджет
                 widget = WidgetPlanTool()
@@ -59,6 +55,10 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
                 # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
                 list_item = QListWidgetItem(self.listWidget)
                 list_item.setSizeHint(widget.sizeHint())  # Используем размер из виджета
+
+                if not has_tools:
+                    has_all_tools = False
+                    widget.setDisabled(True)
 
                 self.listWidget.addItem(list_item)
                 self.listWidget.setItemWidget(list_item, widget)
