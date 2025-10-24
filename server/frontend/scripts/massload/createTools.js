@@ -118,6 +118,7 @@ function openMassLoadInput(toolDiv, valueData, planName, plansIndex, groupIndex,
     input.step = '1';
     input.pattern = '[0-9]*';
     input.inputMode = 'numeric';
+    input.max = valueData.sum.toString();
     input.style.width = '100%';
     input.style.height = '100%';
     input.style.border = 'none';
