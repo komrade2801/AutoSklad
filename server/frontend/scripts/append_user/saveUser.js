@@ -47,7 +47,7 @@ export function setupUserForm() {
         first_name:  inputFirstName.value.trim(),
         second_name: inputSecondName.value.trim(),
         family:      inputFamily.value.trim(),
-        password:    inputCode.value,
+        password:    inputPassword.value,
         role_id:     selectedRoleId                // заменяем role на role_id
       };
 

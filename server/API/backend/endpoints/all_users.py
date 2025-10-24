@@ -231,15 +231,15 @@ def user_barcode(user_id: int, db: Session = Depends(get_db)):
 
 @all_users_router.post("/create_user", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    e_user = EngineUser()
-    e_role = EngineRole()
+    e_user = EngineUser(session=db)
+    e_role = EngineRole(session=db)
     try:
         created_user = e_user.create_user(user)
-        role = e_role.get_role_by_id(created_user.role_id)
-        role_name = role.name
         if not created_user:
             raise HTTPException(
                 status_code=400, detail="Ошибка создания пользователя")
+        role = e_role.get_role_by_id(created_user.role_id)
+        role_name = role.name
         return UserResponse(
             index=created_user.id,
             barcode=created_user.barcode,
@@ -252,7 +252,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         )
     except IntegrityError as ie:
         # например, код занят
-        raise HTTPException(status_code=409, detail="Code already exists")
+        raise HTTPException(status_code=409, detail="Code already exists or duplicate data")
     except Exception as e:
         # любые другие ошибки
         print(traceback.format_exc())
