@@ -312,7 +312,7 @@ class ApiConnectivityTest:
                 "parent_plan": None,
                 "parent_plan_id": None,
                 "enterprise": "ООО «Завод Контакт»",
-                "barcode": "2",
+                "barcode": "4",
                 "description": "Шайба ИВУА.711341.046 (по чертежу; Сталь 20, Ц15.хр; без ЛКП)",
                 "name": "Шайба ИВУА.711341.046",
                 "designation": "4022-4-5",
