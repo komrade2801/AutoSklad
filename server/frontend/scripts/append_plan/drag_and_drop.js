@@ -30,8 +30,8 @@ export function updateJsonPlan(toolId) {
 //Функция для удаления инструмента из списка при перетаскивании
 export function deleteTool(toolNameToDelete, containerId, jsonToolLibrary) {
 
-    const elementToDelete = document.querySelector("#" + toolNameToDelete);
-    console.log(elementToDelete)
+//    const elementToDelete = document.querySelector("#" + toolNameToDelete);
+//    console.log(elementToDelete)
 //    elementToDelete.remove();
 
     for (const toolId in jsonToolLibrary.tools) {

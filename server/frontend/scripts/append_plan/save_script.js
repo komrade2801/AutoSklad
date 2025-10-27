@@ -39,7 +39,19 @@
     const descriptionValue = document.getElementById('descriptionInput').value;
     const designationValue = document.getElementById('designationInput').value;
 
-    console.log("клик был")
+    console.log("клик был");
+
+    if (nameValue === '') {
+        alert('Название чертежа не может быть пустым');
+        document.getElementById('nameInput').focus();
+        return;
+    }
+
+    if (designationValue === '') {
+        alert('Номер чертежа не может быть пустым');
+        document.getElementById('designationInput').focus();
+        return;
+    }
 
         // Подготовим объект tools с актуальными значениями из input'ов
     const toolsContainer = document.getElementById("selection_tools");
@@ -60,6 +72,12 @@
           });
         }
     });
+
+    // Валидация обязательных полей
+    if (tools.length === 0) {
+        alert('Необходимо выбрать инструменты');
+        return;
+    }
 
     window.jsonPlan = {
         id: 0,
