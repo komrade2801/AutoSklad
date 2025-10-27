@@ -408,7 +408,7 @@ transitions = [
     {'trigger': 'btn_up', 'source': 'screen_20_management_tool', 'dest': 'read_db_tools_collection'},
     {'trigger': 'btn_down', 'source': 'screen_20_management_tool', 'dest': 'read_db_tools_collection'},
     {'trigger': 'view_plans', 'source': 'read_db_plan', 'dest': 'screen_33_select_plan'},
-    {'trigger': 'btn_back', 'source': 'screen_33_select_plan', 'dest': 'screen_14_stockman'},
     {'trigger': 'timeout_back', 'source': 'screen_33_select_plan', 'dest': 'screen_1_welcome'},
     {'trigger': 'btn_plan_name', 'source': 'screen_33_select_plan', 'dest': 'read_db_get_plan_tools'},
+    {'trigger': 'btn_back', 'source': 'screen_33_select_plan', 'dest': 'screen_1_welcome'},
 ]
