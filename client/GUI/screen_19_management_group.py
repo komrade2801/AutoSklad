@@ -60,7 +60,7 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
                 # Создаём кастомный виджет
                 widget = WidgetSelectGroup(self.trigger_name)
                 # Передаём данные в кастомный виджет
-                widget.set_data(group)
+                widget.set_data(group, len(group_data['cells']))
                 # Подключаем обработчик сигнала
                 widget.key_pressed.connect(self.on_group_selected)
                 widget.event_select_group = self.handle_select_group

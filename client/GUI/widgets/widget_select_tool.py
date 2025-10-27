@@ -16,18 +16,20 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
         self.status = -1
         self.event_select_tool = lambda *args, **kwargs: print(*args, **kwargs)
 
-    def set_data(self, *args, **kwargs):
+    def set_data(self, tool):
         print("WidgetSelectTool set_data")
-        print(args)
-        print(kwargs)
+        print(tool)
+        print(tool['group'])
+        print(tool['tool'])
+        print(tool['cell'])
         """Устанавливает текст. Реализуется в каждом экране."""
-        self.lbl_number_tool.setText(args[0].name)
-        self.tool_description = args[0].description
-        self.group_name.setText(args[1].name)
-        self.cell_number.setText(str(args[2].number))
-        self.name = args[0].name
+        self.lbl_number_tool.setText(tool['tool'].name)
+        self.tool_description = tool['tool'].description
+        self.group_name.setText(tool['group'].name)
+        self.cell_number.setText(str(tool['cell'].number))
+        self.name = tool['tool'].name
         # self.lbl_status.setText("2")
-        self.status = args[0].id
+        self.status = tool['tool'].id
 
 
 

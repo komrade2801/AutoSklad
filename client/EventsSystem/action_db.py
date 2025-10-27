@@ -488,6 +488,14 @@ class ActionMapper:
         :return: Список инструментов в формате словарей.
         """
 
+        # Лямбда для создания словаря инструментов
+        def create_tool_dict(cell, tool):
+            return {
+                "group": self.e_group.get_group_by_id(tool.groups_id),
+                "tool": tool,
+                "cell": cell,
+            }
+
         # TODO: Вынести в утилитарный класс
         def add_all_parent_groups(group_list: list[Group], parent_group_id: int, group: Group, group_id: int):
             if parent_group_id == group_id:
@@ -522,7 +530,7 @@ class ActionMapper:
             for tool in tools:
                 cells = self.e_cell.get_cells_by_tool(tool.id)
                 if any(c.status_id in {3, 7} for c in cells if c.status_id):
-                    valid_tools.append(tool)
+                    valid_tools.append(create_tool_dict(cells[0], tool))
 
             return valid_tools, group_name
         except Exception as e:

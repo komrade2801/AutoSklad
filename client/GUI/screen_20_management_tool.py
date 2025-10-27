@@ -7,6 +7,7 @@ from .ui_classes.Ui_screen_20_management_tool import Ui_screen_20_management_too
 from PyQt5.QtCore import QEvent
 
 from .widgets.widget_count_tool import WidgetCountTool
+from .widgets.widget_select_tool import WidgetSelectTool
 
 
 class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
@@ -40,7 +41,7 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
         Отображает данные в listWidget.
 
         Ожидается, что данные передаются в виде:
-        [{'id': 1, 'name': 'Group Name', 'description': 'Description', 'status': 0}, ...]
+        ([{"group": 'фрезы', "tool": 'фреза', "cell": 1}, ...], group_name)
         """
         if not args[0]:
             return
@@ -56,8 +57,8 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
             print(tools)
             for tool in tools:
                 # Создаём кастомный виджет
-                widget = WidgetCountTool()
-                widget.set_data(tool.name, 1)  # Передаём данные в кастомный виджет
+                widget = WidgetSelectTool()
+                widget.set_data(tool)  # Передаём данные в кастомный виджет
                 widget.event_select_management_group = self.handle_select_group
                 # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
                 list_item = QListWidgetItem(self.listWidget)
