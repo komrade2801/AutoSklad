@@ -2,11 +2,11 @@
 import random
 import traceback
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 # from typing import List
 
-from ..request_models import PlanResponse, Plan, PlanCreate, PlanUpdate
+from ..request_models import PlanResponse, Plan, PlanCreate, PlanUpdate, PlanAddResponse
 # # from DB.Data.db_depends import get_db
 # from DB.session import get_db
 from DB.session import get_db
@@ -220,7 +220,12 @@ def plan_barcode(barcode_index: str, db: Session = Depends(get_db)):
 #     return StreamingResponse(out_buf, media_type="image/png")
 
 
-@all_plans_router.post("/create_plan/{device_number}")
+@all_plans_router.post(
+    "/create_plan/{device_number}",
+    response_model=PlanAddResponse,
+    status_code=status.HTTP_200_OK,
+    responses={400: {"description": "Ошибка при добавлении инструментов"}}
+)
 def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_db)):
     """
     Создает новые чертежи. Поскольку прямой связи между Plan и Device нет,
@@ -280,6 +285,8 @@ def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_
                 plan_tool_types_crud_id = max(plan_tool_types_crud.get_all_ids(), default=0) + 1
 
                 plan_tool_types_crud.create_plan_tool_types(plan_tool_types_crud_id, tool_type.id, tool_quantity, plan_id)
+
+        return PlanAddResponse(status=200, message="Чертежи успешно добавлены")
 
 
                 # links = tools_has_device_crud.get_tools_by_device_id(device.id)

@@ -219,6 +219,10 @@ class GroupsAddResponse(BaseModel):
     status: int
     message: str
 
+# Модель ответа для добавления чертежей
+class PlanAddResponse(BaseModel):
+    status: int
+    message: str
 
 class ToolsCreate(BaseModel):
     group_id: int
