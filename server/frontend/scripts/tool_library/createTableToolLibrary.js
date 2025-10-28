@@ -25,11 +25,11 @@ export function createTableToolLibrary(containerId, jsonToolLibrary) {
     let thead = document.createElement("thead");
     let headerRow = document.createElement("tr");
 
-    const headers = ["Группа инструмента", "Подгруппа", "Номенклатура", "В наличии", "", ""];
+    const headers = ["Группа инструмента", "Родительская группа", "Инструмент", "Описание", "В наличии", "", ""];
     headers.forEach((text, index) => {
         let th = document.createElement("th");
         th.textContent = text;
-        if (index >= 4) {
+        if (index >= 5) {
             th.style.width = "37px";
         }
         headerRow.appendChild(th);
@@ -40,60 +40,61 @@ export function createTableToolLibrary(containerId, jsonToolLibrary) {
 
     let tbody = document.createElement("tbody");
 
-    Object.values(jsonToolLibrary.groups).forEach(group => {
-        Object.values(group.subgroup).forEach(subgroup => {
-            Object.values(subgroup.value).forEach(item => {
-                let row = document.createElement("tr");
+    Object.values(jsonToolLibrary.tools).forEach(tool => {
+        let row = document.createElement("tr");
 
-                // Группа
-                let groupCell = document.createElement("td");
-                groupCell.textContent = group.name;
-                row.appendChild(groupCell);
+        // Группа инструмента
+        let groupCell = document.createElement("td");
+        groupCell.textContent = tool.group;
+        row.appendChild(groupCell);
 
-                // Подгруппа
-                let subgroupCell = document.createElement("td");
-                subgroupCell.textContent = subgroup.SGName;
-                row.appendChild(subgroupCell);
+        // Родительская группа
+        let parentCell = document.createElement("td");
+        parentCell.textContent = tool.parent_group;
+        row.appendChild(parentCell);
 
-                // Название инструмента
-                let itemCell = document.createElement("td");
-                itemCell.textContent = item.tools;
-                row.appendChild(itemCell);
+        // Инструмент
+        let nameCell = document.createElement("td");
+        nameCell.textContent = tool.name;
+        row.appendChild(nameCell);
 
-                // В наличии (sum)
-                let stockCell = document.createElement("td");
-                stockCell.textContent = item.sum;
-                row.appendChild(stockCell);
+        // Описание
+        let descCell = document.createElement("td");
+        descCell.textContent = tool.description;
+        row.appendChild(descCell);
 
-                // Edit button
-                let editCell = document.createElement("td");
-                let editButton = document.createElement("button");
-                editButton.style.width = "35px";
-                editButton.style.height = "35px";
-                editButton.innerHTML = "✏️";
-                editButton.title = "Редактировать";
-                editCell.appendChild(editButton);
-                row.appendChild(editCell);
+        // В наличии (sum)
+        let stockCell = document.createElement("td");
+        stockCell.textContent = tool.sum;
+        row.appendChild(stockCell);
 
-                // Delete button
-                let deleteCell = document.createElement("td");
-                let deleteButton = document.createElement("button");
-                deleteButton.style.width = "35px";
-                deleteButton.style.height = "35px";
-                deleteButton.innerHTML = "❌";
-                deleteButton.title = "Удалить";
+        // Edit button
+        let editCell = document.createElement("td");
+        let editButton = document.createElement("button");
+        editButton.style.width = "35px";
+        editButton.style.height = "35px";
+        editButton.innerHTML = "✏️";
+        editButton.title = "Редактировать";
+        editCell.appendChild(editButton);
+        row.appendChild(editCell);
 
-                deleteButton.addEventListener('click', function () {
-                    openModalConf();
-                    console.log("Клик был");
-                });
+        // Delete button
+        let deleteCell = document.createElement("td");
+        let deleteButton = document.createElement("button");
+        deleteButton.style.width = "35px";
+        deleteButton.style.height = "35px";
+        deleteButton.innerHTML = "❌";
+        deleteButton.title = "Удалить";
 
-                deleteCell.appendChild(deleteButton);
-                row.appendChild(deleteCell);
-
-                tbody.appendChild(row);
-            });
+        deleteButton.addEventListener('click', function () {
+            openModalConf();
+            console.log("Клик был");
         });
+
+        deleteCell.appendChild(deleteButton);
+        row.appendChild(deleteCell);
+
+        tbody.appendChild(row);
     });
 
     table.appendChild(tbody);

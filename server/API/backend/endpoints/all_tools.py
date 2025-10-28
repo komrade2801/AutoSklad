@@ -164,7 +164,6 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
 
 @all_tools_router.get(
     "/get_groups_from_db",
-    response_model=AllGroupsResponse,
     status_code=status.HTTP_200_OK,
     responses={400: {"description": "Ошибка формирования JSON"}}
 )
@@ -178,100 +177,42 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 
         device = devices_crud.get_device_by_number(device_number)
 
-        # 1) Забираем все группы
-        __all_groups = []
-        all_groups = e_group.get_all_groups()
-        for group in all_groups:
-            if not group.name:
-                e_group.delete_group(group.id)
-            else:
-                __all_groups.append(group)
-        all_groups = __all_groups
+        all_tool_types = tool_type_crud.get_all_tool_types()
 
-        # 2) Фильтруем только "верхнеуровневые" (paren_group_id == None или 0)
-        main_groups = [
-            g for g in all_groups
-            if not g.paren_group_id or g.paren_group_id == 0
-        ]  # :contentReference[oaicite:0]{index=0}
+        result = {"tools": {}}
+        idx = 0
+        for tool in all_tool_types:
+            if tool.count <= 0:
+                continue
+            # Compute sum of free tools
+            tools = tools_crud.get_tools_by_tool_type(tool.id)
+            count_elements = 0
+            links = tools_has_device_crud.get_tools_by_device_id(device.id)
+            for __tool in tools:
+                if __tool.id in links:
+                    continue
+                count_elements += 1
+            if count_elements == 0:
+                continue
 
-        result = {"groups": {}}
-        for i, group in enumerate(main_groups):
-            # 3) Ищем его подгруппы и всегда проверяем прямые инструменты
-            subgroup_dict = {}
-            subgroups = e_group.get_groups_by_paren_group_id(group.id)
-            direct_instruments = tool_type_crud.get_tools_by_group(group.id)
+            # Get immediate group
+            immediate_group_obj = e_group.get_group_by_id(tool.groups_id)
+            immediate_group = immediate_group_obj.name if immediate_group_obj else "Unknown"
 
-            # Сначала добавляем прямые инструменты, если они есть
-            if direct_instruments:
-                values_dict = {}
-                for k, tool in enumerate(direct_instruments):
-                    if tool.count <= 0:
-                        continue
-                    # Проверить есть ли свободный инструмент.
-                    tools = tools_crud.get_tools_by_tool_type(tool.id)
-                    count_elements = 0
-                    links = tools_has_device_crud.get_tools_by_device_id(
-                        device.id)
-                    for __tool in tools:
-                        if __tool.id in links:
-                            continue
-                        count_elements += 1
-                    if count_elements == 0:
-                        continue
+            # Get parent group
+            parent_group = "-"
+            if immediate_group_obj and immediate_group_obj.paren_group_id and immediate_group_obj.paren_group_id != 0:
+                parent_group_obj = e_group.get_group_by_id(immediate_group_obj.paren_group_id)
+                parent_group = parent_group_obj.name if parent_group_obj else "-"
 
-                    key = str(k)
-                    tool_info = f"{tool.name} {tool.description}"
-                    values_dict[key] = {
-                        "tools": tool_info,
-                        "sum": str(count_elements)
-                    }
-
-                subgroup_dict["direct"] = {
-                    "SGName": "-",
-                    "value": values_dict
-                }
-
-            # Затем добавляем подгруппы, если они есть
-            if subgroups:
-                # Начинаем нумерацию после ключей предыдущих
-                current_key = len(subgroup_dict)
-                for j, subgroup in enumerate(subgroups):
-                    instruments = tool_type_crud.get_tools_by_group(
-                        subgroup.id)
-                    values_dict = {}
-                    if instruments:
-                        for k, tool in enumerate(instruments):
-                            # Пропускаем инструменты с count == 0
-                            if tool.count <= 0:
-                                continue
-                            # Проверить есть ли свободный инструмент.
-                            tools = tools_crud.get_tools_by_tool_type(tool.id)
-                            count_elements = 0
-                            links = tools_has_device_crud.get_tools_by_device_id(
-                                device.id)
-                            for __tool in tools:
-                                if __tool.id in links:
-                                    continue
-                                count_elements += 1
-                            if count_elements == 0:
-                                continue
-
-                            key = str(k)
-                            tool_info = f"{tool.name} {tool.description}"
-                            values_dict[key] = {
-                                "tools": tool_info,
-                                "sum": str(count_elements)
-                            }
-
-                        subgroup_dict[str(current_key + j)] = {
-                            "SGName": subgroup.name,
-                            "value": values_dict
-                        }
-
-            result["groups"][str(i)] = {
-                "name": group.name,
-                "subgroup": subgroup_dict
+            result["tools"][str(idx)] = {
+                "group": immediate_group,
+                "parent_group": parent_group,
+                "name": tool.name,
+                "description": tool.description,
+                "sum": str(count_elements)
             }
+            idx += 1
 
         return result
 
