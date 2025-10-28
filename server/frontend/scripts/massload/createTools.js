@@ -41,7 +41,8 @@ export function createTools(containerId, jsonObjectTools) {
                 const sumDiv = document.createElement('div');
                 // Устанавливаем стили для названия инструмента
                 nameDiv.className = 'toolName';
-                nameDiv.textContent = valueData.tools;
+                nameDiv.textContent = valueData.name;
+                nameDiv.title = valueData.description || "Нет описания";
                 nameDiv.style.display = 'flex';
                 nameDiv.style.width = '100%';
                 nameDiv.style.height = '30px';
@@ -161,7 +162,7 @@ function openMassLoadInput(toolDiv, valueData, planName, plansIndex, groupIndex,
         event.stopPropagation();
         const amount = parseInt(input.value);
         if (validateInput(amount, valueData.sum)) {
-            performMassLoad(amount, planName, parseInt(plansIndex), parseInt(groupIndex), parseInt(valueIndex), valueData.tools);
+            performMassLoad(amount, planName, parseInt(plansIndex), parseInt(groupIndex), parseInt(valueIndex), valueData.name);
         }
     });
 
@@ -292,7 +293,7 @@ function getToolInventoryState() {
 
             for (const toolKey in group.value) {
                 const tool = group.value[toolKey];
-                inventory[plan.name][group.name][tool.tools] = tool.sum;
+                inventory[plan.name][group.name][tool.name] = tool.sum;
             }
         }
     }

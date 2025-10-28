@@ -43,7 +43,8 @@ mass_load_router = APIRouter(tags=["MassLoad"])
 # Обновлённые модели
 class ToolValue(BaseModel):
     id: int
-    tools: str
+    name: str
+    description: str
     sum: int
 
 
@@ -286,6 +287,7 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
         plan_id_to_name = {plan.id: plan.name for plan in all_plans}
         group_id_to_obj = {group.id: group for group in all_groups}
         tool_type_id_to_obj = {tt.id: tt for tt in all_tool_types}
+        tool_type_map = {}  # to store tool_type obj per concatenated name
 
         # Собираем данные
         plan_map = defaultdict(lambda: {
@@ -329,6 +331,7 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
                 tool_type_name = tool_type.name + " " + tool_type.description
             else:
                 tool_type_name = tool_type.name
+            tool_type_map[tool_type_name] = tool_type  # store for later
             tool_type_id = tool_type.id
             group_entry["value"][tool_type_name] += 1
             # group_entry["value"]["id"] = tool_type_id
@@ -340,8 +343,9 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
             for group_idx, (group_name, group_data) in enumerate(plan_data["groups"].items()):
                 value_dict = {}
                 for tool_idx, (tool_name, count) in enumerate(group_data["value"].items()):
+                    tt = tool_type_map[tool_name]
                     value_dict[str(tool_idx)] = {
-                        "id": tool_idx, "tools": tool_name, "sum": count}
+                        "id": tool_idx, "name": tt.name, "description": tt.description or "", "sum": count}
 
                 groups_dict[str(group_idx)] = {
                     "name": group_data["name"],
@@ -429,11 +433,12 @@ def save_mass_load(
             request_tool = story.tool
             request_plan = story.plan
 
-            # подбор типа инструмента по точному совпадению full name
-            tool_type = e_tool_types.find_by_full_name(request_tool)
-            if not tool_type:
+            # подбор типа инструмента по имени
+            tool_types = e_tool_types.find_by_name(request_tool)
+            if not tool_types:
                 raise HTTPException(
                     status_code=404, detail=f"Подходящий инструмент '{request_tool}' не найден")
+            tool_type = tool_types[0]  # берем первый, предполагая уникальность имен
 
             # выбираем конкретный инструмент
             db_tools = e_tools.get_tools_by_tool_type(tool_type.id)
