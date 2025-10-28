@@ -33,6 +33,7 @@ export function createTools(containerId, jsonObjectTools) {
                 toolDiv.setAttribute('data-group-index', groupKey);
                 toolDiv.setAttribute('data-value-index', valueKey);
                 toolDiv.setAttribute('data-plan-name', planData.name);
+                toolDiv.setAttribute('data-group-name', groupData.name);
                 // Устанавливаем стили для строки инструмента                
                 toolDiv.style.height = '32px';
                 toolDiv.style.alignItems = 'center';
@@ -41,7 +42,7 @@ export function createTools(containerId, jsonObjectTools) {
                 const sumDiv = document.createElement('div');
                 // Устанавливаем стили для названия инструмента
                 nameDiv.className = 'toolName';
-                nameDiv.textContent = valueData.name;
+                nameDiv.textContent = groupData.name + " " + valueData.name;
                 nameDiv.title = valueData.description || "Нет описания";
                 nameDiv.style.display = 'flex';
                 nameDiv.style.width = '100%';
@@ -74,7 +75,7 @@ export function createTools(containerId, jsonObjectTools) {
                 // Добавляем обработчик клика для массовой загрузки
                 toolDiv.addEventListener('click', (event) => {
                     event.stopPropagation(); // Предотвращаем bubble
-                    openMassLoadInput(toolDiv, valueData, planData.name, planKey, groupKey, valueKey);
+                    openMassLoadInput(toolDiv, valueData, planData.name, planKey, groupKey, valueKey, groupData.name);
                 });
 
                 container.appendChild(toolDiv); // Добавляем строку в контейнер
@@ -84,7 +85,7 @@ export function createTools(containerId, jsonObjectTools) {
 }
 
 // Функция для открытия строки ввода массовой загрузки
-function openMassLoadInput(toolDiv, valueData, planName, plansIndex, groupIndex, valueIndex) {
+function openMassLoadInput(toolDiv, valueData, planName, plansIndex, groupIndex, valueIndex, groupName) {
     // Закрываем предыдущую строку ввода, если есть
     closeCurrentInputRow();
 
@@ -162,7 +163,7 @@ function openMassLoadInput(toolDiv, valueData, planName, plansIndex, groupIndex,
         event.stopPropagation();
         const amount = parseInt(input.value);
         if (validateInput(amount, valueData.sum)) {
-            performMassLoad(amount, planName, parseInt(plansIndex), parseInt(groupIndex), parseInt(valueIndex), valueData.name);
+            performMassLoad(amount, planName, parseInt(plansIndex), parseInt(groupIndex), parseInt(valueIndex), groupName, valueData.name);
         }
     });
 
@@ -224,9 +225,11 @@ function validateInput(value, maxSum) {
 }
 
 // Функция для массовой загрузки
-function performMassLoad(amount, planName, plansIndex, groupIndex, valueIndex, toolName) {
+function performMassLoad(amount, planName, plansIndex, groupIndex, valueIndex, groupName, toolName) {
 
-    console.log(`🔄 Starting mass load: ${amount} units of "${toolName}" for plan "${planName}"`);
+    const combinedToolName = groupName + " " + toolName;
+
+    console.log(`🔄 Starting mass load: ${amount} units of "${combinedToolName}" for plan "${planName}"`);
     console.log('📊 Pre-load tool inventory state:', getToolInventoryState());
 
     const freeCells = getFreeCells();
@@ -240,11 +243,11 @@ function performMassLoad(amount, planName, plansIndex, groupIndex, valueIndex, t
     console.log(`✅ Loading ${cellsToLoad.length} tools into cells: [${cellsToLoad.join(', ')}]`);
 
     cellsToLoad.forEach((cellId, index) => {
-        console.log(`   ${index + 1}. Loading "${toolName}" into cell #${cellId}`);
+        console.log(`   ${index + 1}. Loading "${combinedToolName}" into cell #${cellId}`);
         // Имитируем выборку инструмента (уменьшаем sum на 1)
         updateToolsJSONMass(window.appData.tools, plansIndex, groupIndex, valueIndex, 1);
-        updateCellsJSON(window.appData.сells, planName, toolName, parseInt(cellId));
-        updateJsonHistory(window.appData.history, planName, groupIndex, toolName, parseInt(cellId));
+        updateCellsJSON(window.appData.сells, planName, combinedToolName, parseInt(cellId));
+        updateJsonHistory(window.appData.history, planName, groupIndex, combinedToolName, parseInt(cellId));
     });
 
     console.log('📊 Post-load tool inventory state:', getToolInventoryState());

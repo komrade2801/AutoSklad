@@ -148,6 +148,10 @@ class EngineToolTypes(BaseCRUD):
                 return tt
         return None
 
+    def find_by_name_and_group(self, name: str, group_id: int) -> Optional[ToolTypes]:
+        return self.session.query(self.model).filter(
+            self.model.name == name, self.model.groups_id == group_id).first()
+
     def get_tools_by_group(self, index) -> List[ToolTypes]:
         """
         Получает все инструменты, относящиеся к типам из указанной группы.

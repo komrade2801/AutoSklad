@@ -404,6 +404,8 @@ def save_mass_load(
     e_user = EngineUser()
     e_tools_has_device = EngineToolsHasDevice()
 
+    group_name_to_id = {g.name: g.id for g in e_group.all()}
+
     # 4) подготовка переменных
     stories: Dict[str, History] = mass_load.operation
     mass_load_id = None
@@ -433,12 +435,23 @@ def save_mass_load(
             request_tool = story.tool
             request_plan = story.plan
 
-            # подбор типа инструмента по имени
-            tool_types = e_tool_types.find_by_name(request_tool)
-            if not tool_types:
-                raise HTTPException(
-                    status_code=404, detail=f"Подходящий инструмент '{request_tool}' не найден")
-            tool_type = tool_types[0]  # берем первый, предполагая уникальность имен
+            # подбор типа инструмента по группе и имени
+            parts = request_tool.split(' ', 1)
+            if len(parts) == 2:
+                group_name, tool_name = parts
+                group_id = group_name_to_id.get(group_name)
+                if group_id is None:
+                    raise HTTPException(status_code=404, detail=f"Группа '{group_name}' не найдена")
+                tool_type = e_tool_types.find_by_name_and_group(tool_name, group_id)
+                if not tool_type:
+                    raise HTTPException(status_code=404, detail=f"Инструмент '{tool_name}' не найден в группе '{group_name}'")
+            else:
+                # fallback to old parsing
+                tool_types = e_tool_types.find_by_name(request_tool)
+                if not tool_types:
+                    raise HTTPException(
+                        status_code=404, detail=f"Подходящий инструмент '{request_tool}' не найден")
+                tool_type = tool_types[0]
 
             # выбираем конкретный инструмент
             db_tools = e_tools.get_tools_by_tool_type(tool_type.id)
