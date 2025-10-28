@@ -10,6 +10,29 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
     // Проходим по строкам в JSON
     for (const operationKey in jsonObjectHistory.operation) {
         const operationData = jsonObjectHistory.operation[operationKey];
+
+        // Parse tool to group and tool name
+        const toolParts = operationData.tool.split(' ');
+        const groupName = toolParts[0];
+        const toolName = toolParts.slice(1).join(' ');
+
+        // Find description from tools data
+        let toolDescription = "Нет описания";
+        const toolsData = window.appData.tools;
+        outer: for (const planKey in toolsData.plans) {
+            const plan = toolsData.plans[planKey];
+            for (const gKey in plan.groups) {
+                const group = plan.groups[gKey];
+                if (group.name !== groupName) continue;
+                for (const vKey in group.value) {
+                    const val = group.value[vKey];
+                    if (val.name === toolName) {
+                        toolDescription = val.description || "Нет описания";
+                        break outer;
+                    }
+                }
+            }
+        }
         // Генерируем контейнер для одной операции в истории
         const operationDiv = document.createElement('div');
         // Устанавливаем стили для строки операции
@@ -23,6 +46,7 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         const cellDiv = document.createElement('div');
         // Устанавливаем стили для названия инструмента
         nameDiv.textContent = operationData.tool;
+        nameDiv.title = toolDescription;
         nameDiv.setAttribute('data-group-index', groupIndex);
         nameDiv.style.display = 'flex';
         nameDiv.style.width = '100%';
