@@ -303,28 +303,16 @@
             const tableRows = document.querySelectorAll("#tools_table tbody tr");
             const tools = {};
 
-            // Валидация инвентарных номеров
-            const inventories = [];
-            let hasErrors = false;
             Array.from(tableRows).forEach(row => {
                 const cells = row.querySelectorAll("td");
                 const number = cells[0].textContent.trim();
                 const inventoryInput = cells[1].querySelector("input");
-                const inventory = inventoryInput.value.trim();
-                inventories.push(inventory);
+                let inventory = inventoryInput.value.trim();
+                if (inventory === '') {
+                    inventory = 'None';
+                }
                 tools[number] = inventory;
             });
-
-            if (hasErrors) {
-                return; // Прерываем выполнение при ошибках
-            }
-
-            // Проверка на уникальность
-            const uniqueInventories = new Set(inventories);
-            if (uniqueInventories.size !== inventories.length) {
-                alert('Инвентарные номера должны быть уникальными');
-                return; // Прерываем выполнение при дубликатах
-            }
         
             const data = {
                 group_id: groupId,
