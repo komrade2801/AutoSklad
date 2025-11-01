@@ -206,6 +206,7 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                 parent_group = parent_group_obj.name if parent_group_obj else "-"
 
             result["tools"][str(idx)] = {
+                "id": tool.id,
                 "group": immediate_group,
                 "parent_group": parent_group,
                 "name": tool.name,
@@ -258,6 +259,65 @@ def get_tool_types_from_db(device_number: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка формирования JSON: {e}"
+        )
+
+
+@all_tools_router.delete("/tool_types/{tool_type_id}")
+def delete_tool_type(tool_type_id: int, db: Session = Depends(get_db)):
+    """
+    Удаляет тип инструмента и все связанные с ним инструменты.
+
+    Параметры:
+      - tool_type_id: ID типа инструмента для удаления
+      - db: сессия SQLAlchemy
+
+    Логика:
+      1. Проверить существование типа инструмента
+      2. Получить все инструменты этого типа
+      3. Удалить все инструменты
+      4. Удалить тип инструмента
+    """
+    try:
+        tool_type_crud = EngineToolTypes()
+        tools_crud = EngineTools()
+
+        # 1. Проверить существование типа
+        tool_type = tool_type_crud.get_tool_type_by_id(tool_type_id)
+        if not tool_type:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Тип инструмента не найден"
+            )
+
+        # 2. Получить все инструменты этого типа
+        tools = tools_crud.get_tools_by_tool_type(tool_type_id)
+
+        # 3. Удалить все инструменты
+        for tool in tools:
+            success = tools_crud.delete(index=tool.id)
+            if not success:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Не удалось удалить инструмент с ID {tool.id}"
+                )
+
+        # 4. Удалить тип инструмента
+        success = tool_type_crud.delete_tool_type(tool_type_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Не удалось удалить тип инструмента"
+            )
+
+        return {"message": "Тип инструмента и все связанные инструменты успешно удалены"}
+
+    except HTTPException:
+        raise
+    except Exception as error:
+        print(error, traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при удалении типа инструмента: {error}"
         )
 
 
