@@ -345,7 +345,7 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
                 for tool_idx, (tool_name, count) in enumerate(group_data["value"].items()):
                     tt = tool_type_map[tool_name]
                     value_dict[str(tool_idx)] = {
-                        "id": tool_idx, "name": tt.name, "description": tt.description or "", "sum": count}
+                        "id": tt.id, "name": tt.name, "description": tt.description or "", "sum": count}
 
                 groups_dict[str(group_idx)] = {
                     "name": group_data["name"],

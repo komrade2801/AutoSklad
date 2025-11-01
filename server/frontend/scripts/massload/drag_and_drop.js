@@ -6,26 +6,39 @@ import { createHistory } from './createHistory.js';
 import { searchCellById } from './searchCellById.js';
 import { deleteLoad } from './deleteLoad.js';
 
-// Экспортируем функции для использования в createTools.js
-export function updateToolsJSON(toolsData, plansIndex, groupIndex, toolIndex) {
-    updateToolsJSONMass(toolsData, plansIndex, groupIndex, toolIndex, 1);
+// Функция для поиска инструмента по ID
+function findToolById(toolsData, toolId) {
+    for (const planKey in toolsData.plans) {
+        const plan = toolsData.plans[planKey];
+        for (const groupKey in plan.groups) {
+            const group = plan.groups[groupKey];
+            for (const valueKey in group.value) {
+                const tool = group.value[valueKey];
+                if (tool.id == toolId) {
+                    return { plan, group, tool, planKey, groupKey, valueKey };
+                }
+            }
+        }
+    }
+    return null;
 }
 
-export function updateToolsJSONMass(toolsData, plansIndex, groupIndex, toolIndex, subtractAmount) {
-    //console.log("updateToolsJSONMass успешно вызвана")
-    // Получаем группу и инструмент по индексу
-    const group = toolsData.plans[plansIndex].groups[groupIndex];
+// Экспортируем функции для использования в createTools.js
+export function updateToolsJSON(toolsData, toolId) {
+    updateToolsJSONMass(toolsData, toolId, 1);
+}
 
-    // Получаем инструмент по индексу
-    const tool = group.value[toolIndex];
+export function updateToolsJSONMass(toolsData, toolId, subtractAmount) {
+    //console.log("updateToolsJSONMass успешно вызвана")
+    const found = findToolById(toolsData, toolId);
+    if (!found) {
+        console.error("Tool not found for id:", toolId);
+        return;
+    }
+    const { tool, valueKey } = found;
 
     // Уменьшаем значение sum на указанное количество
     tool.sum -= subtractAmount;
-
-    // Если sum становится 0 или меньше, удаляем инструмент из списка
-    if (tool.sum <= 0) {
-        delete group.value[toolIndex];
-    }
 
     // Обновляем отображение элементов на странице
     createTools('tools-container', toolsData);
@@ -89,7 +102,7 @@ export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
 
 
 // Функция для генерации JSON-History с историей текущей загрузки
-export function updateJsonHistory(jsonObjectHistory, planName, groupIndex, toolName, cellId) {
+export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName, cellId) {
     // Убедимся, что jsonObjectHistory.operation существует
     if (!jsonObjectHistory.operation) {
         jsonObjectHistory.operation = {}; // Инициализируем, если это null или undefined
@@ -100,7 +113,8 @@ export function updateJsonHistory(jsonObjectHistory, planName, groupIndex, toolN
         1: {
             cell: String(cellId), // Преобразуем в строку, чтобы соответствовать образцу
             tool: toolName,
-            plan: planName
+            plan: planName,
+            toolId: toolId
         }
     };
 
@@ -112,7 +126,7 @@ export function updateJsonHistory(jsonObjectHistory, planName, groupIndex, toolN
     // Объединяем новую операцию и сдвинутые операции
     jsonObjectHistory.operation = { ...newOperation, ...updatedOperations };
 
-    createHistory('history', window.appData.history || {}, groupIndex);
+    createHistory('history', window.appData.history || {}, toolId);
     initializeDragAndDrop();
 }
 
@@ -132,10 +146,10 @@ export function initializeDragAndDrop() {
       draggable.setAttribute("draggable", true);
       draggable.addEventListener("dragstart", (event) => {
         event.dataTransfer.setData("text/plain", draggable.querySelector(".toolName").textContent);
-        event.dataTransfer.setData('plansIndex', draggable.dataset.plansIndex);
-        event.dataTransfer.setData('groupIndex', draggable.dataset.groupIndex);
-        event.dataTransfer.setData('valueIndex', draggable.dataset.valueIndex);
+        event.dataTransfer.setData('toolId', draggable.dataset.toolId);
         event.dataTransfer.setData('planName', draggable.dataset.planName);
+        event.dataTransfer.setData('groupName', draggable.dataset.groupName);
+        event.dataTransfer.setData('toolName', draggable.dataset.toolName);
       });
 
       draggable.dataset.initialized = "true"; // Пометка, что обработчик добавлен
@@ -159,21 +173,15 @@ export function initializeDragAndDrop() {
         event.preventDefault();
         const toolName = event.dataTransfer.getData("text/plain");
         const planName = event.dataTransfer.getData("planName");
-        const plansIndex = event.dataTransfer.getData('plansIndex');
-        const groupIndex = event.dataTransfer.getData('groupIndex');
-        const toolIndex = event.dataTransfer.getData('valueIndex');
+        const toolId = event.dataTransfer.getData('toolId');
 
         // Извлечение id ячейки
         const targetCell = event.target;
         const cellId = targetCell.id;
 
-    // console.log(plansIndex)
-    // console.log(groupIndex)
-    // console.log(toolIndex)
-
-        updateToolsJSON(toolsData, plansIndex, groupIndex, toolIndex);
+        updateToolsJSON(toolsData, toolId);
         updateCellsJSON(cellData, planName, toolName, cellId);
-        updateJsonHistory(window.appData.history || {}, planName, groupIndex, toolName, cellId);
+        updateJsonHistory(window.appData.history || {}, planName, toolId, toolName, cellId);
         // console.log(toolsData);
       });
 
