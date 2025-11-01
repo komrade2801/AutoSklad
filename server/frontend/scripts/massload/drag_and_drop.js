@@ -40,11 +40,6 @@ export function updateToolsJSONMass(toolsData, toolId, subtractAmount) {
     // Уменьшаем значение sum на указанное количество
     tool.sum -= subtractAmount;
 
-    // Если sum становится 0 или меньше, удаляем инструмент из списка
-    if (tool.sum <= 0) {
-        delete found.group.value[valueKey];
-    }
-
     // Обновляем отображение элементов на странице
     createTools('tools-container', toolsData);
     initializeDragAndDrop();

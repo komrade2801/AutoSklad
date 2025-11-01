@@ -19,6 +19,8 @@ export function createTools(containerId, jsonObjectTools) {
             // Проходим по ячейкам в строке
             for (const valueKey in groupData.value) {
                 const valueData = groupData.value[valueKey];
+                // Пропускаем инструменты с sum <= 0
+                if (parseInt(valueData.sum) <= 0) continue;
                 const toolDiv = document.createElement('div');
                 // Устанавливаем флекс-контейнер для строки и класс
                 toolDiv.style.display = 'flex';
