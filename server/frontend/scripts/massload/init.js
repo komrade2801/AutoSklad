@@ -80,6 +80,21 @@ export async function fetchCellMapData() {
 export function initToolsData(device_number) {
     return fetchToolLibraryData(device_number)
       .then(data => {
+        // Стандартизация полей: добавить toolName, groupName, id к каждому инструменту
+        if (data && data.plans) {
+          for (const planKey in data.plans) {
+            const plan = data.plans[planKey];
+            for (const groupKey in plan.groups) {
+              const group = plan.groups[groupKey];
+              for (const valueKey in group.value) {
+                const tool = group.value[valueKey];
+                tool.toolName = tool.name;
+                tool.groupName = group.name;
+                // id уже есть из бэкенда
+              }
+            }
+          }
+        }
         window.appData.tools = data;               // turn1search0
         return data;
       })
