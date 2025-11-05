@@ -42,6 +42,7 @@ export function createTableToolLibrary(containerId, jsonToolLibrary) {
 
     Object.values(jsonToolLibrary.tools).forEach(tool => {
         let row = document.createElement("tr");
+        row.setAttribute("data-tool-type-id", tool.id);
 
         // Группа инструмента
         let groupCell = document.createElement("td");
@@ -87,8 +88,10 @@ export function createTableToolLibrary(containerId, jsonToolLibrary) {
         deleteButton.title = "Удалить";
 
         deleteButton.addEventListener('click', function () {
+            // Store the tool type id for deletion
+            window.toolTypeToDelete = tool.id;
             openModalConf();
-            console.log("Клик был");
+            console.log("Клик был", tool.id);
         });
 
         deleteCell.appendChild(deleteButton);
