@@ -76,13 +76,18 @@ async def upload_xlsx(
     errors = []
     seen_inv = set()
 
+    tool_type_counts = {}
+
     last_seen = {k: None for k in field_map.keys()}
+    print(f"last_seen {last_seen}")
     # 4) Обрабатываем построчно
     for idx, rec in enumerate(records, start=1):
+        print(f"{idx} / {len(records)}")
         try:
 
             norm, last_seen = normalize_record(
                 rec, REQUIRED, field_map, last_seen)
+            print(f"norm {norm}")
             inv = norm["tool_inventory_number"]
 
             if inv and inv in seen_inv:
@@ -101,37 +106,26 @@ async def upload_xlsx(
                 name=norm["tool_types_name"],
                 # groups_id=grp_id
             )
+            print(f"tt {tt}")
             tool_type = None
             if not tt:
                 tool_type_id = max(e_tool_types.get_all_ids(), default=0) + 1
-                tt = e_tool_types.add_tool_type(
+                e_tool_types.add_tool_type(
                     tool_type_id=tool_type_id,
                     name=norm["tool_types_name"],
                     description=norm.get("tool_types_description", ""),
+                    count=0,
                     img=norm.get("tool_types_img", ""),
                     groups_id=grp_id
                 )
                 tool_type = e_tool_types.get_tool_type_by_id(tool_type_id)
             else:
                 tool_type = tt[0]
-            if not tool_type.count:
-                e_tool_types.update_tool_type(
-                    tool_type_id=tool_type.id,
-                    name=tool_type.name,
-                    description=tool_type.description,
-                    count=1,
-                    img=tool_type.img,
-                    groups_id=tool_type.groups_id,
-                )
+
+            if tool_type.id in tool_type_counts:
+                tool_type_counts[tool_type.id] = tool_type_counts[tool_type.id] + 1
             else:
-                e_tool_types.update_tool_type(
-                    tool_type_id=tool_type.id,
-                    name=tool_type.name,
-                    description=tool_type.description,
-                    count=tool_type.count + 1,
-                    img=tool_type.img,
-                    groups_id=tool_type.groups_id,
-                )
+                tool_type_counts[tool_type.id] = 1
 
             # Tools
             tl = tools_crud.get_by_inventory_number(inv)
@@ -144,29 +138,46 @@ async def upload_xlsx(
                     tool_type_id=tool_type.id,
                     name=tool_type.name,
                     description=tool_type.description,
-                    count=tool_type.count + 1,
+                    count=1,
                     img=tool_type.img,
                     groups_id=tool_type.groups_id,
                 )
             else:
-                for i in range(0, tool_type.count):
-                    tool_id = max(tools_crud.get_all_ids(), default=0) + 1
-                    tools_crud.add_tool(
-                        tool_id=tool_id,
-                        inventory_number=tool_type.id + i,
-                        plan_id=norm.get("tool_plan_id"),
-                        tool_type_id=tool_type.id,
-                        name=tool_type.name,
-                        description=tool_type.description,
-                        count=tool_type.count + 1,
-                        img=tool_type.img,
-                        groups_id=tool_type.groups_id,
-                    )
+                # for i in range(0, tool_type.count):
+                tool_id = max(tools_crud.get_all_ids(), default=0) + 1
+                tools_crud.add_tool(
+                    tool_id=tool_id,
+                    inventory_number=tool_type.count + tool_type_counts[tool_type.id],
+                    plan_id=norm.get("tool_plan_id"),
+                    tool_type_id=tool_type.id,
+                    name=tool_type.name,
+                    description=tool_type.description,
+                    count=1,
+                    img=tool_type.img,
+                    groups_id=tool_type.groups_id,
+                )
             processed += 1
 
         except (ValueError, SQLAlchemyError) as e:
             db.rollback()
             errors.append({"row": idx, "error": str(e)})
+
+            print(e)
+
+    print(f"found tool type counts {tool_type_counts}")
+    if tool_type_counts:
+        for id, count in tool_type_counts.items():
+            tool_type = e_tool_types.get_tool_type_by_id(id)
+            print(f"tool_type {tool_type}")
+
+            e_tool_types.update_tool_type(
+                id=tool_type.id,
+                name=tool_type.name,
+                description=tool_type.description,
+                count=tool_type.count + count,
+                img=tool_type.img,
+                groups_id=tool_type.groups_id,
+            )
 
     return {
         "processed": processed,

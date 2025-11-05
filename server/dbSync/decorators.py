@@ -84,6 +84,7 @@ def sync_aware(func):
         }
         # 3) Считаем ключ дедупликации
         record_id   = payload.get("id") or payload.get("index")
+        kwargs_value = payload.get("kwargs")
 
         # если данные пришли в record["kwargs"], распакуем их
         # if "kwargs" in payload and isinstance(payload["kwargs"], dict):
@@ -92,8 +93,7 @@ def sync_aware(func):
         if not __id:
             raise ValueError("record must be have id or index provided and cannot be None or empty.")
 
-
-        payload_key = f"id:{record_id}" if record_id is not None else json.dumps(payload, sort_keys=True)
+        payload_key = f"id:{record_id}, {str(kwargs_value)}" if record_id is not None else json.dumps(payload, sort_keys=True)
         dedup_key   = (table_name, method_name, payload_key)
 
         # 4) Если уже выполняли эту операцию — выйдем сразу
