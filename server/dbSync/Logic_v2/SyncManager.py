@@ -272,7 +272,7 @@ class SyncManager:
     def _handle_delete(self, crud, rec_id):
         existing = crud.get(rec_id)
         if existing:
-            crud.delete(index=rec_id)
+            crud.delete(rec_id)
             return self._serialize(existing)
         else:
             return {"id": rec_id}
