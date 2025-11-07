@@ -150,11 +150,6 @@ def init_data_transformer():
 
             e_tools = EngineTools()
             tool = e_tools.get_tool_by_id(tool_id=tls_id)
-
-            # Handle case where tool was deleted (for sync operations)
-            if tool is None:
-                return record
-
             tool_type_id = tool.tool_type_id
             if not tool_type_id:
                 return record
@@ -345,3 +340,5 @@ def init_sender(device_id, proc, queue, transport):
     except Exception as e:
         print(f'[ПОТОК][{threading.current_thread().name}][setup][init_sender][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
     return None
+
+
