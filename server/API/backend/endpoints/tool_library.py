@@ -7,12 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File  # , Bod
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 import pandas as pd
+from starlette import status
 
 from API.backend.request_models import (
     ToolLibraryResponse,  # Pydantic-модель для ответа: { "groups": { ... } }
     ToolLibrary,  # Модель инструмента (ответ при создании/обновлении)
     ToolLibraryCreate,  # Модель для создания записи
-    ToolLibraryUpdate  # Модель для обновления записи
+    ToolLibraryUpdate, ToolsImportResponse  # Модель для обновления записи
 )
 # , DEFAULT_FIELD_MAP
 from API.backend.upload.config import update_field_map, load_field_map
@@ -38,9 +39,14 @@ REQUIRED = [
 ]
 
 
-@tool_library_router.post("/upload")
+@tool_library_router.post(
+    "/upload",
+    response_model=ToolsImportResponse,
+    status_code=status.HTTP_200_OK,
+    responses={400: {"description": "Ошибка при добавлении инструментов"}})
 async def upload_xlsx(
         file: UploadFile = File(...),
+        use_count: bool = False,
         columns_map: Optional[str] = Form(
             None, description="JSON‑строка с дополнительным маппингом"),
         db: Session = Depends(get_db)
@@ -58,12 +64,27 @@ async def upload_xlsx(
             # просто пропускаем, не обновляем маппинг
             pass
 
+    records = []
+
     # 2) Считываем Excel
     try:
         data = await file.read()
-        df = pd.read_excel(BytesIO(data), keep_default_na=False)
-        df = df.replace({pd.NA: None})
-        records = df.to_dict(orient="records")
+
+        # sheet_names = pd.read_excel(BytesIO(data), sheet_name=None)
+
+        xl = pd.read_excel(BytesIO(data), keep_default_na=False, sheet_name=None)
+        # df = df.replace({pd.NA: None})
+
+
+        for sheet_name in xl.keys():
+            df = xl.get(sheet_name)
+            df = df.replace({pd.NA: ''})
+            for record in df.to_dict(orient="records"):
+                record["Название группы"] = sheet_name
+                records.append(record)
+
+        print(f"records: {records}")
+        # records = df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(422, f"Cannot parse Excel: {e}")
 
@@ -84,7 +105,6 @@ async def upload_xlsx(
     for idx, rec in enumerate(records, start=1):
         print(f"{idx} / {len(records)}")
         try:
-
             norm, last_seen = normalize_record(
                 rec, REQUIRED, field_map, last_seen)
             print(f"norm {norm}")
@@ -102,6 +122,9 @@ async def upload_xlsx(
                 grp_id = grp.id
 
             # ToolTypes
+            if not norm["tool_types_name"]:
+                raise ValueError(f"Tool type name is empty")
+
             tt = e_tool_types.find_by_name(
                 name=norm["tool_types_name"],
                 # groups_id=grp_id
@@ -113,49 +136,56 @@ async def upload_xlsx(
                 e_tool_types.add_tool_type(
                     tool_type_id=tool_type_id,
                     name=norm["tool_types_name"],
-                    description=norm.get("tool_types_description", ""),
+                    description=norm.get("tool_types_description") or "",
                     count=0,
-                    img=norm.get("tool_types_img", ""),
+                    img=norm.get("tool_types_img") or "",
                     groups_id=grp_id
                 )
                 tool_type = e_tool_types.get_tool_type_by_id(tool_type_id)
             else:
                 tool_type = tt[0]
 
-            if tool_type.id in tool_type_counts:
-                tool_type_counts[tool_type.id] = tool_type_counts[tool_type.id] + 1
-            else:
-                tool_type_counts[tool_type.id] = 1
+            count = 0
+            if use_count:
+                if norm["tool_types_count"]:
+                    count = norm["tool_types_count"]
+                else:
+                    count = 1
 
-            # Tools
-            tl = tools_crud.get_by_inventory_number(inv)
-            if not tl:
-                tool_id = max(tools_crud.get_all_ids(), default=0) + 1
-                tools_crud.add_tool(
-                    tool_id=tool_id,
-                    inventory_number=inv,
-                    plan_id=norm.get("tool_plan_id"),
-                    tool_type_id=tool_type.id,
-                    name=tool_type.name,
-                    description=tool_type.description,
-                    count=1,
-                    img=tool_type.img,
-                    groups_id=tool_type.groups_id,
-                )
+            if tool_type.id in tool_type_counts:
+                tool_type_counts[tool_type.id] = tool_type_counts[tool_type.id] + count
             else:
-                # for i in range(0, tool_type.count):
-                tool_id = max(tools_crud.get_all_ids(), default=0) + 1
-                tools_crud.add_tool(
-                    tool_id=tool_id,
-                    inventory_number=tool_type.count + tool_type_counts[tool_type.id],
-                    plan_id=norm.get("tool_plan_id"),
-                    tool_type_id=tool_type.id,
-                    name=tool_type.name,
-                    description=tool_type.description,
-                    count=1,
-                    img=tool_type.img,
-                    groups_id=tool_type.groups_id,
-                )
+                tool_type_counts[tool_type.id] = count
+
+            # # Tools
+            # tl = tools_crud.get_by_inventory_number(inv)
+            # if not tl:
+            #     tool_id = max(tools_crud.get_all_ids(), default=0) + 1
+            #     tools_crud.add_tool(
+            #         tool_id=tool_id,
+            #         inventory_number=inv,
+            #         plan_id=norm.get("tool_plan_id"),
+            #         tool_type_id=tool_type.id,
+            #         name=tool_type.name,
+            #         description=tool_type.description,
+            #         count=1,
+            #         img=tool_type.img,
+            #         groups_id=tool_type.groups_id,
+            #     )
+            # else:
+            #     # for i in range(0, tool_type.count):
+            #     tool_id = max(tools_crud.get_all_ids(), default=0) + 1
+            #     tools_crud.add_tool(
+            #         tool_id=tool_id,
+            #         inventory_number=tool_type.count + tool_type_counts[tool_type.id],
+            #         plan_id=norm.get("tool_plan_id"),
+            #         tool_type_id=tool_type.id,
+            #         name=tool_type.name,
+            #         description=tool_type.description,
+            #         count=1,
+            #         img=tool_type.img,
+            #         groups_id=tool_type.groups_id,
+            #     )
             processed += 1
 
         except (ValueError, SQLAlchemyError) as e:
@@ -179,12 +209,7 @@ async def upload_xlsx(
                 groups_id=tool_type.groups_id,
             )
 
-    return {
-        "processed": processed,
-        "errors": errors,
-        "field_map": field_map
-    }
-
+    return ToolsImportResponse(processed=processed, errors=errors, field_map=field_map)
 
 # @tool_library_router.post("/upload")
 # async def upload_xlsx(file: UploadFile = File(...)):
