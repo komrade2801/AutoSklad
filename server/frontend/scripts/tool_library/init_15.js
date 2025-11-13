@@ -20,6 +20,32 @@ function initialization(element_name) {
     nav_btn_add(element_name);
     navbar_add(element_name);
     loadToolLibraryTable("column-1", device_number);
+
+    $('#tool_library_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'Список инструментов',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+    });
+    $('#tool_library_table').bootstrapTable('showLoading');
+
+    $('#group_library_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'Список групп',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+    });
+    $('#group_library_table').bootstrapTable('showLoading');
 }
 
 // Делаем функцию доступной глобально
