@@ -16,34 +16,14 @@ export function generateToolsSelection() {
     const toolData = window.jsonPlan.tools[toolId];
     if (toolData.name !== "groups") {
 
-        console.log(toolData);
+      console.log(toolData);
       
       const toolDiv = document.createElement("div");
+      toolDiv.className = "tool-row-block";
 
-      // Устанавливаем стили для строки инструмента
-      toolDiv.style.height = "32px";
-      toolDiv.style.display = 'flex';
-      toolDiv.style.flexDirection = 'row';
-      toolDiv.style.flexWrap = 'nowrap';
-      toolDiv.style.alignItems = 'center';
-      toolDiv.style.borderRadius = '5px';
-
-      // Устанавливаем стили для имени инструмента
       const toolNameDiv = document.createElement("div");
+      toolNameDiv.className = "tool-name-block";
       toolNameDiv.textContent = toolData.name;
-      toolNameDiv.style.display = 'flex';
-      toolNameDiv.style.width = '100%';
-      toolNameDiv.style.height = '30px';
-      toolNameDiv.style.backgroundColor = '#D3D3D3A0';
-      toolNameDiv.style.border = '1.5px solid #FFFFFF';
-      toolNameDiv.style.borderRadius = '5px';
-      toolNameDiv.style.color = '#003172';
-      toolNameDiv.style.fontWeight = 'bold';
-      toolNameDiv.style.fontSize = '14px';
-      toolNameDiv.style.alignItems = 'center';
-      toolNameDiv.style.justifyContent = 'start';
-      toolNameDiv.style.margin = '1px';
-      toolNameDiv.style.paddingLeft = '5px';
 
       toolDiv.appendChild(toolNameDiv);
 
@@ -53,14 +33,7 @@ export function generateToolsSelection() {
       input.type = "number";
       input.min = 1;
       input.max = toolData.count;
-      input.value = 1;
-
-      //Устанавливаем стили для ввода количества
-      input.style.width = "70px";
-      input.style.height = "30px";
-      input.style.border = '1.5px solid #FFFFFF';
-      input.style.backgroundColor = '#56b358';
-      input.style.color = '#FFFFFF';
+      input.value = toolData.amount;
 
       //Устанавливаем обработчик события ввода
       input.addEventListener("input", (e) => {
@@ -77,23 +50,12 @@ export function generateToolsSelection() {
       //Создаём кнопку для удаления инструмента
       const deleteButton = document.createElement('button');
 
-      //Устанавливаем стили для кнопки удаления (кнопка с крестиком)
-      deleteButton.style.width = '30px';
-      deleteButton.style.height = '30px';
-      deleteButton.style.marginRight = '1px'
-      deleteButton.style.border = '1px solid #FFFFFF';
-      deleteButton.style.backgroundColor = '#56b358';
-      deleteButton.style.display = 'flex';
-      deleteButton.style.alignItems = 'center';
-      deleteButton.style.justifyContent = 'center';
-      deleteButton.style.borderRadius = '5px'
+      deleteButton.className = "tool-delete-button";
 
       //Добавляем иконку на кнопку
       const deleteIcon = document.createElement('img');
       deleteIcon.src = '../assets/img/btn_cross_2.png';
-      deleteIcon.style.width = '20px'; // Размер иконки
-      deleteIcon.style.height = '20px';
-      deleteIcon.style.pointerEvents = 'none'; // Отключаем обработку кликов на изображении
+      deleteIcon.className = "tool-delete-button-icon";
       deleteButton.appendChild(deleteIcon);
 
       // Добавляем обработчик события для deleteButton
