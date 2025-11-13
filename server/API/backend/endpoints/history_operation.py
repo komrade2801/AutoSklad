@@ -72,7 +72,8 @@ def get_history_operation(device_number: int):
             operations.append({
                 "id": op.get("id", "None"),
                 "date": op.get("date", "None"),
-                "name_operation": op.get("name_operation", "None"),
+                "operation_status": op.get("status", "None"),
+                "description": op.get("name_operation", "None"),
                 "tool": op.get("tool", "None"),
                 "plan": op.get("plan", "None"),
                 "user": op.get("user", "None"),

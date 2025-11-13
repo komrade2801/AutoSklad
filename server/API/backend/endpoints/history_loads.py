@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Any
 from datetime import datetime
 
+from API.backend.endpoints.tool_library import tool_library_router
 from API.backend.request_models import (
     HistoryLoadResponse,  # Модель для ответа: {"operation": { "0": { ... }, "1": { ... }, ... } }
     HistoryLoad,  # Модель записи истории загрузки (при чтении/обновлении)
@@ -37,7 +38,7 @@ STATUS_MAPPING = {
 
 
 def format_date(dt: datetime) -> str:
-    return dt.strftime("%d.%m.%Y")
+    return dt.strftime("%Y.%m.%d %H:%M:%S")
 
 
 def format_id(load_id: int) -> str:
@@ -66,10 +67,10 @@ def get_random_load(
     mass_crud = EngineMassLoad()
     load_crud = EngineLoad()
     op_crud   = EngineLoadOperations()
-    status_crud = EngineStatus()
+    # status_crud = EngineStatus()
     cell_crud = EngineCell()
-    tools_crud = EngineTools()
-    types_crud = EngineToolTypes()
+    # tools_crud = EngineTools()
+    tool_types_crud = EngineToolTypes()
 
     # Проверяем, что такая массовая загрузка есть
     mass = mass_crud.get(ID_load)
@@ -89,8 +90,8 @@ def get_random_load(
         latest_op = max(ops, key=lambda o: o.date)
 
         # Инструмент и его тип/группа/чертёж (plan_id)
-        tool = tools_crud.get(latest_op.load_tools_id)
-        tool_type = types_crud.get(tool.tool_type_id) if tool else None
+        # tool = tools_crud.get(latest_op.load_tools_id)
+        tool_type = tool_types_crud.get(latest_op.load_tools_id) if latest_op else None
 
         # Ячейка
         cell = cell_crud.get(load.cell_id)
@@ -99,7 +100,7 @@ def get_random_load(
         result[str(idx)] = {
             "cell": str(cell.id) if cell else "",
             "tool": tool_type.name if tool_type else "",
-            "plan": (tool.plan_id and str(tool.plan_id)) or "",
+            "plan": "",
             "group": tool_type.groups_id and str(tool_type.groups_id) or ""
         }
 
@@ -162,10 +163,10 @@ def get_history_loads(db: Session = Depends(get_db)):
     stat_crud = EngineStatus()
     user_crud = EngineUser()
     load_crud = EngineLoad()
-    e_tools = EngineTools()
+    # e_tools = EngineTools()
     e_tool_types = EngineToolTypes()
     e_cells = EngineCell()
-    e_plans = EnginePlan()
+    # e_plans = EnginePlan()
     # 1) Получаем все mass_load-записи, сортируем по created_at по убыванию
     mass_loads = sorted(mass_crud.all(), key=lambda m: m.created_at, reverse=True)
     result_ops: Dict[str, Dict[str, Any]] = {}
@@ -182,18 +183,18 @@ def get_history_loads(db: Session = Depends(get_db)):
             ops = []
             for load in loads:
                 ops.extend(op_crud.filter_by(load_id=load.id))
-                tool = e_tools.get_tool_by_id(load.tools_id)
-                tool_types = e_tool_types.get_tool_type_by_id(tool.tool_type_id)
-                tools.append(tool_types.name + " №" +str(tool.id))
+                # tool = e_tools.get_tool_by_id(load.tools_id)
+                tool_types = e_tool_types.get_tool_type_by_id(load.tools_id)
+                tools.append(tool_types.name)
                 cell = e_cells.get_cell_by_id(cell_id=load.cell_id)
                 if cell:
                     cell_number = cell.number
                     cells.append(cell_number)
                 else:
                     cell_number = load.cell_id
-                if tool.plan_id:
-                    plan = e_plans.get_plan_by_id(tool.plan_id)
-                    plans.append(plan.name + " " + plan.description)
+                # if tool.plan_id:
+                #     plan = e_plans.get_plan_by_id(tool.plan_id)
+                #     plans.append(plan.name + " " + plan.description)
 
 
             # 4) Берём самую свежую операцию, если есть

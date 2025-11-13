@@ -37,7 +37,7 @@ class EngineHistoryOperation:
         :param record: Экземпляр History.
         :return: Словарь с полями date, name_operation, tool, plan, user, device.
         """
-        date_str = record.datetime.strftime("%d.%m.%Y") if record.datetime else "None"
+        date_str = record.datetime.strftime("%Y.%m.%d %H:%M:%S") if record.datetime else "None"
         name_operation = record.description or "None"
 
         # Получаем имя пользователя
@@ -62,6 +62,7 @@ class EngineHistoryOperation:
 
         return {
             "date": date_str,
+            "status": record.status,
             "name_operation": name_operation,
             "tool": tool_name,
             "plan": plan_name,
