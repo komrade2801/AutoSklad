@@ -16,42 +16,63 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         let groupName = "Unknown";
         let toolName = operationData.tool;
         const toolsData = window.appData.tools;
+
         if (operationData.toolId) {
-            outer: for (const planKey in toolsData.plans) {
-                const plan = toolsData.plans[planKey];
-                for (const gKey in plan.groups) {
-                    const group = plan.groups[gKey];
-                    for (const vKey in group.value) {
-                        const val = group.value[vKey];
-                        if (val.id == operationData.toolId) {
-                            toolDescription = val.description || "Нет описания";
-                            groupName = group.name;
-                            toolName = val.toolName || val.name;
-                            break outer;
-                        }
-                    }
+            for (const [idx, tool] of Object.entries(toolsData.tools)) {
+                if (tool.id == operationData.toolId) {
+                    toolDescription = tool.description || "Нет описания";
+                    groupName = '';
+                    toolName = tool.toolName || tool.name;
+                    break;
                 }
             }
         } else {
-            // Fallback to old parsing
-            const toolParts = operationData.tool.split(' ');
-            groupName = toolParts[0];
-            toolName = toolParts.slice(1).join(' ');
-            outer: for (const planKey in toolsData.plans) {
-                const plan = toolsData.plans[planKey];
-                for (const gKey in plan.groups) {
-                    const group = plan.groups[gKey];
-                    if (group.name !== groupName) continue;
-                    for (const vKey in group.value) {
-                        const val = group.value[vKey];
-                        if (val.name === toolName) {
-                            toolDescription = val.description || "Нет описания";
-                            break outer;
-                        }
-                    }
+            for (const [idx, tool] of Object.entries(toolsData.tools)) {
+                if (tool.id == operationData.toolId) {
+                    toolDescription = tool.description || "Нет описания";
+                    groupName = '';
+                    toolName = tool.toolName || tool.name;
+                    break;
                 }
             }
         }
+
+//        if (operationData.toolId) {
+//            outer: for (const planKey in toolsData.plans) {
+//                const plan = toolsData.plans[planKey];
+//                for (const gKey in plan.groups) {
+//                    const group = plan.groups[gKey];
+//                    for (const vKey in group.value) {
+//                        const val = group.value[vKey];
+//                        if (val.id == operationData.toolId) {
+//                            toolDescription = val.description || "Нет описания";
+//                            groupName = group.name;
+//                            toolName = val.toolName || val.name;
+//                            break outer;
+//                        }
+//                    }
+//                }
+//            }
+//        } else {
+//            // Fallback to old parsing
+//            const toolParts = operationData.tool.split(' ');
+//            groupName = toolParts[0];
+//            toolName = toolParts.slice(1).join(' ');
+//            outer: for (const planKey in toolsData.plans) {
+//                const plan = toolsData.plans[planKey];
+//                for (const gKey in plan.groups) {
+//                    const group = plan.groups[gKey];
+//                    if (group.name !== groupName) continue;
+//                    for (const vKey in group.value) {
+//                        const val = group.value[vKey];
+//                        if (val.name === toolName) {
+//                            toolDescription = val.description || "Нет описания";
+//                            break outer;
+//                        }
+//                    }
+//                }
+//            }
+//        }
         // Генерируем контейнер для одной операции в истории
         const operationDiv = document.createElement('div');
         // Устанавливаем стили для строки операции

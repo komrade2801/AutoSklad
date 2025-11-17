@@ -189,7 +189,7 @@
         }
 
         .checkbox-option {
-            padding: 10px;
+            margin: 20px;
         }
     </style>
 </head>
@@ -227,8 +227,8 @@
                     <textarea class="form-control" id="tool_description" placeholder="Введите описание..." rows="6" cols="40" maxlength="500" spellcheck="true" style="resize: vertical;"></textarea>
 
                     <div class="form-check checkbox-option">
-                        <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" oninput="showToolCount()">
-                        <label class="form-check-label" for="flexCheckChecked">
+                        <input class="form-check-input" type="checkbox" value="" id="useToolCount" oninput="showToolCount()">
+                        <label class="form-check-label" for="useToolCount">
                             Указать количество
                         </label>
                     </div>
@@ -292,7 +292,7 @@
             const groupInput = document.getElementById("select_group");
             const toolNameInput = document.getElementById("tool_name");
             const countInput = document.getElementById("tool_count");
-            const useCount = document.getElementById("flexCheckChecked").checked;
+            const useCount = document.getElementById("useToolCount").checked;
 
             const groupId = parseInt(groupInput.value);
             // const group = groupInput.value.trim();

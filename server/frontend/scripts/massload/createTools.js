@@ -8,19 +8,21 @@ import { jsonObjectHistory } from './init.js';
 let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
 
 export function createTools(containerId, jsonObjectTools) {
-    console.log(jsonObjectTools)
+//    console.log(jsonObjectTools)
     const container = document.getElementById(containerId);
     container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
     // Проходим по строкам в JSON
-    for (const planKey in jsonObjectTools.plans) {
-        const planData = jsonObjectTools.plans[planKey];
-        for (const groupKey in planData.groups) {
-            const groupData = planData.groups[groupKey];
-            // Проходим по ячейкам в строке
-            for (const valueKey in groupData.value) {
-                const valueData = groupData.value[valueKey];
+//    for (const planKey in jsonObjectTools.plans) {
+//        const planData = jsonObjectTools.plans[planKey];
+//        for (const groupKey in planData.groups) {
+//            const groupData = planData.groups[groupKey];
+//            // Проходим по ячейкам в строке
+//            for (const valueKey in groupData.value) {
+//                const valueData = groupData.value[valueKey];
+    for (const [idx, tool] of Object.entries(jsonObjectTools.tools)) {
+//    console.log(idx + ' - ' + tool)
                 // Пропускаем инструменты с sum <= 0
-                if (parseInt(valueData.sum) <= 0) continue;
+                if (parseInt(tool.sum) <= 0) continue;
                 const toolDiv = document.createElement('div');
                 // Устанавливаем флекс-контейнер для строки и класс
                 toolDiv.style.display = 'flex';
@@ -30,13 +32,13 @@ export function createTools(containerId, jsonObjectTools) {
                 toolDiv.draggable = "true";
                 toolDiv.style.width = '100%';
                 toolDiv.style.cursor = 'pointer';
-                toolDiv.content = planData['name'];
-                toolDiv.setAttribute('data-tool-id', valueData.id);
-                toolDiv.setAttribute('data-plan-name', planData.name);
-                toolDiv.setAttribute('data-group-name', groupData.name);
-                toolDiv.setAttribute('data-tool-name', valueData.name);
-                toolDiv.setAttribute('data-group-name', groupData.name);
-                // Устанавливаем стили для строки инструмента                
+//                toolDiv.content = planData['name'];
+                toolDiv.setAttribute('data-tool-id', tool.id);
+//                toolDiv.setAttribute('data-plan-name', planData.name);
+//                toolDiv.setAttribute('data-group-name', groupData.name);
+                toolDiv.setAttribute('data-tool-name', tool.name);
+//                toolDiv.setAttribute('data-group-name', groupData.name);
+                // Устанавливаем стили для строки инструмента
                 toolDiv.style.height = '32px';
                 toolDiv.style.alignItems = 'center';
                 //Создаем название и количество инструмента
@@ -44,8 +46,9 @@ export function createTools(containerId, jsonObjectTools) {
                 const sumDiv = document.createElement('div');
                 // Устанавливаем стили для названия инструмента
                 nameDiv.className = 'toolName';
-                nameDiv.textContent = groupData.name + " " + valueData.name;
-                nameDiv.title = valueData.description || "Нет описания";
+//                nameDiv.textContent = groupData.name + " " + tool.name;
+                nameDiv.textContent = tool.name;
+                nameDiv.title = tool.description || "Нет описания";
                 nameDiv.style.display = 'flex';
                 nameDiv.style.width = '100%';
                 nameDiv.style.height = '30px';
@@ -60,7 +63,7 @@ export function createTools(containerId, jsonObjectTools) {
                 // Добавляем всплывающую подсказку с полным наименованием инструмента
                 //nameDiv.title = `Инструмент: ${cellData.content.tool}\nЧертёж: ${cellData.content.plan}`;
                 // Устанавливаем стили для количества инструмента
-                sumDiv.textContent = valueData.sum;
+                sumDiv.textContent = tool.sum;
                 sumDiv.className = 'sumTool';
                 sumDiv.style.display = 'flex';
                 sumDiv.style.width = '35px';
@@ -77,12 +80,12 @@ export function createTools(containerId, jsonObjectTools) {
                 // Добавляем обработчик клика для массовой загрузки
                 toolDiv.addEventListener('click', (event) => {
                     event.stopPropagation(); // Предотвращаем bubble
-                    openMassLoadInput(toolDiv, valueData, planData.name, valueData.id, groupData.name, valueData.name);
+                    openMassLoadInput(toolDiv, tool, '', tool.id, '', tool.name);
                 });
 
                 container.appendChild(toolDiv); // Добавляем строку в контейнер
-            }
-        }
+//            }
+//        }
     }
 }
 
@@ -229,7 +232,7 @@ function validateInput(value, maxSum) {
 // Функция для массовой загрузки
 function performMassLoad(amount, planName, toolId, groupName, toolName) {
 
-    const combinedToolName = groupName + " " + toolName;
+    const combinedToolName = toolName;
 
     console.log(`🔄 Starting mass load: ${amount} units of "${combinedToolName}" for plan "${planName}"`);
     console.log('📊 Pre-load tool inventory state:', getToolInventoryState());

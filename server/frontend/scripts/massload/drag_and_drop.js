@@ -8,18 +8,23 @@ import { deleteLoad } from './deleteLoad.js';
 
 // Функция для поиска инструмента по ID
 function findToolById(toolsData, toolId) {
-    for (const planKey in toolsData.plans) {
-        const plan = toolsData.plans[planKey];
-        for (const groupKey in plan.groups) {
-            const group = plan.groups[groupKey];
-            for (const valueKey in group.value) {
-                const tool = group.value[valueKey];
-                if (tool.id == toolId) {
-                    return { plan, group, tool, planKey, groupKey, valueKey };
-                }
-            }
+    for (const [idx, tool] of Object.entries(toolsData.tools)) {
+        if (tool.id == toolId) {
+            return { tool, tool };
         }
     }
+//    for (const planKey in toolsData.plans) {
+//        const plan = toolsData.plans[planKey];
+//        for (const groupKey in plan.groups) {
+//            const group = plan.groups[groupKey];
+//            for (const valueKey in group.value) {
+//                const tool = group.value[valueKey];
+//                if (tool.id == toolId) {
+//                    return { plan, group, tool, planKey, groupKey, valueKey };
+//                }
+//            }
+//        }
+//    }
     return null;
 }
 
@@ -74,7 +79,7 @@ function updateToolsJSONold(toolsData, plansIndex, groupIndex, toolIndex) {
 
 //функция для изменения JSON-Cells с ячейками при dragg-and-dropp
 export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
-  
+
     //console.log("updateCellsJSON успешно вызвана")
     //console.log(cellId)
 
@@ -103,6 +108,7 @@ export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
 
 // Функция для генерации JSON-History с историей текущей загрузки
 export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName, cellId) {
+    console.log(toolName)
     // Убедимся, что jsonObjectHistory.operation существует
     if (!jsonObjectHistory.operation) {
         jsonObjectHistory.operation = {}; // Инициализируем, если это null или undefined
@@ -171,7 +177,7 @@ export function initializeDragAndDrop() {
 
       droppable.addEventListener("drop", (event) => {
         event.preventDefault();
-        const toolName = event.dataTransfer.getData("text/plain");
+        const toolName = event.dataTransfer.getData("toolName");
         const planName = event.dataTransfer.getData("planName");
         const toolId = event.dataTransfer.getData('toolId');
 

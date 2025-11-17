@@ -1,6 +1,6 @@
 function doImportTools() {
     const selectedFile = document.getElementById("importToolsFile").files[0];
-    const useCount = document.getElementById("flexCheckChecked").checked;
+    const useCount = document.getElementById("useToolCount").checked;
     const endpointUrl = "../backend/upload";
     const formData = new FormData();
 

@@ -19,7 +19,7 @@ STATUS_COLORS: dict[str, ColorMapValue] = {
 
     # === mass_load_ready ===
     # массовая выгрузка готова
-    "mass_load_ready": "#69696910", # DimGray с 10% прозрачности
+    "mass_load_ready": "#696969", # DimGray с 10% прозрачности
 
     # === mass_drop_init ===
     # массовая загрузка начата
@@ -27,7 +27,7 @@ STATUS_COLORS: dict[str, ColorMapValue] = {
 
     # === mass_load_init ===
     # массовая выгрузка начата
-    "mass_load_init": "#535353",    # Gold
+    "mass_load_init": "#d1772a",    # Gold
 
     # === drop_ready ===
     # загрузка (одиночная) готова
