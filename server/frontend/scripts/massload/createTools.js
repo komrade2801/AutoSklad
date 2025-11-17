@@ -37,26 +37,46 @@ export function createTools(containerId, jsonObjectTools) {
                 toolDiv.setAttribute('data-tool-name', valueData.name);
                 toolDiv.setAttribute('data-group-name', groupData.name);
                 // Устанавливаем стили для строки инструмента                
-                toolDiv.style.height = '32px';
+                toolDiv.style.height = '64px';
                 toolDiv.style.alignItems = 'center';
                 //Создаем название и количество инструмента
                 const nameDiv = document.createElement('div');
                 const sumDiv = document.createElement('div');
                 // Устанавливаем стили для названия инструмента
                 nameDiv.className = 'toolName';
-                nameDiv.textContent = groupData.name + " " + valueData.name;
                 nameDiv.title = valueData.description || "Нет описания";
                 nameDiv.style.display = 'flex';
+                nameDiv.style.flexDirection = 'column';
                 nameDiv.style.width = '100%';
-                nameDiv.style.height = '30px';
+                nameDiv.style.height = '62px';
                 nameDiv.style.backgroundColor = '#D3D3D3A0';
                 nameDiv.style.border = '1px solid #ffffff';
                 nameDiv.style.color = '#003172';
                 nameDiv.style.fontWeight = 'bold';
-                nameDiv.style.fontSize = '14px';
-                nameDiv.style.alignItems = 'center';
-                nameDiv.style.justifyContent = 'start';
+                nameDiv.style.alignItems = 'stretch';
+                nameDiv.style.justifyContent = 'center';
                 nameDiv.style.margin = '1px';
+
+                // Создаем div для группы
+                const groupDiv = document.createElement('div');
+                groupDiv.textContent = groupData.name;
+                groupDiv.style.overflow = 'hidden';
+                groupDiv.style.textOverflow = 'ellipsis';
+                groupDiv.style.whiteSpace = 'nowrap';
+                groupDiv.style.fontSize = '16px';
+                groupDiv.style.lineHeight = '1.2';
+
+                // Создаем div для инструмента
+                const toolNameDiv = document.createElement('div');
+                toolNameDiv.textContent = valueData.name;
+                toolNameDiv.style.overflow = 'hidden';
+                toolNameDiv.style.textOverflow = 'ellipsis';
+                toolNameDiv.style.whiteSpace = 'nowrap';
+                toolNameDiv.style.fontSize = '16px';
+                toolNameDiv.style.lineHeight = '1.2';
+
+                nameDiv.appendChild(groupDiv);
+                nameDiv.appendChild(toolNameDiv);
                 // Добавляем всплывающую подсказку с полным наименованием инструмента
                 //nameDiv.title = `Инструмент: ${cellData.content.tool}\nЧертёж: ${cellData.content.plan}`;
                 // Устанавливаем стили для количества инструмента
@@ -64,7 +84,7 @@ export function createTools(containerId, jsonObjectTools) {
                 sumDiv.className = 'sumTool';
                 sumDiv.style.display = 'flex';
                 sumDiv.style.width = '35px';
-                sumDiv.style.height = '30px';
+                sumDiv.style.height = '62px';
                 sumDiv.style.marginRight = '0px'
                 sumDiv.style.border = '1px solid #FFFFFF';
                 sumDiv.style.backgroundColor = '#56b358';

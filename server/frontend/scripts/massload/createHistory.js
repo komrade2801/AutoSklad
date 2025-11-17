@@ -14,40 +14,20 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         // Find tool by id
         let toolDescription = "Нет описания";
         let groupName = "Unknown";
-        let toolName = operationData.tool;
+        let toolName = "Unknown";
         const toolsData = window.appData.tools;
-        if (operationData.toolId) {
-            outer: for (const planKey in toolsData.plans) {
-                const plan = toolsData.plans[planKey];
-                for (const gKey in plan.groups) {
-                    const group = plan.groups[gKey];
-                    for (const vKey in group.value) {
-                        const val = group.value[vKey];
-                        if (val.id == operationData.toolId) {
-                            toolDescription = val.description || "Нет описания";
-                            groupName = group.name;
-                            toolName = val.toolName || val.name;
-                            break outer;
-                        }
-                    }
-                }
-            }
-        } else {
-            // Fallback to old parsing
-            const toolParts = operationData.tool.split(' ');
-            groupName = toolParts[0];
-            toolName = toolParts.slice(1).join(' ');
-            outer: for (const planKey in toolsData.plans) {
-                const plan = toolsData.plans[planKey];
-                for (const gKey in plan.groups) {
-                    const group = plan.groups[gKey];
-                    if (group.name !== groupName) continue;
-                    for (const vKey in group.value) {
-                        const val = group.value[vKey];
-                        if (val.name === toolName) {
-                            toolDescription = val.description || "Нет описания";
-                            break outer;
-                        }
+        // Now operationData.tool is the id
+        outer: for (const planKey in toolsData.plans) {
+            const plan = toolsData.plans[planKey];
+            for (const gKey in plan.groups) {
+                const group = plan.groups[gKey];
+                for (const vKey in group.value) {
+                    const val = group.value[vKey];
+                    if (val.id == operationData.tool) {
+                        toolDescription = val.description || "Нет описания";
+                        groupName = group.name;
+                        toolName = val.name;
+                        break outer;
                     }
                 }
             }
@@ -64,7 +44,7 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         const nameDiv = document.createElement('div');
         const cellDiv = document.createElement('div');
         // Устанавливаем стили для названия инструмента
-        nameDiv.textContent = operationData.tool;
+        nameDiv.textContent = toolName;
         nameDiv.title = toolDescription;
         nameDiv.setAttribute('data-group-index', groupIndex);
         nameDiv.style.display = 'flex';
@@ -179,7 +159,7 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         // Вызываем функцию редактирования JSON-файлов
         confirmDeleteButton.addEventListener('click', () => {
             const planName = operationData.plan; // Значение из JSON
-            const toolId = operationData.toolId; // ID инструмента
+            const toolId = operationData.tool; // ID инструмента
             const cellId = operationData.cell;  // Значение из cellDiv
             // Вызов функции deleteLoad с нужными параметрами
             deleteLoad(jsonObjectHistory, jsonObjectCells, window.appData.tools, planName, toolId, cellId);
