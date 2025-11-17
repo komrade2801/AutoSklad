@@ -302,8 +302,9 @@ class ApiConnectivityTest:
                 "list_count": 0,
                 "parent_plan": None,
                 "parent_plan_id": None,
-                "tools": [{'name': "M6x1 HSS", 'quantity': 1}, {'name': "Сверло 990SUTA 4.5 мм", 'quantity': 1},
-                          {'name': "ZCC-CT CNMG120408-DM", 'quantity': 2}]
+                "tools": [{'id':1, 'name': "M6x1 HSS", 'quantity': 1},
+                          {'id':3, 'name': "Сверло 990SUTA 4.5 мм", 'quantity': 1},
+                          {'id':4, 'name': "ZCC-CT CNMG120408-DM", 'quantity': 2}]
             },
             {
                 "id": 2,
@@ -316,15 +317,15 @@ class ApiConnectivityTest:
                 "description": "Шайба ИВУА.711341.046 (по чертежу; Сталь 20, Ц15.хр; без ЛКП)",
                 "name": "Шайба ИВУА.711341.046",
                 "designation": "4022-4-5",
-                "tools": [{'name': "M6x1 HSS", 'quantity': 1},
-                          {'name': "Сверло твердосплавное 3.3 мм PSD-3DA-0330", 'quantity': 2},
-                          {'name': "SEHT1204AFFN-AL", 'quantity': 1}]
+                "tools": [{'id':1, 'name': "M6x1 HSS", 'quantity': 1},
+                          {'id':2, 'name': "Сверло твердосплавное 3.3 мм PSD-3DA-0330", 'quantity': 2},
+                          {'id':5, 'name': "SEHT1204AFFN-AL", 'quantity': 1}]
             },
         ]
 
         created_plans = []
         for plan in plan_data:
-            response = self.make_request("POST", "/backend/create_plan/1", plan)
+            response = self.make_request("POST", "/backend/create_plan/1", {'plan': plan, 'create_mass_load': True})
             # if response.status not in [200, 201]:
             #     print(f"Warning: Plan creation failed: {response.json()}")
             #     with log_file.open("a", encoding="utf-8") as f:
