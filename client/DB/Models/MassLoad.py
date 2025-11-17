@@ -1,6 +1,8 @@
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Index
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.schema import ForeignKey
+
 from DB.Data.base import Base
 from DB.Models.BaseModel import Model
 
@@ -18,6 +20,15 @@ class MassLoad(Base, Model):
     description = Column(String(255), nullable=True, comment='Описание задачи массовой загрузки')
     created_at = Column(DateTime, default=datetime.utcnow, nullable=True,
                         comment='Дата и время создания задачи массовой загрузки')
+    status_id = Column(Integer, ForeignKey('Status.id'), nullable=False, comment='Идентификатор статуса операции из таблицы Status')
+
+    @property
+    def status(self):
+        if 'Status' not in Base.metadata.tables:
+            from DB.Models.Status import Status
+        else:
+            Status = Base.metadata.tables['Status'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(Status, back_populates="MassLoads")
 
     @property
     def loads(self):
@@ -37,6 +48,7 @@ class MassLoad(Base, Model):
         return (f"<MassLoad("
                 f"id={self.id}, "
                 f"description={self.description}, "
+                f"status_id={self.status_id}, "
                 f"created_at={self.created_at}"
                 f")>")
 

@@ -21,7 +21,7 @@ class EngineMassLoad(BaseCRUD):
         # Инициализация родительского класса с переданными session и моделью MassLoad
         super().__init__(session, MassLoad)
 
-    def add_mass_load(self, description: str, index: int) -> bool:
+    def add_mass_load(self, description: str, status_id: int, index: int) -> bool:
         """
         Добавляет новую задачу массовой загрузки.
 
@@ -30,7 +30,7 @@ class EngineMassLoad(BaseCRUD):
         :return: True, если задача успешно добавлена, иначе False.
         """
 
-        return self.add(id=index, description=description, created_at=datetime.now())
+        return self.add(id=index, description=description, status_id=status_id, created_at=datetime.now())
         # try:except IntegrityError as e:
         #     print(f"Ошибка добавления задачи массовой загрузки: {e}")
         #     return False

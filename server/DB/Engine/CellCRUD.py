@@ -6,19 +6,20 @@ from API.backend.request_models import CellUpdate
 from DB.Engine.CRUD import BaseCRUD
 from DB.Models.Cell import Cell
 
+
 class EngineCell(BaseCRUD):
     """
     Класс EngineCell предоставляет интерфейс для работы с таблицей Cell.
     Инкапсулирует CRUD-операции и предоставляет методы для работы с ячейками, их группами и инструментами.
     """
 
-    def __init__(self, session: Session=None):
+    def __init__(self, session: Session = None):
         """
         Инициализация класса EngineCell.
         :param session: Объект сессии SQLAlchemy для выполнения операций с базой данных.
         """
         # Передаем модель Cell и сессию в BaseCRUD.
-        
+
         super().__init__(session=session, model=Cell)
 
     def add_cell(self,
@@ -122,7 +123,6 @@ class EngineCell(BaseCRUD):
         # 4) Иначе передаём только изменившиеся поля
         return self.update(index=cell_id, **updates)
 
-
     def delete_cell(self, cell_id: int) -> bool:
         """
         Удаляет ячейку по её уникальному идентификатору.
@@ -146,6 +146,12 @@ class EngineCell(BaseCRUD):
         Возвращает список всех ячеек в таблице Cell.
         """
         return self.all()
+
+    def get_all_empty_cells(self) -> List[Cell]:
+        """
+        Возвращает список всех пустых ячеек в таблице Cell.
+        """
+        return self.session.query(Cell).filter(Cell.tools_id == 0).all()
 
     def get_cells_by_description(self, description: str) -> List[Cell]:
         """

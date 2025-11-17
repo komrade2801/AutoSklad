@@ -75,15 +75,16 @@ class EngineStatus(BaseCRUD):
         """
         return super().get(index)
 
-    def update(self, index: int, **kwargs) -> bool:
+    def update(self, index: int, stype: Optional[str] = None, description: Optional[str] = None) -> bool:
         """
         Обновляет существующий статус по уникальному идентификатору.
 
         :param index: Уникальный идентификатор статуса для обновления.
-        :param kwargs: Поля и значения для обновления записи.
+        :param stype: Новый тип статуса (если изменяется).
+        :param description: Новое описание статуса (если изменяется).
         :return: True если статус успешно обновлен, иначе False.
         """
-        return super().update(index, **kwargs)
+        return super().update(index, stype=stype, description=description)
 
     def delete(self, index: int) -> bool:
         """

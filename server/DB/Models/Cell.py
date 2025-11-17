@@ -20,7 +20,7 @@ class Cell(Base, Model):
     number = Column(Integer, nullable=True, unique=True, comment="Номер ячейки")
     description = Column(String(255), nullable=True, comment="Описание ячейки или дополнительные детали")
     groups_id = Column(Integer, ForeignKey("Group.id"), nullable=True, comment="Внешний ключ на таблицу Group")
-    tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=True)
+    tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=True)
     status_id = Column(Integer, ForeignKey("Status.id"), nullable=True, comment="Внешний ключ на таблицу Status")
 
     @property
@@ -44,13 +44,25 @@ class Cell(Base, Model):
             Group = Base.metadata.tables["Groups"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Group, back_populates="Cells")
 
+    # @property
+    # def tools(self):
+    #     if "Tools" not in Base.metadata.tables:
+    #         from ..Models.Tools import Tools
+    #     else:
+    #         Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+    #     return relationship(Tools, back_populates="Cells")
+    #
+    # __table_args__ = (
+    #     Index("idx_cell_groups_id", "groups_id", unique=False),
+    #     Index("idx_cell_tools_id", "tools_id", unique=False),
+    # )
     @property
     def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from ..Models.Tools import Tools
+        if "ToolTypes" not in Base.metadata.tables:
+            from ..Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="Cells")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="Cells")
 
     __table_args__ = (
         Index("idx_cell_groups_id", "groups_id", unique=False),
