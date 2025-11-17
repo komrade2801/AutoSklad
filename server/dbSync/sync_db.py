@@ -11,6 +11,9 @@ from dbSync.Model.Command import Command
 from dbSync.Model.CommandStatus import CommandStatus
 from dbSync.Model.Record import Record
 from dbSync.Model.SyncConfig import SyncConfig
+from dbSync.Model.CommandSnapshot import CommandSnapshot
+from dbSync.Model.BatchExecution import BatchExecution, BatchCommandLink
+from dbSync.Model.IdempotencyToken import IdempotencyToken
 from dbSync.Model.base import sync_base
 
 
@@ -42,7 +45,16 @@ def init_sync_db(force_recreate: bool = False) -> None:
     if not os.path.exists(db_file):
         open(db_file, "w").close()
 
-    models = [CommandStatus, Command, Record, SyncConfig]
+    models = [
+        CommandStatus, 
+        Command, 
+        Record, 
+        SyncConfig,
+        CommandSnapshot,      # Rollback: Pre-execution snapshots
+        BatchExecution,       # Rollback: Batch tracking
+        BatchCommandLink,     # Rollback: Command-to-batch links
+        IdempotencyToken      # Rollback: Duplicate prevention
+    ]
     engine = _get_sync_engine()
     sync_base.metadata.create_all(engine)
 
