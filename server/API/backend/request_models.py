@@ -544,6 +544,9 @@ class PlanCreate(BaseModel):
     # name: str
     # description: Optional[str]
 
+class PlanCreateRequest(BaseModel):
+    plan: PlanCreate
+    create_mass_load: bool
 
 # class PlanCreate(BaseModel):
 #     enterprise: str

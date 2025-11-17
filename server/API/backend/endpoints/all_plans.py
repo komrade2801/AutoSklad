@@ -4,9 +4,13 @@ import traceback
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from starlette.requests import Request
+
+from DB.Engine.CellCRUD import EngineCell
+from API.backend.endpoints.mass_load import save_mass_load, MassLoadCreate, History
 # from typing import List
 
-from ..request_models import PlanResponse, Plan, PlanCreate, PlanUpdate, PlanAddResponse
+from API.backend.request_models import PlanResponse, Plan, PlanCreate, PlanUpdate, PlanAddResponse, PlanCreateRequest
 # # from DB.Data.db_depends import get_db
 # from DB.session import get_db
 from DB.session import get_db
@@ -14,7 +18,7 @@ from DB.session import get_db
 from DB.Engine.PlanCRUD import EnginePlan
 from DB.Engine.DeviceCRUD import EngineDevice
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
-from DB.Engine.ToolsCRUD import EngineTools
+# from DB.Engine.ToolsCRUD import EngineTools
 from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
 from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 from fastapi.responses import StreamingResponse
@@ -43,7 +47,7 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
     """
     devices_crud = EngineDevice()
     tools_has_device_crud = EngineToolsHasDevice()
-    tools_crud = EngineTools()
+    # tools_crud = EngineTools()
     plans_crud = EnginePlan()
     tool_types_crud = EngineToolTypes()
     plan_tool_types_crud = EnginePlanToolTypes()
@@ -224,20 +228,27 @@ def plan_barcode(barcode_index: str, db: Session = Depends(get_db)):
     "/create_plan/{device_number}",
     response_model=PlanAddResponse,
     status_code=status.HTTP_200_OK,
-    responses={400: {"description": "Ошибка при добавлении инструментов"}}
+    responses={400: {"description": "Ошибка при добавлении чертежа"}}
 )
-def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_db)):
+def create_plan(
+    request: Request,
+    device_number: int,
+    plan_request: PlanCreateRequest, db: Session = Depends(get_db)):
     """
     Создает новые чертежи. Поскольку прямой связи между Plan и Device нет,
     создание Чертёжа осуществляется независимо, а привязка к устройству может быть реализована
     на уровне инструмента (через поле plan_id в Tools).
     """
-    print(f"create_plan Device number: {device_number}, plan: {plan}")
+    print(f"create_plan. request: {request}, Device number: {device_number}, plan_request: {plan_request}")
+    plan = plan_request.plan
+    create_mass_load = plan_request.create_mass_load
+
     devices_crud = EngineDevice()
     plans_crud = EnginePlan()
     plan_tool_types_crud = EnginePlanToolTypes()
-    tools_has_device_crud = EngineToolsHasDevice()
-    tools_crud = EngineTools()
+    cells_crud = EngineCell()
+    # tools_has_device_crud = EngineToolsHasDevice()
+    # tools_crud = EngineTools()
     tool_types_crud = EngineToolTypes()
     device = devices_crud.get_device_by_number(device_number)
     tool_ids = []
@@ -269,22 +280,43 @@ def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_
         for idx, tool in enumerate(plan.tools):
             # tool[""]
             # tool_types_name = name['name'].split(' ')[0]
+            tool_types_id = tool['id']
             tool_types_name = tool['name']
             tool_quantity = tool['quantity']
             quantity = 0
-            tool_types = tool_types_crud.find_by_name(tool_types_name)
-            print(f"create_plan tool_types_name: {tool_types_name}, tool_quantity: {tool_quantity}, tool_types: {tool_types}")
+            tool_type = tool_types_crud.get_tool_type_by_id(tool_types_id)
+            print(f"create_plan tool_types_name: {tool_types_name}, tool_quantity: {tool_quantity}, tool_types_id: {tool_types_id}")
             # tool_types_ids = tool_types_crud.get_all_ids()
             # for index in tool_types_ids:
             #     tool_types = tool_types_crud.get_tool_type_by_id(tool_type_id=index)
             #     if tool_types.name in tool_types_name:
-            for tool_type in tool_types:
-                tools = tools_crud.get_tools_by_tool_type(tool_type.id)
-                print(f"create_plan tool_type: {tool_type}, tools: {tools}")
 
-                plan_tool_types_crud_id = max(plan_tool_types_crud.get_all_ids(), default=0) + 1
+            print(f"create_plan tool_type: {tool_type}")
 
-                plan_tool_types_crud.create_plan_tool_types(plan_tool_types_crud_id, tool_type.id, tool_quantity, plan_id)
+            plan_tool_types_crud_id = max(plan_tool_types_crud.get_all_ids(), default=0) + 1
+
+            plan_tool_types_crud.create_plan_tool_types(plan_tool_types_crud_id, tool_type.id, tool_quantity, plan_id)
+
+        print(f"create_plan create_mass_load: {create_mass_load}")
+        if create_mass_load:
+            empty_cells = cells_crud.get_all_empty_cells()
+            print(f"create_plan empty_cells: {empty_cells}")
+            operation = {}
+            number = 1
+            for idx, tool in enumerate(plan.tools):
+                print(f"create_plan idx: {idx}, tool: {tool}")
+                cell = empty_cells[idx]
+                print(f"create_plan cell: {cell}")
+                load_operation = History(cell=str(cell.number), tool=str(tool['name']), plan=str(plan_id))
+                # load_operation['toolId'] = tool['id']
+
+                operation[str(number)] = load_operation
+
+                number += 1
+            mass_load = MassLoadCreate(operation = operation)
+
+            print(f"create_plan mass_load: {mass_load}")
+            save_mass_load(request, device_number, mass_load)
 
         return PlanAddResponse(status=200, message="Чертежи успешно добавлены")
 
@@ -322,26 +354,24 @@ def create_plan(device_number: int, plan: PlanCreate, db: Session = Depends(get_
 
         return HTTPException(status_code=200, detail="Чертёж успешно создать")
     except Exception as err:
+        print(f"err: {err}")
         __exception = True
         __e = err
         print(traceback.format_exc())
     finally:
+        print(f"__exception: {__exception}")
         if __exception:
-            for tool_id in tool_ids:
-                tool = tools_crud.get_tool_by_id(tool_id=tool_id)
-                tools_crud.update_tool(
-                    # tool_id=,
-                    # inventory_number=,
-                    # plan_id=,
-                    # tool_type_id=,
 
-                    tool_id=tool.id,
-                    inventory_number=tool.inventory_number,
-                    plan_id=0,
-                    tool_type_id=tool.tool_type_id,
-                )
-            plans_crud.delete_plan(plan_id)
+            plan_tool_types = plan_tool_types_crud.get_plan_tool_types_by_plan_id(plan.id)
+
+            for plan_tool_type in plan_tool_types:
+                plan_tool_types_crud.delete_plan_tool_types(plan_tool_type.id)
+
+            plans_crud.delete_plan(plan.id)
+
             raise HTTPException(status_code=301, detail=__e)
+        else:
+            return PlanAddResponse(status=200, message="Чертежи успешно добавлены")
 
 
 @all_plans_router.put("/update_plan/{device_number}/{plan_id}", response_model=Plan)
@@ -352,20 +382,20 @@ def update_plan(device_number: int, plan_id: int, plan_data: PlanUpdate, db: Ses
     """
     devices_crud = EngineDevice()
     tools_has_device_crud = EngineToolsHasDevice()
-    tools_crud = EngineTools()
+    # tools_crud = EngineTools()
     plans_crud = EnginePlan()
 
     device = devices_crud.get_device_by_number(device_number)
     if not device:
         raise HTTPException(status_code=404, detail="Устройство не найдено")
 
-    tool_ids = tools_has_device_crud.get_tools_by_device_id(device.id)
-    if not tool_ids:
-        raise HTTPException(status_code=404, detail="Нет инструментов, связанных с данным устройством")
-
-    tools = tools_crud.get_tools_by_ids(tool_ids)
-    if not any(tool.plan_id == plan_id for tool in tools):
-        raise HTTPException(status_code=403, detail="Чертёж не связан с данным устройством")
+    # tool_ids = tools_has_device_crud.get_tools_by_device_id(device.id)
+    # if not tool_ids:
+    #     raise HTTPException(status_code=404, detail="Нет инструментов, связанных с данным устройством")
+    #
+    # tools = tools_crud.get_tools_by_ids(tool_ids)
+    # if not any(tool.plan_id == plan_id for tool in tools):
+    #     raise HTTPException(status_code=403, detail="Чертёж не связан с данным устройством")
 
     updated_plan = plans_crud.update_plan_from_data(plan_id, plan_data)
     if not updated_plan:
@@ -380,20 +410,20 @@ def delete_plan(device_number: int, plan_id: int, db: Session = Depends(get_db))
     """
     devices_crud = EngineDevice()
     tools_has_device_crud = EngineToolsHasDevice()
-    tools_crud = EngineTools()
+    # tools_crud = EngineTools()
     plans_crud = EnginePlan()
 
     device = devices_crud.get_device_by_number(device_number)
     if not device:
         raise HTTPException(status_code=404, detail="Устройство не найдено")
 
-    tool_ids = tools_has_device_crud.get_tools_by_device_id(device.id)
-    if not tool_ids:
-        raise HTTPException(status_code=404, detail="Нет инструментов, связанных с данным устройством")
-
-    tools = tools_crud.get_tools_by_ids(tool_ids)
-    if not any(tool.plan_id == plan_id for tool in tools):
-        raise HTTPException(status_code=403, detail="Чертёж не связан с данным устройством")
+    # tool_ids = tools_has_device_crud.get_tools_by_device_id(device.id)
+    # if not tool_ids:
+    #     raise HTTPException(status_code=404, detail="Нет инструментов, связанных с данным устройством")
+    #
+    # tools = tools_crud.get_tools_by_ids(tool_ids)
+    # if not any(tool.plan_id == plan_id for tool in tools):
+    #     raise HTTPException(status_code=403, detail="Чертёж не связан с данным устройством")
 
     deleted = plans_crud.delete_plan(plan_id)
     if not deleted:

@@ -111,6 +111,9 @@
        .suggestions div:hover {
            background-color: #f0f0f0;
        }
+        .checkbox-option {
+            margin: 20px;
+        }
     </style>
 </head>
 <body onload="initialization('screen_8_append_plan')" class="d-flex justify-content-center" id="body"
@@ -152,6 +155,12 @@
               <input id="nameInput" class="form-control me-2" type="text" placeholder="Втулка стальная 5мм.">
               <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Описание чертежа:</span>
               <input id="descriptionInput" class="form-control me-2" type="text" placeholder="Описание чертежа.">
+                <div class="form-check checkbox-option">
+                    <input class="form-check-input" type="checkbox" value="" id="createMassLoad">
+                    <label class="form-check-label" for="createMassLoad">
+                        Сгенерировать массовую загрузку
+                    </label>
+                </div>
               <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Инструмент для чертежа:</span>
               <div id="selection_tools" class="d-flex dropable"
                    style="display: flex; flex-direction: column; flex-grow: 1; margin-top: 5px; padding: 5px; padding-bottom: 50px; box-sizing: border-box; overflow-y: auto; border-radius: 5px; border: 1px solid rgb(255, 255, 255);">
@@ -159,9 +168,9 @@
             </div>
         </div>
         <div id="column-3" class="d-flex" style="display: flex; flex-direction: column; justify-content: space-between; width: 225px; height: 100%; margin-right: 10px;">
-          <div style="width: 100%; height: 70px; margin-top: 10px;">
-            <button class="btn_vending" type="button">Загрузить из 1С</button>
-          </div>
+<!--          <div style="width: 100%; height: 70px; margin-top: 10px;">-->
+<!--            <button class="btn_vending" type="button">Загрузить из 1С</button>-->
+<!--          </div>-->
           <div class="card" style="width: 225px; border: 20px; border-radius: 5px; border-color: rgb(0,49,114); font-size: 16px;">
             <div class="card-body" style="color: rgb(0,49,114); padding: 10px;">
               <h6 class="card-title" >Подсказка:</h6>

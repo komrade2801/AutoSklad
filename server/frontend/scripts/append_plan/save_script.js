@@ -1,15 +1,14 @@
 
   window.jsonPlan = {};
 
-  export function save_all_plans(device_number, json_plan){
+  function save_all_plans(device_number, plan_request){
     const url = `../backend/create_plan/${device_number}`+"?token="+localStorage.getItem("token");
-    console.log(url);
     fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(json_plan)
+      body: JSON.stringify(plan_request)
     })
     .then(response => {
       if (!response.ok) {
@@ -38,6 +37,7 @@
     const nameValue = document.getElementById('nameInput').value;
     const descriptionValue = document.getElementById('descriptionInput').value;
     const designationValue = document.getElementById('designationInput').value;
+    const createMassLoad = document.getElementById("createMassLoad").checked;
 
     console.log("клик был");
 
@@ -63,10 +63,12 @@
         const input = div.querySelector(".input_amount");
 
         if (nameDiv && input) {
+            const toolId = nameDiv.getAttribute('data-tool-id');
           const toolName = nameDiv.textContent.trim();
           const toolCount = parseInt(input.value, 10) || 1;
           // tools[toolName] = toolCount.toString();
           tools.push({
+            id: toolId,
             name: toolName,
             quantity: toolCount
           });
@@ -95,8 +97,8 @@
 
     console.log(window.jsonPlan);
     let device_number = 1;
-    let json_plan = window.jsonPlan;
-    save_all_plans(device_number, json_plan)
+    let plan_request = {'plan': window.jsonPlan, 'create_mass_load': createMassLoad};
+    save_all_plans(device_number, plan_request)
 
     //Перенаправление на другую страницу:
     window.location.href='../screen_7_plans.html?token=' + localStorage.getItem('token');

@@ -23,6 +23,7 @@ export function generateToolsSelection() {
 
       const toolNameDiv = document.createElement("div");
       toolNameDiv.className = "tool-name-block";
+      toolNameDiv.setAttribute('data-tool-id', toolData.id);
       toolNameDiv.textContent = toolData.name;
 
       toolDiv.appendChild(toolNameDiv);
