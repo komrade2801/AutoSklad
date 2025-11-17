@@ -118,9 +118,8 @@ export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName,
     const newOperation = {
         1: {
             cell: String(cellId), // Преобразуем в строку, чтобы соответствовать образцу
-            tool: toolName,
-            plan: planName,
-            toolId: toolId
+            tool: toolId,
+            plan: planName
         }
     };
 

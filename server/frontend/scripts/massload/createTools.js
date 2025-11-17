@@ -39,7 +39,7 @@ export function createTools(containerId, jsonObjectTools) {
                 toolDiv.setAttribute('data-tool-name', tool.name);
 //                toolDiv.setAttribute('data-group-name', groupData.name);
                 // Устанавливаем стили для строки инструмента
-                toolDiv.style.height = '32px';
+                toolDiv.style.height = '64px';
                 toolDiv.style.alignItems = 'center';
                 //Создаем название и количество инструмента
                 const nameDiv = document.createElement('div');
@@ -51,13 +51,13 @@ export function createTools(containerId, jsonObjectTools) {
                 nameDiv.title = tool.description || "Нет описания";
                 nameDiv.style.display = 'flex';
                 nameDiv.style.width = '100%';
-                nameDiv.style.height = '30px';
+                nameDiv.style.height = '62px';
                 nameDiv.style.backgroundColor = '#D3D3D3A0';
                 nameDiv.style.border = '1px solid #ffffff';
                 nameDiv.style.color = '#003172';
                 nameDiv.style.fontWeight = 'bold';
                 nameDiv.style.fontSize = '14px';
-                nameDiv.style.alignItems = 'center';
+                nameDiv.style.alignItems = 'stretch';
                 nameDiv.style.justifyContent = 'start';
                 nameDiv.style.margin = '1px';
                 // Добавляем всплывающую подсказку с полным наименованием инструмента
@@ -67,7 +67,7 @@ export function createTools(containerId, jsonObjectTools) {
                 sumDiv.className = 'sumTool';
                 sumDiv.style.display = 'flex';
                 sumDiv.style.width = '35px';
-                sumDiv.style.height = '30px';
+                sumDiv.style.height = '62px';
                 sumDiv.style.marginRight = '0px'
                 sumDiv.style.border = '1px solid #FFFFFF';
                 sumDiv.style.backgroundColor = '#56b358';
