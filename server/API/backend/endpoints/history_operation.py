@@ -38,6 +38,7 @@ def get_history_operation(device_number: int):
          - device: имя устройства (например, "Аппарат 1")
       4. Возвращаем итоговый объект, где ключ "operation" содержит словарь с пронумерованными записями.
     """
+    print(f"get_history_operation")
     devices_crud = EngineDevice()
     history_op_crud = EngineHistoryOperation()
 
@@ -54,6 +55,8 @@ def get_history_operation(device_number: int):
         print(traceback.format_exc())
         operations_list = []
 
+    print(f"operations_list: {operations_list}")
+
     # operations: Dict[str, dict] = {}
     # if operations_list:
     #     for idx, op in enumerate(operations_list):
@@ -69,6 +72,7 @@ def get_history_operation(device_number: int):
     operations = []
     if operations_list:
         for idx, op in enumerate(operations_list):
+            print(f"op: {op}")
             operations.append({
                 "id": op.get("id", "None"),
                 "date": op.get("date", "None"),
