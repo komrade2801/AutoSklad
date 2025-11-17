@@ -67,9 +67,9 @@ class ToolTypesResponse(BaseModel):
 
 
 class History(BaseModel):
-    cell: str
-    tool: str
-    plan: str
+    cell: int
+    tool: int
+    plan: int
 
 
 class MassLoadCreate(BaseModel):
@@ -85,6 +85,7 @@ class Content(BaseModel):
 
 class CellResponse(BaseModel):
     id: int
+    number: int
     type: str
     backgroundColor: str
     content: Content
@@ -233,7 +234,8 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                 cell_type = sig.get("type", "big")
 
                 cells_in_row[str(c)] = CellResponse(
-                    id=cell.number,
+                    id=cell.id,
+                    number=cell.number,
                     type=cell_type,
                     backgroundColor=bg,
                     content=Content(tool=tool_name, plan=plan_name,
@@ -468,6 +470,7 @@ def save_mass_load(
         # 6) обрабатываем каждую операцию
         for key, story in stories.items():
             # разбираем вход
+            print(f"save_mass_load story: {story}")
             request_cell = story.cell
             request_tool = story.tool
             request_plan = story.plan

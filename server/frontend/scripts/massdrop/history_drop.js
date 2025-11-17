@@ -38,7 +38,7 @@ function handleUnloadClick(button) {
     const cellId = button.dataset.cellId;
     const toolName = button.dataset.toolName;
     const planName = button.dataset.planName;
-    let jsonCellsDrop = window.appData.сells;
+    let jsonCellsDrop = window.appData.cells;
     let jsonToolForDrop = window.appData.tools;
     let jsonHistoryDrop = window.appData.story;
 

@@ -4,12 +4,14 @@ import { deleteLoad } from './deleteLoad.js';
 
 // Функция для создания строк истории на основе JSON-данных
 export function createHistory(containerId, jsonObjectHistory, groupIndex) {
-    let jsonObjectCells = window.appData.сells
+    let jsonObjectCells = window.appData.cells
     const container = document.getElementById(containerId);
     container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
     // Проходим по строкам в JSON
     for (const operationKey in jsonObjectHistory.operation) {
         const operationData = jsonObjectHistory.operation[operationKey];
+
+        console.log(operationData)
 
         // Find tool by id
         let toolDescription = "Нет описания";
@@ -85,100 +87,44 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         const nameDiv = document.createElement('div');
         const cellDiv = document.createElement('div');
         // Устанавливаем стили для названия инструмента
+        nameDiv.className = 'history-tool-name';
         nameDiv.textContent = operationData.tool;
         nameDiv.title = toolDescription;
         nameDiv.setAttribute('data-group-index', groupIndex);
-        nameDiv.style.display = 'flex';
-        nameDiv.style.width = '100%';
-        nameDiv.style.height = '30px';
-        nameDiv.style.backgroundColor = '#D3D3D3A0';
-        nameDiv.style.border = '1px solid #ffffff';
-        nameDiv.style.color = '#003172';
-        nameDiv.style.fontWeight = 'bold';
-        nameDiv.style.fontSize = '14px';
-        nameDiv.style.alignItems = 'center';
-        nameDiv.style.justifyContent = 'start';
-        nameDiv.style.margin = '1px';
         // Устанавливаем стили для номера ячейки
+        cellDiv.className = 'history-tool-cell';
         cellDiv.textContent = operationData.cell;
-        cellDiv.style.display = 'flex';
-        cellDiv.style.width = '52px';
-        cellDiv.style.height = '30px';
-        cellDiv.style.marginRight = '1px';
-        cellDiv.style.border = '1px solid #FFFFFF';
-        cellDiv.style.backgroundColor = '#56b358';
-        cellDiv.style.alignItems = 'center';
-        cellDiv.style.justifyContent = 'center';
         //Создаём значок чертежа со всплывающей подсказкой
         const planDiv = document.createElement('div');
         //Устанавливаем стили для чертежа
-        planDiv.style.display = 'flex';
-        planDiv.style.width = '30px';
-        planDiv.style.height = '30px';
-        planDiv.style.marginRight = '1px';
-        planDiv.style.border = '1px solid #FFFFFF';
-        planDiv.style.backgroundColor = '#56b358';
-        planDiv.style.alignItems = 'center';
-        planDiv.style.justifyContent = 'center';
+        planDiv.className = 'history-tool-plan';
         //Добавляем изображение иконки
         const planImage = document.createElement('img');
         planImage.src = '../assets/img/btn_info.png';
-        planImage.style.width = '20px';
-        planImage.style.height = '20px';
-        planImage.style.objectFit = 'contain'; // Сохраняем пропорции
+        planImage.className = 'history-tool-plan-image';
         planDiv.appendChild(planImage);
         //Добавляем всплывающую подсказку
         planDiv.setAttribute('data-tooltipPlan', `Чертёж: ${operationData.plan}`);
         //Создаём кнопку для удаления операции
         const deleteButton = document.createElement('button');
         //Устанавливаем стили для кнопки удаления (кнопка с крестиком)
-        deleteButton.style.width = '30px';
-        deleteButton.style.height = '30px';
-        deleteButton.style.marginRight = '1px'
-        deleteButton.style.border = '1px solid #FFFFFF';
-        deleteButton.style.backgroundColor = '#56b358';
-        deleteButton.style.display = 'flex';
-        deleteButton.style.alignItems = 'center';
-        deleteButton.style.justifyContent = 'center';
+        deleteButton.className = "tool-delete-button";
         //Добавляем иконку на кнопку
         const deleteIcon = document.createElement('img');
         deleteIcon.src = '../assets/img/btn_cross_2.png';
-        deleteIcon.style.width = '20px'; // Размер иконки
-        deleteIcon.style.height = '20px';
-        deleteIcon.style.pointerEvents = 'none'; // Отключаем обработку кликов на изображении
+        deleteIcon.className = "tool-delete-button-icon";
         deleteButton.appendChild(deleteIcon);
         // Создаём скрытые кнопки "Удалить" и "Отмена"
         const confirmDiv = document.createElement('div');
-        confirmDiv.style.display = 'none';
-        confirmDiv.style.flexDirection = 'row';
-        confirmDiv.style.zIndex = '10';
-        confirmDiv.style.width = '100%';
+        confirmDiv.className = "tool-hidden-buttons";
         // Стили для уточнающей кнопки "Удалить"
         const confirmDeleteButton = document.createElement('button');
         confirmDeleteButton.textContent = 'Удалить';
-        confirmDeleteButton.style.width = '50%';
-        confirmDeleteButton.style.height = '30px';
-        confirmDeleteButton.style.backgroundColor = '#FF5248';
-        confirmDeleteButton.style.border = '2px solid #003172';
-        confirmDeleteButton.style.color = '#003172';
-        confirmDeleteButton.style.fontWeight = 'bold';
-        confirmDeleteButton.style.fontSize = '14px';
-        confirmDeleteButton.style.alignItems = 'center';
-        confirmDeleteButton.style.justifyContent = 'center';
-        confirmDeleteButton.style.margin = '1px';
+        confirmDeleteButton.className = "tool-confirm-delete-button";
         // Стили для уточнающей кнопки "Отмена"
         const cancelButton = document.createElement('button');
         cancelButton.textContent = 'Отмена';
-        cancelButton.style.width = '50%';
-        cancelButton.style.height = '30px';
-        cancelButton.style.backgroundColor = '#56b358';
-        cancelButton.style.border = '2px solid #003172';
-        cancelButton.style.color = '#003172';
-        cancelButton.style.fontWeight = 'bold';
-        cancelButton.style.fontSize = '14px';
-        cancelButton.style.alignItems = 'center';
-        cancelButton.style.justifyContent = 'center';
-        cancelButton.style.margin = '1px';
+        cancelButton.className = "tool-confirm-cancel-button";
         confirmDiv.appendChild(confirmDeleteButton);
         confirmDiv.appendChild(cancelButton);
         // Добавляем обработчик события для deleteButton

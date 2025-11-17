@@ -24,7 +24,7 @@ export function deleteDrop(operationKeyToDelete) {
         }
     }
     jsonHistoryDrop.operation = updatedOperations;
-    let jsonCellsDrop = window.appData.сells;
+    let jsonCellsDrop = window.appData.cells;
     // 2. Возвращаем инструмент в jsonCellsDrop
     for (const rowKey in jsonCellsDrop.rows) {
         const row = jsonCellsDrop.rows[rowKey];

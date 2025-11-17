@@ -107,8 +107,7 @@ export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
 
 
 // Функция для генерации JSON-History с историей текущей загрузки
-export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName, cellId) {
-    console.log(toolName)
+export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName, cellId, cellNumber) {
     // Убедимся, что jsonObjectHistory.operation существует
     if (!jsonObjectHistory.operation) {
         jsonObjectHistory.operation = {}; // Инициализируем, если это null или undefined
@@ -117,9 +116,11 @@ export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName,
     // Создаем новый объект для операций с новой записью под первым номером
     const newOperation = {
         1: {
-            cell: String(cellId), // Преобразуем в строку, чтобы соответствовать образцу
-            tool: toolId,
-            plan: planName
+            cellId: cellId,
+            cell: cellNumber,
+            tool: toolName,
+            plan: planName,
+            toolId: toolId
         }
     };
 
@@ -139,7 +140,7 @@ export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName,
 //функция Dragg-and-Dropp с проверкой инициализации перед привязкой обработчиков
 export function initializeDragAndDrop() {
   const toolsData = window.appData.tools;
-  const cellData = window.appData.сells;
+  const cellData = window.appData.cells;
   if (!toolsData) {
     console.warn('Данные инструментов ещё не загружены');
     return;
@@ -183,10 +184,11 @@ export function initializeDragAndDrop() {
         // Извлечение id ячейки
         const targetCell = event.target;
         const cellId = targetCell.id;
+        const cellNumber = targetCell.textContent;
 
         updateToolsJSON(toolsData, toolId);
         updateCellsJSON(cellData, planName, toolName, cellId);
-        updateJsonHistory(window.appData.history || {}, planName, toolId, toolName, cellId);
+        updateJsonHistory(window.appData.history || {}, planName, toolId, toolName, cellId, cellNumber);
         // console.log(toolsData);
       });
 

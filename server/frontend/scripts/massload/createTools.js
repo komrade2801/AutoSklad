@@ -247,12 +247,13 @@ function performMassLoad(amount, planName, toolId, groupName, toolName) {
     const cellsToLoad = freeCells.slice(0, amount);
     console.log(`✅ Loading ${cellsToLoad.length} tools into cells: [${cellsToLoad.join(', ')}]`);
 
-    cellsToLoad.forEach((cellId, index) => {
-        console.log(`   ${index + 1}. Loading "${combinedToolName}" into cell #${cellId}`);
+    console.log(cellsToLoad)
+    cellsToLoad.forEach((cell, index) => {
+        console.log(`   ${index + 1}. Loading "${combinedToolName}" into cell #${cell.id}`);
         // Имитируем выборку инструмента (уменьшаем sum на 1)
         updateToolsJSONMass(window.appData.tools, toolId, 1);
-        updateCellsJSON(window.appData.сells, planName, combinedToolName, parseInt(cellId));
-        updateJsonHistory(window.appData.history, planName, toolId, combinedToolName, parseInt(cellId));
+        updateCellsJSON(window.appData.cells, planName, combinedToolName, parseInt(cell.id));
+        updateJsonHistory(window.appData.history, planName, toolId, combinedToolName, parseInt(cell.id), parseInt(cell.number));
     });
 
     console.log('📊 Post-load tool inventory state:', getToolInventoryState());
@@ -262,7 +263,7 @@ function performMassLoad(amount, planName, toolId, groupName, toolName) {
 
     // Обновляем UI
     createTools('tools-container', window.appData.tools);
-    createCells('cells-container', window.appData.сells);
+    createCells('cells-container', window.appData.cells);
     createHistory('history', window.appData.history, toolId);
     initializeDragAndDrop();
 
@@ -272,18 +273,18 @@ function performMassLoad(amount, planName, toolId, groupName, toolName) {
 
 // Функция для получения свободных ячеек
 function getFreeCells() {
-    const jsonObjectCells = window.appData.сells;
+    const jsonObjectCells = window.appData.cells;
     const free = [];
     for (const rowKey in jsonObjectCells.rows) {
         const row = jsonObjectCells.rows[rowKey];
         for (const cellKey in row.cells) {
             const cell = row.cells[cellKey];
             if (!cell.block) {
-                free.push(cell.id);
+                free.push({'id':cell.id, 'number':cell.number});
             }
         }
     }
-    return free.sort((a, b) => a - b); // Сортировка по id по возрастанию
+    return free.sort((a, b) => a.id - b.id); // Сортировка по id по возрастанию
 }
 
 // Функция для получения текущего состояния инвентаря инструментов
