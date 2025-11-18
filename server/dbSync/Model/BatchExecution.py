@@ -51,6 +51,20 @@ class BatchExecution(sync_base):
         nullable=False,
         comment='Total number of commands in batch'
     )
+
+    # Result counters
+    successful_commands = Column(
+        Integer,
+        nullable=False,
+        default=0,
+        comment='Number of successfully executed commands'
+    )
+    failed_commands = Column(
+        Integer,
+        nullable=False,
+        default=0,
+        comment='Number of failed commands'
+    )
     
     # Execution status
     status = Column(
@@ -96,6 +110,8 @@ class BatchExecution(sync_base):
             'batch_id': self.batch_id,
             'device_number': self.device_number,
             'total_commands': self.total_commands,
+            'successful_commands': self.successful_commands,
+            'failed_commands': self.failed_commands,
             'status': self.status,
             'started_at': self.started_at.isoformat() if self.started_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,

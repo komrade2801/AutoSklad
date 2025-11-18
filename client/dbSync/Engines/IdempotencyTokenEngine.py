@@ -5,7 +5,8 @@ Handles creation, retrieval, and updates for idempotency tokens
 used to prevent duplicate command execution.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Union
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from ..Model.IdempotencyToken import IdempotencyToken
 from dbSync.Engines.CRUD import BaseCRUD
@@ -40,7 +41,9 @@ class IdempotencyTokenCRUD(BaseCRUD):
         token: str,
         command_id: int,
         batch_id: Optional[str] = None,
-        execution_result: Optional[str] = None
+        execution_result: Optional[str] = None,
+        expires_at: Optional[datetime] = None,
+        status: str = 'COMPLETED'
     ) -> int:
         """
         Create idempotency token record.
@@ -49,13 +52,19 @@ class IdempotencyTokenCRUD(BaseCRUD):
         :param command_id: Command ID
         :param batch_id: Optional batch UUID
         :param execution_result: Optional JSON string of execution result
+        :param expires_at: Optional expiration datetime (defaults to now + 24h)
+        :param status: Lifecycle status (PENDING|COMPLETED|FAILED)
         :return: Created token record ID
         """
+        if expires_at is None:
+            expires_at = datetime.utcnow() + timedelta(hours=24)
         token_record = IdempotencyToken(
             token=token,
             command_id=command_id,
             batch_id=batch_id,
-            execution_result=execution_result
+            execution_result=execution_result,
+            status=status,
+            expires_at=expires_at
         )
 
         self.session.add(token_record)
@@ -132,22 +141,26 @@ class IdempotencyTokenCRUD(BaseCRUD):
             return True
         
         return False
+
+    # Backwards-compatible alias used by IdempotencyManager.invalidate_token
+    def delete_token(self, token: str) -> bool:
+        return self.delete_by_token(token)
     
-    def cleanup_old_tokens(self, days_old: int = 30) -> int:
+    def cleanup_old_tokens(self, cutoff_or_days: Union[datetime, int] = 30) -> int:
         """
-        Delete tokens older than specified days.
+        Delete tokens older than specified days or before a cutoff datetime.
+        Prefers expires_at for TTL semantics.
         
-        Optional maintenance operation to prevent table growth.
-        
-        :param days_old: Age threshold in days
+        :param cutoff_or_days: datetime cutoff or days (int)
         :return: Number of tokens deleted
         """
-        from datetime import datetime, timedelta
-        
-        cutoff_date = datetime.utcnow() - timedelta(days=days_old)
+        if isinstance(cutoff_or_days, int):
+            cutoff_date = datetime.utcnow() - timedelta(days=cutoff_or_days)
+        else:
+            cutoff_date = cutoff_or_days
         
         count = self.session.query(IdempotencyToken).filter(
-            IdempotencyToken.executed_at < cutoff_date
+            (IdempotencyToken.expires_at != None) & (IdempotencyToken.expires_at < cutoff_date)
         ).delete(synchronize_session=False)
         
         self.session.flush()
