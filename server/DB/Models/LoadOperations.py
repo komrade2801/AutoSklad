@@ -15,7 +15,7 @@ class LoadOperations(Base, Model):
     date = Column(DateTime, default=datetime.datetime.utcnow, nullable=False,comment="Дата и время выполнения операции загрузки")
     description = Column(String(255), nullable=True, comment="Описание операции или дополнительные детали")
     load_id = Column(Integer, ForeignKey("Load.id"), nullable=False,comment="Идентификатор записи загрузки из таблицы Load")
-    load_tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=False,comment="Идентификатор инструмента из таблицы Tools")
+    load_tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False,comment="Идентификатор инструмента из таблицы ToolTypes")
     status_id = Column(Integer, ForeignKey("Status.id"), nullable=False,comment="Идентификатор статуса операции из таблицы Status")
     history_id = Column(Integer, ForeignKey("History.id"), nullable=True,comment="Идентификатор записи истории из таблицы History")
 
@@ -29,11 +29,11 @@ class LoadOperations(Base, Model):
 
     @property
     def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+        if "ToolTypes" not in Base.metadata.tables:
+            from DB.Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="LoadOperations")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="LoadOperations")
 
     @property
     def stories(self):

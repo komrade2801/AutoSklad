@@ -35,14 +35,6 @@ class Plan(Base, Model):
     parent_plan = relationship("Plan", remote_side=[id], backref="child_plans")
 
     @property
-    def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from ..Models.Tools import Tools
-        else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="Plans")
-
-    @property
     def stories(self):
         if "Stories" not in Base.metadata.tables:
             from ..Models.History import History

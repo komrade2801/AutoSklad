@@ -18,6 +18,7 @@ class Drop(Base, Model):
     mass_drop_id = Column(Integer, ForeignKey("MassDrop.id"), nullable=False,comment="Внешний ключ на таблицу massdrop")
     tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Внешний ключ на таблицу ToolTypes")
     plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Внешний ключ на таблицу Plan")
+    history_id = Column(Integer, ForeignKey("History.id"), nullable=False, comment="Идентификатор записи из таблицы History")
 
     @property
     def devices(self):
@@ -59,12 +60,21 @@ class Drop(Base, Model):
             Plan = Base.metadata.tables["Plan"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Plan, back_populates="Drops")
 
+    @property
+    def stories(self):
+        if "History" not in Base.metadata.tables:
+            from DB.Models.History import History
+        else:
+            History = Base.metadata.tables["History"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(History, back_populates="Drops")
+
     # Индексы
     __table_args__ = (
         Index("idx_drop_tools_id", "tools_id", unique=False),
         Index("idx_drop_mass_drop_id", "mass_drop_id", unique=False),
         Index("idx_drop_cell_id", "cell_id", unique=False),
         Index("idx_drop_plan_id", "plan_id", unique=False),
+        Index("idx_drop_history_id", "history_id", unique=False)
     )
 
     def __repr__(self):
@@ -77,6 +87,7 @@ class Drop(Base, Model):
                 f"mass_drop_id={self.mass_drop_id}, "
                 f"tools_id={self.tools_id}"
                 f"plan_id={self.plan_id}, "
+                f"history_id={self.history_id}, "
                 f")>")
 
 # mass_drop = relationship("MassDrop", back_populates="Drops")

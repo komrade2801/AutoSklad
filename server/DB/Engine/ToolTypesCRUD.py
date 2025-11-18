@@ -66,6 +66,14 @@ class EngineToolTypes(BaseCRUD):
         """
         return self.session.query(ToolTypes).filter(ToolTypes.id.in_(tool_type_ids)).all()
 
+    def find_tool_types_by_name(self, name: str) -> List[ToolTypes]:
+        """
+        Возвращает инструменты по имени.
+        """
+        tool_types = self.session.query(ToolTypes).filter(ToolTypes.name == name).all()
+        tool_types.sort(key=lambda rec: rec.id, reverse=False)
+        return tool_types
+
     def update_tool_type(self, *args, **kwargs) -> bool:
         """
         Обновляет данные типа инструмента.

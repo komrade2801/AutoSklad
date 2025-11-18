@@ -16,6 +16,7 @@ class Load(Base, Model):
     mass_load_id = Column(Integer, ForeignKey("MassLoad.id"), nullable=False, comment="Внешний ключ на таблицу mass_load")
     cell_id = Column(Integer, ForeignKey("Cell.id"), nullable=False, comment="Внешний ключ на таблицу Cell")
     plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Внешний ключ на таблицу Plan")
+    history_id = Column(Integer, ForeignKey("History.id"), nullable=False, comment="Идентификатор записи из таблицы History")
 
     @property
     def cells(self):
@@ -49,12 +50,21 @@ class Load(Base, Model):
             Plan = Base.metadata.tables["Plan"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Plan, back_populates="Loads")
 
+    @property
+    def stories(self):
+        if "History" not in Base.metadata.tables:
+            from DB.Models.History import History
+        else:
+            History = Base.metadata.tables["History"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(History, back_populates="Loads")
+
     # Индексы
     __table_args__ = (
         Index("idx_load_tools_id", "tools_id", unique=False),
         Index("idx_load_mass_load_id", "mass_load_id", unique=False),
         Index("idx_load_cell_id", "cell_id", unique=False),
         Index("idx_load_plan_id", "plan_id", unique=False),
+        Index("idx_load_history_id", "history_id", unique=False)
     )
 
     def __repr__(self):
@@ -66,4 +76,5 @@ class Load(Base, Model):
                 f"mass_load_id={self.mass_load_id}, "
                 f"cell_id={self.cell_id}, "
                 f"plan_id={self.plan_id}, "
+                f"history_id={self.history_id}, "
                 f")>")

@@ -48,6 +48,17 @@ class EngineGroup(BaseCRUD):
         """
         return self.get(group_id)
 
+    def find_groups_by_name(self, name: str) -> List[Group]:
+        """
+        Получает группу из таблицы Group по уникальному идентификатору.
+
+        :param name: Название группы.
+        :return: Объект Group или None, если группа не найдена.
+        """
+        tool_types = self.session.query(Group).filter(Group.name == name).all()
+        tool_types.sort(key=lambda rec: rec.id, reverse=False)
+        return tool_types
+
     def update_group(self,
             group_id: int,
             name: Optional[str] = None,

@@ -28,7 +28,7 @@ class OperationsConsumption(Base, Model):
     description = Column(String(255), nullable=True, comment="Описание операции или дополнительные детали")
     consumption_id = Column(Integer, ForeignKey("Consumption.id"), nullable=False, comment="Идентификатор расхода из таблицы Consumption")
     history_id = Column(Integer, ForeignKey("History.id"), nullable=False, comment="Идентификатор записи из таблицы History")
-    consumption_tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=False, comment="Идентификатор инструмента из таблицы Tools")
+    consumption_tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Идентификатор инструмента из таблицы ToolTypes")
     status_id = Column(Integer, ForeignKey("Status.id"), nullable=False, comment="Идентификатор статуса операции из таблицы Status")
 
     @property
@@ -56,11 +56,11 @@ class OperationsConsumption(Base, Model):
         return relationship(Consumption, back_populates="OperationsConsumptions")
     @property
     def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+        if "ToolTypes" not in Base.metadata.tables:
+            from DB.Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="OperationsConsumptions")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="OperationsConsumptions")
 
     # Индексы
     __table_args__ = (

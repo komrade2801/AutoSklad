@@ -20,7 +20,12 @@ class EngineConsumption(BaseCRUD):
         
         super().__init__(session=session, model=Consumption)
 
-    def add_consumption(self, index: int, cells_id: int, tool_id: int) -> True:
+    def add_consumption(self,
+                        index: int,
+                        cells_id: int,
+                        tool_id: int,
+                        plan_id: int,
+                        history_id: int) -> bool:
         """
         Получает ячейку по её уникальному идентификатору.
 
@@ -29,7 +34,12 @@ class EngineConsumption(BaseCRUD):
         :param index: Уникальный идентификатор ячейки.
         :return: Объект Cell или None, если запись не найдена.
         """
-        return self.add(index=index, cell_id=cells_id, tools_id=tool_id)
+        return self.add(
+            index=index,
+            cell_id=cells_id,
+            tools_id=tool_id,
+            plan_id=plan_id,
+            history_id=history_id)
 
     def get_consumption_by_id(self, consumption_id: int) -> Optional[Consumption]:
         """

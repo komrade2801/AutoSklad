@@ -23,7 +23,9 @@ class EngineLoad(BaseCRUD):
                  description: str,
                  tools_id: int,
                  mass_load_id: int,
-                 cell_id: int) -> bool:
+                 cell_id: int,
+                 plan_id: int,
+                 history_id: int) -> bool:
         """
         Добавляет новую запись о загрузке инструментов в базу данных.
         """
@@ -33,6 +35,8 @@ class EngineLoad(BaseCRUD):
             tools_id=tools_id,
             mass_load_id=mass_load_id,
             cell_id=cell_id,
+            plan_id=plan_id,
+            history_id=history_id
         )
 
     def get_load_by_id(self, load_id: int) -> Optional[Load]:

@@ -16,7 +16,7 @@ class DropOperations(Base, Model):
     description = Column(String(255), nullable=True, comment="Описание операции или дополнительные детали")
     history_id = Column(Integer, ForeignKey("History.id"), nullable=True, comment="Внешний ключ на таблицу History")
     status_id = Column(Integer, ForeignKey("Status.id"), nullable=False, comment="Внешний ключ на таблицу Status")
-    tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=False, comment="Внешний ключ на таблицу Tools")
+    tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Внешний ключ на таблицу ToolTypes")
     drop_id = Column(Integer, ForeignKey("Drop.id"), nullable=False, comment="Внешний ключ на таблицу Drop")
 
     @property
@@ -29,11 +29,11 @@ class DropOperations(Base, Model):
 
     @property
     def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+        if "ToolTypes" not in Base.metadata.tables:
+            from DB.Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="DropOperations")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="DropOperations")
 
     @property
     def status(self):

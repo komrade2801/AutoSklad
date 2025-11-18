@@ -66,12 +66,14 @@ class EngineDrop(BaseCRUD):
         return self.session.query(self.model).filter_by(cell_id=cell_id).all()
 
     def add_drop(self,
-             index: int,
-             created_at: datetime.date,
-             cell_id: int,
-             mass_drop_id: int,
-             tools_id: int,
-             description: Optional[str] = None,
+                index: int,
+                created_at: datetime.date,
+                cell_id: int,
+                mass_drop_id: int,
+                tools_id: int,
+                plan_id: int,
+                history_id: int,
+                description: Optional[str] = None,
         ) -> bool:
         """
         Добавляет новую запись в таблицу Drop.
@@ -90,6 +92,8 @@ class EngineDrop(BaseCRUD):
             cell_id=cell_id,
             mass_drop_id=mass_drop_id,
             tools_id=tools_id,
+            plan_id=plan_id,
+            history_id=history_id
         )
 
     def update_drop(self,

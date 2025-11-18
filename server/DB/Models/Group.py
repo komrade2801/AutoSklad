@@ -17,7 +17,7 @@ class Group(Base, Model):
 
     # Поля таблицы
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment="Уникальный идентификатор группы инструмента")
-    name = Column(String(100), nullable=True, comment="Название группы")  # Увеличен размер для более длинных названий
+    name = Column(String(100), nullable=False, comment="Название группы")  # Увеличен размер для более длинных названий
     description = Column(String(450), nullable=True, comment="Описание группы")  # Описание группы
     paren_group_id = Column(Integer, nullable=True, comment="Код родительской группы")
 
@@ -28,14 +28,6 @@ class Group(Base, Model):
         else:
             Cell = Base.metadata.tables["Cells"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Cell, back_populates="Drops")
-
-    @property
-    def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
-        else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="Drops")
 
     # Индексы
     __table_args__ = (
