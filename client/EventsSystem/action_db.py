@@ -2173,14 +2173,13 @@ class ActionMapper:
         """
 
         # Лямбда для создания словаря ячейки
-        def create_cell_dict(cell):
+        def create_cell_dict(cell, tool_type):
             # Safe lookups with null checks to prevent AttributeError
             group = self.e_group.get_group_by_id(cell.groups_id) if cell.groups_id else None
-            tool = self.e_tools.get_tool_by_id(cell.tools_id) if cell.tools_id else None
 
             return {
                 "group_name": group.name if group else "Без группы",
-                "tools_name": tool.name if tool else "Неизвестный инструмент",
+                "tools_name": tool_type.name if tool_type else "Неизвестный инструмент",
                 "cell_number": cell.number,
             }
 
