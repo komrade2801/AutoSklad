@@ -12,7 +12,7 @@ from DB.Engine.DeviceCRUD import EngineDevice
 from DB.Engine.DropOperationsCRUD import EngineDropOperations
 from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
 
-from DB.Engine.ToolsCRUD import EngineTools
+# from DB.Engine.ToolsCRUD import EngineTools
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
 from DB.Engine.GroupCRUD import EngineGroup
 # from DB.Engine.CellCRUD import EngineCell
@@ -32,53 +32,53 @@ from DB.Models.OperationsConsumption import OperationsConsumption
 all_tools_router = APIRouter(tags=["All Tools"])
 
 
-# , response_model=InventoryResponse
-@all_tools_router.get("/")
-def get_inventory(db: Session = Depends(get_db)):
-    """
-    Получает информацию для экрана "упрinventoryавление запасами".
-    Метод:
-      1. Получает список инструментов с информацией о наличии (stock, machine, in_use) через EngineTools.
-      2. Для каждого инструмента определяет группу (через groups_id и EngineGroup).
-      3. Группирует данные по названиям групп и формирует JSON-ответ, соответствующий примеру из js файла.
-    """
-    tools_crud = EngineTools()
-    group_crud = EngineGroup()
-
-    # Предположим, что метод get_inventory() возвращает список объектов с полями:
-    # id, name, groups_id, stock, machine, in_use
-    inventory_tools = tools_crud.get_inventory()
-    if not inventory_tools:
-        raise HTTPException(status_code=404, detail="Инструменты не найдены")
-
-    # Группируем инструменты по группам
-    inventory_by_group: Dict[str, list] = {}
-    for tool in inventory_tools:
-        group = group_crud.get_group_by_id(tool.groups_id)
-        group_name = group.name if group else "Unknown"
-        if group_name not in inventory_by_group:
-            inventory_by_group[group_name] = []
-        inventory_by_group[group_name].append({
-            "id": tool.id,
-            "barcode": tool.barcode,
-            "name": tool.name,
-            "description": tool.description,
-            "img": tool.img,
-            "plan_id": tool.plan_id,
-            "groups_id": tool.groups_id,
-        })
-
-    # Формируем финальный JSON в виде: { "groups": { "0": { "name": "...", "value": { "0": {..}, ... } }, ... } }
-    groups_output: Dict[str, Any] = {}
-    for idx, (group_name, tools_list) in enumerate(inventory_by_group.items()):
-        # Преобразуем список инструментов в объект с ключами-индексами
-        tools_obj = {str(j): tool for j, tool in enumerate(tools_list)}
-        groups_output[str(idx)] = {
-            "name": group_name,
-            "value": tools_obj
-        }
-
-    return {"groups": groups_output}
+# # , response_model=InventoryResponse
+# @all_tools_router.get("/")
+# def get_inventory(db: Session = Depends(get_db)):
+#     """
+#     Получает информацию для экрана "упрinventoryавление запасами".
+#     Метод:
+#       1. Получает список инструментов с информацией о наличии (stock, machine, in_use) через EngineTools.
+#       2. Для каждого инструмента определяет группу (через groups_id и EngineGroup).
+#       3. Группирует данные по названиям групп и формирует JSON-ответ, соответствующий примеру из js файла.
+#     """
+#     tools_crud = EngineTools()
+#     group_crud = EngineGroup()
+#
+#     # Предположим, что метод get_inventory() возвращает список объектов с полями:
+#     # id, name, groups_id, stock, machine, in_use
+#     inventory_tools = tools_crud.get_inventory()
+#     if not inventory_tools:
+#         raise HTTPException(status_code=404, detail="Инструменты не найдены")
+#
+#     # Группируем инструменты по группам
+#     inventory_by_group: Dict[str, list] = {}
+#     for tool in inventory_tools:
+#         group = group_crud.get_group_by_id(tool.groups_id)
+#         group_name = group.name if group else "Unknown"
+#         if group_name not in inventory_by_group:
+#             inventory_by_group[group_name] = []
+#         inventory_by_group[group_name].append({
+#             "id": tool.id,
+#             "barcode": tool.barcode,
+#             "name": tool.name,
+#             "description": tool.description,
+#             "img": tool.img,
+#             "plan_id": tool.plan_id,
+#             "groups_id": tool.groups_id,
+#         })
+#
+#     # Формируем финальный JSON в виде: { "groups": { "0": { "name": "...", "value": { "0": {..}, ... } }, ... } }
+#     groups_output: Dict[str, Any] = {}
+#     for idx, (group_name, tools_list) in enumerate(inventory_by_group.items()):
+#         # Преобразуем список инструментов в объект с ключами-индексами
+#         tools_obj = {str(j): tool for j, tool in enumerate(tools_list)}
+#         groups_output[str(idx)] = {
+#             "name": group_name,
+#             "value": tools_obj
+#         }
+#
+#     return {"groups": groups_output}
 
 
 # Регистрация маршрута через роутер (all_tools_router)
@@ -102,7 +102,7 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
       3. Добавляем записи в таблицу Tools с правильным tool_type_id.
     """
     try:
-        tools_crud = EngineTools()
+        # tools_crud = EngineTools()
         tool_type_crud = EngineToolTypes()
         group_crud = EngineGroup()
 
@@ -133,20 +133,20 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
             groups_id=data.group_id,
         )
 
-        # 4. Добавить каждую единицу инвентаря
-        for inv in data.tools.values():
-            tool_id = max(tools_crud.get_all_ids(), default=0) + 1
-            tools_crud.add_tool(
-                tool_id=tool_id,
-                inventory_number=inv,
-                plan_id=None,
-                tool_type_id=new_tt_id,
-                name=data.tool_name,
-                description=data.description,
-                count=data.count,
-                img=data.img,
-                groups_id=data.group_id,
-            )
+        # # 4. Добавить каждую единицу инвентаря
+        # for inv in data.tools.values():
+        #     tool_id = max(tools_crud.get_all_ids(), default=0) + 1
+        #     tools_crud.add_tool(
+        #         tool_id=tool_id,
+        #         inventory_number=inv,
+        #         plan_id=None,
+        #         tool_type_id=new_tt_id,
+        #         name=data.tool_name,
+        #         description=data.description,
+        #         count=data.count,
+        #         img=data.img,
+        #         groups_id=data.group_id,
+        #     )
 
         return ToolsAddResponse(status=200, message="Инструменты успешно добавлены")
 
@@ -171,7 +171,7 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
     try:
         devices_crud = EngineDevice()
         tools_has_device_crud = EngineToolsHasDevice()
-        tools_crud = EngineTools()
+        # tools_crud = EngineTools()
         tool_type_crud = EngineToolTypes()
         e_group = EngineGroup()
 
@@ -179,21 +179,23 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 
         all_tool_types = tool_type_crud.get_all_tool_types()
 
-        result = {"tools": {}}
+        tool_list = []
+        group_list = []
+        group_set = set()
         idx = 0
         for tool in all_tool_types:
             if tool.count <= 0:
                 continue
-            # Compute sum of free tools
-            tools = tools_crud.get_tools_by_tool_type(tool.id)
-            count_elements = 0
-            links = tools_has_device_crud.get_tools_by_device_id(device.id)
-            for __tool in tools:
-                if __tool.id in links:
-                    continue
-                count_elements += 1
-            if count_elements == 0:
-                continue
+            # # Compute sum of free tools
+            # tools = tools_crud.get_tools_by_tool_type(tool.id)
+            # count_elements = 0
+            # links = tools_has_device_crud.get_tools_by_device_id(device.id)
+            # for __tool in tools:
+            #     if __tool.id in links:
+            #         continue
+            #     count_elements += 1
+            # if count_elements == 0:
+            #     continue
 
             # Get immediate group
             immediate_group_obj = e_group.get_group_by_id(tool.groups_id)
@@ -201,20 +203,35 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 
             # Get parent group
             parent_group = "-"
+            full_path = immediate_group
             if immediate_group_obj and immediate_group_obj.paren_group_id and immediate_group_obj.paren_group_id != 0:
                 parent_group_obj = e_group.get_group_by_id(immediate_group_obj.paren_group_id)
                 parent_group = parent_group_obj.name if parent_group_obj else "-"
 
-            result["tools"][str(idx)] = {
+                cur_parent_group_id = parent_group_obj.id if parent_group_obj else 0
+                while cur_parent_group_id != 0:
+                    cur_parent_group = e_group.get_group_by_id(cur_parent_group_id)
+                    cur_parent_group_id = cur_parent_group.paren_group_id if cur_parent_group else 0
+                    full_path = cur_parent_group.name + "/" + full_path
+
+
+            tool_list.append({
                 "group": immediate_group,
-                "parent_group": parent_group,
                 "name": tool.name,
                 "description": tool.description,
-                "sum": str(count_elements)
-            }
+                "sum": tool.count
+            })
+            if immediate_group_obj.id not in group_set:
+                group_list.append({
+                    "group": immediate_group,
+                    "parent_group": parent_group,
+                    "description": immediate_group_obj.description,
+                    "full": full_path
+                })
+                group_set.add(immediate_group_obj.id)
             idx += 1
 
-        return result
+        return {"tools": tool_list, "groups": group_list}
 
     except Exception as e:
         print(traceback.format_exc())
@@ -231,11 +248,11 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 )
 def get_tool_types_from_db(device_number: int, db: Session = Depends(get_db)):
     try:
-        devices_crud = EngineDevice()
-        tools_has_device_crud = EngineToolsHasDevice()
-        tools_crud = EngineTools()
+        # devices_crud = EngineDevice()
+        # tools_has_device_crud = EngineToolsHasDevice()
+        # tools_crud = EngineTools()
         tool_type_crud = EngineToolTypes()
-        e_group = EngineGroup()
+        # e_group = EngineGroup()
 
         tool_types = tool_type_crud.get_all_tool_types()
 
@@ -261,67 +278,67 @@ def get_tool_types_from_db(device_number: int, db: Session = Depends(get_db)):
         )
 
 
-@all_tools_router.get("/tools_controls")
-async def get_tools_status(db: Session = Depends(get_db)):
-    e_load_operations = EngineLoadOperations()
-    e_drop_operations = EngineDropOperations()
-    e_consumption_operations = EngineOperationsConsumption()
-    tool_types_crud = EngineToolTypes()
-    tools_crud = EngineTools()
-
-    # 1. Получить все типы инструментов
-    tool_types = tool_types_crud.get_all_tool_types()
-
-    result = {"groups": {}}
-
-    for tool_type in tool_types:
-        # 2. Инициализация счетчиков
-        current_stock = tool_type.count
-        machine = 0
-        in_use = 0
-        tools = tools_crud.get_tools_by_tool_type(tool_type.id)
-        loads = []
-        drops = []
-        consumptions = []
-        # 3. Получить все операции для типа
-        for tool in tools:
-            loads.append(e_load_operations.get_operations_by_tool(tool.id))
-            drops.append(e_drop_operations.get_operations_by_tool(tool.id))
-            consumptions.append(
-                e_consumption_operations.get_operations_by_tool(tool_type.id))
-
-        # 4. Обработка операций
-        all_ops = sorted(
-            loads + drops + consumptions,
-            key=lambda x: x.date
-        )
-
-        for op in all_ops:
-            if isinstance(op, LoadOperations):
-                current_stock += 1
-            elif isinstance(op, DropOperations):
-                if current_stock > 0:
-                    current_stock -= 1
-                    machine += 1
-            elif isinstance(op, OperationsConsumption):
-                if machine > 0:
-                    machine -= 1
-                    in_use += 1
-
-        # 5. Добавить в результат
-        group_key = str(tool_type.group_id)  # Предполагается связь с Group
-        if group_key not in result["groups"]:
-            result["groups"][group_key] = {
-                "name": tool_type.group.name,
-                "value": {}
-            }
-
-        tool_entry = {
-            "tools": tool_type.name,
-            "stock": current_stock,
-            "machine": machine,
-            "in_use": in_use
-        }
-        result["groups"][group_key]["value"][str(tool_type.id)] = tool_entry
-
-    return result
+# @all_tools_router.get("/tools_controls")
+# async def get_tools_status(db: Session = Depends(get_db)):
+#     e_load_operations = EngineLoadOperations()
+#     e_drop_operations = EngineDropOperations()
+#     e_consumption_operations = EngineOperationsConsumption()
+#     tool_types_crud = EngineToolTypes()
+#     tools_crud = EngineTools()
+#
+#     # 1. Получить все типы инструментов
+#     tool_types = tool_types_crud.get_all_tool_types()
+#
+#     result = {"groups": {}}
+#
+#     for tool_type in tool_types:
+#         # 2. Инициализация счетчиков
+#         current_stock = tool_type.count
+#         machine = 0
+#         in_use = 0
+#         tools = tools_crud.get_tools_by_tool_type(tool_type.id)
+#         loads = []
+#         drops = []
+#         consumptions = []
+#         # 3. Получить все операции для типа
+#         for tool in tools:
+#             loads.append(e_load_operations.get_operations_by_tool(tool.id))
+#             drops.append(e_drop_operations.get_operations_by_tool(tool.id))
+#             consumptions.append(
+#                 e_consumption_operations.get_operations_by_tool(tool_type.id))
+#
+#         # 4. Обработка операций
+#         all_ops = sorted(
+#             loads + drops + consumptions,
+#             key=lambda x: x.date
+#         )
+#
+#         for op in all_ops:
+#             if isinstance(op, LoadOperations):
+#                 current_stock += 1
+#             elif isinstance(op, DropOperations):
+#                 if current_stock > 0:
+#                     current_stock -= 1
+#                     machine += 1
+#             elif isinstance(op, OperationsConsumption):
+#                 if machine > 0:
+#                     machine -= 1
+#                     in_use += 1
+#
+#         # 5. Добавить в результат
+#         group_key = str(tool_type.group_id)  # Предполагается связь с Group
+#         if group_key not in result["groups"]:
+#             result["groups"][group_key] = {
+#                 "name": tool_type.group.name,
+#                 "value": {}
+#             }
+#
+#         tool_entry = {
+#             "tools": tool_type.name,
+#             "stock": current_stock,
+#             "machine": machine,
+#             "in_use": in_use
+#         }
+#         result["groups"][group_key]["value"][str(tool_type.id)] = tool_entry
+#
+#     return result

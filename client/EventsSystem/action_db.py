@@ -43,7 +43,8 @@ from DB.Models.Cell import Cell
 from DB.Models.LoadOperations import LoadOperations
 from DB.Models.MassDrop import MassDrop
 from DB.Models.OperationsConsumption import OperationsConsumption
-from DB.Models.Tools import Tools
+# from DB.Models.Tools import Tools
+from DB.Models.ToolTypes import ToolTypes
 from DB.Models.Group import Group
 from DB.Models.User import User
 from sphinx.cmd.quickstart import valid_dir
@@ -138,7 +139,7 @@ class ActionMapper:
         self.e_user = EngineUser(session=self.session_local)
         self.e_identification = EngineIdentification(
             session=self.session_local)
-        self.e_tools = EngineTools(session=self.session_local)
+        # self.e_tools = EngineTools(session=self.session_local)
         self.e_cell = EngineCell(session=self.session_local)
         self.e_load = EngineLoad(session=self.session_local)
         self.e_drop = EngineDrop(session=self.session_local)
@@ -307,20 +308,21 @@ class ActionMapper:
 
             needed_tools += plan_tool_type.tool_types_count
 
-            tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+            # tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+
+            # for tool in tools:
+            cells = self.e_cell.get_cells_by_tool(tool_type.id)
+
+            # Если ячейка не найдена, возвращаем ошибку
+            if not cells:
+                continue
 
             found_tools = 0
-            for tool in tools:
-                cells = self.e_cell.get_cells_by_tool(tool.id)
-
-                # Если ячейка не найдена, возвращаем ошибку
-                if not cells or not cells[0]:
-                    continue
-
-                # Предполагается, что инструмент связан с одной ячейкой
-                # Возвращаем номер первой найденной ячейки
-                if cells[0].status_id in [3, 7]:
-                    cells_list.append(cells[0])
+            # По очереди проходим ячейки с инструментами этого типа
+            # Возвращаем номера ячеек, согласно необходимому количеству
+            for cell in cells:
+                if cell.status_id in [3, 7]:
+                    cells_list.append(cell)
                     found_tools += 1
                     if found_tools == plan_tool_type.tool_types_count:
                         break
@@ -357,24 +359,25 @@ class ActionMapper:
         print(
             f"read_db_rights_tool tool_type_id {tool_type_id}, name {name}, group_name {group_name}, tool_description {tool_description}")
 
-        tools = self.e_tools.get_tools_by_tool_type_id(tool_type_id)
-        print(f"tools {tools}")
-        if tools:
-            for tool in tools:
-                cells = self.e_cell.get_cells_by_tool(tool.id)
-                if cells:
-                    cell = cells[0]
-                    if cell.status_id in [3, 7]:
-                        self.select_tool = tool
-                        self.select_cell = cell
-                        return self.select_tool.id, name, group_name, tool_description
-
+        # tools = self.e_tools.get_tools_by_tool_type_id(tool_type_id)
+        # print(f"tools {tools}")
+        # if tools:
+        cells = self.e_cell.get_cells_by_tool(tool_type_id)
+        if cells:
+            for cell in cells:
+                if cell.status_id in [3, 7]:
+                    self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
+                    self.select_cell = cell
+                    return self.select_tool.id, name, group_name, tool_description
+            print(f"Свободные инструменты \"{name}\" не найдены.")
+            return {'trigger': 'err_rights'}
+        else:
             print(f"Ячейки, содержащие \"{name}\" не найдены.")
             return {'trigger': 'err_rights'}
 
-        else:
-            print(f"Свободные инструменты \"{name}\" не найдены.")
-            return {'trigger': 'err_rights'}
+        # else:
+        #     print(f"Свободные инструменты \"{name}\" не найдены.")
+        #     return {'trigger': 'err_rights'}
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
         print(f"write_db_tool_consumption {index}, {args}, {kwargs}, {self.select_tool}, {self.select_cell}")
@@ -394,7 +397,8 @@ class ActionMapper:
         #     cell = cells[0]
 
         if not self.select_tool:
-            self.select_tool = self.e_tools.get_tool_by_id(self.select_cell.tools_id)
+            # self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
+            self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
 
         cell = self.select_cell
         if not cell.tools_id:
@@ -522,15 +526,17 @@ class ActionMapper:
 
             for group in group_list:
                 # Получаем инструменты из указанной группы
-                tools.extend(self.e_tools.get_tools_by_group(group.id))
+                # tools.extend(self.e_tools.get_tools_by_group(group.id))
+                tools.extend(self.e_tool_types.get_tool_types_by_group(group.id))
 
             # Filter tools to only those with cells having status_id in {3,7}
             valid_tools = []
             print(f"tools: {tools}")
-            for tool in tools:
-                cells = self.e_cell.get_cells_by_tool(tool.id)
-                if any(c.status_id in {3, 7} for c in cells if c.status_id):
-                    valid_tools.append(create_tool_dict(cells[0], tool))
+            for tool_type in tools:
+                cells = self.e_cell.get_cells_by_tool(tool_type.id)
+                for cell in cells:
+                    if cell.status_id in {3, 7}:
+                        valid_tools.append(create_tool_dict(cell, tool_type))
 
             return valid_tools, group_name
         except Exception as e:
@@ -539,7 +545,7 @@ class ActionMapper:
             print(traceback.format_exc())
             return [], group_name
 
-    def read_db_tools_by_group_id(self, group_id: int) -> list[Tools]:
+    def read_db_tools_by_group_id(self, group_id: int) -> list[ToolTypes]:
         """
         Извлекает список инструментов, связанных с указанной группой (group_id), из таблицы Tools.
 
@@ -548,8 +554,9 @@ class ActionMapper:
         """
         try:
             # Получаем инструменты, связанные с указанным group_id
-            tools = self.e_tools.get_tools_by_group(group_id)
-            return tools
+            # tools = self.e_tools.get_tools_by_group(group_id)
+            tool_types = self.e_tool_types.get_tool_types_by_group(group_id)
+            return tool_types
 
         except Exception as e:
             print(
@@ -583,13 +590,11 @@ class ActionMapper:
                 tool_object["total_count"] = tool_type.count
                 tool_object["plan_count"] = plan_tool_type.tool_types_count
 
-                tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+                cells = self.e_cell.get_cells_by_tool(tool_type.id)
                 tool_load_count = 0
-                for tool in tools:
-                    cells = self.e_cell.get_cells_by_tool(tool.id)
-                    for cell in cells:
-                        if cell.status_id in [3, 7]:
-                            tool_load_count += 1
+                for cell in cells:
+                    if cell.status_id in [3, 7]:
+                        tool_load_count += 1
 
                 tool_object["load_count"] = tool_load_count
 
@@ -714,54 +719,58 @@ class ActionMapper:
         #     print(" Эталон tool id " + str(tool.id))
 
         for tool_type in tool_types:
-            tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
-            valid_tools = []
-            # valid_tools_count
-            for tool in tools:
+            # tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+            # valid_tools = []
+            # for tool in tools:
                 # Проверка статуса инструмента в таблице Cell
-                cells = self.e_cell.get_cells_by_tool(tool.id)
-                cell = None
-                if cells:
-                    cell = cells[0]
-                if cell and cell.status_id:
-                    status = self.e_status.get_status_by_id(cell.status_id)
-                    if status.stype not in ["mass_load_ready", "load_ready"]:
-                        continue
+            valid_tools_count = 0
+            cells = self.e_cell.get_cells_by_tool(tool_type.id)
+            if cells:
+                for cell in cells:
+                    if cell and cell.status_id:
+                        # status = self.e_status.get_status_by_id(cell.status_id)
+                        # if status.stype not in ["mass_load_ready", "load_ready"]:
+                        if cell.status_id not in {3, 7}:
+                            continue
 
-                    # Проверка операций в таблице DropOperations
-                    drop_operations = self.e_drop_operations.get_operations_by_tool(
-                        tool.id)
-                    if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
-                        continue
-                    # Проверка операций в таблице OperationsConsumption
-                    consumption_operations = self.e_operations_consumption.get_operations_by_tool(
-                        tool.id)
-                    if consumption_operations:
-                        continue
-                    # Проверка операций в таблице LoadOperations
-                    load_operations = self.e_load_operations.get_operations_by_tool(
-                        tool.id)
-                    found = False  # предполагаем, что ни один статус не подходит
+                        # Проверка операций в таблице DropOperations
+                        # drop_operations = self.e_drop_operations.get_operations_by_tool(
+                        #     tool_type.id)
+                        # if any(op.status_id for op in drop_operations if self.e_status.get_status_by_id(op.status_id).stype in ["mass_drop_ready", "drop_ready", "mass_drop_init"]):
+                        #     continue
+                        # Проверка операций в таблице OperationsConsumption
+                        # consumption_operations = self.e_operations_consumption.get_operations_by_tool(
+                        #     tool_type.id)
+                        # if consumption_operations:
+                        #     continue
+                        # Проверка операций в таблице LoadOperations
+                        # load_operations = self.e_load_operations.get_operations_by_tool(
+                        #     tool_type.id)
+                        # found = False  # предполагаем, что ни один статус не подходит
+                        #
+                        # for op in load_operations:
+                        #     status = self.e_status.get_status_by_id(
+                        #         op.status_id)  # получаем объект статуса
+                        #     if status.stype in ["mass_load_ready", "load_ready"]:  # проверка нужного типа
+                        #         found = True
+                        #         break  # нашли хотя бы один — дальше не надо
+                        #
+                        # if not found:
+                        #     continue
+                        # if len(load_operations) == 0 or load_operations == []:
+                        #     continue
 
-                    for op in load_operations:
-                        status = self.e_status.get_status_by_id(
-                            op.status_id)  # получаем объект статуса
-                        if status.stype in ["mass_load_ready", "load_ready"]:  # проверка нужного типа
-                            found = True
-                            break  # нашли хотя бы один — дальше не надо
+                        # Если инструмент прошёл все проверки, добавляем его в список
+                        # valid_tools.append(tool)
+                        # valid_tools.append(create_tool_dict(cell, tool_type))
+                        valid_tools_count += 1
 
-                    if not found:
-                        continue
-                    if len(load_operations) == 0 or load_operations == []:
-                        continue
-                    # Если инструмент прошёл все проверки, добавляем его в список
-                    # valid_tools.append(tool)
-                    valid_tools.append(create_tool_dict(cell, tool))
+            print(f"tool_type: {tool_type}, valid_tools_count: {valid_tools_count}")
 
-            print(f"tool_type: {tool_type}, valid_tools: {valid_tools}")
+            if valid_tools_count > 0:
+                valid_tool_types.append(create_tool_types_dict(tool_type, valid_tools_count))
 
-            if valid_tools:
-                valid_tool_types.append(create_tool_types_dict(tool_type, len(valid_tools)))
+            print(f"valid_tool_types: {valid_tool_types}")
         return valid_tool_types, group_name
 
     def read_db_plan_operations(self, plans_id: int) -> list[dict]:
@@ -774,13 +783,15 @@ class ActionMapper:
         """
         try:
             # Получаем все инструменты, связанные с указанным чертежом
-            tools = self.e_tools.get_tools_by_plan(plans_id)
-            tools_ids = [tool.id for tool in tools]
+            # tools = self.e_tools.get_tools_by_plan(plans_id)
+            # tools_ids = [tool.id for tool in tools]
 
-            # Получаем все записи из таблицы History, связанные с инструментами чертежа
+            # TODO: добавить в History поле plan_id, выполнять поиск по plan_id
+            plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plans_id)
             history_records = []
-            for tool_id in tools_ids:
-                stories = self.e_history.get_history_by_tool(tool_id)
+            for plan_tool_type in plan_tool_types:
+                # Получаем все записи из таблицы History, связанные с инструментами чертежа
+                stories = self.e_history.get_history_by_tool(plan_tool_type.tool_types_id)
                 for history in stories:
                     history_records.append(history)
 
@@ -793,9 +804,9 @@ class ActionMapper:
                 "user_family": self.e_user.get_user_by_id(history.user_id).family,
                 "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
                 "history_description": history.description,
-                "tools_name": self.e_tools.get_tool_by_id(history.tools_id).name,
-                "group_name": self.e_group.get_group_by_id(self.e_tools.get_tool_by_id(history.tools_id).groups_id).name,
-                "plan_name": self.e_plan.get_plan_by_id(self.e_tools.get_tool_by_id(history.tools_id).plan_id).name,
+                "tools_name": self.e_tool_types.get_tool_type_by_id(history.tools_id).name,
+                "group_name": self.e_group.get_group_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).groups_id).name,
+                "plan_name": self.e_plan.get_plan_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).plan_id).name,
                 "operation_description": op.description,
                 **additional_fields,
             }
@@ -870,7 +881,7 @@ class ActionMapper:
 
                 # print(f"history: {history}, op: {op}")
 
-                # print(f"user: {user}, tool: {self.e_tools.get_tool_by_id(history.tools_id)}, op: {add_cell_number(op)}")
+                # print(f"user: {user}, tool: {self.e_tool_types.get_tool_type_by_id(history.tools_id)}, op: {add_cell_number(op)}")
 
                 return {
                     "datetime": history.datetime,
@@ -879,9 +890,9 @@ class ActionMapper:
                     # "user_family": self.e_user.get_user_by_id(history.user_id).family,
                     "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
                     # "history_description": history.description,
-                    "tools_name": self.e_tools.get_tool_by_id(history.tools_id).name,
-                    "group_name": self.e_group.get_group_by_id(self.e_tools.get_tool_by_id(history.tools_id).groups_id).name,
-                    # "plan_name": self.e_plan.get_plan_by_id(self.e_tools.get_tool_by_id(history.tools_id).plan_id).name,
+                    "tools_name": self.e_tool_types.get_tool_type_by_id(history.tools_id).name,
+                    "group_name": self.e_group.get_group_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).groups_id).name,
+                    # "plan_name": self.e_plan.get_plan_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).plan_id).name,
                     # "operation_description": op.description,
                     # "load_description": self.e_load.get_load_by_id(op.load_id).description if hasattr(op, "load_id") else None,
                     # "cell_number": add_cell_number(op),
@@ -960,9 +971,9 @@ class ActionMapper:
                 "user_family": self.e_user.get_user_by_id(history.user_id).family,
                 "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
                 "history_description": history.description,
-                "tools_name": self.e_tools.get_tool_by_id(history.tools_id).name,
-                "group_name": self.e_group.get_group_by_id(self.e_tools.get_tool_by_id(history.tools_id).groups_id).name,
-                "plan_name": self.e_plan.get_plan_by_id(self.e_tools.get_tool_by_id(history.tools_id).plan_id).name,
+                "tools_name": self.e_tool_types.get_tool_type_by_id(history.tools_id).name,
+                "group_name": self.e_group.get_group_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).groups_id).name,
+                "plan_name": self.e_plan.get_plan_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).plan_id).name,
                 "operation_description": op.description,
                 "load_description": self.e_load.get_load_by_id(op.load_id).description,
                 "cell_number": self.e_cell.get_cell_by_id(self.e_load.get_load_by_id(op.load_id).cell_id).number,
@@ -1013,7 +1024,7 @@ class ActionMapper:
 
         return latest_mass_drop
 
-    def read_db_mass_drop_tools_by_plan(self, plan_id: int) -> List[Tools]:
+    def read_db_mass_drop_tools_by_plan(self, plan_id: int) -> List[ToolTypes]:
         """
         Возвращает список инструментов, помеченных для массовой выгрузки и связанных с конкретным чертежом.
 
@@ -1037,9 +1048,14 @@ class ActionMapper:
 
         # 3. Получить инструменты из таблицы Tools, привязанные к Drop и к указанному чертежу (plan_id)
         tools_ids_in_drops = {drop.tools_id for drop in mass_drop_drops}
-        tools = self.e_tools.all()
-        plan_tools = [
-            tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id == plan_id]
+        # tools = self.e_tools.all()
+        tool_types = self.e_tool_types.all()
+        plan_tools = []
+        plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+        for plan_tool_type in plan_tool_types:
+            plan_tools.append(plan_tool_type.tool_types_id)
+        # plan_tools = [
+        #     tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id == plan_id]
 
         if not plan_tools:
             return []  # Если таких инструментов нет, возвращаем пустой список
@@ -1057,7 +1073,7 @@ class ActionMapper:
 
         return valid_tools
 
-    def read_db_mass_drop_tools_by_free(self) -> List[Tools]:
+    def read_db_mass_drop_tools_by_free(self) -> List[ToolTypes]:
         """
         Возвращает список инструментов, помеченных для массовой выгрузки и не связанных с чертежами.
 
@@ -1080,9 +1096,11 @@ class ActionMapper:
 
         # 3. Получить инструменты из таблицы Tools, привязанные к Drop и не имеющие чертежей (plan_id is None)
         tools_ids_in_drops = {drop.tools_id for drop in mass_drop_drops}
-        tools = self.e_tools.all()
-        free_tools = [
-            tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id is None]
+        # tools = self.e_tools.all()
+        tool_types = self.e_tool_types.all()
+        free_tools = []
+        # free_tools = [
+        #     tool for tool in tools if tool.id in tools_ids_in_drops and tool.plan_id is None]
 
         if not free_tools:
             return []  # Если таких инструментов нет, возвращаем пустой список
@@ -1120,32 +1138,32 @@ class ActionMapper:
             for drop in drops_by_mass_drop:
                 target_cells.append(self.e_cell.get(drop.cell_id))
 
-            target_tools = []
-            for drop in drops_by_mass_drop:
-                target_tools.append(self.e_tools.get(drop.tools_id))
+            # target_tools = []
+            # for drop in drops_by_mass_drop:
+            #     target_tools.append(self.e_tools.get(drop.tools_id))
 
-            result = result and self.e_mass_drop.delete(mass_drop_id)
+            # result = result and self.e_mass_drop.delete(mass_drop_id)
 
-            for drop in drops_by_mass_drop:
-                result = result and self.e_drop.delete(drop.id)
+            # for drop in drops_by_mass_drop:
+            #     result = result and self.e_drop.delete(drop.id)
 
             history = []
 
             for operations in target_operations:
                 for operation in operations:
                     history.append(operation.history_id)
-                    result = result and self.e_drop_operations.delete(
-                        operation.id)
+                    # result = result and self.e_drop_operations.delete(
+                    #     operation.id)
 
-            for target_cell in target_cells:
-                # if target_cell:
-                result = result and self.e_cell.delete(target_cell.id)
-
-            for target_tool in target_tools:
-                result = result and self.e_tools.delete(target_tool.id)
-
-            for story_id in history:
-                result = result and self.e_history.delete(story_id)
+            # for target_cell in target_cells:
+            #     # if target_cell:
+            #     result = result and self.e_cell.delete(target_cell.id)
+            #
+            # for target_tool in target_tools:
+            #     result = result and self.e_tools.delete(target_tool.id)
+            #
+            # for story_id in history:
+            #     result = result and self.e_history.delete(story_id)
 
         except Exception as e:
             print(e)
@@ -1165,35 +1183,38 @@ class ActionMapper:
         status = 0
         description = "Готов к выдаче"
         try:
-            # Берём последнюю добавленную задачу массовой загрузки.
-            mass_load_id = max(self.e_mass_load.get_all_ids())
-            # Получаем список загрузок инструментов связанных с последней массовой загрузкой.
-            loads_by_mass_load = self.e_load.find_by_mass_load_id(mass_load_id)
+
+            statuses = self.e_status.all()
+            status_init = next(
+                (s.id for s in statuses if s.stype == "mass_load_init"), None)
+
             target_operations = []
-            for load in loads_by_mass_load:
-                # Добавляем
-                target_operations.append(
-                    self.e_load_operations.get_operations_by_load_id(load.id))
-
             target_cells = []
-            for load in loads_by_mass_load:
-                target_cells.append(self.e_cell.get(load.cell_id))
-
             target_tools = []
-            for load in loads_by_mass_load:
+            mass_loads = self.e_mass_load.all()
+            for mass_load in mass_loads:
+                # Получаем список загрузок инструментов связанных с последней массовой загрузкой.
+                loads_by_mass_load = self.e_load.find_by_mass_load_id(mass_load.id)
+                for load in loads_by_mass_load:
+                    operations = self.e_load_operations.get_operations_by_load_id(load.id)
+                    if len(operations) == 1 and operations[0].status_id == status_init:
+                        target_operations.append(operations)
 
-                tool = self.e_tools.get(load.tools_id)
+                    target_cells.append(self.e_cell.get(load.cell_id))
 
-                # Если группа не найдена — создаём новую с именем первого слова из tool.name
-                group = self.e_group.get(tool.groups_id)
-                if group is None:
-                    first_word = tool.name.split()[0]
-                    new_group_id = max(
-                        self.e_group.get_all_ids(), default=0) + 1
-                    self.e_group.add(id=new_group_id, name=first_word)
-                    tool.groups_id = new_group_id
+                    tool_type = self.e_tool_types.get(load.tools_id)
 
-                target_tools.append(self.e_tools.get(load.tools_id))
+                    # Если группа не найдена — создаём новую с именем первого слова из tool.name
+                    group = self.e_group.get(tool_type.groups_id)
+                    if group is None:
+                        first_word = tool_type.name.split()[0]
+                        new_group_id = max(
+                            self.e_group.get_all_ids(), default=0) + 1
+                        self.e_group.add(id=new_group_id, name=first_word)
+                        tool_type.groups_id = new_group_id
+
+                    # target_tools.append(self.e_tools.get(load.tools_id))
+                    target_tools.append(self.e_tool_types.get_tool_type_by_id(load.tools_id))
 
             # Получаем статус "ready"
             all_statuses = self.e_status.all()
@@ -1291,20 +1312,23 @@ class ActionMapper:
             groups = self.e_group.get_all_groups()
             for group in groups:
                 tool_types = self.e_tool_types.get_tool_types_by_group(group.id)
+                print(f"group: {group}")
 
                 count = 0
 
                 for tool_type in tool_types:
+                    print(f"tool_type: {tool_type}")
 
-                    tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
-                    print(f"tools {tools}")
-                    if tools:
-                        for tool in tools:
-                            cells = self.e_cell.get_cells_by_tool(tool.id)
-                            if cells:
-                                cell = cells[0]
-                                if cell.status_id in [3, 7]:
-                                    count += 1
+                    # tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
+                    # print(f"tools {tools}")
+                    # if tools:
+                    #     for tool in tools:
+                    cells = self.e_cell.get_cells_by_tool(tool_type.id)
+                    if cells:
+                        for cell in cells:
+                            print(f"cell: {cell}")
+                            if cell.status_id in [3, 7]:
+                                count += 1
 
                 print(f"group: {group}, count: {count}")
 
@@ -1334,7 +1358,7 @@ class ActionMapper:
             cells = self.e_cell.all()
             for cell in cells:
                 if cell.status_id in [3, 7] and cell.tools_id:
-                    tool = self.e_tools.get_tool_by_id(cell.tools_id)
+                    tool = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
                     if tool and tool.groups_id:
                         # Trace to root
                         current_id = tool.groups_id
@@ -1351,11 +1375,12 @@ class ActionMapper:
             for group_id in valid_root_groups:
                 group = self.e_group.get_group_by_id(group_id)
                 if group:
-                    tools = self.e_tools.get_tools_by_group(group_id)
+                    # tools = self.e_tools.get_tools_by_group(group_id)
+                    tool_types = self.e_tool_types.get_tool_types_by_group(group_id)
                     cells = self.e_cell.get_cells_by_group(group_id)
                     group_collection[group_id] = {
                         "group": group,
-                        "tools": tools,
+                        "tools": tool_types,
                         "cells": cells
                     }
 
@@ -1685,13 +1710,11 @@ class ActionMapper:
             tool_object["total_count"] = tool_type.count
             tool_object["plan_count"] = plan_tool_type.tool_types_count
 
-            tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
             tool_load_count = 0
-            for tool in tools:
-                cells = self.e_cell.get_cells_by_tool(tool.id)
-                for cell in cells:
-                    if cell.status_id in [3, 7]:
-                        tool_load_count += 1
+            cells = self.e_cell.get_cells_by_tool(tool_type.id)
+            for cell in cells:
+                if cell.status_id in [3, 7]:
+                    tool_load_count += 1
 
             tool_object["load_count"] = tool_load_count
 
@@ -1863,7 +1886,7 @@ class ActionMapper:
             print(traceback.format_exc())
             return False
 
-    def write_db_mass_drop_tools_by_free(self, tools_data: List[Tools], cells_data: List[Cell]) -> bool:
+    def write_db_mass_drop_tools_by_free(self, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
         """
         Создаёт записи для массового удаления инструментов без привязки к плану.
 
@@ -1871,15 +1894,16 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
-        # Проверка данных
-        for tool in tools_data:
-            if tool.plan_id is not None:
-                raise MassDropToolPlanIDNoneError(
-                    "Значение идентификатора чертежа должно быть пустым (None).")
-        if len(tools_data) != len(cells_data):
-            raise MassDropLenEqCellToolsError(
-                f"Значения не могут быть разной длины! tools: {len(tools_data)}, cells: {len(cells_data)}"
-            )
+        print(f"write_db_mass_drop_tools_by_free. tools_data: {tools_data}, cells_data: {cells_data}")
+        # # Проверка данных
+        # for tool in tools_data:
+        #     if tool.plan_id is not None:
+        #         raise MassDropToolPlanIDNoneError(
+        #             "Значение идентификатора чертежа должно быть пустым (None).")
+        # if len(tools_data) != len(cells_data):
+        #     raise MassDropLenEqCellToolsError(
+        #         f"Значения не могут быть разной длины! tools: {len(tools_data)}, cells: {len(cells_data)}"
+        #     )
 
         # 1. Найти или создать статус "mass_drop_init"
         all_statuses = self.e_status.all()
@@ -1949,7 +1973,7 @@ class ActionMapper:
 
         return True
 
-    def write_db_mass_drop_tools_by_plan(self, plan_id: int, tools_data: List[Tools], cells_data: List[Cell]) -> bool:
+    def write_db_mass_drop_tools_by_plan(self, plan_id: int, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
         """
         Создаёт записи для массового удаления инструментов по плану.
 
@@ -1958,21 +1982,22 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
-        # Проверка данных
-        for tool in tools_data:
-            if not tool.plan_id:
-                raise MassDropToolPlanIDNoneError(
-                    "Значение идентификатора чертежа не может быть пустым (None)")
-            if tool.plan_id != plan_id:
-                raise MassDropPlanIdEQToolsError(
-                    f"Значение идентификатора чертежа в команде записи и "
-                    f"наборе данных не могут быть разными: tool.plan_id={tool.plan_id} != plan_id={plan_id}"
-                )
+        print(f"write_db_mass_drop_tools_by_plan. tools_data: {tools_data}, cells_data: {cells_data}")
+        # # Проверка данных
+        # for tool in tools_data:
+        #     if not tool.plan_id:
+        #         raise MassDropToolPlanIDNoneError(
+        #             "Значение идентификатора чертежа не может быть пустым (None)")
+        #     if tool.plan_id != plan_id:
+        #         raise MassDropPlanIdEQToolsError(
+        #             f"Значение идентификатора чертежа в команде записи и "
+        #             f"наборе данных не могут быть разными: tool.plan_id={tool.plan_id} != plan_id={plan_id}"
+        #         )
 
-        if len(tools_data) != len(cells_data):
-            raise MassDropLenEqCellToolsError(
-                f"Значения не могут быть разной длины! tools: {len(tools_data)}, cells: {len(cells_data)}"
-            )
+        # if len(tools_data) != len(cells_data):
+        #     raise MassDropLenEqCellToolsError(
+        #         f"Значения не могут быть разной длины! tools: {len(tools_data)}, cells: {len(cells_data)}"
+        #     )
 
         # 1. Найти или создать статус "mass_drop_init"
         all_statuses = self.e_status.all()
@@ -2042,7 +2067,7 @@ class ActionMapper:
 
         return True
 
-    def write_db_mass_load_tools_by_plan(self, plan_id: int, tools_data: List[Tools], cells_data: List[Cell]) -> bool:
+    def write_db_mass_load_tools_by_plan(self, plan_id: int, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
         """
         Создаёт записи для массовой загрузки инструментов по плану.
 
@@ -2051,6 +2076,7 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
+        print(f"write_db_mass_load_tools_by_plan. tools_data: {tools_data}, cells_data: {cells_data}")
         # try:
         # 1. Найти или создать статус "mass_load_init"
         for tool in tools_data:
@@ -2151,7 +2177,7 @@ class ActionMapper:
             # Safe lookups with null checks to prevent AttributeError
             group = self.e_group.get_group_by_id(cell.groups_id) if cell.groups_id else None
             tool = self.e_tools.get_tool_by_id(cell.tools_id) if cell.tools_id else None
-            
+
             return {
                 "group_name": group.name if group else "Без группы",
                 "tools_name": tool.name if tool else "Неизвестный инструмент",
@@ -2171,27 +2197,29 @@ class ActionMapper:
                 print(f"Данные о массовой загрузке отсутствуют")
                 return []
 
-            mass_load_id = max(self.e_mass_load.get_all_ids())
-            loads = self.e_load.find_by_mass_load_id(mass_load_id)
             cells_ids = []
-            for load in loads:
-                operations = self.e_load_operations.get_operations_by_load_id(
-                    load.id)
-                # 2. Найти последние операции загрузки, связанные с этим статусом
-                # Проверяем, что есть ровно одна операция и ее статус — mass_load_init
-                if len(operations) == 1 and operations[0].status_id == status_id:
-                    # Если load подходит, добавляем его в список
-                    cells_ids.append(load.cell_id)
+            mass_loads = self.e_mass_load.all()
+            for mass_load in mass_loads:
+                loads = self.e_load.find_by_mass_load_id(mass_load.id)
+                for load in loads:
+                    operations = self.e_load_operations.get_operations_by_load_id(
+                        load.id)
+                    # 2. Найти последние операции загрузки, связанные с этим статусом
+                    # Проверяем, что есть ровно одна операция и ее статус — mass_load_init
+                    if len(operations) == 1 and operations[0].status_id == status_id:
+                        # Если load подходит, добавляем его в список
+                        cells_ids.append(load.cell_id)
 
             # Получение идентификаторов загрузок
             cell_list = []
             for _id in cells_ids:
                 cell = self.e_cell.get_cell_by_id(_id)
+                print(f"cell: {cell}")
+                print(f"tool: {self.e_tool_types.get_tool_type_by_id(cell.tools_id)}")
 
-                tool = self.e_tools.get_tool_by_id(cell.tools_id)
-                group = self.e_group.get_group_by_id(cell.groups_id)
+                tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
 
-                cell_list.append(create_cell_dict(cell))
+                cell_list.append(create_cell_dict(cell, tool_type))
 
             return cell_list
 
@@ -2200,7 +2228,7 @@ class ActionMapper:
             print(traceback.format_exc())
             return []
 
-    def write_db_mass_load_tools_by_free(self, tools_data: List[Tools], cells_data: List[Cell]) -> bool:
+    def write_db_mass_load_tools_by_free(self, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
         """
         Создаёт записи для массовой загрузки инструментов по плану.
 
@@ -2208,6 +2236,7 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
+        print(f"write_db_mass_load_tools_by_free. tools_data: {tools_data}, cells_data: {cells_data}")
         # try:
         # 1. Найти или создать статус "mass_load_init"
         for tool in tools_data:
@@ -2299,6 +2328,7 @@ class ActionMapper:
         :param plan_id: Уникальный идентификатор плана.
         :return: Список инструментов, связанных с указанным планом.
         """
+        print(f"read_db_mass_load_tools_by_plan. plan_id: {plan_id}")
         try:
             # Проверяем существование плана
             plan = self.e_plan.get_plan_by_id(plan_id)
@@ -2318,7 +2348,8 @@ class ActionMapper:
                 loads = self.e_load.find_by_mass_load_id(mass_load_id)
                 for load in loads:
                     # Извлекаем инструмент по tools_id
-                    tool = self.e_tools.get(load.tools_id)
+                    # tool = self.e_tools.get(load.tools_id)
+                    tool = self.e_tool_types.get_tool_type_by_id(load.tools_id)
                     if tool:
                         tools.append(tool)
 

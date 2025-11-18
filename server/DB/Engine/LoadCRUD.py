@@ -10,12 +10,12 @@ class EngineLoad(BaseCRUD):
     Наследуется от BaseCRUD, при этом не использует прямые session.query.
     """
 
-    def __init__(self, session: Session=None):        
+    def __init__(self, session: Session = None):
         """        Инициализация класса EngineLoad.
 
         :param session: Объект сессии SQLAlchemy для работы с базой данных.
         """
-                
+
         super().__init__(session=session, model=Load)
 
     def add_load(self,
@@ -46,6 +46,18 @@ class EngineLoad(BaseCRUD):
         Возвращает список записей Load, связанных с указанным tools_id.
         """
         return self.get_by_tools_id(tools_id)
+
+    def find_by_cell_id(self, cell_id: int) -> List[Load]:
+        """
+        Возвращает список записей Load, связанных с указанным tools_id.
+        """
+        return self.session.query(Load).filter(Load.cell_id == cell_id).all()
+
+    def find_by_plan_id(self, plan_id: int) -> List[Load]:
+        """
+        Возвращает список записей Load, связанных с указанным plan_id.
+        """
+        return self.session.query(Load).filter(Load.plan_id == plan_id).all()
 
     def find_by_mass_load_id(self, mass_load_id: int) -> List[Load]:
         """
@@ -81,7 +93,7 @@ class EngineLoad(BaseCRUD):
         # filter_by возвращает список, считаем его длину
         return len(self.filter_by(cell_id=cell_id))
 
-    def get_loads_by_mass_load_id(self, mass_load_id: int): # -> List[Load]
+    def get_loads_by_mass_load_id(self, mass_load_id: int):  # -> List[Load]
         """
         Возвращает список всех записей Load, связанных с указанным mass_load_id.
 

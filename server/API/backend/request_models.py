@@ -238,6 +238,10 @@ class ToolsAddResponse(BaseModel):
     status: int
     message: str
 
+class ToolsImportResponse(BaseModel):
+    processed: int
+    errors: Any
+    field_map: Any
 
 # Модели для библиотеки инструментов
 class ToolLibraryResponse(BaseModel):
@@ -540,6 +544,9 @@ class PlanCreate(BaseModel):
     # name: str
     # description: Optional[str]
 
+class PlanCreateRequest(BaseModel):
+    plan: PlanCreate
+    create_mass_load: bool
 
 # class PlanCreate(BaseModel):
 #     enterprise: str
@@ -593,3 +600,8 @@ class AuthResponse(BaseModel):
     token: str
     redirect_url: str
     user: Dict[str, Any]  # Можно заменить на конкретную модель, например, UserResponse
+
+class StatusResponse(BaseModel):
+    id: int
+    stype: str
+    description: str

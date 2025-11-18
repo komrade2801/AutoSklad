@@ -51,8 +51,9 @@ function initialization(element_name) {
         window.location.href='/';
     }
     const url = "../backend/history-operation/1";
+    const url_status = "../backend/status";
 
-    $('#table').bootstrapTable({
+    $('#operation_history_table').bootstrapTable({
         exportOptions: {
             fileName: 'История операций',
             pdfmake: {
@@ -64,7 +65,18 @@ function initialization(element_name) {
             onCellHtmlData: DoOnCellHtmlData
         },
     });
-    $('#table').bootstrapTable('showLoading');
+    $('#operation_history_table').bootstrapTable('showLoading');
+
+    initData(url_status).then(data => {
+        if (data) {
+            window.appData.statusData = {};
+
+            for (const status of data) {
+                window.appData.statusData[status.id] = status.description;
+            }
+
+        }
+    });
 
     initData(url).then(data => {
         if (data) {

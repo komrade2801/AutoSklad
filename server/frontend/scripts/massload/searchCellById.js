@@ -2,7 +2,7 @@
 
 // Функция для поиска ячейки по ID
 export function searchCellById(CellId) {
-  let jsonObjectCells = window.appData.сells;
+  let jsonObjectCells = window.appData.cells;
     //console.log("Функция searchCellById инициализирована")
   for (const rowKey in jsonObjectCells.rows) {
     const row = jsonObjectCells.rows[rowKey];

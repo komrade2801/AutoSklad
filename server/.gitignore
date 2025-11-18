@@ -19,3 +19,11 @@ inspectionProfiles/profiles_settings.xml
 /.idea/shelf/Uncommitted_changes_before_Update_at_20_05_2025_6_36_[Changes]/web_vending.db
 /.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml
 __pycache__/
+/DB/Data/web_vending.db
+/DB/Data/web_vending.db-shm
+/DB/Data/web_vending.db-wal
+/dbSync/Model/sync.db
+/dbSync/Model/sync.db-shm
+/dbSync/Model/sync.db-wal
+command_queue.json
+/dbSync/Logic_v2/cache/schema

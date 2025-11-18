@@ -14,16 +14,16 @@ class EngineMassLoad(BaseCRUD):
     Использует все методы из BaseCRUD для выполнения операций с таблицей MassLoad.
     """
 
-    def __init__(self, session: Session=None):        
+    def __init__(self, session: Session = None):
         """        Инициализация EngineMassLoad.
 
         :param session: Сессия SQLAlchemy для выполнения операций с базой данных.
         """
         # Инициализация родительского класса с переданными session и моделью MassLoad
-                
+
         super().__init__(session=session, model=MassLoad)
 
-    def add_mass_load(self, description: str, index: int) -> bool:
+    def add_mass_load(self, description: str, status_id: int, index: int) -> bool:
         """
         Добавляет новую задачу массовой загрузки.
 
@@ -32,7 +32,7 @@ class EngineMassLoad(BaseCRUD):
         :return: True, если задача успешно добавлена, иначе False.
         """
 
-        return self.add(index=index, description=description, created_at=datetime.now())
+        return self.add(index=index, description=description, status_id=status_id, created_at=datetime.now())
         # try:except IntegrityError as e:
         #      print(f"Ошибка добавления задачи массовой загрузки: {e}")
         #     return False

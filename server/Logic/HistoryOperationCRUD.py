@@ -1,6 +1,7 @@
 from typing import List, Optional
 
-from DB.Engine.ToolsCRUD import EngineTools
+# from DB.Engine.ToolsCRUD import EngineTools
+from DB.Engine.ToolTypesCRUD import EngineToolTypes
 from DB.Engine.UserCRUD import EngineUser
 from DB.Models.History import History
 from DB.Engine.HistoryCRUD import EngineHistory
@@ -27,7 +28,8 @@ class EngineHistoryOperation:
         """
         self.history_crud = history_crud or EngineHistory()
         self.tools_has_device = tools_has_device or EngineToolsHasDevice()
-        self.tool_crud = EngineTools()
+        # self.tool_crud = EngineTools()
+        self.tool_types_crud = EngineToolTypes()
         self.user_crud = EngineUser()
 
     def _transform_history_record(self, record: History) -> dict:
@@ -37,7 +39,7 @@ class EngineHistoryOperation:
         :param record: Экземпляр History.
         :return: Словарь с полями date, name_operation, tool, plan, user, device.
         """
-        date_str = record.datetime.strftime("%d.%m.%Y") if record.datetime else "None"
+        date_str = record.datetime.strftime("%Y.%m.%d %H:%M:%S") if record.datetime else "None"
         name_operation = record.description or "None"
 
         # Получаем имя пользователя
@@ -52,8 +54,8 @@ class EngineHistoryOperation:
 
         # Получаем название инструмента
         if record.tools_id:
-            tool = self.tool_crud.get(record.tools_id)
-            tool_name = tool.name if tool else "Unknown"
+            tool_type = self.tool_types_crud.get(record.tools_id)
+            tool_name = tool_type.name if tool_type else "Unknown"
         else:
             tool_name = "None"
 
@@ -62,6 +64,7 @@ class EngineHistoryOperation:
 
         return {
             "date": date_str,
+            "status": record.status,
             "name_operation": name_operation,
             "tool": tool_name,
             "plan": plan_name,
@@ -75,13 +78,11 @@ class EngineHistoryOperation:
         :param device_id: ID устройства.
         :return: Список словарей-операций.
         """
-        tool_ids = self.tools_has_device.get_tools_by_device_id(device_id)
-        if not tool_ids:
-            return []
+        # tool_ids = self.tools_has_device.get_tools_by_device_id(device_id)
+        # if not tool_ids:
+        #     return []
         # фильтрация через CoreEngine.filter
-        histories = self.history_crud.filter(
-            History.tools_id.in_(tool_ids)
-        )
+        histories = self.history_crud.all()
         return [self._transform_history_record(h) for h in histories]
 
     def create_operation(self, op_data) -> Optional[dict]:

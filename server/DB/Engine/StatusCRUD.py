@@ -24,16 +24,17 @@ class EngineStatus(BaseCRUD):
     - drop(): Удаление таблицы Status из базы данных.
     """
 
-    def __init__(self, session: Session=None):        
+    def __init__(self, session: Session = None):
         """        Инициализация класса EngineStatus.
 
         :param session: Объект сессии SQLAlchemy для работы с базой данных.
         """
         # Передаем сессию и модель Status в конструктор BaseCRUD
-                
+
         super().__init__(session=session, model=Status)
 
-    def add(self, index: int, stype: str, description: Optional[str] = None, created_at=datetime.datetime.now()) -> bool:
+    def add(self, index: int, stype: str, description: Optional[str] = None,
+            created_at=datetime.datetime.now()) -> bool:
         """
         Добавляет новый статус в таблицу.
 

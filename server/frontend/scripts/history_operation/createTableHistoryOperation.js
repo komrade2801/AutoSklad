@@ -13,8 +13,8 @@ export function createTableHistoryOperation(containerId, jsonHistoryOperation) {
     console.log(data)
 
     if (data != undefined) {
-        $('#table').bootstrapTable('load', data);
-        $('#table').bootstrapTable('hideLoading');
+        $('#operation_history_table').bootstrapTable('load', data);
+        $('#operation_history_table').bootstrapTable('hideLoading');
     }
 
 

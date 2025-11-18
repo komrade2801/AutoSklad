@@ -22,15 +22,16 @@ class History(Base, Model):
     description = Column(String(450), nullable=True, comment="Описание или дополнительные комментарии для записи истории")
     user_id = Column(Integer, ForeignKey("User.id"), nullable=False, comment="Идентификатор пользователя, связанного с событием")
     user_role_id = Column(Integer, ForeignKey("Role.id"), nullable=False, comment="Идентификатор роли пользователя, участвующего в событии")
-    tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=False, comment="Идентификатор инструмента, связанного с событием")
+    tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Идентификатор инструмента, связанного с событием")
+    plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Внешний ключ на таблицу Plan")
 
     @property
     def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+        if "ToolTypes" not in Base.metadata.tables:
+            from DB.Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="Stories")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="Stories")
 
     @property
     def plans(self):
@@ -66,4 +67,5 @@ class History(Base, Model):
                 f"user_id={self.user_id}, "
                 f"user_role_id={self.user_role_id}, "
                 f"tools_id={self.tools_id}"
+                f"plan_id={self.plan_id}, "
                 f")>")

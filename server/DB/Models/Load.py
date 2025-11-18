@@ -12,9 +12,10 @@ class Load(Base, Model):
     # Поля таблицы
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment="Уникальный идентификатор записи загрузки")
     description = Column(String(255), nullable=True, comment="Описание загрузки или дополнительные детали")
-    tools_id = Column(Integer, ForeignKey("Tools.id"), nullable=False, comment="Внешний ключ на таблицу Tools")
+    tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Внешний ключ на таблицу ToolTypes")
     mass_load_id = Column(Integer, ForeignKey("MassLoad.id"), nullable=False, comment="Внешний ключ на таблицу mass_load")
     cell_id = Column(Integer, ForeignKey("Cell.id"), nullable=False, comment="Внешний ключ на таблицу Cell")
+    plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Внешний ключ на таблицу Plan")
 
     @property
     def cells(self):
@@ -34,17 +35,26 @@ class Load(Base, Model):
 
     @property
     def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+        if "ToolTypes" not in Base.metadata.tables:
+            from DB.Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="Loads")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="Loads")
+
+    @property
+    def plans(self):
+        if "Plan" not in Base.metadata.tables:
+            from DB.Models.Plan import Plan
+        else:
+            Plan = Base.metadata.tables["Plan"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(Plan, back_populates="Loads")
 
     # Индексы
     __table_args__ = (
         Index("idx_load_tools_id", "tools_id", unique=False),
         Index("idx_load_mass_load_id", "mass_load_id", unique=False),
         Index("idx_load_cell_id", "cell_id", unique=False),
+        Index("idx_load_plan_id", "plan_id", unique=False),
     )
 
     def __repr__(self):
@@ -55,4 +65,5 @@ class Load(Base, Model):
                 f"tools_id={self.tools_id}, "
                 f"mass_load_id={self.mass_load_id}, "
                 f"cell_id={self.cell_id}, "
+                f"plan_id={self.plan_id}, "
                 f")>")

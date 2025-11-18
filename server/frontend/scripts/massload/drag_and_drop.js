@@ -8,18 +8,23 @@ import { deleteLoad } from './deleteLoad.js';
 
 // Функция для поиска инструмента по ID
 function findToolById(toolsData, toolId) {
-    for (const planKey in toolsData.plans) {
-        const plan = toolsData.plans[planKey];
-        for (const groupKey in plan.groups) {
-            const group = plan.groups[groupKey];
-            for (const valueKey in group.value) {
-                const tool = group.value[valueKey];
-                if (tool.id == toolId) {
-                    return { plan, group, tool, planKey, groupKey, valueKey };
-                }
-            }
+    for (const [idx, tool] of Object.entries(toolsData.tools)) {
+        if (tool.id == toolId) {
+            return { tool, tool };
         }
     }
+//    for (const planKey in toolsData.plans) {
+//        const plan = toolsData.plans[planKey];
+//        for (const groupKey in plan.groups) {
+//            const group = plan.groups[groupKey];
+//            for (const valueKey in group.value) {
+//                const tool = group.value[valueKey];
+//                if (tool.id == toolId) {
+//                    return { plan, group, tool, planKey, groupKey, valueKey };
+//                }
+//            }
+//        }
+//    }
     return null;
 }
 
@@ -74,7 +79,7 @@ function updateToolsJSONold(toolsData, plansIndex, groupIndex, toolIndex) {
 
 //функция для изменения JSON-Cells с ячейками при dragg-and-dropp
 export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
-  
+
     //console.log("updateCellsJSON успешно вызвана")
     //console.log(cellId)
 
@@ -102,7 +107,7 @@ export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
 
 
 // Функция для генерации JSON-History с историей текущей загрузки
-export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName, cellId) {
+export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName, cellId, cellNumber) {
     // Убедимся, что jsonObjectHistory.operation существует
     if (!jsonObjectHistory.operation) {
         jsonObjectHistory.operation = {}; // Инициализируем, если это null или undefined
@@ -111,9 +116,11 @@ export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName,
     // Создаем новый объект для операций с новой записью под первым номером
     const newOperation = {
         1: {
-            cell: String(cellId), // Преобразуем в строку, чтобы соответствовать образцу
-            tool: toolId,
-            plan: planName
+            cellId: cellId,
+            cell: cellNumber,
+            tool: toolName,
+            plan: planName,
+            toolId: toolId
         }
     };
 
@@ -133,7 +140,7 @@ export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName,
 //функция Dragg-and-Dropp с проверкой инициализации перед привязкой обработчиков
 export function initializeDragAndDrop() {
   const toolsData = window.appData.tools;
-  const cellData = window.appData.сells;
+  const cellData = window.appData.cells;
   if (!toolsData) {
     console.warn('Данные инструментов ещё не загружены');
     return;
@@ -170,17 +177,18 @@ export function initializeDragAndDrop() {
 
       droppable.addEventListener("drop", (event) => {
         event.preventDefault();
-        const toolName = event.dataTransfer.getData("text/plain");
+        const toolName = event.dataTransfer.getData("toolName");
         const planName = event.dataTransfer.getData("planName");
         const toolId = event.dataTransfer.getData('toolId');
 
         // Извлечение id ячейки
         const targetCell = event.target;
         const cellId = targetCell.id;
+        const cellNumber = targetCell.textContent;
 
         updateToolsJSON(toolsData, toolId);
         updateCellsJSON(cellData, planName, toolName, cellId);
-        updateJsonHistory(window.appData.history || {}, planName, toolId, toolName, cellId);
+        updateJsonHistory(window.appData.history || {}, planName, toolId, toolName, cellId, cellNumber);
         // console.log(toolsData);
       });
 

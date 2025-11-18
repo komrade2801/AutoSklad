@@ -65,7 +65,7 @@ export async function fetchCellMapData() {
             throw new Error("Ошибка сети, статус: ${response.status}");
         }
         const jsonData = await response.json();
-        window.appData.сells = jsonData;
+        window.appData.cells = jsonData;
         return jsonData;
     } catch (error) {
         console.error("Ошибка получения данных:", error);
@@ -111,7 +111,7 @@ export function initToolsData(device_number) {
 export function initCellsData() {
     return fetchCellMapData()
       .then(сells => {
-        window.appData.сells = сells;               // turn1search0
+        window.appData.cells = сells;               // turn1search0
         return сells;
       })
       .catch(err => {
@@ -146,7 +146,7 @@ function initialization(element_name) {
         initCellsData().then(cells => {
             if (cells) {
                 nav_btn_add(element_name);
-                createCells('cells-container', window.appData.сells);
+                createCells('cells-container', window.appData.cells);
                 createTools('tools-container', window.appData.tools);
                 initializeDragAndDrop();
                 createHistory('history', window.appData.history);

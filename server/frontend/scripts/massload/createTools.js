@@ -8,19 +8,21 @@ import { jsonObjectHistory } from './init.js';
 let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
 
 export function createTools(containerId, jsonObjectTools) {
-    console.log(jsonObjectTools)
+//    console.log(jsonObjectTools)
     const container = document.getElementById(containerId);
     container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
     // Проходим по строкам в JSON
-    for (const planKey in jsonObjectTools.plans) {
-        const planData = jsonObjectTools.plans[planKey];
-        for (const groupKey in planData.groups) {
-            const groupData = planData.groups[groupKey];
-            // Проходим по ячейкам в строке
-            for (const valueKey in groupData.value) {
-                const valueData = groupData.value[valueKey];
+//    for (const planKey in jsonObjectTools.plans) {
+//        const planData = jsonObjectTools.plans[planKey];
+//        for (const groupKey in planData.groups) {
+//            const groupData = planData.groups[groupKey];
+//            // Проходим по ячейкам в строке
+//            for (const valueKey in groupData.value) {
+//                const valueData = groupData.value[valueKey];
+    for (const [idx, tool] of Object.entries(jsonObjectTools.tools)) {
+//    console.log(idx + ' - ' + tool)
                 // Пропускаем инструменты с sum <= 0
-                if (parseInt(valueData.sum) <= 0) continue;
+                if (parseInt(tool.sum) <= 0) continue;
                 const toolDiv = document.createElement('div');
                 // Устанавливаем флекс-контейнер для строки и класс
                 toolDiv.style.display = 'flex';
@@ -30,13 +32,13 @@ export function createTools(containerId, jsonObjectTools) {
                 toolDiv.draggable = "true";
                 toolDiv.style.width = '100%';
                 toolDiv.style.cursor = 'pointer';
-                toolDiv.content = planData['name'];
-                toolDiv.setAttribute('data-tool-id', valueData.id);
-                toolDiv.setAttribute('data-plan-name', planData.name);
-                toolDiv.setAttribute('data-group-name', groupData.name);
-                toolDiv.setAttribute('data-tool-name', valueData.name);
-                toolDiv.setAttribute('data-group-name', groupData.name);
-                // Устанавливаем стили для строки инструмента                
+//                toolDiv.content = planData['name'];
+                toolDiv.setAttribute('data-tool-id', tool.id);
+//                toolDiv.setAttribute('data-plan-name', planData.name);
+//                toolDiv.setAttribute('data-group-name', groupData.name);
+                toolDiv.setAttribute('data-tool-name', tool.name);
+//                toolDiv.setAttribute('data-group-name', groupData.name);
+                // Устанавливаем стили для строки инструмента
                 toolDiv.style.height = '64px';
                 toolDiv.style.alignItems = 'center';
                 //Создаем название и количество инструмента
@@ -44,43 +46,24 @@ export function createTools(containerId, jsonObjectTools) {
                 const sumDiv = document.createElement('div');
                 // Устанавливаем стили для названия инструмента
                 nameDiv.className = 'toolName';
-                nameDiv.title = valueData.description || "Нет описания";
+//                nameDiv.textContent = groupData.name + " " + tool.name;
+                nameDiv.textContent = tool.name;
+                nameDiv.title = tool.description || "Нет описания";
                 nameDiv.style.display = 'flex';
-                nameDiv.style.flexDirection = 'column';
                 nameDiv.style.width = '100%';
                 nameDiv.style.height = '62px';
                 nameDiv.style.backgroundColor = '#D3D3D3A0';
                 nameDiv.style.border = '1px solid #ffffff';
                 nameDiv.style.color = '#003172';
                 nameDiv.style.fontWeight = 'bold';
+                nameDiv.style.fontSize = '14px';
                 nameDiv.style.alignItems = 'stretch';
-                nameDiv.style.justifyContent = 'center';
+                nameDiv.style.justifyContent = 'start';
                 nameDiv.style.margin = '1px';
-
-                // Создаем div для группы
-                const groupDiv = document.createElement('div');
-                groupDiv.textContent = groupData.name;
-                groupDiv.style.overflow = 'hidden';
-                groupDiv.style.textOverflow = 'ellipsis';
-                groupDiv.style.whiteSpace = 'nowrap';
-                groupDiv.style.fontSize = '16px';
-                groupDiv.style.lineHeight = '1.2';
-
-                // Создаем div для инструмента
-                const toolNameDiv = document.createElement('div');
-                toolNameDiv.textContent = valueData.name;
-                toolNameDiv.style.overflow = 'hidden';
-                toolNameDiv.style.textOverflow = 'ellipsis';
-                toolNameDiv.style.whiteSpace = 'nowrap';
-                toolNameDiv.style.fontSize = '16px';
-                toolNameDiv.style.lineHeight = '1.2';
-
-                nameDiv.appendChild(groupDiv);
-                nameDiv.appendChild(toolNameDiv);
                 // Добавляем всплывающую подсказку с полным наименованием инструмента
                 //nameDiv.title = `Инструмент: ${cellData.content.tool}\nЧертёж: ${cellData.content.plan}`;
                 // Устанавливаем стили для количества инструмента
-                sumDiv.textContent = valueData.sum;
+                sumDiv.textContent = tool.sum;
                 sumDiv.className = 'sumTool';
                 sumDiv.style.display = 'flex';
                 sumDiv.style.width = '35px';
@@ -97,12 +80,12 @@ export function createTools(containerId, jsonObjectTools) {
                 // Добавляем обработчик клика для массовой загрузки
                 toolDiv.addEventListener('click', (event) => {
                     event.stopPropagation(); // Предотвращаем bubble
-                    openMassLoadInput(toolDiv, valueData, planData.name, valueData.id, groupData.name, valueData.name);
+                    openMassLoadInput(toolDiv, tool, '', tool.id, '', tool.name);
                 });
 
                 container.appendChild(toolDiv); // Добавляем строку в контейнер
-            }
-        }
+//            }
+//        }
     }
 }
 
@@ -249,7 +232,7 @@ function validateInput(value, maxSum) {
 // Функция для массовой загрузки
 function performMassLoad(amount, planName, toolId, groupName, toolName) {
 
-    const combinedToolName = groupName + " " + toolName;
+    const combinedToolName = toolName;
 
     console.log(`🔄 Starting mass load: ${amount} units of "${combinedToolName}" for plan "${planName}"`);
     console.log('📊 Pre-load tool inventory state:', getToolInventoryState());
@@ -264,12 +247,13 @@ function performMassLoad(amount, planName, toolId, groupName, toolName) {
     const cellsToLoad = freeCells.slice(0, amount);
     console.log(`✅ Loading ${cellsToLoad.length} tools into cells: [${cellsToLoad.join(', ')}]`);
 
-    cellsToLoad.forEach((cellId, index) => {
-        console.log(`   ${index + 1}. Loading "${combinedToolName}" into cell #${cellId}`);
+    console.log(cellsToLoad)
+    cellsToLoad.forEach((cell, index) => {
+        console.log(`   ${index + 1}. Loading "${combinedToolName}" into cell #${cell.id}`);
         // Имитируем выборку инструмента (уменьшаем sum на 1)
         updateToolsJSONMass(window.appData.tools, toolId, 1);
-        updateCellsJSON(window.appData.сells, planName, combinedToolName, parseInt(cellId));
-        updateJsonHistory(window.appData.history, planName, toolId, combinedToolName, parseInt(cellId));
+        updateCellsJSON(window.appData.cells, planName, combinedToolName, parseInt(cell.id));
+        updateJsonHistory(window.appData.history, planName, toolId, combinedToolName, parseInt(cell.id), parseInt(cell.number));
     });
 
     console.log('📊 Post-load tool inventory state:', getToolInventoryState());
@@ -279,7 +263,7 @@ function performMassLoad(amount, planName, toolId, groupName, toolName) {
 
     // Обновляем UI
     createTools('tools-container', window.appData.tools);
-    createCells('cells-container', window.appData.сells);
+    createCells('cells-container', window.appData.cells);
     createHistory('history', window.appData.history, toolId);
     initializeDragAndDrop();
 
@@ -289,18 +273,18 @@ function performMassLoad(amount, planName, toolId, groupName, toolName) {
 
 // Функция для получения свободных ячеек
 function getFreeCells() {
-    const jsonObjectCells = window.appData.сells;
+    const jsonObjectCells = window.appData.cells;
     const free = [];
     for (const rowKey in jsonObjectCells.rows) {
         const row = jsonObjectCells.rows[rowKey];
         for (const cellKey in row.cells) {
             const cell = row.cells[cellKey];
             if (!cell.block) {
-                free.push(cell.id);
+                free.push({'id':cell.id, 'number':cell.number});
             }
         }
     }
-    return free.sort((a, b) => a - b); // Сортировка по id по возрастанию
+    return free.sort((a, b) => a.id - b.id); // Сортировка по id по возрастанию
 }
 
 // Функция для получения текущего состояния инвентаря инструментов

@@ -16,26 +16,26 @@
     <link rel="stylesheet" href="../assets/bootstrap-icons/1.13.1/bootstrap-icons.css">
     <link href="../assets/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
     <script src="../assets/jquery/2.1.0/jquery.min.js"></script>
-    <link rel="stylesheet" href="../assets/bootstrap-table/1.24.1/bootstrap-table.css">
+    <link rel="stylesheet" href="../assets/bootstrap-table/1.25.0/bootstrap-table.css">
 <!--    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>-->
 <!--    <script src="../assets/bootstrap/5.3.8/js/bootstrap.min.js"></script>-->
     <script src="../assets/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/bootstrap-table/1.24.1/bootstrap-table.js"></script>
-    <script src="../assets/bootstrap-table/1.24.1/locale/bootstrap-table-ru-RU.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/bootstrap-table.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/locale/bootstrap-table-ru-RU.js"></script>
 
     <link rel="stylesheet" href="../assets/jquery-resizable-columns/jquery.resizableColumns.css">
     <script src="../assets/jquery-resizable-columns/jquery.resizableColumns.js"></script>
-    <script src="../assets/bootstrap-table/1.24.1/extensions/resizable/bootstrap-table-resizable.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/extensions/resizable/bootstrap-table-resizable.js"></script>
 
-    <link rel="stylesheet" href="../assets/bootstrap-table/1.24.1/extensions/filter-control/bootstrap-table-filter-control.css">
-    <script src="../assets/bootstrap-table/1.24.1/extensions/filter-control/bootstrap-table-filter-control.js"></script>
+    <link rel="stylesheet" href="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.css">
+    <script src="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.js"></script>
 
     <script src="../assets/tableExport.jquery.plugin/tableExport.js"></script>
     <script src="../assets/tableExport.jquery.plugin/libs/js-xlsx/xlsx.core.min.js"></script>
 <!--    <script src="../assets/tableExport.jquery.plugin/libs/jsPDF/jspdf.umd.min.js"></script>-->
     <script src="../assets/tableExport.jquery.plugin/libs/pdfmake/pdfmake.min.js"></script>
     <script src="../assets/tableExport.jquery.plugin/libs/pdfmake/vfs_fonts.js"></script>
-    <script src="../assets/bootstrap-table/1.24.1/extensions/export/bootstrap-table-export.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/extensions/export/bootstrap-table-export.js"></script>
 
 <!--    <script type="module" src="../scripts/history_operation/filter_handler.js"></script>-->
 
@@ -133,9 +133,9 @@
     <div class="tab-pane fade show active d-flex" id="v-pills-page_15_mass_load" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
         <div id="column-1" class="d-flex" style="flex-direction: column; width: 100%; height: 100%; padding: 10px;">
             <div class="panel-body">
-              <div id="report_details" class="row" style="display:block;">
+              <div id="operation_history_div" class="row" style="display:block;">
                 <table
-                    id='table'
+                    id='operation_history_table'
                     data-locale="ru-RU"
                     data-resizable='true'
                     data-search='true'
@@ -155,7 +155,8 @@
                         <tr>
 <!--                            <th data-field="state" data-checkbox="true"></th>-->
                             <th data-field='date' data-sortable='true' data-sorter='dateTimeSorter'><span title="Дата">Дата</span></th>
-                            <th data-field='name_operation' data-sortable='true' data-filter-control="select"><span title="Наименование операции">Операция</span></th>
+                            <th data-field='name_operation' data-sortable='true' data-filter-control="select" data-filter-data="func:getStatusDescriptions" data-search-formatter="true" data-formatter="statusDescriptionFormatter"><span title="Наименование операции">Операция</span></th>
+                            <th data-field='description'><span title="Описание операции">Описание</span></th>
                             <th data-field='tool' data-sortable='true' data-filter-control="input"><span title="Наименование инструмента">Инструмент</span></th>
                             <th data-field='plan' data-sortable='true' data-filter-control="input"><span title="Обозначение чертежа">Чертеж</span></th>
                             <th data-field='user' data-sortable='true' data-filter-control="select"><span title="Имя пользователя">Пользователь</span></th>
@@ -188,6 +189,46 @@
                         }
 
                         return 0;
+                    }
+
+                    function getStatusDescriptions() {
+                        const data = $('#operation_history_table').bootstrapTable('getData');
+                        const statusSet = new Set();
+                        for (const item of data) {
+                            statusSet.add(item.operation_status);
+                        }
+                        const statusArrayObject = {};
+                        for (const status of statusSet) {
+                            if (status in window.appData.statusData) {
+                                statusArrayObject[window.appData.statusData[status]] = window.appData.statusData[status];
+                            }
+                        }
+                        return statusArrayObject;
+                    }
+
+                    function statusDescriptionFormatter(value, row, index, field) {
+                    //    console.log(value);
+                    //    console.log(row);
+                    //    console.log(index);
+                    //    console.log(field);
+
+                        return window.appData.statusData[row.operation_status];
+                    }
+
+                    function searchByDescription(text, value, field, data) {
+                        console.log(text);
+                        console.log(value);
+                        console.log(field);
+                        console.log(data);
+
+                        for (const operation of data) {
+                        //    console.log(operation['operation_status']);
+                            if (operation.operation_status == text) {
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }
                     }
                 </script>
               </div>
