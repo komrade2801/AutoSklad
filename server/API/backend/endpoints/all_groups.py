@@ -120,15 +120,20 @@ def create_groups(data: GroupsCreate, db: Session = Depends(get_db)):
         else:
             group_parent_id = 0
 
-        if data.group_name:
-            group = group_crud.create_group(name=data.group_name,
-                description=data.description,
-                paren_group_id=group_parent_id)
-            if not group:
-                raise HTTPException(
-                    status_code=400, detail="Не удалось создать")
 
-        return GroupsAddResponse(status=200, message="Группа успешно добавлена")
+        if data.group_name:
+            existing_group = group_crud.find_groups_by_name(name=data.group_name)
+            if not existing_group:
+                group = group_crud.create_group(name=data.group_name,
+                    description=data.description,
+                    paren_group_id=group_parent_id)
+                if not group:
+                    raise HTTPException(
+                        status_code=400, detail="Не удалось создать")
+            else:
+                return GroupsAddResponse(status=204, message="Группа уже существует")
+
+        return GroupsAddResponse(status=201, message="Группа успешно добавлена")
 
     except HTTPException:
         # Пробрасываем HTTP ошибки дальше

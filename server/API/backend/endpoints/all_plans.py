@@ -19,14 +19,14 @@ from DB.Engine.PlanCRUD import EnginePlan
 from DB.Engine.DeviceCRUD import EngineDevice
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
 # from DB.Engine.ToolsCRUD import EngineTools
-from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
+# from DB.Engine.Tools_has_DeviceCRUD import EngineToolsHasDevice
 from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
-from fastapi.responses import StreamingResponse
-from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
-from barcode.codex import Code128
+# from fastapi.responses import StreamingResponse
+# from io import BytesIO
+# from PIL import Image, ImageDraw, ImageFont
+# from barcode.codex import Code128
 # from barcode import get_barcode_class
-from barcode.writer import ImageWriter
+# from barcode.writer import ImageWriter
 from barcode.codex import Code128
 from barcode.writer import ImageWriter
 from io import BytesIO
@@ -46,7 +46,7 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
     Связь реализуется через таблицу Tools: выбираем инструменты устройства и собираем уникальные plan_id.
     """
     devices_crud = EngineDevice()
-    tools_has_device_crud = EngineToolsHasDevice()
+    # tools_has_device_crud = EngineToolsHasDevice()
     # tools_crud = EngineTools()
     plans_crud = EnginePlan()
     tool_types_crud = EngineToolTypes()
@@ -300,19 +300,31 @@ def create_plan(
         print(f"create_plan create_mass_load: {create_mass_load}")
         if create_mass_load:
             empty_cells = cells_crud.get_all_empty_cells()
+            total_tools = 0
+
             print(f"create_plan empty_cells: {empty_cells}")
+
+            for tool in plan.tools:
+                total_tools += tool['quantity']
+
+            if total_tools > len(empty_cells):
+                raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
+
             operation = {}
             number = 1
-            for idx, tool in enumerate(plan.tools):
-                print(f"create_plan idx: {idx}, tool: {tool}")
-                cell = empty_cells[idx]
-                print(f"create_plan cell: {cell}")
-                load_operation = History(cell=str(cell.number), tool=str(tool['name']), plan=str(plan_id))
-                # load_operation['toolId'] = tool['id']
+            cell_used = 0
+            for tool in plan.tools:
+                for count in range(tool['quantity']):
+                    print(f"create_plan tool: {tool}, cell_used: {cell_used}")
+                    cell = empty_cells[cell_used]
+                    cell_used += 1
+                    print(f"create_plan cell: {cell}")
+                    load_operation = History(cell=cell.id, tool=tool['id'], plan=plan_id)
+                    # load_operation['toolId'] = tool['id']
 
-                operation[str(number)] = load_operation
+                    operation[str(number)] = load_operation
 
-                number += 1
+                    number += 1
             mass_load = MassLoadCreate(operation = operation)
 
             print(f"create_plan mass_load: {mass_load}")
@@ -381,7 +393,7 @@ def update_plan(device_number: int, plan_id: int, plan_data: PlanUpdate, db: Ses
     связан с этим Чертёжом (то есть, у инструмента поле plan_id равно plan_id).
     """
     devices_crud = EngineDevice()
-    tools_has_device_crud = EngineToolsHasDevice()
+    # tools_has_device_crud = EngineToolsHasDevice()
     # tools_crud = EngineTools()
     plans_crud = EnginePlan()
 
@@ -409,7 +421,7 @@ def delete_plan(device_number: int, plan_id: int, db: Session = Depends(get_db))
     Удаляет Чертёж, предварительно проверив, что он связан с устройством (через наличие plan_id в инструментах устройства).
     """
     devices_crud = EngineDevice()
-    tools_has_device_crud = EngineToolsHasDevice()
+    # tools_has_device_crud = EngineToolsHasDevice()
     # tools_crud = EngineTools()
     plans_crud = EnginePlan()
 

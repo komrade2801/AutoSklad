@@ -10,6 +10,7 @@ import dbSync
 from API.backend.endpoints.color_map import STATUS_COLORS
 from Core.authorization import AuthService
 from DB.Engine.HelpCRUD import EngineHelp
+from DB.Engine.HistoryHasDeviceCRUD import EngineHistoryHasDevice
 from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 # from DB.Data.db_depends import get_db
 from DB.session import get_db
@@ -433,6 +434,7 @@ def save_mass_load(
     e_load = EngineLoad()
     e_load_operation = EngineLoadOperations()
     e_operation_has_device = EngineLoadOperationsHasDevice()
+    e_history_has_device = EngineHistoryHasDevice()
     e_mass_load = EngineMassLoad()
     e_cells = EngineCell()
     e_cell_has_device = EngineCellHasDevice()
@@ -467,6 +469,13 @@ def save_mass_load(
         )
         new_mass_load = e_mass_load.get_mass_load_by_id(mass_load_id)
 
+        if not mass_load_status:
+            idx = max(e_status.get_all_ids(), default=0) + 1
+            e_status.add(index=idx, stype="mass_load_init",
+                         description="Инициализирована массовая загрузка")
+            mass_load_status = e_status.get_status_by_id(idx)
+        status_load = e_status.find_by_name("mass_load_init")
+
         # 6) обрабатываем каждую операцию
         for key, story in stories.items():
             # разбираем вход
@@ -474,6 +483,13 @@ def save_mass_load(
             request_cell = story.cell
             request_tool = story.tool
             request_plan = story.plan
+
+            if not request_plan or request_plan == "":
+                request_plan = None
+            else:
+                plan = e_plan.get_plan_by_id(request_plan)
+                if not plan:
+                    request_plan = None
 
             print(f"request_cell: {request_cell}, request_tool: {request_tool}, request_plan: {request_plan}")
 
@@ -489,72 +505,12 @@ def save_mass_load(
             #         raise HTTPException(status_code=404, detail=f"Инструмент '{tool_name}' не найден в группе '{group_name}'")
             # else:
 
-            tool_types = e_tool_types.find_by_name(request_tool)
-            if not tool_types:
+            # tool_types = e_tool_types.find_by_name(request_tool)
+            tool_type = e_tool_types.get_tool_type_by_id(request_tool)
+            if not tool_type:
                 raise HTTPException(
                     status_code=404, detail=f"Подходящий инструмент '{request_tool}' не найден")
-            tool_type = tool_types[0]
-
-            load_id = max(e_load.get_all_ids(), default=0) + 1
-
-            # # выбираем конкретный инструмент
-            # db_tools = e_tools.get_tools_by_tool_type(tool_type.id)
-            # tool_to_load = next(
-            #     (t for t in db_tools if not e_load.find_by_tools_id(t.id)), None)
-            # if not tool_to_load:
-            #     raise HTTPException(
-            #         status_code=404, detail="Подходящий инструмент не найден")
-
-            # получаем и обновляем cell
-            cell = e_cells.get_cell_by_number(int(request_cell))
-            if not cell:
-                raise HTTPException(
-                    status_code=404, detail="Система не инициирована")
-
-            if not mass_load_status:
-                idx = max(e_status.get_all_ids(), default=0) + 1
-                e_status.add(index=idx, stype="mass_load_init",
-                             description="Инициализирована массовая загрузка")
-                mass_load_status = e_status.get_status_by_id(idx)
-            status_load = e_status.find_by_name("mass_load_init")
-
-            # # привязываем инструмент к устройству
-            # e_tools_has_device.add_link(
-            #     tools_id=tool_to_load.id, device_id=device.id)
-            # if not e_tools_has_device.this_tool_is_linked(tool_to_load.id):
-            #     raise HTTPException(
-            #         status_code=500,
-            #         detail=f"Связь инструмента ID={tool_to_load.id} с устройством не установлена",
-            #     )
-
-            # backup и обновление ячейки
-            cell_backs.append(e_cells.get_cell_by_id(cell.id))
-            e_cells.update_cell(
-                cell_id=cell.id,
-                number=cell.number,
-                description=f"Объявлена новая загрузка {new_mass_load.description}",
-                groups_id=tool_type.groups_id,
-                tools_id=tool_type.id,
-                status_id=mass_load_status.id,
-            )
-
-            print(f"add_load: {load_id}")
-            # создаём Load
-            e_load.add_load(
-                load_id=load_id,
-                description="",
-                tools_id=tool_type.id,
-                mass_load_id=new_mass_load.id,
-                cell_id=cell.id,
-            )
-            load = e_load.get_load_by_id(load_id)
-            if not load:
-                raise HTTPException(
-                    status_code=500, detail="Не удалось получить Load после создания")
-            loads.append(load)
-
-            # привязываем cell к устройству
-            e_cell_has_device.add_link(cell_id=cell.id, device_id=device.id)
+            # tool_type = tool_types[0]
 
             # создаём History
             story_id = max(e_stories.get_all_ids(), default=0) + 1
@@ -577,6 +533,86 @@ def save_mass_load(
             if not new_history:
                 raise HTTPException(
                     status_code=500, detail="Не удалось получить History после добавления")
+            e_history_has_device.add_link(
+                history_id=new_history.id, device_id=device.id)
+
+            # # выбираем конкретный инструмент
+            # db_tools = e_tools.get_tools_by_tool_type(tool_type.id)
+            # tool_to_load = next(
+            #     (t for t in db_tools if not e_load.find_by_tools_id(t.id)), None)
+            # if not tool_to_load:
+            #     raise HTTPException(
+            #         status_code=404, detail="Подходящий инструмент не найден")
+
+            # получаем и обновляем cell
+            # cell = e_cells.get_cell_by_number(int(request_cell))
+            cell = e_cells.get_cell_by_id(int(request_cell))
+            if not cell:
+                raise HTTPException(
+                    status_code=404, detail="Система не инициирована")
+
+            # # привязываем инструмент к устройству
+            # e_tools_has_device.add_link(
+            #     tools_id=tool_to_load.id, device_id=device.id)
+            # if not e_tools_has_device.this_tool_is_linked(tool_to_load.id):
+            #     raise HTTPException(
+            #         status_code=500,
+            #         detail=f"Связь инструмента ID={tool_to_load.id} с устройством не установлена",
+            #     )
+
+            # backup и обновление ячейки
+            cell_backs.append(e_cells.get_cell_by_id(cell.id))
+            e_cells.update_cell(
+                cell_id=cell.id,
+                number=cell.number,
+                description=f"Объявлена новая загрузка {new_mass_load.description}",
+                groups_id=tool_type.groups_id,
+                tools_id=tool_type.id,
+                status_id=mass_load_status.id,
+            )
+
+            load_id = max(e_load.get_all_ids(), default=0) + 1
+            print(f"add_load: {load_id}")
+            # создаём Load
+            e_load.add_load(
+                load_id=load_id,
+                description="",
+                tools_id=tool_type.id,
+                mass_load_id=new_mass_load.id,
+                cell_id=cell.id,
+                plan_id=request_plan,
+                history_id=new_history.id
+            )
+            load = e_load.get_load_by_id(load_id)
+            if not load:
+                raise HTTPException(
+                    status_code=500, detail="Не удалось получить Load после создания")
+            loads.append(load)
+
+            # привязываем cell к устройству
+            e_cell_has_device.add_link(cell_id=cell.id, device_id=device.id)
+
+            # # создаём History
+            # story_id = max(e_stories.get_all_ids(), default=0) + 1
+            # story_ids.append(story_id)
+            # user = e_user.get_user_by_barcode(validation.user_barcode)
+            # if not user:
+            #     raise HTTPException(
+            #         status_code=402, detail="Пользователь не найден")
+            # print(f"add_history: {story_id}")
+            # e_stories.add_history(
+            #     history_id=story_id,
+            #     user_id=user.id,
+            #     role_id=user.role_id,
+            #     tools_id=tool_type.id,
+            #     datetime_value=datetime.datetime.now(),
+            #     status=status_load.id,
+            #     description=status_load.description
+            # )
+            # new_history = e_stories.get_history_by_id(story_id)
+            # if not new_history:
+            #     raise HTTPException(
+            #         status_code=500, detail="Не удалось получить History после добавления")
 
             # создаём LoadOperation и привязываем к устройству
             operation_id = max(e_load_operation.get_all_ids(), default=0) + 1

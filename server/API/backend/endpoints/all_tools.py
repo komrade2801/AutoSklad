@@ -122,16 +122,29 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
         #         paren_group_id=0
         #     )
 
-        # 3. Создать новый тип инструмента
-        new_tt_id = max(tool_type_crud.get_all_ids(), default=0) + 1
-        tool_type_crud.add_tool_type(
-            tool_type_id=new_tt_id,
-            name=data.tool_name,
-            description=data.description,
-            count=data.count,
-            img=data.img,
-            groups_id=data.group_id,
-        )
+        existing_tool = tool_type_crud.find_tool_types_by_name(name=data.tool_name)
+        print(f"tool_type {existing_tool}")
+        if not existing_tool:
+            # 3. Создать новый тип инструмента
+            new_tt_id = max(tool_type_crud.get_all_ids(), default=0) + 1
+            tool_type_crud.add_tool_type(
+                tool_type_id=new_tt_id,
+                name=data.tool_name,
+                description=data.description,
+                count=data.count,
+                img=data.img,
+                groups_id=data.group_id,
+            )
+        else:
+            tool_type = existing_tool[0]
+            tool_type_crud.update_tool_type(
+                id=tool_type.id,
+                name=tool_type.name,
+                description=tool_type.description,
+                count=tool_type.count + data.count,
+                img=tool_type.img,
+                groups_id=tool_type.groups_id,
+            )
 
         # # 4. Добавить каждую единицу инвентаря
         # for inv in data.tools.values():
