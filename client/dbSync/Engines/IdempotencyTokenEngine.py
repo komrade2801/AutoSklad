@@ -30,34 +30,37 @@ class IdempotencyTokenCRUD(BaseCRUD):
     def __init__(self, session: Session):
         """
         Initialize IdempotencyToken CRUD engine.
-        
+
         :param session: SQLAlchemy session for sync.db
         """
-        super().__init__(session, IdempotencyToken)
+        super().__init__(model=IdempotencyToken, session=session)
     
     def add_token(
         self,
         token: str,
         command_id: int,
-        batch_id: Optional[str] = None
+        batch_id: Optional[str] = None,
+        execution_result: Optional[str] = None
     ) -> int:
         """
         Create idempotency token record.
-        
+
         :param token: SHA256 hash token
         :param command_id: Command ID
         :param batch_id: Optional batch UUID
+        :param execution_result: Optional JSON string of execution result
         :return: Created token record ID
         """
         token_record = IdempotencyToken(
             token=token,
             command_id=command_id,
-            batch_id=batch_id
+            batch_id=batch_id,
+            execution_result=execution_result
         )
-        
+
         self.session.add(token_record)
         self.session.flush()
-        
+
         return token_record.id
     
     def get_by_token(self, token: str) -> Optional[IdempotencyToken]:
