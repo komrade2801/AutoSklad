@@ -116,11 +116,11 @@ export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName,
     // Создаем новый объект для операций с новой записью под первым номером
     const newOperation = {
         1: {
-            cellId: cellId,
-            cell: cellNumber,
-            tool: toolName,
+//            cellId: cellId,
+            cell: cellId,
+            tool: toolId,
             plan: planName,
-            toolId: toolId
+//            toolId: toolId
         }
     };
 
@@ -188,7 +188,7 @@ export function initializeDragAndDrop() {
 
         updateToolsJSON(toolsData, toolId);
         updateCellsJSON(cellData, planName, toolName, cellId);
-        updateJsonHistory(window.appData.history || {}, planName, toolId, toolName, cellId, cellNumber);
+        updateJsonHistory(window.appData.history || {}, 0, toolId, toolName, cellId, cellNumber);
         // console.log(toolsData);
       });
 

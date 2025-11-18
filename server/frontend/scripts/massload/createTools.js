@@ -253,7 +253,7 @@ function performMassLoad(amount, planName, toolId, groupName, toolName) {
         // Имитируем выборку инструмента (уменьшаем sum на 1)
         updateToolsJSONMass(window.appData.tools, toolId, 1);
         updateCellsJSON(window.appData.cells, planName, combinedToolName, parseInt(cell.id));
-        updateJsonHistory(window.appData.history, planName, toolId, combinedToolName, parseInt(cell.id), parseInt(cell.number));
+        updateJsonHistory(window.appData.history, 0, toolId, combinedToolName, parseInt(cell.id), parseInt(cell.number));
     });
 
     console.log('📊 Post-load tool inventory state:', getToolInventoryState());

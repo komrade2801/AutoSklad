@@ -19,9 +19,9 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         let toolName = operationData.tool;
         const toolsData = window.appData.tools;
 
-        if (operationData.toolId) {
+        if (operationData.tool) {
             for (const [idx, tool] of Object.entries(toolsData.tools)) {
-                if (tool.id == operationData.toolId) {
+                if (tool.id == operationData.tool) {
                     toolDescription = tool.description || "Нет описания";
                     groupName = '';
                     toolName = tool.toolName || tool.name;
@@ -30,7 +30,7 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
             }
         } else {
             for (const [idx, tool] of Object.entries(toolsData.tools)) {
-                if (tool.id == operationData.toolId) {
+                if (tool.id == operationData.tool) {
                     toolDescription = tool.description || "Нет описания";
                     groupName = '';
                     toolName = tool.toolName || tool.name;
@@ -88,7 +88,7 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         const cellDiv = document.createElement('div');
         // Устанавливаем стили для названия инструмента
         nameDiv.className = 'history-tool-name';
-        nameDiv.textContent = operationData.tool;
+        nameDiv.textContent = toolName;
         nameDiv.title = toolDescription;
         nameDiv.setAttribute('data-group-index', groupIndex);
         // Устанавливаем стили для номера ячейки
@@ -146,7 +146,7 @@ export function createHistory(containerId, jsonObjectHistory, groupIndex) {
         // Вызываем функцию редактирования JSON-файлов
         confirmDeleteButton.addEventListener('click', () => {
             const planName = operationData.plan; // Значение из JSON
-            const toolId = operationData.toolId; // ID инструмента
+            const toolId = operationData.tool; // ID инструмента
             const cellId = operationData.cell;  // Значение из cellDiv
             // Вызов функции deleteLoad с нужными параметрами
             deleteLoad(jsonObjectHistory, jsonObjectCells, window.appData.tools, planName, toolId, cellId);
