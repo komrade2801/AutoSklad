@@ -164,6 +164,15 @@ class SyncManager:
 
         return table, op.lower(), data, rec_id
 
+    def get_crud(self, table):
+        """
+        Public method to get CRUD instance for a table.
+
+        :param table: Table name
+        :return: CRUD instance
+        """
+        return self._get_crud(table)
+
     def _get_crud(self, table):
         crud_cls = self.crud_registry.get(table)
         if crud_cls is None:

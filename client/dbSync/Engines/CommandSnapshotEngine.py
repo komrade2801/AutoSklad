@@ -34,7 +34,7 @@ class CommandSnapshotCRUD(BaseCRUD):
         
         :param session: SQLAlchemy session for sync.db
         """
-        super().__init__(session, CommandSnapshot)
+        super().__init__(model=CommandSnapshot, session=session)
     
     def add_snapshot(
         self,

@@ -35,7 +35,7 @@ class BatchExecutionCRUD(BaseCRUD):
         
         :param session: SQLAlchemy session for sync.db
         """
-        super().__init__(session, BatchExecution)
+        super().__init__(model=BatchExecution, session=session)
     
     def create_batch(
         self,
@@ -94,6 +94,40 @@ class BatchExecutionCRUD(BaseCRUD):
         
         if batch:
             batch.status = status
+            batch.completed_at = datetime.utcnow()
+            
+            if error_message:
+                batch.error_message = error_message
+            
+            self.session.flush()
+            return True
+        
+        return False
+    
+    def update_batch_status(
+        self,
+        batch_id: str,
+        status: str,
+        successful_commands: int = 0,
+        failed_commands: int = 0,
+        error_message: Optional[str] = None
+    ) -> bool:
+        """
+        Update batch status with command counts (alias for update_status with extended parameters).
+        
+        :param batch_id: Batch UUID
+        :param status: New status (committed, rolled_back, completed, failed)
+        :param successful_commands: Count of successful commands
+        :param failed_commands: Count of failed commands
+        :param error_message: Optional error message
+        :return: True if updated, False if batch not found
+        """
+        batch = self.get_by_batch_id(batch_id)
+        
+        if batch:
+            batch.status = status
+            batch.successful_commands = successful_commands
+            batch.failed_commands = failed_commands
             batch.completed_at = datetime.utcnow()
             
             if error_message:
