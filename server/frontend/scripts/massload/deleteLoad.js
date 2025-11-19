@@ -48,7 +48,7 @@ export function deleteLoad(jsonObjectHistory, jsonObjectCells, jsonObjectTools, 
 
     for (const operationKey in jsonObjectHistory.operation) {
         const operationData = jsonObjectHistory.operation[operationKey];
-        if (operationData.cell == cellId && operationData.tool == toolId) {
+        if (operationData.cell == cellId && operationData.toolId == toolId) {
             targetIndex = parseInt(operationKey, 10); // Сохраняем индекс для удаления
             break;
         }
