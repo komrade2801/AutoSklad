@@ -10,11 +10,6 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
 from sqlalchemy.sql import func
 from .base import sync_base
 
-# Allowed status values for token lifecycle
-TOKEN_STATUS_PENDING = 'PENDING'
-TOKEN_STATUS_COMPLETED = 'COMPLETED'
-TOKEN_STATUS_FAILED = 'FAILED'
-
 
 class IdempotencyToken(sync_base):
     """
@@ -68,35 +63,13 @@ class IdempotencyToken(sync_base):
         nullable=True,
         comment='JSON serialized result of command execution'
     )
-
-    # Status lifecycle and timestamps
-    status = Column(
-        String(20),
-        nullable=False,
-        default=TOKEN_STATUS_COMPLETED,
-        comment='PENDING, COMPLETED, FAILED'
-    )
-
-    created_at = Column(
-        DateTime,
-        server_default=func.now(),
-        nullable=False,
-        comment='When token was created'
-    )
-
-    # First execution time (for replay semantics)
+    
+    # Timestamp
     executed_at = Column(
         DateTime,
         server_default=func.now(),
         nullable=False,
         comment='When command was first executed'
-    )
-
-    # Optional expiration time (e.g., +24 hours)
-    expires_at = Column(
-        DateTime,
-        nullable=True,
-        comment='When token expires and can be purged'
     )
     
     def __repr__(self):
@@ -114,8 +87,5 @@ class IdempotencyToken(sync_base):
             'command_id': self.command_id,
             'batch_id': self.batch_id,
             'execution_result': self.execution_result,
-            'status': self.status,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'executed_at': self.executed_at.isoformat() if self.executed_at else None,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None
+            'executed_at': self.executed_at.isoformat() if self.executed_at else None
         }

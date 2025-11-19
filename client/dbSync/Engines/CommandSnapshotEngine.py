@@ -6,7 +6,6 @@ used for rollback compensation.
 """
 
 from typing import Optional, List
-from datetime import datetime
 from sqlalchemy.orm import Session
 from ..Model.CommandSnapshot import CommandSnapshot
 from dbSync.Engines.CRUD import BaseCRUD
@@ -142,19 +141,6 @@ class CommandSnapshotCRUD(BaseCRUD):
             CommandSnapshot.command_id.in_(command_ids)
         ).delete(synchronize_session=False)
         
-        self.session.flush()
-        return count
-
-    def bulk_delete_older_than(self, cutoff_date: datetime) -> int:
-        """
-        Delete snapshots created before cutoff_date.
-        
-        :param cutoff_date: datetime threshold for deletion
-        :return: Number of snapshots deleted
-        """
-        count = self.session.query(CommandSnapshot).filter(
-            CommandSnapshot.created_at < cutoff_date
-        ).delete(synchronize_session=False)
         self.session.flush()
         return count
     
