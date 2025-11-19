@@ -15,14 +15,6 @@ from dbSync.Logic_v2.SyncManager import SyncManager
 from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES
 
 from .Model.base import sync_base
-# Import all sync models to register them with sync_base BEFORE create_all()
-from dbSync.Model.Command import Command
-from dbSync.Model.Record import Record
-from dbSync.Model.CommandStatus import CommandStatus
-from dbSync.Model.SyncConfig import SyncConfig
-from dbSync.Model.CommandSnapshot import CommandSnapshot  # Rollback support
-from dbSync.Model.BatchExecution import BatchExecution, BatchCommandLink  # Rollback support
-from dbSync.Model.IdempotencyToken import IdempotencyToken  # Rollback support
 from .setup import *
 import os
 from queue import Queue, Empty
@@ -336,43 +328,15 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port=""):
     scheduler = init_scheduler()
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_scheduler - Успешно.')
 
-    cmd_crud, record_crud, status_crud, sync_cfg = init_crud(db_session)
+    cmd_crud, record_crud, status_crud, sync_cfg = init_crud()
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_crud - Успешно.')
 
     transport_service = init_transport_service(
         host=host, token=token, secret=secret, aes=aes, Port=Port)
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_transport_service - Успешно.')
 
-    # Initialize rollback support CRUDs with shared session to prevent database locking
-    snapshot_crud = init_snapshot_crud(db_session)
-    batch_crud = init_batch_execution_crud(db_session)
-    token_crud = init_idempotency_token_crud(db_session)
-    
-    # Initialize rollback managers
-    snapshot_manager = init_snapshot_manager(
-        snapshot_crud=snapshot_crud,
-        work_session=db_session_local,
-        sync_manager=sync_manager,
-        diagnostic_logger=diagnostic_logger,
-        scheduler=scheduler
-    )
-    
-    idempotency_manager = init_idempotency_manager(
-        token_crud=token_crud,
-        diagnostic_logger=diagnostic_logger,
-        scheduler=scheduler
-    )
-    
-    # Initialize enhanced batch processor with rollback support
     batch_processor = init_batch_processor(
-        diagnostic=diagnostic_logger,
-        manager=sync_manager,
-        dbsession=db_session,
-        snapshot_manager=snapshot_manager,
-        idempotency_manager=idempotency_manager,
-        batch_crud=batch_crud,
-        device_number=device_id
-    )
+        diagnostic=diagnostic_logger, manager=sync_manager, dbsession=db_session)
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_batch_processor - Успешно.')
 
     conflict_manager = init_conflict_manager(

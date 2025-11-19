@@ -6,8 +6,8 @@ db_path_work = "vending.db"
 db_path_test = ":memory:"
 SECRET_KEY = "g\xa8\xc9\x04H\xf0F\xe1\xfb\xb6J\xbc\xae\xfaP\xec'\x08\xcb\xa1\xfc\xbe\xea\x96'"
 BASE_URL = f"http://{Host}"
-SENDER_TIMEOUT = 30
-RECEIVER_TIMEOUT = 60
+SENDER_TIMEOUT = 15
+RECEIVER_TIMEOUT = 30
 AES_KEY = b"16byteslongkey!!"
 
 # ------------------------------MySQL-----------------------------

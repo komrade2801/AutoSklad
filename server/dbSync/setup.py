@@ -16,118 +16,26 @@ import traceback
 # import time
 logger = logging.getLogger(__name__)
 
-def init_crud(shared_session):
-    """Initialize sync CRUD engines with shared session to prevent database locking"""
+def init_crud():
+    # from dbSync.Engines.CommandCRUD import CommandCRUD
+    # from dbSync.Engines.RecordCRUD import RecordCRUD
+    # from dbSync.Engines.CommandStatusCRUD import CommandStatusCRUD
+    # from dbSync.Engines.SyncConfigCRUD import SyncConfigCRUD
+    # --- Импорты компонентов синхронизации ---
     from dbSync.Engines.CommandEngine import CommandCRUD
     from dbSync.Engines.RecordEngine import RecordCRUD
     from dbSync.Engines.CommandStatusEngine import CommandStatusCRUD
     from dbSync.Engines.SyncConfigEngine import SyncConfigCRUD
 
-    cmd_crud = CommandCRUD(session=shared_session)
-    record_crud = RecordCRUD(session=shared_session)
-    status_crud = CommandStatusCRUD(session=shared_session)
-    sync_cfg = SyncConfigCRUD(session=shared_session)
+
+    # CRUD-слои
+
+    cmd_crud = CommandCRUD()
+    record_crud = RecordCRUD()
+    status_crud = CommandStatusCRUD()
+    sync_cfg = SyncConfigCRUD()
     print('[setup]init_crud')
     return cmd_crud, record_crud, status_crud, sync_cfg
-
-
-def init_snapshot_crud(shared_session):
-    """Initialize CommandSnapshot CRUD engine with shared session to prevent database locking"""
-    try:
-        from dbSync.Engines.CommandSnapshotEngine import CommandSnapshotCRUD
-        
-        snapshot_crud = CommandSnapshotCRUD(session=shared_session)
-        print('[setup]init_snapshot_crud')
-        return snapshot_crud
-    except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_snapshot_crud][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
-        return None
-
-
-def init_batch_execution_crud(shared_session):
-    """Initialize BatchExecution CRUD engine with shared session to prevent database locking"""
-    try:
-        from dbSync.Engines.BatchExecutionEngine import BatchExecutionCRUD
-        
-        batch_crud = BatchExecutionCRUD(session=shared_session)
-        print('[setup]init_batch_execution_crud')
-        return batch_crud
-    except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_batch_execution_crud][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
-        return None
-
-
-def init_idempotency_token_crud(shared_session):
-    """Initialize IdempotencyToken CRUD engine with shared session to prevent database locking"""
-    try:
-        from dbSync.Engines.IdempotencyTokenEngine import IdempotencyTokenCRUD
-        
-        token_crud = IdempotencyTokenCRUD(session=shared_session)
-        print('[setup]init_idempotency_token_crud')
-        return token_crud
-    except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_idempotency_token_crud][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
-        return None
-
-
-def init_snapshot_manager(snapshot_crud, work_session, sync_manager, diagnostic_logger, scheduler):
-    """Initialize SnapshotManager for rollback compensation"""
-    try:
-        from dbSync.Logic_v2.SnapshotManager import SnapshotManager
-        
-        snapshot_manager = SnapshotManager(
-            snapshot_crud=snapshot_crud,
-            work_session=work_session,
-            sync_manager=sync_manager,
-            _logger=diagnostic_logger
-        )
-        
-        # Schedule automatic cleanup (daily at 3 AM)
-        if scheduler:
-            scheduler.add_job(
-                func=snapshot_manager.cleanup_old_snapshots,
-                trigger='cron',
-                hour=3,
-                minute=0,
-                args=[30],  # 30 days retention
-                id='snapshot_cleanup',
-                replace_existing=True
-            )
-        
-        print('[setup]init_snapshot_manager')
-        return snapshot_manager
-    except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_snapshot_manager][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
-        return None
-
-
-def init_idempotency_manager(token_crud, diagnostic_logger, scheduler):
-    """Initialize IdempotencyManager for duplicate prevention"""
-    try:
-        from dbSync.Logic_v2.IdempotencyManager import IdempotencyManager
-        
-        idempotency_manager = IdempotencyManager(
-            token_crud=token_crud,
-            _logger=diagnostic_logger
-        )
-        
-        # Schedule automatic cleanup (daily at 4 AM)
-        if scheduler:
-            scheduler.add_job(
-                func=idempotency_manager.cleanup_old_tokens,
-                trigger='cron',
-                hour=4,
-                minute=0,
-                args=[7],  # 7 days retention
-                id='token_cleanup',
-                replace_existing=True
-            )
-        
-        print('[setup]init_idempotency_manager')
-        return idempotency_manager
-    except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_idempotency_manager][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
-        return None
 
 
 def init_retry_manager(scheduler, queue, sender, diagnostic_logger):
@@ -138,7 +46,7 @@ def init_retry_manager(scheduler, queue, sender, diagnostic_logger):
         sender=sender,
         _logger=diagnostic_logger,
         base_delay=60.0,  # или другое значение
-        max_retries=5  # или другое значение
+        max_retries=150  # или другое значение
     )
     print('[setup]init_retry_manager')
     return retry_manager
@@ -305,20 +213,15 @@ def init_queue():
     except Exception as e:
         print(f'[ПОТОК][{threading.current_thread().name}][setup][init_queue][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
 
-def init_batch_processor(diagnostic, manager, dbsession, snapshot_manager=None, 
-                        idempotency_manager=None, batch_crud=None, device_number=None):
+def init_batch_processor(diagnostic, manager, dbsession):
     try:
-        from .Logic_v2.BatchProcessorEnhanced import BatchProcessorEnhanced
-        _batch_processor = BatchProcessorEnhanced(
-            session=dbsession,
+        from .Logic_v2.BatchProcessor import BatchProcessor
+        _batch_processor = BatchProcessor(
             sync_manager=manager,
-            snapshot_manager=snapshot_manager,
-            idempotency_manager=idempotency_manager,
-            batch_crud=batch_crud,
-            device_number=device_number,
-            _logger=diagnostic
+            _logger=diagnostic,
+            session=dbsession,
         )
-        print('[setup]init_batch_processor (enhanced with rollback support)')
+        print('[setup]init_batch_processor')
         return _batch_processor
     except Exception as e:
         print(f'[ПОТОК][{threading.current_thread().name}][setup][init_batch_processor][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')

@@ -13,8 +13,8 @@
     "token": "token11111",
     "secret": "g\\xa8\\xc9\\x04H\\xf0F\\xe1\\xfb\\xb6J\\xbc\\xae\\xfaP\\xec'\\x08\\xcb\\xa1\\xfc\\xbe\\xea\\x96'",
     "aes": "16byteslongkey!!",
-    "sender_timeout": 30,
-    "receiver_timeout": 60
+    "sender_timeout": 15,
+    "receiver_timeout": 30
   },
   "network": {
     "ip": "127.0.0.1",
