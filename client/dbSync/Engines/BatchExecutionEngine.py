@@ -35,7 +35,7 @@ class BatchExecutionCRUD(BaseCRUD):
         
         :param session: SQLAlchemy session for sync.db
         """
-        super().__init__(model=BatchExecution, session=session)
+        super().__init__(session, BatchExecution)
     
     def create_batch(
         self,
@@ -76,7 +76,7 @@ class BatchExecutionCRUD(BaseCRUD):
             batch_id=batch_id
         ).first()
     
-    def update_batch_status(
+    def update_status(
         self,
         batch_id: str,
         status: str,
@@ -84,24 +84,24 @@ class BatchExecutionCRUD(BaseCRUD):
     ) -> bool:
         """
         Update batch status and completion time.
-
+        
         :param batch_id: Batch UUID
         :param status: New status (committed, rolled_back)
         :param error_message: Optional error message
         :return: True if updated, False if batch not found
         """
         batch = self.get_by_batch_id(batch_id)
-
+        
         if batch:
             batch.status = status
             batch.completed_at = datetime.utcnow()
-
+            
             if error_message:
                 batch.error_message = error_message
-
+            
             self.session.flush()
             return True
-
+        
         return False
     
     def get_by_device(

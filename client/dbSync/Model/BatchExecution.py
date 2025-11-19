@@ -26,7 +26,7 @@ class BatchExecution(sync_base):
     - Final status set on commit or rollback
     """
     
-    __tablename__ = 'BatchExecution'
+    __tablename__ = 'batch_execution'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     
@@ -111,7 +111,7 @@ class BatchCommandLink(sync_base):
     enabling precise rollback and resume operations.
     """
     
-    __tablename__ = 'BatchCommandLink'
+    __tablename__ = 'batch_command_link'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     

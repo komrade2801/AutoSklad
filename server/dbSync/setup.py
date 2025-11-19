@@ -16,27 +16,36 @@ import traceback
 # import time
 logger = logging.getLogger(__name__)
 
-def init_crud(shared_session):
-    """Initialize sync CRUD engines with shared session to prevent database locking"""
+def init_crud():
+    # from dbSync.Engines.CommandCRUD import CommandCRUD
+    # from dbSync.Engines.RecordCRUD import RecordCRUD
+    # from dbSync.Engines.CommandStatusCRUD import CommandStatusCRUD
+    # from dbSync.Engines.SyncConfigCRUD import SyncConfigCRUD
+    # --- Импорты компонентов синхронизации ---
     from dbSync.Engines.CommandEngine import CommandCRUD
     from dbSync.Engines.RecordEngine import RecordCRUD
     from dbSync.Engines.CommandStatusEngine import CommandStatusCRUD
     from dbSync.Engines.SyncConfigEngine import SyncConfigCRUD
 
-    cmd_crud = CommandCRUD(session=shared_session)
-    record_crud = RecordCRUD(session=shared_session)
-    status_crud = CommandStatusCRUD(session=shared_session)
-    sync_cfg = SyncConfigCRUD(session=shared_session)
+
+    # CRUD-слои
+
+    cmd_crud = CommandCRUD()
+    record_crud = RecordCRUD()
+    status_crud = CommandStatusCRUD()
+    sync_cfg = SyncConfigCRUD()
     print('[setup]init_crud')
     return cmd_crud, record_crud, status_crud, sync_cfg
 
 
-def init_snapshot_crud(shared_session):
-    """Initialize CommandSnapshot CRUD engine with shared session to prevent database locking"""
+def init_snapshot_crud():
+    """Initialize CommandSnapshot CRUD engine for rollback snapshots"""
     try:
         from dbSync.Engines.CommandSnapshotEngine import CommandSnapshotCRUD
+        from dbSync.sync_db import get_sync_session
         
-        snapshot_crud = CommandSnapshotCRUD(session=shared_session)
+        sync_session = get_sync_session()
+        snapshot_crud = CommandSnapshotCRUD(session=sync_session)
         print('[setup]init_snapshot_crud')
         return snapshot_crud
     except Exception as e:
@@ -44,12 +53,14 @@ def init_snapshot_crud(shared_session):
         return None
 
 
-def init_batch_execution_crud(shared_session):
-    """Initialize BatchExecution CRUD engine with shared session to prevent database locking"""
+def init_batch_execution_crud():
+    """Initialize BatchExecution CRUD engine for batch tracking"""
     try:
         from dbSync.Engines.BatchExecutionEngine import BatchExecutionCRUD
+        from dbSync.sync_db import get_sync_session
         
-        batch_crud = BatchExecutionCRUD(session=shared_session)
+        sync_session = get_sync_session()
+        batch_crud = BatchExecutionCRUD(session=sync_session)
         print('[setup]init_batch_execution_crud')
         return batch_crud
     except Exception as e:
@@ -57,12 +68,14 @@ def init_batch_execution_crud(shared_session):
         return None
 
 
-def init_idempotency_token_crud(shared_session):
-    """Initialize IdempotencyToken CRUD engine with shared session to prevent database locking"""
+def init_idempotency_token_crud():
+    """Initialize IdempotencyToken CRUD engine for duplicate prevention"""
     try:
         from dbSync.Engines.IdempotencyTokenEngine import IdempotencyTokenCRUD
+        from dbSync.sync_db import get_sync_session
         
-        token_crud = IdempotencyTokenCRUD(session=shared_session)
+        sync_session = get_sync_session()
+        token_crud = IdempotencyTokenCRUD(session=sync_session)
         print('[setup]init_idempotency_token_crud')
         return token_crud
     except Exception as e:

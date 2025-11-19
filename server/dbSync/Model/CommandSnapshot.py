@@ -25,14 +25,14 @@ class CommandSnapshot(sync_base):
     - Used for compensation when ALL_OR_NOTHING batch fails
     """
     
-    __tablename__ = 'CommandSnapshot'
+    __tablename__ = 'command_snapshot'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     
     # Link to the command being snapshotted
     command_id = Column(
         Integer, 
-        ForeignKey('Command.id', ondelete='CASCADE'),
+        ForeignKey('command.id', ondelete='CASCADE'),
         nullable=False,
         unique=True,  # One snapshot per command
         comment='Foreign key to Command table'

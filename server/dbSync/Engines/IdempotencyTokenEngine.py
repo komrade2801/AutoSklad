@@ -33,14 +33,13 @@ class IdempotencyTokenCRUD(BaseCRUD):
         
         :param session: SQLAlchemy session for sync.db
         """
-        super().__init__(model=IdempotencyToken, session=session)
+        super().__init__(session, IdempotencyToken)
     
     def add_token(
         self,
         token: str,
         command_id: int,
-        batch_id: Optional[str] = None,
-        execution_result: Optional[str] = None
+        batch_id: Optional[str] = None
     ) -> int:
         """
         Create idempotency token record.
@@ -48,14 +47,12 @@ class IdempotencyTokenCRUD(BaseCRUD):
         :param token: SHA256 hash token
         :param command_id: Command ID
         :param batch_id: Optional batch UUID
-        :param execution_result: Optional JSON string of execution result
         :return: Created token record ID
         """
         token_record = IdempotencyToken(
             token=token,
             command_id=command_id,
-            batch_id=batch_id,
-            execution_result=execution_result
+            batch_id=batch_id
         )
         
         self.session.add(token_record)

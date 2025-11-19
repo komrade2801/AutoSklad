@@ -30,7 +30,7 @@ class IdempotencyToken(sync_base):
     - Prevents re-execution after rollback + retry
     """
     
-    __tablename__ = 'IdempotencyToken'
+    __tablename__ = 'idempotency_token'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     
@@ -45,7 +45,7 @@ class IdempotencyToken(sync_base):
     # Link to command
     command_id = Column(
         Integer,
-        ForeignKey('Command.id', ondelete='CASCADE'),
+        ForeignKey('command.id', ondelete='CASCADE'),
         nullable=False,
         comment='Foreign key to Command table'
     )
