@@ -46,7 +46,7 @@ def init_retry_manager(scheduler, queue, sender, diagnostic_logger):
         sender=sender,
         _logger=diagnostic_logger,
         base_delay=60.0,  # или другое значение
-        max_retries=5  # или другое значение
+        max_retries=150  # или другое значение
     )
     print('[setup]init_retry_manager')
     return retry_manager
@@ -340,5 +340,3 @@ def init_sender(device_id, proc, queue, transport):
     except Exception as e:
         print(f'[ПОТОК][{threading.current_thread().name}][setup][init_sender][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
     return None
-
-

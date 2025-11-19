@@ -50,7 +50,7 @@ def init_retry_manager(scheduler, queue, sender, diagnostic_logger):
         sender=sender,
         _logger=diagnostic_logger,
         base_delay=60.0,  # или другое значение
-        max_retries=5  # или другое значение
+        max_retries=150  # или другое значение
     )
     print('[setup]init_retry_manager')
     return retry_manager
