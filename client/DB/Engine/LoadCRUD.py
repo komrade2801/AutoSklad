@@ -19,7 +19,7 @@ class EngineLoad(BaseCRUD):
 
         :param session: Объект сессии SQLAlchemy для работы с базой данных.
         """
-        super().__init__(session, Load)
+        super().__init__(session=session, model=Load)
 
     def add_load(self, id: int, description: str, tools_id: int, mass_load_id: int, cell_id: int):
         """
@@ -57,6 +57,12 @@ class EngineLoad(BaseCRUD):
         :return: Список записей Load.
         """
         return self.session.query(self.model).filter_by(cell_id=cell_id).first()
+
+    def find_by_plan_id(self, plan_id: int) -> List[Load]:
+        """
+        Возвращает список записей Load, связанных с указанным plan_id.
+        """
+        return self.session.query(self.model).filter(plan_id=plan_id).all()
 
     def find_by_tools_id(self, tools_id: int) -> Load:
         """

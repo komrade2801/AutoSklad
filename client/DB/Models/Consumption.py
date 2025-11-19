@@ -14,6 +14,7 @@ class Consumption(Base, Model):
     cell_id = Column(Integer, ForeignKey("Cell.id"), nullable=False, comment="Идентификатор ячейки")
     tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Идентификатор инструмента")
     plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Внешний ключ на таблицу Plan")
+    history_id = Column(Integer, ForeignKey("History.id"), nullable=False, comment="Идентификатор записи из таблицы History")
 
     @property
     def tools(self):
@@ -40,19 +41,19 @@ class Consumption(Base, Model):
         return relationship(Plan, back_populates="Consumptions")
 
     @property
-    def operations_consumptions(self):
-        if "OperationsConsumptions" not in Base.metadata.tables:
-            from DB.Models.OperationsConsumption import OperationsConsumption
+    def stories(self):
+        if "History" not in Base.metadata.tables:
+            from DB.Models.History import History
         else:
-            OperationsConsumption = Base.metadata.tables["OperationsConsumptions"].class_
-            # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(OperationsConsumption, back_populates="Consumptions")
+            History = Base.metadata.tables["History"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(History, back_populates="Consumptions")
 
     # Индексы
     __table_args__ = (
         Index("idx_consumption_tools_id", "tools_id", unique=False),
         Index("idx_consumption_cell_id", "cell_id", unique=False),
         Index("idx_consumption_plan_id", "plan_id", unique=False),
+        Index("idx_consumption_history_id", "history_id", unique=False)
     )
 
     def __repr__(self):
@@ -62,6 +63,7 @@ class Consumption(Base, Model):
                 f"cell_id={self.cell_id}, "
                 f"tools_id={self.tools_id}, "
                 f"plan_id={self.plan_id}, "
+                f"history_id={self.history_id}, "
                 f")>")
 
 # cells = relationship("Cell", back_populates="Consumptions")

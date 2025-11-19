@@ -49,19 +49,19 @@ class EngineLoad(BaseCRUD):
         """
         Возвращает список записей Load, связанных с указанным tools_id.
         """
-        return self.get_by_tools_id(tools_id)
+        return self.session.query(self.model).filter_by(tools_id=tools_id).first()
 
     def find_by_cell_id(self, cell_id: int) -> List[Load]:
         """
         Возвращает список записей Load, связанных с указанным tools_id.
         """
-        return self.session.query(Load).filter(Load.cell_id == cell_id).all()
+        return self.session.query(self.model).filter_by(cell_id=cell_id).first()
 
     def find_by_plan_id(self, plan_id: int) -> List[Load]:
         """
         Возвращает список записей Load, связанных с указанным plan_id.
         """
-        return self.session.query(Load).filter(Load.plan_id == plan_id).all()
+        return self.session.query(self.model).filter_by(plan_id=plan_id).all()
 
     def find_by_mass_load_id(self, mass_load_id: int) -> List[Load]:
         """

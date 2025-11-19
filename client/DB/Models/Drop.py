@@ -5,52 +5,51 @@ from DB.Data.base import Base
 from DB.Models.BaseModel import Model
 
 
-# if 'Tools' not in Base.metadata.tables:
-#     from DB.Models.Tools import Tools
-# if 'MassDrop' not in Base.metadata.tables:
-#     from DB.Models.MassDrop import MassDrop
-# if 'Cell' not in Base.metadata.tables:
-#     from DB.Models.Cell import Cell
-
-# print("Drop")
-
-
 class Drop(Base, Model):
     """Модель для учета операций выдачи инструментов."""
-    __tablename__ = 'Drop'
+    __tablename__ = "Drop"
     __table_kwargs__ = {"extend_existing": True}  # Указываем аргументы таблицы отдельно
 
     # Поля таблицы
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment='Уникальный идентификатор записи в таблице Drop')
-    description = Column(String(255), nullable=True, comment='Описание операции или дополнительные детали')
-    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False,comment='Дата и время создания записи')
-    cell_id = Column(Integer, ForeignKey('Cell.id'), nullable=False, comment='Внешний ключ на таблицу Cell')
-    mass_drop_id = Column(Integer, ForeignKey('MassDrop.id'), nullable=False,comment='Внешний ключ на таблицу mass_drop')
-    tools_id = Column(Integer, ForeignKey('Tools.id'), nullable=False, comment='Внешний ключ на таблицу Tools')
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True, comment="Уникальный идентификатор записи в таблице Drop")
+    description = Column(String(255), nullable=True, comment="Описание операции или дополнительные детали")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False,comment="Дата и время создания записи")
+    cell_id = Column(Integer, ForeignKey("Cell.id"), nullable=False, comment="Внешний ключ на таблицу Cell")
+    mass_drop_id = Column(Integer, ForeignKey("MassDrop.id"), nullable=False,comment="Внешний ключ на таблицу massdrop")
+    tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Внешний ключ на таблицу ToolTypes")
     plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Внешний ключ на таблицу Plan")
+    history_id = Column(Integer, ForeignKey("History.id"), nullable=False, comment="Идентификатор записи из таблицы History")
+
+    @property
+    def devices(self):
+        if "Devices" not in Base.metadata.tables:
+            from DB.Models.Device import Device
+        else:
+            Device = Base.metadata.tables["Devices"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(Device, back_populates="DropOperations")
 
     @property
     def tools(self):
-        if 'Tools' not in Base.metadata.tables:
-            from DB.Models.Tools import Tools
+        if "ToolTypes" not in Base.metadata.tables:
+            from DB.Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables['Tools'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="Drops")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="Drops")
 
     @property
     def mass_drops(self):
-        if 'MassDrops' not in Base.metadata.tables:
+        if "MassDrops" not in Base.metadata.tables:
             from DB.Models.MassDrop import MassDrop
         else:
-            MassDrop = Base.metadata.tables['MassDrops'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+            MassDrop = Base.metadata.tables["MassDrops"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(MassDrop, back_populates="Drops")
 
     @property
     def cells(self):
-        if 'Cells' not in Base.metadata.tables:
+        if "Cells" not in Base.metadata.tables:
             from DB.Models.Cell import Cell
         else:
-            Cell = Base.metadata.tables['Cells'].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+            Cell = Base.metadata.tables["Cells"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Cell, back_populates="Drops")
 
     @property
@@ -61,25 +60,35 @@ class Drop(Base, Model):
             Plan = Base.metadata.tables["Plan"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
         return relationship(Plan, back_populates="Drops")
 
+    @property
+    def stories(self):
+        if "History" not in Base.metadata.tables:
+            from DB.Models.History import History
+        else:
+            History = Base.metadata.tables["History"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(History, back_populates="Drops")
+
     # Индексы
     __table_args__ = (
-        Index('idx_drop_tools_id', 'tools_id', unique=False),
-        Index('idx_drop_mass_drop_id', 'mass_drop_id', unique=False),
-        Index('idx_drop_cell_id', 'cell_id', unique=False),
+        Index("idx_drop_tools_id", "tools_id", unique=False),
+        Index("idx_drop_mass_drop_id", "mass_drop_id", unique=False),
+        Index("idx_drop_cell_id", "cell_id", unique=False),
         Index("idx_drop_plan_id", "plan_id", unique=False),
+        Index("idx_drop_history_id", "history_id", unique=False)
     )
 
     def __repr__(self):
         """Представляет объект Drop в виде строки для удобства отладки."""
-        return (f"<Drop("
+        return (f"<{self.__tablename__}("
                 f"id={self.id}, "
                 f"description={self.description}, "
-                f"created_at={self.created_at}), "
+                f"created_at={self.created_at}, "
                 f"cell_id={self.cell_id}, "
-                f'mass_drop_id={self.mass_drop_id}, '
+                f"mass_drop_id={self.mass_drop_id}, "
                 f"tools_id={self.tools_id}"
                 f"plan_id={self.plan_id}, "
-                f">")
+                f"history_id={self.history_id}, "
+                f")>")
 
 # mass_drop = relationship("MassDrop", back_populates="Drops")
 # cells = relationship("Cell", back_populates="Drops")

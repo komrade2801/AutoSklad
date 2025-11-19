@@ -29,12 +29,12 @@ class PlanToolTypes(Base, Model):
     plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=False, comment="Идентификатор чертежа")
 
     @property
-    def tools(self):
-        if "Tools" not in Base.metadata.tables:
-            from ..Models.Tools import Tools
+    def tool_types(self):
+        if "ToolTypes" not in Base.metadata.tables:
+            from ..Models.ToolTypes import ToolTypes
         else:
-            Tools = Base.metadata.tables["Tools"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Tools, back_populates="PlanToolTypes")
+            ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(ToolTypes, back_populates="PlanToolTypes")
 
     @property
     def plans(self):
