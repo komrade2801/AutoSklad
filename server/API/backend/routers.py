@@ -19,6 +19,7 @@ from API.backend.endpoints.json_random_load import json_random_load_router
 from API.backend.endpoints.tool_library import tool_library_router
 from API.backend.endpoints.tools_in_vending import tools_in_vending_router
 from API.backend.endpoints.status import status_router
+from API.backend.endpoints.settings import settings_router
 
 
 # Импортируем все файлы с роутерами
@@ -47,3 +48,4 @@ backend_router.include_router(mass_load_router)
 backend_router.include_router(mass_drop_router)
 backend_router.include_router(all_device_router)
 backend_router.include_router(status_router)
+backend_router.include_router(settings_router)

@@ -1,0 +1,120 @@
+[
+  {
+    "key": "Host",
+    "value": "127.0.0.1",
+    "value_type": "str",
+    "category": "network",
+    "description": "Адрес привязки сервера",
+    "requires_restart": true
+  },
+  {
+    "key": "port",
+    "value": "8000",
+    "value_type": "int",
+    "category": "network",
+    "description": "Порт сервера",
+    "requires_restart": true
+  },
+  {
+    "key": "FullScreen",
+    "value": "False",
+    "value_type": "bool",
+    "category": "frontend",
+    "description": "Режим полного экрана",
+    "requires_restart": true
+  },
+  {
+    "key": "db_path",
+    "value": "web_vending.db",
+    "value_type": "str",
+    "category": "database",
+    "description": "Путь к файлу базы данных SQLite"
+  },
+  {
+    "key": "db_path_work",
+    "value": "vending.db",
+    "value_type": "str",
+    "category": "database",
+    "description": "Путь к рабочей базе данных"
+  },
+  {
+    "key": "db_path_test",
+    "value": ":memory:",
+    "value_type": "str",
+    "category": "database",
+    "description": "Путь к тестовой базе данных"
+  },
+  {
+    "key": "SECRET_KEY",
+    "value": "Z6TJBEfwRuh/tkawur9QzCfPIcvB+OYJ",
+    "value_type": "str",
+    "category": "security",
+    "description": "Ключ подписи JWT",
+    "is_sensitive": true
+  },
+  {
+    "key": "BASE_URL",
+    "value": "http://127.0.0.1",
+    "value_type": "str",
+    "category": "network",
+    "description": "Базовый URL сервера"
+  },
+  {
+    "key": "SENDER_TIMEOUT",
+    "value": "15",
+    "value_type": "int",
+    "category": "sync",
+    "description": "Интервал отправки синхронизации (сек)"
+  },
+  {
+    "key": "RECEIVER_TIMEOUT",
+    "value": "30",
+    "value_type": "int",
+    "category": "sync",
+    "description": "Интервал приёма синхронизации (сек)"
+  },
+  {
+    "key": "AES_KEY",
+    "value": "16byteslongkey!!",
+    "value_type": "str",
+    "category": "security",
+    "description": "Ключ шифрования синхронизации",
+    "is_sensitive": true
+  },
+  {
+    "key": "DB_HOST",
+    "value": "127.0.0.1",
+    "value_type": "str",
+    "category": "database",
+    "description": "Адрес сервера MySQL"
+  },
+  {
+    "key": "DB_PORT",
+    "value": "3306",
+    "value_type": "int",
+    "category": "database",
+    "description": "Порт MySQL"
+  },
+  {
+    "key": "DB_NAME",
+    "value": "vending",
+    "value_type": "str",
+    "category": "database",
+    "description": "Имя базы данных MySQL"
+  },
+  {
+    "key": "DB_USER",
+    "value": "root",
+    "value_type": "str",
+    "category": "database",
+    "description": "Пользователь базы данных MySQL"
+  },
+  {
+    "key": "DB_PASSWORD",
+    "value": "Fury1488!",
+    "value_type": "str",
+    "category": "database",
+    "description": "Пароль базы данных MySQL",
+    "is_sensitive": true
+  }
+]

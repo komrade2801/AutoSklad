@@ -1,0 +1,81 @@
+{
+  "templates": [
+    {
+      "template_name": "default_vending",
+      "description": "Стандартная конфигурация вендингового аппарата",
+      "is_active": true,
+      "device_config": {
+        "signature": {
+          "serial_number": 1,
+          "cells": {
+            "length": 210,
+            "columns": 35,
+            "rows": 6
+          }
+        },
+        "server": {
+          "ip": "127.0.0.1",
+          "port": 8000,
+          "token": "token11111",
+          "secret": "",
+          "aes": "16byteslongkey!!",
+          "sender_timeout": 30,
+          "receiver_timeout": 60
+        },
+        "network": {
+          "ip": "127.0.0.1",
+          "port": 8080
+        },
+        "serial": {
+          "port": "COM29",
+          "baudrate": "9600"
+        },
+        "barcode": {
+          "port": "COM1",
+          "baudrate": "9600"
+        },
+        "dev": {
+          "ttyUSB": "/dev/ttyUSB0",
+          "serial": "/dev/serial0"
+        },
+        "key": {
+          "aes": ""
+        },
+        "locks": {
+          "load_locked": 0,
+          "drop_locked": 0
+        },
+        "logs": {
+          "critical_errors": []
+        }
+      }
+    },
+    {
+      "template_name": "test_device",
+      "description": "Тестовая конфигурация для разработки",
+      "is_active": false,
+      "device_config": {
+        "signature": {
+          "serial_number": 999,
+          "cells": {
+            "length": 10,
+            "columns": 2,
+            "rows": 5
+          }
+        },
+        "server": {
+          "ip": "127.0.0.1",
+          "port": 8001,
+          "token": "test_token",
+          "aes": "test_key_16bytes!",
+          "sender_timeout": 5,
+          "receiver_timeout": 10
+        },
+        "network": {
+          "ip": "127.0.0.1",
+          "port": 8081
+        }
+      }
+    }
+  ]
+}
