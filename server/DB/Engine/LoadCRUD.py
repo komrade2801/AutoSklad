@@ -25,7 +25,8 @@ class EngineLoad(BaseCRUD):
                  mass_load_id: int,
                  cell_id: int,
                  plan_id: int,
-                 history_id: int) -> bool:
+                 history_id: int,
+                 status_id: int) -> bool:
         """
         Добавляет новую запись о загрузке инструментов в базу данных.
         """
@@ -36,7 +37,8 @@ class EngineLoad(BaseCRUD):
             mass_load_id=mass_load_id,
             cell_id=cell_id,
             plan_id=plan_id,
-            history_id=history_id
+            history_id=history_id,
+            status_id=status_id
         )
 
     def get_load_by_id(self, load_id: int) -> Optional[Load]:
@@ -49,13 +51,22 @@ class EngineLoad(BaseCRUD):
         """
         Возвращает список записей Load, связанных с указанным tools_id.
         """
-        return self.session.query(self.model).filter_by(tools_id=tools_id).first()
+        return self.session.query(self.model).filter_by(tools_id=tools_id).all()
+
+    def find_by_status_id(self, status_id: int) -> List[Load]:
+        """
+        Возвращает список записей Load, связанных с указанным status_id.
+
+        :param status_id: Идентификатор статуса.
+        :return: Список записей Load.
+        """
+        return self.session.query(self.model).filter_by(status_id=status_id).all()
 
     def find_by_cell_id(self, cell_id: int) -> List[Load]:
         """
-        Возвращает список записей Load, связанных с указанным tools_id.
+        Возвращает список записей Load, связанных с указанным cell_id.
         """
-        return self.session.query(self.model).filter_by(cell_id=cell_id).first()
+        return self.session.query(self.model).filter_by(cell_id=cell_id).all()
 
     def find_by_plan_id(self, plan_id: int) -> List[Load]:
         """
@@ -81,7 +92,7 @@ class EngineLoad(BaseCRUD):
         :return: Количество удаленных записей.
         """
         # Получаем все записи и удаляем по одной
-        records = self.get_by_tools_id(tools_id)
+        records = self.find_by_tools_id(tools_id)
         count = 0
         for rec in records:
             # BaseCRUD.delete принимает PK id,

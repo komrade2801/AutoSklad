@@ -21,7 +21,15 @@ class EngineLoad(BaseCRUD):
         """
         super().__init__(session=session, model=Load)
 
-    def add_load(self, id: int, description: str, tools_id: int, mass_load_id: int, cell_id: int):
+    def add_load(self,
+                 load_id: int,
+                 description: str,
+                 tools_id: int,
+                 mass_load_id: int,
+                 cell_id: int,
+                 plan_id: int,
+                 history_id: int,
+                 status_id: int) -> bool:
         """
         Добавляет новую запись о загрузке инструментов в базу данных.
 
@@ -33,11 +41,14 @@ class EngineLoad(BaseCRUD):
         :return: Объект добавленной записи или результат выполнения метода добавления.
         """
         return self.add(
-            id=id,
+            index=load_id,
             description=description,
             tools_id=tools_id,
             mass_load_id=mass_load_id,
             cell_id=cell_id,
+            plan_id=plan_id,
+            history_id=history_id,
+            status_id=status_id
         )
 
     def get_load_by_id(self, load_id: int) -> Optional[Load]:
@@ -49,14 +60,14 @@ class EngineLoad(BaseCRUD):
         """
         return self.get(load_id)
 
-    def find_by_cell_id(self, cell_id: int) -> Load:
+    def find_by_cell_id(self, cell_id: int) -> List[Load]:
         """
         Возвращает список записей Load, связанных с указанным cell_id.
 
         :param cell_id: Идентификатор ячейки.
         :return: Список записей Load.
         """
-        return self.session.query(self.model).filter_by(cell_id=cell_id).first()
+        return self.session.query(self.model).filter_by(cell_id=cell_id).all()
 
     def find_by_plan_id(self, plan_id: int) -> List[Load]:
         """
@@ -64,14 +75,23 @@ class EngineLoad(BaseCRUD):
         """
         return self.session.query(self.model).filter(plan_id=plan_id).all()
 
-    def find_by_tools_id(self, tools_id: int) -> Load:
+    def find_by_tools_id(self, tools_id: int) -> List[Load]:
         """
         Возвращает список записей Load, связанных с указанным tools_id.
 
         :param tools_id: Идентификатор инструмента.
         :return: Список записей Load.
         """
-        return self.session.query(self.model).filter_by(tools_id=tools_id).first()
+        return self.session.query(self.model).filter_by(tools_id=tools_id).all()
+
+    def find_by_status_id(self, status_id: int) -> List[Load]:
+        """
+        Возвращает список записей Load, связанных с указанным status_id.
+
+        :param status_id: Идентификатор статуса.
+        :return: Список записей Load.
+        """
+        return self.session.query(self.model).filter_by(status_id=status_id).all()
 
     def find_by_mass_load_id(self, mass_load_id: int) -> List[Load]:
         """
@@ -99,16 +119,14 @@ class EngineLoad(BaseCRUD):
         :param tools_id: Идентификатор инструмента.
         :return: Количество удаленных записей.
         """
+        # Получаем все записи и удаляем по одной
+        records = self.find_by_tools_id(tools_id)
         count = 0
-
-        while True:
-            records = self.find_by_tools_id(tools_id)
-            if records:
-                count += 1
-                self.session.delete(records)
-                self.session.commit()
-            else:
-                break
+        for rec in records:
+            # BaseCRUD.delete принимает PK id,
+            # но здесь PK — это просто id поля модели Load
+            self.delete(index=rec.id)
+            count += 1
         return count
         # try:except Exception as e:
         #     self.session.rollback()

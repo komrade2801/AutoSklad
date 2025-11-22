@@ -111,6 +111,9 @@ function printElement(elem) {
 export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
     const container = document.getElementById(containerId);
 
+    console.log("generateTableHistoryLoad")
+    console.log(jsonHistoryLoad)
+
     const table = document.createElement("table");
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
@@ -134,14 +137,18 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
     const operationsArray = Object.values(jsonHistoryLoad.operation);
 
     function parseDate(dateStr) {
-        const [day, month, year] = dateStr.split(".");
-        return new Date(year, month - 1, day);
+        const [time, date] = dateStr.split(" ");
+        const [hour, minute, second] = time.split(":");
+        const [day, month, year] = date.split(".");
+        return new Date(year, month - 1, day, hour, minute, second);
     }
 
+        console.log(operationsArray);
     // Найдём самую свежую дату
     const latestDate = operationsArray
         .map(op => parseDate(op.date.trim()))
-        .reduce((max, curr) => (curr > max ? curr : max), new Date(0));
+        .reduce((max, curr) => {
+        console.log(max, curr);return (curr > max ? curr : max)}, new Date(0));
 
     function isSameDate(date1, date2) {
         return (
@@ -156,45 +163,48 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
     operationsArray.forEach(item => {
         const row = document.createElement("tr");
 
-        const itemDate = parseDate(item.date.trim());
-        const isLatest = isSameDate(itemDate, latestDate);
-        const status = item.status.trim().toLowerCase();
+        console.log(item);
+        console.log(latestDate);
+
+//        const itemDate = parseDate(item.date.trim());
+//        const isLatest = isSameDate(itemDate, latestDate);
+//        const status = item.status.trim().toLowerCase();
         const idLoad = item.ID_load.trim();
 
         row.style.cursor = "pointer";
 
         let destinationUrl = `/screen_14_2_random_load.html?ID_load=${encodeURIComponent(idLoad)}`;
 
-        const printerCell = document.createElement("td");
-
-        if (isLatest && status === "на загрузке" || isLatest && status === "mass_load_init") {
-            // Кнопка с иконкой принтера
-            const printButton = document.createElement("button");
-            printButton.style.width = "35px";
-            printButton.style.height = "35px";
-            printButton.style.backgroundImage = "url('../assets/img/printer.png')"; // Путь к иконке
-            printButton.style.backgroundSize = "contain";
-            printButton.style.backgroundRepeat = "no-repeat";
-            printButton.style.backgroundColor = "transparent";
-            printButton.style.border = "none";
-            printButton.title = "Печать";
-
-            printButton.addEventListener("click", (e) => {
-                e.stopPropagation();
-
-                // Генерируем таблицу
-                generatePrintTable(jsonHistoryLoad);
-
-                // Печатаем только содержимое printArea
-                let print_area = document.getElementById('printArea')
-                console.log(print_area);
-                printElement(print_area);
-            });
-
-
-            printerCell.appendChild(printButton);
-            //destinationUrl = `/screen_14_1_last_load.html?ID_load=${encodeURIComponent(idLoad)}`;
-        }
+//        const printerCell = document.createElement("td");
+//
+//        if (isLatest && status === "на загрузке" || isLatest && status === "mass_load_init" || isLatest && status === "объявлена массовая загрузка") {
+//            // Кнопка с иконкой принтера
+//            const printButton = document.createElement("button");
+//            printButton.style.width = "35px";
+//            printButton.style.height = "35px";
+//            printButton.style.backgroundImage = "url('../assets/img/printer.png')"; // Путь к иконке
+//            printButton.style.backgroundSize = "contain";
+//            printButton.style.backgroundRepeat = "no-repeat";
+//            printButton.style.backgroundColor = "transparent";
+//            printButton.style.border = "none";
+//            printButton.title = "Печать";
+//
+//            printButton.addEventListener("click", (e) => {
+//                e.stopPropagation();
+//
+//                // Генерируем таблицу
+//                generatePrintTable(jsonHistoryLoad);
+//
+//                // Печатаем только содержимое printArea
+//                let print_area = document.getElementById('printArea')
+//                console.log(print_area);
+//                printElement(print_area);
+//            });
+//
+//
+//            printerCell.appendChild(printButton);
+//            //destinationUrl = `/screen_14_1_last_load.html?ID_load=${encodeURIComponent(idLoad)}`;
+//        }
 
         row.innerHTML = `
             <td>${item.date.trim()}</td>
@@ -207,8 +217,7 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
             td.style.border = '1px solid';
         }
 
-        printerCell.style.border = '1px solid';
-        row.appendChild(printerCell);
+//        row.appendChild(printerCell);
 
         row.addEventListener("click", () => {
             let token = localStorage.getItem('token');
@@ -218,6 +227,36 @@ export function generateTableHistoryLoad(jsonHistoryLoad, containerId) {
 
         tbody.appendChild(row);
     });
+
+    const printerCell = document.createElement("th");
+    printerCell.style.border = '1px solid';
+
+    const printButton = document.createElement("button");
+    printButton.style.width = "35px";
+    printButton.style.height = "35px";
+    printButton.style.backgroundImage = "url('../assets/img/printer.png')"; // Путь к иконке
+    printButton.style.backgroundSize = "contain";
+    printButton.style.backgroundRepeat = "no-repeat";
+    printButton.style.backgroundColor = "transparent";
+    printButton.style.border = "none";
+    printButton.title = "Печать";
+
+    printButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        // Генерируем таблицу
+        generatePrintTable(jsonHistoryLoad);
+
+        // Печатаем только содержимое printArea
+        let print_area = document.getElementById('printArea')
+        console.log(print_area);
+        printElement(print_area);
+    });
+
+    printerCell.appendChild(printButton);
+
+    headerRow.appendChild(printButton);
+
 
     if (operationsArray.length === 0) {
         const emptyRow = document.createElement("tr");
