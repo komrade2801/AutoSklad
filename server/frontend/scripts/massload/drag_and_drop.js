@@ -91,11 +91,12 @@ export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
 
     //Изменяем цвет ячейки
       //Устанавливаем цвет для свободного инструмента
-      if (planName == "None") {
-          cell.backgroundColor = '#2C8822';
+      console.log(planName)
+      if (planName === '') {
+          cell.backgroundColor = '#ff4f00';
       } else {
       // Устанавливаем цвет для инструмента по чертежу
-          cell.backgroundColor = '#ff4f00';
+          cell.backgroundColor = '#2C8822';
       }
 
     cell.block = true;
@@ -151,9 +152,9 @@ export function initializeDragAndDrop() {
     if (!draggable.dataset.initialized) {
       draggable.setAttribute("draggable", true);
       draggable.addEventListener("dragstart", (event) => {
-        event.dataTransfer.setData("text/plain", draggable.querySelector(".toolName").textContent);
+//        event.dataTransfer.setData("text/plain", draggable.querySelector(".toolName").textContent);
         event.dataTransfer.setData('toolId', draggable.dataset.toolId);
-        event.dataTransfer.setData('planName', draggable.dataset.planName);
+        event.dataTransfer.setData('planName', draggable.dataset.planName || '');
         event.dataTransfer.setData('groupName', draggable.dataset.groupName);
         event.dataTransfer.setData('toolName', draggable.dataset.toolName);
       });

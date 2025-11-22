@@ -81,7 +81,7 @@ class MassLoadCreate(BaseModel):
 class Content(BaseModel):
     tool: str
     plan: str
-    mass_load: str
+    load: str
 
 
 class CellResponse(BaseModel):
@@ -150,8 +150,9 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
     e_plan = EnginePlan()
     e_status = EngineStatus()
     e_load = EngineLoad()
-    e_load_operations = EngineLoadOperations()
-    e_mass_load = EngineMassLoad()
+    # e_history = EngineHistory()
+    # e_load_operations = EngineLoadOperations()
+    # e_mass_load = EngineMassLoad()
 
     def get_background_color(
             status_id: int,
@@ -171,7 +172,7 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
             return STATUS_COLORS.get("__default__")
 
         cmap = STATUS_COLORS.get(status.stype, STATUS_COLORS["__default__"])
-        print(f"status.stype: {status.stype}, color: {cmap}")
+        # print(f"status.stype: {status.stype}, color: {cmap}")
         if isinstance(cmap, dict):
             return cmap.get(has_plan, STATUS_COLORS["__default__"])
         return cmap
@@ -179,7 +180,7 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
     # 4. Сборка JSON
     result_rows: Dict[str, RowResponse] = {}
 
-    mass_load_max_id = e_mass_load.get_max_id()
+    # mass_load_max_id = e_mass_load.get_max_id()
 
     for r in range(1, rows + 1):
         cells_in_row: Dict[str, CellResponse] = {}
@@ -187,29 +188,45 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
             try:
                 number = (r - 1) * cols + c
                 cell = e_cell.get_cell_by_number(number)
-                load = e_load.find_by_tools_id(cell.tools_id)
+                loads = e_load.find_by_tools_id(cell.tools_id)
 
-                mass_load_id = ""
-
-                if load and not load == []:
-                    mass_load_id = str(load[0].mass_load_id)
+                # mass_load_id = ""
+                #
+                # if loads and not loads == []:
+                #     mass_load_id = str(loads[0].mass_load_id)
 
                 if not cell:
                     continue
 
                 loads = e_load.find_by_cell_id(cell.id)
                 _status = cell.status_id
+                # print(f"cell: {cell.number}, status: {cell.status_id}")
+                plan = None
+                load = None
 
                 if loads:
                     load = max(loads, key=lambda rec: rec.id)
 
-                    load_operations = e_load_operations.get_operations_by_load_id(load.id)
-                    if load_operations:
-                        print(f"load_operations: {load_operations}")
-                        load_operation = max(load_operations, key=lambda rec: rec.id)
-                        print(f"load_operation: {load_operation}")
-                        _status = e_status.get_status_by_id(load_operation.status_id).id
-                        print(f"_status: {_status}")
+                    plan = e_plan.get_plan_by_id(load.plan_id)
+                    # history = e_history.get_history_by_id(load.history_id)
+
+                    if plan:
+                        plan_name = plan.designation
+                    else:
+                        plan_name = ""
+
+                    # if history:
+                    #     _status = history.status
+
+                    # load_operations = e_load_operations.get_operations_by_load_id(load.id)
+                    # if load_operations:
+                    #     print(f"load_operations: {load_operations}")
+                    #     load_operation = max(load_operations, key=lambda rec: rec.id)
+                    #     print(f"load_operation: {load_operation}")
+                    #     _status = e_status.get_status_by_id(load_operation.status_id).id
+                    #     print(f"_status: {_status}")
+                else:
+                    plan_name = ""
 
                 # 4.1 Определяем block
                 block = cell.tools_id is not None and cell.tools_id != 0
@@ -223,13 +240,11 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                     # plan = e_plan.get(
                     #     tool.plan_id) if tool and tool.plan_id else None
                     # plan_name = plan.name if plan else ""
-                    plan_name = "None"
                 else:
                     tool_name = "None"
-                    plan_name = "None"
 
                 # 4.3 Цвет по статусу и наличию чертежа
-                bg = get_background_color(_status, bool(plan_name), db)
+                bg = get_background_color(_status, bool(plan), db)
 
                 # 4.4 Тип ячейки — берём из конфига, если есть, иначе "big"
                 cell_type = sig.get("type", "big")
@@ -240,7 +255,7 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                     type=cell_type,
                     backgroundColor=bg,
                     content=Content(tool=tool_name, plan=plan_name,
-                                    mass_load=mass_load_id + ":" + str(mass_load_max_id)),
+                                    load=str(load.id) if load else '',),
                     block=block
                 )
             except Exception as e:
@@ -260,22 +275,22 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
 )
 def export_tools(device_number: int, db: Session = Depends(get_db)):
     try:
-        e_plan = EnginePlan()
+        # e_plan = EnginePlan()
         # e_tools = EngineTools()
         e_tool_types = EngineToolTypes()
-        e_group = EngineGroup()
+        # e_group = EngineGroup()
         e_load = EngineLoad()
-        e_load_operations = EngineLoadOperations()
-        e_load_operations_has_device = EngineLoadOperationsHasDevice()
+        # e_load_operations = EngineLoadOperations()
+        # e_load_operations_has_device = EngineLoadOperationsHasDevice()
         # e_tools_has_device = EngineToolsHasDevice()
-        e_mass_load = EngineMassLoad()
+        # e_mass_load = EngineMassLoad()
         e_device = EngineDevice()
-        e_cells = EngineCell()
-        e_status = EngineStatus()
+        # e_cells = EngineCell()
+        # e_status = EngineStatus()
         all_tool_types = e_tool_types.get_all_tool_types()
         # all_tools = e_tools.get_all_tools()
-        all_plans = e_plan.get_all_plans()
-        all_groups = e_group.get_all_groups()
+        # all_plans = e_plan.get_all_plans()
+        # all_groups = e_group.get_all_groups()
 
         device = e_device.get_device_by_number(device_number)
         if not device:
@@ -385,12 +400,13 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
         # return {"plans": plans_dict}
 
         for tool_type in all_tool_types:
-            print(f"tool_type: {tool_type}")
+            # print(f"tool_type: {tool_type}")
             count = tool_type.count
-            print(f"count: {count}")
+            # print(f"count: {count}")
             loads = e_load.find_by_tools_id(tool_type.id)
-            print(f"len(loads): {len(loads)}")
-            count -= len(loads)
+            if loads:
+                # print(f"len(loads): {len(loads)}")
+                count -= len(loads)
 
             tool_type_list.append({"id": tool_type.id, "name": tool_type.name, "description": tool_type.description or "", "sum": count})
 
@@ -413,8 +429,10 @@ def save_mass_load(
     db: Session = Depends(get_db),
 ):
     print(f"save_mass_load request: {request}, device_number: {device_number}, mass_load: {mass_load}")
+    # print(request)
     # 1) авторизация
     validation = auth_service.validation_user(request)
+    # print(validation)
     if isinstance(validation, RedirectResponse) or ("status" in getattr(validation, "data", {})):
         raise HTTPException(
             status_code=402, detail="Неавторизованный доступ запрещён")
@@ -479,7 +497,7 @@ def save_mass_load(
         # 6) обрабатываем каждую операцию
         for key, story in stories.items():
             # разбираем вход
-            print(f"save_mass_load story: {story}")
+            # print(f"save_mass_load story: {story}")
             request_cell = story.cell
             request_tool = story.tool
             request_plan = story.plan
@@ -491,7 +509,7 @@ def save_mass_load(
                 if not plan:
                     request_plan = None
 
-            print(f"request_cell: {request_cell}, request_tool: {request_tool}, request_plan: {request_plan}")
+            # print(f"request_cell: {request_cell}, request_tool: {request_tool}, request_plan: {request_plan}")
 
             # подбор типа инструмента по группе и имени
             # parts = request_tool.split(' ', 1)
@@ -519,7 +537,7 @@ def save_mass_load(
             if not user:
                 raise HTTPException(
                     status_code=402, detail="Пользователь не найден")
-            print(f"add_history: {story_id}")
+            # print(f"add_history: {story_id}")
             e_stories.add_history(
                 history_id=story_id,
                 user_id=user.id,
@@ -572,7 +590,7 @@ def save_mass_load(
             )
 
             load_id = max(e_load.get_all_ids(), default=0) + 1
-            print(f"add_load: {load_id}")
+            # print(f"add_load: {load_id}")
             # создаём Load
             e_load.add_load(
                 load_id=load_id,
@@ -581,7 +599,8 @@ def save_mass_load(
                 mass_load_id=new_mass_load.id,
                 cell_id=cell.id,
                 plan_id=request_plan,
-                history_id=new_history.id
+                history_id=new_history.id,
+                status_id=status_load.id
             )
             load = e_load.get_load_by_id(load_id)
             if not load:
@@ -617,7 +636,7 @@ def save_mass_load(
             # создаём LoadOperation и привязываем к устройству
             operation_id = max(e_load_operation.get_all_ids(), default=0) + 1
             operation_ids.append(operation_id)
-            print(f"add_operation: {operation_id}")
+            # print(f"add_operation: {operation_id}")
             e_load_operation.add_operation(
                 operation_id=operation_id,
                 date=datetime.datetime.now(),
