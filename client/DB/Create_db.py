@@ -246,8 +246,8 @@ def execute():
                 e_cell.add_cell(
                     index=index,
                     number=number,
+                    status_id=1,
                     tools_id=None,
-                    status_id=None,
                     groups_id=None,
                     description='Старт',
                 )

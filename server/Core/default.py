@@ -477,9 +477,9 @@ def execute():
                 e_cell.add_cell(
                     index=cell_id,
                     number=number,
-                    tools_id=0,
-                    status_id=0,
-                    groups_id=0,
+                    status_id=1,
+                    tools_id=None,
+                    groups_id=None,
                     description='Старт',
                 )
                 e_cell_has_device.add_link(

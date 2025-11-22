@@ -19,14 +19,7 @@ class Drop(Base, Model):
     tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=False, comment="Внешний ключ на таблицу ToolTypes")
     plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Внешний ключ на таблицу Plan")
     history_id = Column(Integer, ForeignKey("History.id"), nullable=False, comment="Идентификатор записи из таблицы History")
-
-    @property
-    def devices(self):
-        if "Devices" not in Base.metadata.tables:
-            from DB.Models.Device import Device
-        else:
-            Device = Base.metadata.tables["Devices"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Device, back_populates="DropOperations")
+    status_id = Column(Integer, ForeignKey("Status.id"), nullable=True, comment="Внешний ключ на таблицу Status")
 
     @property
     def tools(self):
@@ -34,7 +27,7 @@ class Drop(Base, Model):
             from DB.Models.ToolTypes import ToolTypes
         else:
             ToolTypes = Base.metadata.tables["ToolTypes"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(ToolTypes, back_populates="Drops")
+        return relationship(ToolTypes, back_populates="Drop")
 
     @property
     def mass_drops(self):
@@ -42,7 +35,7 @@ class Drop(Base, Model):
             from DB.Models.MassDrop import MassDrop
         else:
             MassDrop = Base.metadata.tables["MassDrops"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(MassDrop, back_populates="Drops")
+        return relationship(MassDrop, back_populates="Drop")
 
     @property
     def cells(self):
@@ -50,7 +43,7 @@ class Drop(Base, Model):
             from DB.Models.Cell import Cell
         else:
             Cell = Base.metadata.tables["Cells"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Cell, back_populates="Drops")
+        return relationship(Cell, back_populates="Drop")
 
     @property
     def plans(self):
@@ -58,7 +51,7 @@ class Drop(Base, Model):
             from DB.Models.Plan import Plan
         else:
             Plan = Base.metadata.tables["Plan"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Plan, back_populates="Drops")
+        return relationship(Plan, back_populates="Drop")
 
     @property
     def stories(self):
@@ -66,7 +59,15 @@ class Drop(Base, Model):
             from DB.Models.History import History
         else:
             History = Base.metadata.tables["History"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(History, back_populates="Drops")
+        return relationship(History, back_populates="Drop")
+
+    @property
+    def status(self):
+        if "Status" not in Base.metadata.tables:
+            from ..Models.Status import Status
+        else:
+            Status = Base.metadata.tables["Status"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
+        return relationship(Status, back_populates="Drop")
 
     # Индексы
     __table_args__ = (
@@ -88,6 +89,7 @@ class Drop(Base, Model):
                 f"tools_id={self.tools_id}"
                 f"plan_id={self.plan_id}, "
                 f"history_id={self.history_id}, "
+                f"status_id={self.status_id}"
                 f")>")
 
 # mass_drop = relationship("MassDrop", back_populates="Drops")

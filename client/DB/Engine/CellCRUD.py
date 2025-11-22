@@ -25,8 +25,8 @@ class EngineCell(BaseCRUD):
     def add_cell(self,
                  index: int,
                  number: int,
-                 tools_id: int,
                  status_id: int,
+                 tools_id: Optional[int] = None,
                  groups_id: Optional[int] = None,
                  description: Optional[str] = None
                  ) -> bool:
@@ -124,6 +124,7 @@ class EngineCell(BaseCRUD):
             :param id: Уникальный идентификатор ячейки.
             :return: True, если запись успешно обновлена, иначе False.
         """
+        print(f"update_cell {id}, {number}, {description}, {groups_id}, {tools_id}, {status_id}")
         # 1) Загружаем из БД текущее состояние
         instance = self.session.query(self.model).get(id)
         if not instance:
@@ -135,12 +136,14 @@ class EngineCell(BaseCRUD):
             updates['number'] = number
         if description is not None and instance.description != description:
             updates['description'] = description
-        if groups_id is not None and instance.groups_id != groups_id:
-            updates['groups_id'] = groups_id
-        if tools_id is not None and instance.tools_id != tools_id:
-            updates['tools_id'] = tools_id
-        if status_id is not None and instance.status_id != status_id:
-            updates['status_id'] = status_id
+        # if groups_id is not None and instance.groups_id != groups_id:
+        updates['groups_id'] = groups_id
+        # if tools_id is not None and instance.tools_id != tools_id:
+        updates['tools_id'] = tools_id
+        # if status_id is not None and instance.status_id != status_id:
+        updates['status_id'] = status_id
+
+        print(f"updates {updates}")
 
         # 3) Если нечего менять — вернём True, потому что ошибок нет
         if not updates:
