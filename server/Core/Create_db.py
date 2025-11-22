@@ -35,6 +35,8 @@ from DB.Models.ToolsHasDevice import ToolsHasDevice #---------------------------
 from DB.Models.ToolsNorm import ToolsNorm #---------------------------------------------------------------33
 from DB.Models.Type import Type #-----------------------------------------------------------------------34
 from DB.Models.User import User #-----------------------------------------------------------------------35
+from DB.Models.Settings import Settings  #--------------------------------------------------------------36
+from DB.Models.DeviceDefaults import DeviceDefaults  #--------------------------------------------------37
 
 from sqlalchemy import create_engine
 from DB.Data.base import Base
@@ -56,7 +58,8 @@ def rebuild_db():
         Error, ErrorHasDevice, Group, Help, History, Identification, Load, LoadOperations,
         LoadOperationsHasDevice, MassDrop, MassLoad, MassDropHasDevice, MassLoadHasDevice,
         OperationsConsumption, OperationsConsumptionHasDevice, Plan, ActualNorm, ActualNormHasDevice, Rights,
-        Role, Status, ToolTypes, ToolLocation, Tools, ToolsHasDevice, ToolsNorm, Type, User, Page
+        Role, Status, ToolTypes, ToolLocation, Tools, ToolsHasDevice, ToolsNorm, Type, User, Page,
+        Settings, DeviceDefaults
     ]
     # Получаем текущую директорию
     current_dir = os.path.dirname(os.path.abspath(__file__))

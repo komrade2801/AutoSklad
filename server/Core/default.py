@@ -1,5 +1,6 @@
 # Core/default.py
 import sys
+import logging
 from datetime import datetime
 from pathlib import Path
 from threading import RLock
@@ -12,6 +13,16 @@ from Core.Parser import HtmlTitleParser
 from options import db_path, Host, port, AES_KEY, SENDER_TIMEOUT, RECEIVER_TIMEOUT
 import json
 import os
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
 # Глобальное хранилище прогресса
 progress_data = {
@@ -274,6 +285,8 @@ def execute():
         from DB.Engine.TypeCRUD import EngineType
         from DB.Engine.UserCRUD import EngineUser
         from DB.Engine.PageCRUD import EnginePage
+        from DB.Engine.SettingsCRUD import EngineSettings
+        from DB.Engine.DeviceDefaultsCRUD import EngineDeviceDefaults
 
         update_progress("Starting database population", "execute", 0)
         e_cell = EngineCell()
@@ -312,6 +325,8 @@ def execute():
         e_type = EngineType()
         e_user = EngineUser()
         e_page = EnginePage()
+        e_settings = EngineSettings()
+        e_device_defaults = EngineDeviceDefaults()
 
         e_page.delete_all()
         e_cell.delete_all()
@@ -572,7 +587,44 @@ def execute():
                     page_id=page_id,
                     description="",
                 )
-            update_progress("Database populated", "execute", 100)
+
+        # Load default settings from JSON if they don't exist
+        if e_settings.get_count() == 0:
+            logger.info("Loading default settings from JSON file")
+            config_dir = Path(__file__).parent
+            settings_file = config_dir / "default_settings.json"
+            if settings_file.exists():
+                with open(settings_file, 'r', encoding='utf-8') as f:
+                    settings_data = json.load(f)
+                for setting_data in settings_data:
+                    index = max(e_settings.get_all_ids(), default=0) + 1
+                    setting_data['index'] = index
+                    e_settings.add(**setting_data)
+                logger.info(f"Loaded {len(settings_data)} default settings")
+            else:
+                logger.warning("default_settings.json file not found")
+
+        # Load device defaults from JSON if they don't exist
+        if e_device_defaults.get_count() == 0:
+            logger.info("Loading device defaults from JSON file")
+            config_dir = Path(__file__).parent
+            defaults_file = config_dir / "device_defaults.json"
+            if defaults_file.exists():
+                with open(defaults_file, 'r', encoding='utf-8') as f:
+                    defaults_data = json.load(f)
+                for template_data in defaults_data.get('templates', []):
+                    template_name = template_data['template_name']
+                    config_dict = template_data['device_config']
+                    description = template_data.get('description', '')
+                    is_active = template_data.get('is_active', True)
+                    e_device_defaults.add_template_from_dict(
+                        template_name, config_dict, description, is_active
+                    )
+                logger.info(f"Loaded {e_device_defaults.get_count()} device templates")
+            else:
+                logger.warning("device_defaults.json file not found")
+
+        update_progress("Database populated", "execute", 100)
     except Exception as e:
         update_progress(f"Population error: {str(e)}", "error", 0)
         raise
