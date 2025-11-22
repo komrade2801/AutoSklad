@@ -4,12 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>Добавление чертежа</title>
+    <link href="../assets/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
     <link rel="stylesheet" href="../style/titles.css">
     <link rel="stylesheet" href="../style/dropdown_list.css">
     <link rel="stylesheet" href="../style/append_plan/style_modal_window.css">
     <link rel="stylesheet" href="../style/append_plan/input_amount.css">
+    <script src="../assets/jquery/2.1.0/jquery.min.js"></script>
     <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
     <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="../scripts/append_plan/clear_all_form.js"></script>
@@ -114,6 +116,38 @@
         .checkbox-option {
             margin: 20px;
         }
+
+         .tab-change-bar {
+            width: 100%;
+            font-size: 20px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+            padding: 10px;
+         }
+
+        .btn-outline-tabs {
+            --bs-btn-color: #ff9923;
+            --bs-btn-border-color: #ff9923;
+            --bs-btn-hover-color: #fff;
+            --bs-btn-hover-bg: #ff9923;
+            --bs-btn-hover-border-color: #ff9923;
+            --bs-btn-focus-shadow-rgb: 13, 110, 253;
+            --bs-btn-active-color: #fff;
+            --bs-btn-active-bg: #ff9923;
+            --bs-btn-active-border-color: #ff9923;
+            --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+            --bs-btn-disabled-color: #ff9923;
+            --bs-btn-disabled-bg: transparent;
+            --bs-btn-disabled-border-color: #ff9923;
+            --bs-gradient: none;
+            font-weight: 600;
+        }
+
+        .plan-input:disabled,
+        .plan-qr:disabled {
+            background-color: #b3b8bd;
+        }
     </style>
 </head>
 <body onload="initialization('screen_8_append_plan')" class="d-flex justify-content-center" id="body"
@@ -135,28 +169,80 @@
     </div>
     <div class="tab-pane fade show active d-flex" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
         <div id="column-1" class="d-flex" style="flex-direction: column; width: calc(50% - 112px); height: 100%; align-items: center; padding: 10px;">
-          <div style="display: flex; flex-direction: row; width: 93%; height: 30px; margin-top: 5px;">
+          <div style="display: flex; flex-direction: row; width: 100%; height: 30px; margin-top: 10px;">
             <form class="d-flex" role="search" style="width: 100%;">
-              <input class="form-control me-2" type="search" placeholder="Поиск инструмента" aria-label="Поиск">
-              <button class="btn" type="submit" style="width: 30px; display: flex; justify-content: center; align-items: center; border-color: rgb(153, 153, 153);">
-                <img src="../assets/img/loupe.png" style="width: 20px; height: 20px; pointer-events: none;">
-              </button>
+              <input class="form-control me-2" type="search" placeholder="Поиск инструмента" aria-label="Поиск" oninput="performSearch(this)">
+<!--              <button class="btn" type="submit" style="width: 30px; display: flex; justify-content: center; align-items: center; border-color: rgb(153, 153, 153);">-->
+<!--                <img src="../assets/img/loupe.png" style="width: 20px; height: 20px; pointer-events: none;">-->
+<!--              </button>-->
             </form>
+              <script>
+                  function performSearch(input) {
+                    const searchText = input.value.toLowerCase();
+                    if (searchText == '') {
+                        $(".library-tool-div").show();
+                    } else {
+                        $(".library-tool-div").hide();
+                        $(".library-tool-div").filter(function() {
+                            return $(this).attr('data-tool-name').toLowerCase().indexOf(searchText) > -1;
+                        }).show();
+                    }
+                  }
+              </script>
           </div>
           <div class="d-flex" id="tools" style="flex-direction: column; width: 100%; overflow-y: scroll; margin-top: 5px;"></div>
         </div>
         <div id="column-2" style="display: flex; flex-direction: column; width: calc(50% - 113px); height: 100%; box-sizing: border-box; padding: 10px;">
             <div style="display: flex; flex-direction: column; width: 100%; height: 100%; border: 2px solid rgb(78, 155, 229); border-radius: 5px; padding: 10px; box-sizing: border-box;">
-              <span style="width: 100%; padding-left: 10px;">Предприятие:</span>
-              <input id="enterpriseInput" class="form-control me-2" type="text" placeholder="ООО АзовСталь" style="margin-top: 5px;">
-              <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Номер чертежа:</span>
-              <input id="designationInput" class="form-control me-2" type="text" placeholder="XXXX.DDDD.xxxx.xxxx.xxxx">
-              <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Название чертежа:</span>
-              <input id="nameInput" class="form-control me-2" type="text" placeholder="Втулка стальная 5мм.">
-              <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Описание чертежа:</span>
-              <input id="descriptionInput" class="form-control me-2" type="text" placeholder="Описание чертежа.">
+                <div id="qrCodeBlock">
+                    <div class="btn-group btn-group-toggle tab-change-bar" data-toggle="buttons">
+                        <input type="radio" class="btn-check" name="options-tabs" id="tab1" value="qr" autocomplete="off" checked>
+                        <label class="btn btn-outline-tabs btn-lg" for="tab1">Сканирование QR-кода</label>
+
+                        <input type="radio" class="btn-check" name="options-tabs" id="tab2" value="auto" autocomplete="off">
+                        <label class="btn btn-outline-tabs btn-lg" for="tab2">Ввести вручную</label>
+                    </div>
+                    <script>
+                        $("input[name=options-tabs]").change(function () {
+                            console.log(this.value);
+                            const elements = document.getElementsByClassName('plan-input');
+                            for (elem of elements) {
+                                if(this.value == "qr"){
+                                    elem.disabled = true;
+                                } else {
+                                    elem.disabled = false;
+                                }
+                            }
+                            const element = document.getElementById('qrCodeInput');
+                            if(this.value == "qr"){
+                                element.disabled = false;
+                            } else {
+                                element.disabled = true;
+                            }
+                        });
+
+
+                    </script>
+
+                    <div style="padding-bottom: 20px;">
+                        <textarea id="qrCodeInput" class="form-control me-2 plan-qr" placeholder="Отсканируйте QR-код" style="margin-top: 5px;" onkeydown="fillManualFields(this)"></textarea>
+                        <label class="form-check-label" for="qrCodeInput">
+                            Первая строка из QR-кода - обозначение чертежа
+                        </label>
+                    </div>
+                </div>
+                <div id="manualBlock">
+                    <span style="width: 100%; padding-left: 10px;">Предприятие:</span>
+                  <input id="enterpriseInput" class="form-control me-2 plan-input" type="text" placeholder="ООО АзовСталь" style="margin-top: 5px;" disabled>
+                  <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Номер чертежа:</span>
+                  <input id="designationInput" class="form-control me-2 plan-input" type="text" placeholder="XXXX.DDDD.xxxx.xxxx.xxxx" disabled>
+                  <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Название чертежа:</span>
+                  <input id="nameInput" class="form-control me-2 plan-input" type="text" placeholder="Втулка стальная 5мм." disabled>
+                  <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Описание чертежа:</span>
+                  <input id="descriptionInput" class="form-control me-2 plan-input" type="text" placeholder="Описание чертежа." disabled>
+                </div>
                 <div class="form-check checkbox-option">
-                    <input class="form-check-input" type="checkbox" value="" id="createMassLoad">
+                    <input class="form-check-input" type="checkbox" value="" id="createMassLoad" checked>
                     <label class="form-check-label" for="createMassLoad">
                         Сгенерировать массовую загрузку
                     </label>
@@ -166,6 +252,30 @@
                    style="display: flex; flex-direction: column; flex-grow: 1; margin-top: 5px; padding: 5px; padding-bottom: 50px; box-sizing: border-box; overflow-y: auto; border-radius: 5px; border: 1px solid rgb(255, 255, 255);">
               </div>
             </div>
+            <script>
+                function fillManualFields(elem) {
+                    if(event.key === 'Enter') {
+                        console.log(elem.value);
+                        const lines = elem.value.split(/\r?\n/);
+                        console.log(lines);
+
+                        const enterpriseInput = document.getElementById('enterpriseInput');
+                        const designationInput = document.getElementById('designationInput');
+                        const nameInput = document.getElementById('nameInput');
+                        const descriptionInput = document.getElementById('descriptionInput');
+
+                        enterpriseInput.value = lines[3];
+                        designationInput.value = lines[0];
+                        nameInput.value = lines[5];
+                        descriptionInput.value = lines[4];
+
+                        const qrCodeInput = document.getElementById('qrCodeInput');
+                        qrCodeInput.placeholder = 'QR-код отсканирован успешно'
+                        qrCodeInput.blur();
+                        qrCodeInput.value = '';
+                    }
+                }
+            </script>
         </div>
         <div id="column-3" class="d-flex" style="display: flex; flex-direction: column; justify-content: space-between; width: 225px; height: 100%; margin-right: 10px;">
 <!--          <div style="width: 100%; height: 70px; margin-top: 10px;">-->

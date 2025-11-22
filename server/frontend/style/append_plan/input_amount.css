@@ -51,10 +51,11 @@
   color: #003172;
   font-weight: bold;
   font-size: 14px;
-  align-items: center;
+  align-items: stretch;
   justify-content: start;
   margin: 1px;
   padding-left: 5px;
+  overflow: hidden;
 }
 
 .tool-delete-button {
@@ -72,5 +73,31 @@
 .tool-delete-button-icon {
   width: 20px;
   height: 20px;
-  pointerEvents: none;
+  pointer-events: none;
+}
+
+.library-tool-div {
+    display: flex;
+    height: 32px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 100%;
+    cursor: pointer;
+    border-radius: 5px;
+    background-color: #D3D3D3A0;
+    align-items: center;
+}
+
+.library-tool-name-div {
+    display: flex;
+    width: 100%;
+    height: 30px;
+    border: 1px solid #ffffff;
+    color: #003172;
+    font-weight: bold;
+    font-size: 14px;
+    align-items: stretch;
+    justify-content: start;
+    margin: 1px;
+    overflow: hidden;
 }
