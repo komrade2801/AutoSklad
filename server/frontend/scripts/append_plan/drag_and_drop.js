@@ -81,7 +81,7 @@ export function initializeDragAndDrop() {
       draggable.setAttribute("draggable", true);
       draggable.addEventListener("dragstart", (event) => {
         const toolName = draggable.querySelector(".toolName").textContent;
-        const toolId = draggable.getAttribute('data-value-index');
+        const toolId = draggable.getAttribute('data-tool-index');
         if (toolName) {
           event.dataTransfer.setData("toolName", toolName);
           event.dataTransfer.setData("toolId", toolId);

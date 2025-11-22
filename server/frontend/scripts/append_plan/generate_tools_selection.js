@@ -16,6 +16,11 @@ export function generateToolsSelection() {
     const toolData = window.jsonPlan.tools[toolId];
     if (toolData.name !== "groups") {
 
+        var count = toolData.count
+        if (count == 0) {
+            count = 99999999;
+        }
+
       console.log(toolData);
       
       const toolDiv = document.createElement("div");
@@ -33,7 +38,7 @@ export function generateToolsSelection() {
       input.className = "form-control me-2 input_amount";
       input.type = "number";
       input.min = 1;
-      input.max = toolData.count;
+      input.max = count;
       input.value = toolData.amount;
 
       //Устанавливаем обработчик события ввода
@@ -42,7 +47,7 @@ export function generateToolsSelection() {
         let val = parseInt(e.target.value, 10);
         console.log(val);
         if (isNaN(val) || val < 1) val = 1;
-        if (val > toolData.count) val = toolData.count;
+        if (val > count) val = count;
         e.target.value = val;
         window.jsonPlan.tools[toolId].amount = val;
       });
