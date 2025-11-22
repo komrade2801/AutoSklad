@@ -95,7 +95,7 @@ async def upload_xlsx(
 
     processed = 0
     errors = []
-    seen_inv = set()
+    # seen_inv = set()
 
     tool_type_counts = {}
 
@@ -108,11 +108,11 @@ async def upload_xlsx(
             norm, last_seen = normalize_record(
                 rec, REQUIRED, field_map, last_seen)
             print(f"norm {norm}")
-            inv = norm["tool_inventory_number"]
+            # inv = norm["tool_inventory_number"]
 
-            if inv and inv in seen_inv:
-                raise ValueError(f"Duplicate inventory_number: {inv}")
-            seen_inv.add(inv)
+            # if inv and inv in seen_inv:
+            #     raise ValueError(f"Duplicate inventory_number: {inv}")
+            # seen_inv.add(inv)
 
             # Group
             grp_id = norm.get("group_id")
