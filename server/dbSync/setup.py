@@ -45,8 +45,8 @@ def init_retry_manager(scheduler, queue, sender, diagnostic_logger):
         queue=queue,
         sender=sender,
         _logger=diagnostic_logger,
-        base_delay=60.0,  # или другое значение
-        max_retries=150  # или другое значение
+        base_delay=30.0,  # Фиксированный интервал 30 секунд
+        max_retries=4320  # 36 часов = 129600 сек / 30 сек = 4320 попыток
     )
     print('[setup]init_retry_manager')
     return retry_manager
@@ -169,6 +169,28 @@ def init_data_transformer():
             'incoming',
             lambda d: {**d, 'id': d.get('index', d.get('id'))}
         )
+        
+        def extract_status_from_history(record: dict) -> dict:
+            """
+            Извлекает status из вложенного объекта Status в History.
+            Преобразует Status.id в status (integer).
+            Если status уже является integer, оставляем как есть.
+            """
+            # Если есть вложенный объект Status, извлекаем id
+            if 'Status' in record and isinstance(record['Status'], dict):
+                status_obj = record['Status']
+                # Извлекаем id из объекта Status
+                if 'id' in status_obj:
+                    record['status'] = status_obj['id']
+                # Удаляем вложенный объект Status
+                del record['Status']
+            # Если status уже установлен как integer, оставляем как есть
+            elif 'status' not in record and 'Status' not in record:
+                # Если нет ни status, ни Status, оставляем как есть
+                pass
+            return record
+        
+        transformer.register_rule("History", "incoming", extract_status_from_history)
         print('[setup]init_data_transformer')
         return transformer
     except Exception as e:

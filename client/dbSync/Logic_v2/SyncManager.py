@@ -1,4 +1,5 @@
 # import traceback
+import threading
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Protocol  # , Union
 
@@ -193,7 +194,7 @@ class SyncManager:
         if record:
             return self._serialize_datetimes(record.to_dict())
         else:
-            raise
+            raise ValueError("Cannot serialize None or empty record")
 
     def _handle_insert(self, crud, table, data, rec_id, sync_context=False):
         """
@@ -231,7 +232,22 @@ class SyncManager:
         # передаём rec_id первым аргументом, остальное — именованно
 
         print(f'[COUNT_FIX] Inserting new record with final rec_id={rec_id}, fields={fields}')
-        crud.add(rec_id, **fields)
+        try:
+            crud.add(rec_id, **fields)
+        except (RuntimeError, Exception) as e:
+            # Если возникла ошибка (например, IntegrityError из-за race condition),
+            # проверяем, не появилась ли запись между проверкой и вставкой
+            error_str = str(e).lower()
+            if "integrity" in error_str or "unique" in error_str or "constraint" in error_str:
+                print(f'[INTEGRITY_FIX] IntegrityError при вставке {rec_id}, проверяем существование записи. Ошибка: {e}')
+                existing = crud.get(rec_id)
+                if existing:
+                    # Запись появилась между проверкой и вставкой (race condition)
+                    # Делаем upsert вместо insert
+                    print(f'[INTEGRITY_FIX] Запись {rec_id} найдена после IntegrityError, выполняем upsert')
+                    return self._upsert_update(crud, rec_id, data, sync_context=sync_context)
+            # Если это не IntegrityError или запись не найдена, пробрасываем ошибку дальше
+            raise
 
         # Вместо instance.id — берём rec_id из payload или максимальный ID в таблице
         new_id = data.get("id") or max(crud.get_all_ids(), default=0)
@@ -255,6 +271,12 @@ class SyncManager:
 
         current = existing_obj.to_dict()
         incoming = {k: data[k] for k in data if k in current}
+        
+        # Удаляем служебные поля, которые не должны обновляться
+        # id, index - идентификаторы
+        # created_at, updated_at - временные метки создания/обновления
+        excluded_fields = {"id", "index", "created_at", "updated_at"}
+        incoming = {k: v for k, v in incoming.items() if k not in excluded_fields}
 
         # For sync operations, always update without checking for changes
         # For normal operations, check for changes first
@@ -268,9 +290,50 @@ class SyncManager:
         return self._serialize(crud.get(rec_id))
 
     def _handle_update(self, crud, data, rec_id):
-        # просто вызываем update(**data)
-        crud.update(**data)
-        return self._serialize(crud.get(rec_id))
+        """
+        Обрабатывает UPDATE операцию.
+        
+        :param crud: CRUD экземпляр для таблицы
+        :param data: Данные для обновления (может содержать id/index)
+        :param rec_id: ID записи для обновления
+        """
+        if rec_id is None:
+            raise ValueError("Cannot update record: rec_id is None")
+        
+        # Проверяем существование записи перед обновлением
+        existing_record = crud.get(rec_id)
+        if existing_record is None:
+            # Если запись не существует, выполняем upsert (insert или update)
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] Record {rec_id} not found, performing upsert')
+            return self._upsert_update(crud, rec_id, data, sync_context=True)
+        
+        # Удаляем служебные поля, которые не должны обновляться
+        # id, index - идентификаторы
+        # created_at, updated_at - временные метки создания/обновления
+        excluded_fields = {"id", "index", "created_at", "updated_at"}
+        update_data = {k: v for k, v in data.items() if k not in excluded_fields}
+        
+        # Если нет данных для обновления, просто возвращаем существующую запись
+        if not update_data:
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] No data to update for record {rec_id}, returning existing record')
+            return self._serialize(existing_record)
+        
+        # Вызываем update с явным указанием index
+        try:
+            success = crud.update(index=rec_id, **update_data)
+            if not success:
+                # Если обновление не удалось, возможно из-за IntegrityError, пробуем upsert
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] Update returned False for record {rec_id}, trying upsert')
+                return self._upsert_update(crud, rec_id, data, sync_context=True)
+        except Exception as e:
+            # Если произошла ошибка при обновлении, пробуем upsert
+            print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] Error during update for record {rec_id}: {e}, trying upsert')
+            return self._upsert_update(crud, rec_id, data, sync_context=True)
+        
+        updated_record = crud.get(rec_id)
+        if updated_record is None:
+            raise ValueError(f"Record with id {rec_id} not found after update")
+        return self._serialize(updated_record)
 
     def _handle_delete(self, crud, rec_id):
         existing = crud.get(rec_id)

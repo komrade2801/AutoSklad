@@ -128,11 +128,19 @@ class DataMapper:
 
         print(f"[DataMapper][map_incoming] table={table}, record={record}, base_map={base_map}")
 
+        # Если таблицы нет в маппинге, используем pass-through (прямая передача полей)
+        use_pass_through = not base_map
+
         # 4) Основной цикл по полям
         for remote_field, value in record.items():
-            local_field = base_map.get(remote_field)
-            if not local_field:
-                continue
+            # Если таблицы нет в маппинге, используем имя поля как есть
+            if use_pass_through:
+                local_field = remote_field
+            else:
+                local_field = base_map.get(remote_field)
+                if not local_field:
+                    # Пропускаем только если есть маппинг, но поля в нём нет
+                    continue
 
             # не перезаписываем protected
             if local_field in self.PROTECTED_FIELDS and local_field in result:

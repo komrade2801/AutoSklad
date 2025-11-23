@@ -554,12 +554,12 @@ class SyncProcessor:
             # map & postprocess
             local = self.data_mapper.map_incoming(table, cleaned, mapping.get(table, {}))
             local = self.data_transformer.postprocess(table, local)
-            raw = cmd.get("data", {})
-            merged = {**raw, **local}
-            cmd['data'] = merged
+            # Используем только обработанные данные (local), а не raw, чтобы избежать попадания необработанных полей типа Status
+            # raw может содержать вложенные объекты, которые уже обработаны в DataTransformer
+            cmd['data'] = local
 
             # DIAGNOSTIC LOGGING: Existing data lookup
-            print(f'[DIAGNOSTIC][SERVER] Merged data keys: {list(merged.keys())}')
+            print(f'[DIAGNOSTIC][SERVER] Processed data keys: {list(local.keys())}')
             print(f'[DIAGNOSTIC][SERVER] About to lookup existing data for table={table}, rec_id={rec_id}')
 
             # data conflicts

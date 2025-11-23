@@ -81,7 +81,7 @@ class EngineStatus(BaseCRUD):
         :param description: Новое описание статуса (если изменяется).
         :return: True если статус успешно обновлен, иначе False.
         """
-        return super().update(index, stype=stype, description=description)
+        return super().update(index=index, stype=stype, description=description)
 
     def delete(self, index: int) -> bool:
         """

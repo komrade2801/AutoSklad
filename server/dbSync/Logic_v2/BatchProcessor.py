@@ -92,6 +92,9 @@ class BatchProcessor:
               "error": Optional[str]
             }
         """
+        # Предварительная обработка: связываем Consumption с History из текущего батча
+        self._link_consumption_to_history(operations)
+        
         results: List[OperationResult] = []
         try:
             with self.session.begin_nested():
@@ -157,6 +160,37 @@ class BatchProcessor:
         # Ожидаем, что process_sync_command вернёт new_id для insert
         print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][_apply_single][INFO] - command_id: {op["command_id"]}. [{datetime.now()}]')
         return result or {}
+    
+    def _link_consumption_to_history(self, operations: List[Operation]) -> None:
+        """
+        Предварительная обработка: связывает Consumption с History из текущего батча команд.
+        Если Consumption не имеет history_id, ищет связанную History в том же батче.
+        """
+        # Собираем все History команды из батча
+        history_commands = {}
+        for op in operations:
+            if op.get("table") == "History" and op.get("operation", "").lower() in ("add", "insert"):
+                history_id = op.get("data", {}).get("id") or op.get("data", {}).get("index")
+                tools_id = op.get("data", {}).get("tools_id")
+                if history_id and tools_id:
+                    if tools_id not in history_commands:
+                        history_commands[tools_id] = []
+                    history_commands[tools_id].append((history_id, op))
+        
+        # Обновляем Consumption команды, добавляя history_id
+        for op in operations:
+            if op.get("table") == "Consumption" and op.get("operation", "").lower() in ("add", "insert"):
+                data = op.get("data", {})
+                if "history_id" not in data or data.get("history_id") is None:
+                    tools_id = data.get("tools_id")
+                    if tools_id and tools_id in history_commands:
+                        # Берём последнюю History для этого tools_id
+                        history_list = history_commands[tools_id]
+                        if history_list:
+                            # Сортируем по timestamp или используем последнюю
+                            latest_history_id = history_list[-1][0]
+                            data["history_id"] = latest_history_id
+                            print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][_link_consumption_to_history] Linked Consumption to History {latest_history_id} from batch for tools_id={tools_id}')
 
 # Список изменений в обновлённой версии класса:
 #

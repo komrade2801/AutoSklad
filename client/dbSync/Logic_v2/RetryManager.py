@@ -83,71 +83,67 @@ class RetryManager:
 
     def schedule_retry(self, cmd: RetryCommand, delay: Optional[float] = None) -> None:
         """
-        Планирует повтор неудачной команды.
+        Упрощенный метод для обновления retry_count и статуса команды.
+        Больше не планирует через scheduler, используется только для обновления счетчика.
 
-        :param cmd:   Словарь команды, включая поле 'retry_count'.
-        :param delay: Задержка перед повтором (по умолчанию base_delay * 2^retry_count).
+        :param cmd:   Словарь команды со статусом retrying.
+        :param delay: Не используется (оставлен для совместимости).
         """
         with self._lock:
             cmd_id = cmd["id"]
-            count = cmd.get("retry_count", 0) + 1
-            cmd["retry_count"] = count
+            # Увеличиваем retry_count
+            count = self.queue.add_retry_count(cmd_id)
             if count > self.max_retries:
                 if self.logger:
                     self.logger.log_warning(
-                        "Max retries exceeded, dropping command",
+                        "Max retries exceeded, marking command as failed",
                         {"id": cmd_id, "retry_count": count}
                     )
-                print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][schedule_retry] - count: {len(self.queue.get_pending_commands() + self.queue.get_failed_commands())}')
+                self.queue.mark_as_failed(cmd_id)
+                print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][schedule_retry] Max retries exceeded for {cmd_id}, marked as failed')
                 return
 
-            self.queue.mark_as_failed(cmd_id)
-            actual_delay = delay if delay is not None else self.base_delay * (2 ** (count - 1))
+            # Команда остается в статусе retrying
             if self.logger:
                 self.logger.log_info(
-                    "Scheduling retry",
-                    {"id": cmd_id, "attempt": count, "delay": actual_delay}
+                    "Retry count updated",
+                    {"id": cmd_id, "retry_count": count}
                 )
-            run_date = datetime.utcnow() + timedelta(seconds=actual_delay)
-            self.scheduler.add_job(
-                self._retry_one,
-                trigger='date',
-                run_date=run_date,
-                args=[cmd],
-                id=f"retry_{cmd_id}_{count}"
-            )
-            # self.scheduler.schedule(
-            #     func=self._retry_one,
-            #     args=(cmd,),
-            #     delay=actual_delay
-            # )
-            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][schedule_retry] - count: {len(self.queue.get_pending_commands() + self.queue.get_failed_commands())}')
+            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][schedule_retry] Retry count updated for {cmd_id}, count: {count}')
 
-    def _retry_one(self, cmd: RetryCommand) -> None:
+    def _retry_one(self, cmd: RetryCommand) -> bool:
         """
         Выполняет попытку повторной отправки одной команды.
 
         :param cmd: RetryCommand со всеми необходимыми полями.
+        :return: True если успешно, False если неудача
         """
         cmd_id = cmd["id"]
+        current_retry_count = self.queue.get_retry_count(cmd_id)
+        
         try:
             if self.logger:
-                self.logger.log_debug("Retrying command", {"id": cmd_id, "attempt": cmd["retry_count"]})
+                self.logger.log_debug("Retrying command", {"id": cmd_id, "attempt": current_retry_count})
             # Предполагается, что sender поддерживает send_single_command
             self.sender.send_single_command(cmd)
             self.queue.mark_as_done(cmd_id)
             if self.logger:
                 self.logger.log_info("Command retry succeeded", {"id": cmd_id})
-            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][_retry_one] - count: {len(self.queue.get_pending_commands() + self.queue.get_failed_commands())}')
+            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][_retry_one] Command {cmd_id} retry succeeded')
+            return True
         except Exception as ex:
             print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][_retry_one][ERROR] - error: {ex} Не удалось повторить команду, подробности: - {traceback.format_exc()}')
             if self.logger:
                 self.logger.log_error(
                     "Retry attempt failed",
-                    {"id": cmd_id, "error": str(ex), "attempt": cmd["retry_count"]}
+                    {"id": cmd_id, "error": str(ex), "attempt": current_retry_count}
                 )
-            # планируем новую попытку
+            # Обновляем timestamp последней попытки
+            now_iso = datetime.utcnow().isoformat() + "Z"
+            self.queue.update_last_retry_timestamp(cmd_id, now_iso)
+            # Увеличиваем retry_count
             self.schedule_retry(cmd)
+            return False
 
     def retry_failed(self):
         """
@@ -174,6 +170,88 @@ class RetryManager:
             rc: RetryCommand = {**cmd, "retry_count": cmd.get("retry_count", 0)}
             self.schedule_retry(rc, delay=0)
         print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][retry_failed_all] - count: {len(failed)}')
+
+    def retry_all_retrying(self) -> int:
+        """
+        Обрабатывает все retrying команды итеративно.
+        Проверяет timestamp последней попытки и обрабатывает только те команды,
+        которые не обрабатывались последние base_delay секунд.
+
+        :return: Количество успешно обработанных команд
+        """
+        with self._lock:
+            retrying = self.queue.get_retrying_commands()
+            if not retrying:
+                if self.logger:
+                    self.logger.log_debug("No retrying commands to process")
+                return 0
+
+            if self.logger:
+                self.logger.log_info("Processing retrying commands", {"count": len(retrying)})
+            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][retry_all_retrying] Processing {len(retrying)} retrying commands')
+
+            now = datetime.utcnow()
+            success_count = 0
+            processed_count = 0
+
+            for cmd in retrying:
+                cmd_id = cmd["id"]
+                retry_count = self.queue.get_retry_count(cmd_id)
+                
+                # Проверяем max_retries
+                if retry_count >= self.max_retries:
+                    if self.logger:
+                        self.logger.log_warning(
+                            "Max retries exceeded, marking as failed",
+                            {"id": cmd_id, "retry_count": retry_count}
+                        )
+                    self.queue.mark_as_failed(cmd_id)
+                    continue
+
+                # Проверяем timestamp последней попытки
+                last_retry_ts = self.queue.get_last_retry_timestamp(cmd_id)
+                if last_retry_ts:
+                    try:
+                        last_retry_time = datetime.fromisoformat(last_retry_ts.replace('Z', '+00:00'))
+                        time_since_last = (now - last_retry_time.replace(tzinfo=None)).total_seconds()
+                        if time_since_last < self.base_delay:
+                            # Еще не прошло достаточно времени с последней попытки
+                            continue
+                    except (ValueError, TypeError) as e:
+                        # Если timestamp некорректный, обрабатываем команду
+                        if self.logger:
+                            self.logger.log_warning(
+                                "Invalid last_retry_timestamp, processing anyway",
+                                {"id": cmd_id, "error": str(e)}
+                            )
+
+                # Обновляем timestamp перед попыткой
+                now_iso = datetime.utcnow().isoformat() + "Z"
+                self.queue.update_last_retry_timestamp(cmd_id, now_iso)
+                processed_count += 1
+
+                # Преобразуем к RetryCommand
+                rc: RetryCommand = {
+                    "id": cmd_id,
+                    "table": cmd["table"],
+                    "operation": cmd["operation"],
+                    "data": cmd["data"],
+                    "status": cmd["status"],
+                    "timestamp": cmd["timestamp"],
+                    "retry_count": retry_count
+                }
+
+                # Пытаемся отправить команду
+                if self._retry_one(rc):
+                    success_count += 1
+
+            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][retry_all_retrying] Processed {processed_count} commands, {success_count} succeeded')
+            if self.logger:
+                self.logger.log_info(
+                    "Retry all retrying completed",
+                    {"processed": processed_count, "succeeded": success_count, "total": len(retrying)}
+                )
+            return success_count
 
 # Список изменений
 # Типизация через TypedDict и Protocol

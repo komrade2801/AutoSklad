@@ -134,19 +134,54 @@ class CommandSender:
 
     def send_pending(self) -> None:
         """
-        Отправляет все pending-команды одним batch-запросом.
+        Отправляет pending команды в хронологическом порядке с учетом retrying команд.
         Здесь мы дополнительно обогащаем каждую команду через DataTransformer.
+
+        Новая логика:
+        1. Сначала обрабатываем все retrying команды через retry_all_retrying()
+        2. Проверяем, что нет retrying/failed команд старше pending
+        3. Если есть retrying/failed старше - не отправляем pending (возвращаемся)
+        4. Если все retrying обработаны или их нет - отправляем pending как обычно
         """
         print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] send_pending. {datetime.datetime.now()}')
         self._ensure_handshake()
 
+        # 1. Сначала обрабатываем все retrying команды
+        retry_manager = getattr(self, 'retry_manager', None)
+        if retry_manager:
+            retry_manager.retry_all_retrying()
+
+        # 2. Проверяем согласованность: нет ли retrying/failed команд старше pending
+        retrying = self.queue.get_retrying_commands()
+        failed = self.queue.get_failed_commands()
         pending = self.queue.get_pending_commands()
+
         if not pending:
             if self.logger:
-                self.logger.log_debug("Нет ожидающих отправки команд.")
+                self.logger.log_debug("Нет pending команд для отправки.")
             return
 
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] {pending} ожидающие команды. {datetime.datetime.now()}')
+        # Проверяем, есть ли retrying/failed команды старше самой старой pending
+        if retrying or failed:
+            oldest_pending_ts = min(cmd["timestamp"] for cmd in pending)
+            
+            # Проверяем retrying команды
+            for cmd in retrying:
+                if cmd["timestamp"] < oldest_pending_ts:
+                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Есть retrying команда старше pending, не отправляем pending. {datetime.datetime.now()}')
+                    if self.logger:
+                        self.logger.log_debug("Retrying commands older than pending, skipping pending send")
+                    return
+            
+            # Проверяем failed команды
+            for cmd in failed:
+                if cmd["timestamp"] < oldest_pending_ts:
+                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Есть failed команда старше pending, не отправляем pending. {datetime.datetime.now()}')
+                    if self.logger:
+                        self.logger.log_debug("Failed commands older than pending, skipping pending send")
+                    return
+
+        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] {len(pending)} pending команд для отправки. {datetime.datetime.now()}')
 
         # --- Готовим payload ---
         schema_hash = self._schema_hash or ""
@@ -176,14 +211,14 @@ class CommandSender:
                 last_modified=""  # если не нужен — можно оставить пустым
             ))
 
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] payload: {payload}. {datetime.datetime.now()}')
+        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] payload подготовлен. {datetime.datetime.now()}')
 
         try:
             if self.logger:
-                self.logger.log_info(f"Sending {len(pending)} commands to {self.endpoint}")
+                self.logger.log_info(f"Sending {len(pending)} pending commands to {self.endpoint}")
             # отправляем на реальный сервер
             response = self.transport.send_push(self.endpoint, payload)
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] response: {response}. {datetime.datetime.now()}')
+            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] pending команды отправлены успешно. {datetime.datetime.now()}')
 
             # в dev-режиме прогоняем через SyncProcessor (эмуляция)
             if self.sync_processor:
@@ -193,19 +228,99 @@ class CommandSender:
                     client_schema_hash=schema_hash
                 )
 
-            # отмечаем всё как сделанное
+            # отмечаем pending команды как успешные
             for cmd in pending:
                 self.queue.mark_as_done(cmd["id"])
             if self.logger:
-                self.logger.log_info("All pending commands marked as done.")
+                self.logger.log_info("All processed pending commands marked as done.")
 
         except Exception as err:
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Не удалось отправить команды: {err}')
+            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Не удалось отправить pending команды: {err}')
             if self.logger:
-                self.logger.log_error(f"Failed to send commands: {err}")
+                self.logger.log_error(f"Failed to send pending commands: {err}")
+            # Pending команды становятся retrying для первой попытки
             for cmd in pending:
-                self.queue.mark_as_failed(cmd["id"])
+                self.queue.mark_as_retrying(cmd["id"])
             raise
+
+    def send_single_command(self, cmd: dict) -> None:
+        """
+        Отправляет одну retrying команду.
+
+        :param cmd: Словарь команды с полями id, table, operation, data, retry_count
+        """
+        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] send_single_command: {cmd.get("id")} retry_count={cmd.get("retry_count", 0)}. {datetime.datetime.now()}')
+        self._ensure_handshake()
+
+        schema_hash = self._schema_hash or ""
+        transformer: DataTransformer = self.sync_processor.data_transformer
+
+        # обогащаем данные для single команды
+        raw_data = cmd["data"]
+        enriched_data = transformer.postprocess(cmd["table"], raw_data)
+
+        payload = {
+            "device": self.device_id,
+            "schema_hash": schema_hash,
+            "commands": [{
+                "id": cmd["id"],
+                "table": cmd["table"],
+                "operation": cmd["operation"].upper(),
+                "data": enriched_data,
+                "last_modified": ""
+            }]
+        }
+
+        try:
+            if self.logger:
+                self.logger.log_info(f"Sending single retrying command {cmd['id']} to {self.endpoint}")
+
+            response = self.transport.send_push(self.endpoint, payload)
+            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] single команда отправлена успешно: {cmd["id"]}. {datetime.datetime.now()}')
+
+            # dev-mode
+            if self.sync_processor:
+                self.sync_processor.process_push(
+                    device=self.device_id,
+                    commands=payload["commands"],
+                    client_schema_hash=schema_hash
+                )
+
+            # Помечаем как успешную
+            self.queue.mark_as_done(cmd["id"])
+            if self.logger:
+                self.logger.log_info(f"Single command {cmd['id']} completed successfully.")
+
+        except Exception as err:
+            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Не удалось отправить single команду {cmd["id"]}: {err}')
+            if self.logger:
+                self.logger.log_error(f"Failed to send single command {cmd['id']}: {err}")
+            raise
+
+    def process_retrying(self, retry_manager: Optional['RetryManager'] = None) -> None:
+        """
+        Обрабатывает retrying команды, планируя их повторы через RetryManager.
+        """
+        retrying = self.queue.get_retrying_commands()
+        if not retrying:
+            return
+
+        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Processing {len(retrying)} retrying commands. {datetime.datetime.now()}')
+
+        for cmd in retrying:
+            retry_count = self.queue.get_retry_count(cmd["id"])
+            if retry_count > 0:  # Если retry_count > 0, значит уже обрабатывается
+                continue
+
+            # Это новая retrying команда, инициализируем retry_count = 0 и планируем retry
+            self.queue.add_retry_count(cmd["id"])  # Теперь retry_count = 1
+            cmd_copy = cmd.copy()
+            cmd_copy["retry_count"] = 1
+
+            if retry_manager:
+                retry_manager.schedule_retry(cmd_copy, delay=0)  # Начать retry немедленно
+            else:
+                print(f'[WARNING] No retry_manager provided for retrying command {cmd["id"]}')
     # def send_pending(self) -> None:
     #     """
     #     Отправляет все pending-команды одним batch-запросом.

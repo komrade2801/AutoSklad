@@ -92,6 +92,10 @@ def job_fetch(_receiver):
     _receiver.fetch_and_apply()
 
 
+def job_process_retrying(_sender, _retry_manager):
+    _sender.process_retrying(_retry_manager)
+
+
 def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", secret=b"supersecret", aes=b"16byteslongkey!!", scheduler_sender_timeout=60, scheduler_receiver_timeout=120):
     if device_id in _active_schedulers:
         logging.getLogger("sync.startup").warning(
@@ -129,6 +133,10 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
                           seconds=scheduler_receiver_timeout,
                           id=f"fetch_{device_id}",
                           args=[receiver])
+        scheduler.add_job(job_process_retrying, 'interval',
+                          seconds=30,  # Check retrying commands every 30 seconds
+                          id=f"process_retrying_{device_id}",
+                          args=[sender, retry_manager])
 
         # 3) Сохраняем и стартуем scheduler
         _active_schedulers[device_id] = scheduler
@@ -398,6 +406,7 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port=""):
     # 4) «Подпишем» обратно в processor его sender (нужен для retry_manager)
     processor.sender = sender
     retry_manager.sender = sender
+    sender.retry_manager = retry_manager
     print(f">>> DEBUG: sender.sync_processor is {sender.sync_processor!r}")
     print(
         f">>> DEBUG: sender.data_mapper      is {sender.sync_processor.data_mapper!r}")

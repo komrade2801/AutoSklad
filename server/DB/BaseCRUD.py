@@ -260,8 +260,12 @@ class CoreEngine:
         :param kwargs: Поля и значения для создания объекта.
         :return: True при успешном добавлении.
         """
+        # Фильтруем только валидные колонки модели
+        valid_keys = set(c.name for c in self.model.__table__.columns)
+        clean = {k: v for k, v in kwargs.items() if k in valid_keys}
+        
         with self.transaction() as db:
-            instance = self.model(**kwargs)
+            instance = self.model(**clean)
             db.add(instance)
         self._cache.clear()
         return True

@@ -560,14 +560,14 @@ class SyncProcessor:
             # map & postprocess
             local = self.data_mapper.map_incoming(table, cleaned, mapping.get(table, {}))
             local = self.data_transformer.postprocess(table, local)
-            raw = cmd.get("data", {})
-            merged = {**raw, **local}
-            cmd['data'] = merged
-            index = cmd['data'].get('id') or cmd['data'].get('index')
+            # Используем только обработанные данные (local), а не raw, чтобы избежать попадания необработанных полей типа Status
+            # raw может содержать вложенные объекты, которые уже обработаны в DataTransformer
+            cmd['data'] = local
+            index = local.get('id') or local.get('index') or rec_id
 
             # DIAGNOSTIC LOGGING: Existing data lookup
-            print(f'[DIAGNOSTIC][CLIENT] Merged data keys: {list(merged.keys())}')
-            print(f'[DIAGNOSTIC][CLIENT] Potential record IDs: id={merged.get("id")}, index={merged.get("index")}, chosen={index}')
+            print(f'[DIAGNOSTIC][CLIENT] Processed data keys: {list(local.keys())}')
+            print(f'[DIAGNOSTIC][CLIENT] Potential record IDs: id={local.get("id")}, index={local.get("index")}, chosen={index}')
             print(f'[DIAGNOSTIC][CLIENT] About to lookup existing data for table={table}, rec_id={index}')
 
             existing = self.sync_manager.get_current_data(table=table, work_session=SessionLocal(), rec_id=index)
