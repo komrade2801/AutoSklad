@@ -45,15 +45,23 @@ The main user interface built with PyQt5, consisting of multiple screens and sta
 A local web server integrated into the client application for synchronization functionality.
 
 ### Technical Details:
-- **Port Configuration**: Default 8080 (configurable via `config.json`)
+- **Port Configuration**: Default 8080 (configurable via `config.json` network.port)
 - **Router Mounting**: `/sync` endpoints for bidirectional data exchange
-- **Threading Model**: Runs in separate thread to avoid blocking GUI
+- **Threading Model**: Runs in separate QThread (UvicornThread) to avoid blocking GUI
 - **Shared Database Access**: Same SQLite databases as GUI thread
+- **Lifespan Management**: FastAPI lifespan context manages sync thread startup/shutdown
 
 ### Synchronization Endpoints (`dbSync/Transport/routers.py`):
-- **`/push`**: Send commands to server (encrypted with AES)
+- **`/push`**: Send commands to server (encrypted with AES-CBC)
 - **`/pull`**: Receive pending commands from server
-- **`/handshake`**: Initial synchronization handshake with schema validation
+- **`/handshake`**: Initial synchronization handshake with schema validation (AES-encrypted)
+
+### Transport Layer (`dbSync/Transport/`):
+- **`routers.py`**: FastAPI router with sync endpoints (`/push`, `/pull`, `/handshake`)
+- **`TransportService.py`**: HTTP client with AES encryption for sync communication
+- **`ws_transport.py`**: WebSocket transport implementation (optional, for future use)
+- **`client_ws.py`**: WebSocket client implementation
+- **`server_ws.py`**: WebSocket server implementation
 
 ## 3. Synchronization Service (`dbSync/`)
 
@@ -77,6 +85,8 @@ The client synchronization service implements a **Command Queue Pattern** where 
 - **`ConflictManager`**: Handles data conflicts from bidirectional sync operations
 - **`BatchProcessor`**: Executes local database changes in atomic transactions
 - **`RetryManager`**: Manages re-sync of failed operations with exponential backoff
+- **`CDCService`**: Change Data Capture service that tracks database changes and notifies listeners
+- **`MappingConfigurator`**: Configures field mappings and conflict resolution strategies
 
 #### Schema & Validation:
 - **`SchemaCache`**: Client-side SHA256-hashed mapping cache for schema translations
@@ -182,14 +192,14 @@ The command queue serves as **persistent staging area** for all local database c
 {
   "id": "uuid",                    // Globally unique command identifier
   "table": "Tools|User|Cell",      // Database table being modified
-  "operation": "add|update|delete", // CRUD operation type
+  "operation": "insert|update|delete", // CRUD operation type (lowercase)
   "data": {                        // Full record data payload
     "name": "Drill Press",
     "inventory_number": "DM-001",
     "count": 5
   },
-  "status": "pending|sent|done",   // Sync processing status
-  "timestamp": "RFC3339"           // Command creation time
+  "status": "pending|retrying|failed|done",   // Sync processing status
+  "timestamp": "RFC3339"           // Command creation time (ISO 8601 format)
 }
 ```
 
@@ -209,7 +219,7 @@ The command queue serves as **persistent staging area** for all local database c
   {
     "id": "e53d46a6-4821-44aa-848a-e27b443198c8",
     "table": "Tools",
-    "operation": "add",
+    "operation": "insert",
     "data": {
       "index": 3,
       "inventory_number": "",
@@ -227,7 +237,7 @@ The command queue serves as **persistent staging area** for all local database c
   {
     "id": "60a59368-dec0-4a4d-9ede-70f13797c361",
     "table": "History",
-    "operation": "add",
+    "operation": "insert",
     "data": {
       "index": 1,
       "datetime": "2025-09-27T15:18:57.959816",
@@ -250,12 +260,31 @@ The command queue serves as **persistent staging area** for all local database c
 CREATE TABLE Command (
   id INTEGER PRIMARY KEY,
   table_name VARCHAR NOT NULL,    -- Target table name
-  operation VARCHAR NOT NULL,     -- add|update|delete
+  operation VARCHAR NOT NULL,     -- insert|update|delete
   record_id INTEGER,              -- Local record ID
   created_at TIMESTAMP,
-  status VARCHAR,                 -- pending|sent|done|failed
-  error_message TEXT,
-  sync_attempts INTEGER DEFAULT 0
+  device_number INTEGER,          -- Device ID
+  FOREIGN KEY (id) REFERENCES Record(command_id)
+);
+```
+
+#### Record Table Structure:
+```sql
+CREATE TABLE Record (
+  id INTEGER PRIMARY KEY,
+  command_id INTEGER REFERENCES Command(id),
+  data_json TEXT,                 -- JSON-serialized record data
+  last_modified TIMESTAMP
+);
+```
+
+#### CommandStatus Table Structure:
+```sql
+CREATE TABLE CommandStatus (
+  id INTEGER PRIMARY KEY,
+  command_id INTEGER REFERENCES Command(id),
+  status VARCHAR NOT NULL,        -- pending|in_progress|completed|failed
+  updated_at TIMESTAMP
 );
 ```
 
@@ -282,10 +311,10 @@ CREATE TABLE Command (
 - **Database Threads**: Serial/hardware I/O threads with Qt signal communication
 
 #### Sync Scheduling Model:
-- **Push Interval**: Every `sender_timeout` seconds (default 30s), commands pushed
-- **Pull Interval**: Every `receiver_timeout` seconds (default 60s), changes pulled
-- **Retry Scheduling**: Failed syncs resubmitted with exponential backoff delays
-- **Queue Processing**: Continuous monitoring of command queue for new operations
+- **Push Interval**: Every `sender_timeout` seconds (default 15s from config), commands pushed
+- **Pull Interval**: Every `receiver_timeout` seconds (default 30s from config), changes pulled
+- **Retry Scheduling**: Failed syncs resubmitted with exponential backoff delays (checked every 30s)
+- **Queue Processing**: Continuous monitoring of command queue for new operations via INBOUND_QUEUES
 
 ### Error Handling & Conflict Resolution
 
@@ -384,9 +413,9 @@ SQLite-based local data storage for offline operation and caching.
 - **`BaseCRUD.py`**: Common database operations base class
 
 ### Database Files:
-- **`Model/vending.db`**: Main application data
-- **`Model/sync.db`**: Synchronization metadata and queue state
-- **`command_queue.json`**: Sync command persistence
+- **`DB/Data/vending.db`**: Main application data
+- **`dbSync/Model/sync.db`**: Synchronization metadata and queue state
+- **`command_queue.json`**: Sync command persistence (in client root directory)
 
 ### Initialization (`Create_db.py`):
 - Automatic database creation on first run
@@ -415,9 +444,10 @@ Centralized JSON configuration file with environment-specific settings.
     "ip": "127.0.0.1",
     "port": 8000,
     "token": "token11111",
+    "secret": "hmac_secret_key",
     "aes": "16byteslongkey!!",
-    "sender_timeout": 30,
-    "receiver_timeout": 60
+    "sender_timeout": 15,
+    "receiver_timeout": 30
   }
 }
 ```

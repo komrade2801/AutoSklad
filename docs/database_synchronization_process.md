@@ -57,9 +57,9 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 #### Таблица `Command`
 - `id` (INTEGER, PRIMARY KEY): Уникальный ID команды.
 - `table_name` (STRING): Имя целевой таблицы.
-- `operation` (STRING): CREATE, UPDATE, DELETE (ограничено CHECK).
+- `operation` (STRING): insert, update, delete (lowercase).
 - `record_id` (INTEGER): ID затрагиваемой записи.
-- `created_at` (DATE, server_default=NOW()): Время создания.
+- `created_at` (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP): Время создания.
 - `device_number` (INTEGER): ID устройства.
 
 #### Таблица `Record`
@@ -71,8 +71,8 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 #### Таблица `CommandStatus`
 - `id` (INTEGER, PRIMARY KEY)
 - `command_id` (INTEGER, FOREIGN KEY → Command.id, CASCADE DELETE)
-- `status` (STRING): PENDING, IN_PROGRESS, COMPLETED, FAILED
-- `updated_at` (DATE, DEFAULT NOW, UPDATE)
+- `status` (STRING): pending, in_progress, completed, failed (lowercase)
+- `updated_at` (TIMESTAMP, DEFAULT CURRENT_TIMESTAMP)
 
 #### Таблица `SyncConfig`
 - `table_name` (STRING, PRIMARY KEY)
@@ -93,10 +93,11 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 
 ### Push (Отправка изменений)
 - `CommandSender.send_pending()`: Берёт pending из очереди, отправляет batch.
-- `TransportService.send_push(endpoint, payload)`: HTTP POST с AES+HASH.
+- `TransportService.send_push(endpoint, payload)`: HTTP POST с AES-шифрованием.
 - `SyncProcessor.process_push(device, commands, schema_hash)`: Применяет команды на получателе.
 - `ConflictManager.detect_data_conflict(existing, local)`: Обнаружение конфликтов.
 - `BatchProcessor.execute_batch(ops)`: Атомарное выполнение в БД.
+- `CommandQueue.get_pending_commands()`: Получает команды со статусом "pending" из JSON-файла.
 
 ### Pull (Получение изменений)
 - `CommandReceiver.fetch_and_apply()`: Запрашивает и применяет новые команды.
@@ -110,16 +111,18 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 - `MergeFieldsStrategy.merge(existing, local, field)`: Стратегия объединения.
 
 ### Transport
-- `TransportService._encrypt(plaintext)`: AES-CBC с padding.
-- `TransportService._decrypt(ciphertext)`: Расшифровка.
-- `TransportService._sign_hmac(payload)`: HMAC-SHA256 подпись.
+- `TransportService._encrypt(plaintext)`: AES-CBC с PKCS7 padding, IV (16 байт) prepended к ciphertext.
+- `TransportService._decrypt(ciphertext)`: Расшифровка AES-CBC, извлечение IV из первых 16 байт.
+- `TransportService._sign_hmac(payload)`: HMAC-SHA256 подпись (если используется).
+- **Transport Directory**: `dbSync/Transport/` содержит HTTP и WebSocket (опционально) реализации.
 
 ### Очереди и планировка
-- `CommandQueue.add_command(table, operation, data)`: Добавление локальной команды.
-- `CommandQueue.get_pending_commands()`: Получение ожидающих.
-- `CommandQueue.mark_as_done/failed(id)`: Обновление статуса.
-- `RetryManager.schedule_retry(command, delay)`: Планировка retry.
-- APScheduler job_send/job_fetch каждые sender_timeout/receiver_timeout.
+- `CommandQueue.add_command(table, operation, data)`: Добавление локальной команды (operation: "insert"|"update"|"delete").
+- `CommandQueue.get_pending_commands()`: Получение ожидающих команд со статусом "pending".
+- `CommandQueue.mark_as_done/failed(id)`: Обновление статуса команды.
+- `RetryManager.schedule_retry(command, delay)`: Планировка retry с экспоненциальным backoff.
+- APScheduler job_send/job_fetch каждые sender_timeout/receiver_timeout (по умолчанию 15/30 секунд).
+- `INBOUND_QUEUES[device_id]`: Словарь очередей для передачи сообщений между HTTP-обработчиками и фоновыми потоками.
 
 ## Поэтапный процесс синхронизации
 
@@ -138,37 +141,39 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 6. Клиент: `SyncProcessor.update_schema(mapping, hash)` → `DataMapper.update_field_mappings()`.
 
 ### Этап 3: Push-процесс (клиент → сервер)
-1. `job_send` → `CommandSender.send_pending()`.
-2. `CommandQueue.get_pending_commands()` → список команд.
+1. `job_send` (APScheduler) → `CommandSender.send_pending()` каждые `sender_timeout` секунд.
+2. `CommandQueue.get_pending_commands()` → список команд со статусом "pending".
 3. Формирование payload: `{"device": id, "schema_hash": hash, "commands": list}`.
-4. `TransportService.send_push("/sync/push", payload)`: POST с AES+HASH.
-5. Сервер принимает, дешифрует, валидирует.
-6. `SyncProcessor.process_push(device, commands, hash)`:
+4. `TransportService.send_push("/sync/push?device=<id>", payload)`: POST с AES-CBC шифрованием (IV + ciphertext).
+5. Сервер принимает через `/sync/push`, дешифрует AES, валидирует через JSONSchemaValidator.
+6. HTTP-обработчик кладёт сообщение в `INBOUND_QUEUES[device_id]` с типом "push" и `reply_queue`.
+7. Фоновый поток Runner обрабатывает сообщение и вызывает `SyncProcessor.process_push(device, commands, hash)`:
    - `json_validator.validate(commands, "push_commands")`.
    - Фильтрация дубликатов.
    - Для каждой команды: `data_transformer.preprocess/clean/validate`.
    - `conflict_manager.detect_structure_conflict` → `mapping_config.on_conflict`.
    - `data_mapper.map_incoming` на серверную схему.
    - `conflict_manager.detect_data_conflict` → стратегия (например, MergeFieldsStrategy).
-   - `batch_processor.execute_batch([{cmd, table, data, operation}])` → SQL в work.db.
+   - `batch_processor.execute_batch([{cmd, table, data, operation}])` → SQL в work.db (web_vending.db).
    - Обновление статусов в sync.db: `CommandStatusCRUD.add_status()`.
-7. Возврат статусов команд.
-8. Клиент: `mark_as_done/failed`.
-9. При ошибках: `retry_manager.schedule_retry`.
+8. Результат кладётся в `reply_queue`, HTTP-обработчик возвращает статусы клиенту.
+9. Клиент: `CommandQueue.mark_as_done/failed(id)`.
+10. При ошибках: `retry_manager.schedule_retry` с экспоненциальным backoff.
 
 ### Этап 4: Pull-процесс (сервер → клиент)
-1. `job_fetch` → `CommandReceiver.fetch_and_apply()`.
-2. Чтение `last_synced` из `last_synced.txt`.
-3. `TransportService.send_pull("/sync/pull", params={"device":id, "since": since, "schema_hash":hash})`: GET.
-4. Сервер: `SyncProcessor.prepare_pull(device, since, hash)`:
+1. `job_fetch` (APScheduler) → `CommandReceiver.fetch_and_apply()` каждые `receiver_timeout` секунд.
+2. Чтение `last_synced` из `last_synced.txt` (файл в корне клиента/сервера).
+3. `TransportService.send_pull("/sync/pull?device=<id>&since=<timestamp>")`: GET запрос.
+4. Сервер HTTP-обработчик `/sync/pull` кладёт сообщение в `INBOUND_QUEUES[device_id]` с типом "pull".
+5. Фоновый поток Runner вызывает `SyncProcessor.prepare_pull(device, since, hash)`:
    - Запрос из sync.db: `CommandCRUD.get_pending_for_device(device)`.
-   - Join с `RecordCRUD.get_bulk_records()`.
-   - Для каждой: `data_mapper.map_outgoing` → `data_transformer.postprocess`.
+   - Join с `RecordCRUD.get_bulk_records()` для получения данных.
+   - Для каждой команды: `data_mapper.map_outgoing` → `data_transformer.postprocess`.
    - Сбор `{id, table, operation, data, last_modified}`.
-5. Возврат `{schema_hash, commands}`.
-6. Клиент получает, для каждой команды: `SyncProcessor.process_push(device, [cmd], hash)` (локально применяется тот же процесс).
-   - В работе БД клиента: создание/обновление записей.
-7. Обновление `last_synced = max(last_modified)`, запись в файл.
+6. Результат кладётся в `reply_queue`, HTTP-обработчик возвращает `{schema_hash, commands}`.
+7. Клиент получает, для каждой команды применяет локально через `SyncProcessor.process_push(device, [cmd], hash)`:
+   - В работе БД клиента (vending.db): создание/обновление записей через BatchProcessor.
+8. Обновление `last_synced = max(last_modified)`, запись в файл `last_synced.txt`.
 
 ### Этап 5: Локальная обработка
 - Местные изменения: Декораторы → `SyncProcessor.enqueue_local_command(cmd)` → `CommandQueue.add_command()`.
@@ -182,10 +187,12 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 - При network errors: повтор в APScheduler.
 
 ## Базы данных
-- **Sync.db**: Локальная на клиенте/сервере, хранение команд, записей, статусов.
-- **Work.db**: Основная БД приложения (клиентская, серверная), куда применяются изменения.
-- WAL-режим: `PRAGMA journal_mode=WAL`.
-- Многопоточность: NullPool, no check_same_thread.
+- **Sync.db**: Локальная на клиенте/сервере (`dbSync/Model/sync.db`), хранение команд, записей, статусов.
+- **Work.db**: Основная БД приложения:
+  - Клиент: `DB/Data/vending.db`
+  - Сервер: `DB/Data/web_vending.db`
+- WAL-режим: `PRAGMA journal_mode=WAL` для конкурентного доступа.
+- Многопоточность: NullPool, `check_same_thread=False` для SQLite.
 
 ## Безопасность
 - **Шифрование**: AES-256-CBC с подкреплением в send_push/schema/pull, дешифровка в receive.
@@ -194,9 +201,10 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 - **Валидация**: JSONSchema для handshake, push_commands, push_response, pull_response.
 
 ## Настройка
-- `sender_timeout`: Интервал push (сек).
-- `receiver_timeout`: Интервал pull (сек).
-- Ключи: aes_key, hmac_secret, jwt_token.
-- Host/port: endpoints сервера.
+- `sender_timeout`: Интервал push (сек, по умолчанию 15).
+- `receiver_timeout`: Интервал pull (сек, по умолчанию 30).
+- Ключи: aes_key (16 байт), secret (HMAC), token (JWT).
+- Host/port: endpoints сервера (клиент: `config.json`, сервер: `options.py`).
+- `command_queue.json`: Путь к файлу очереди команд (по умолчанию в корне клиента/сервера).
 
 Эта документация охватывает полный цикл синхронизации с ссылками на файлы, функции и базы данных.

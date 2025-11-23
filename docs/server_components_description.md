@@ -49,7 +49,7 @@ Centralizes all server configuration in a single Python file.
   - `DB_NAME = "vending"`
   - `DB_USER = "root"`
   - `DB_PASSWORD = "Fury1488!"`
-- **Sync Timers**: `SENDER_TIMEOUT = 30`, `RECEIVER_TIMEOUT = 60`
+- **Sync Timers**: `SENDER_TIMEOUT = 15`, `RECEIVER_TIMEOUT = 30`
 
 ## 3. Frontend Web Interface (`frontend/`)
 
@@ -157,9 +157,13 @@ The synchronization service implements a sophisticated **Command Pattern** archi
 
 #### Command-Based Synchronization Architecture:
 - **`SyncProcessor`**: Central coordinator handling handshake, push, and pull operations with conflict resolution
-- **`CommandQueue`**: In-memory queues for staging commands before sync operations
-- **`CommandRunner`**: Background thread managing per-device synchronization cycles
+- **`CommandQueue`**: In-memory queues for staging commands before sync operations (persisted to `command_queue.json`)
+- **`CommandRunner`**: Background thread managing per-device synchronization cycles (via `Runner.py`)
 - **`TransportService`**: HTTP client with AES-encrypted communication to remote sync endpoints
+- **Transport Layer** (`dbSync/Transport/`):
+  - `routers.py`: FastAPI router with sync endpoints (`/push`, `/pull`, `/handshake`)
+  - `TransportService.py`: HTTP transport with AES-CBC encryption
+  - `ws_transport.py`, `routers_ws.py`: WebSocket transport implementations (optional, for future use)
 
 #### Data Processing Pipeline:
 - **`DataMapper`**: Translates field mappings between differing database schemas
@@ -167,6 +171,9 @@ The synchronization service implements a sophisticated **Command Pattern** archi
 - **`ConflictManager`**: Detects and resolves data conflicts using configurable strategies
 - **`BatchProcessor`**: Executes atomic database operations in transaction blocks
 - **`RetryManager`**: Manages failed sync attempts with exponential backoff
+- **`CDCService`**: Change Data Capture service that tracks database changes and notifies listeners
+- **`MappingConfigurator`**: Configures field mappings and conflict resolution strategies
+- **`sync_events.py`**: Event definitions for synchronization operations (server-side)
 
 #### Schema Management:
 - **`SchemaCache`**: SHA256-hashed cache of schema mappings to avoid repeated analysis
@@ -222,10 +229,10 @@ The command queue is a **persistence layer** for sync commands, ensuring no comm
 {
   "id": "uuid",                 // Unique command identifier
   "table": "Tools",             // Target database table
-  "operation": "add|update|delete", // CRUD operation type
+  "operation": "insert|update|delete", // CRUD operation type (lowercase)
   "data": { ... },              // Record data payload
-  "status": "pending|done|failed", // Processing status
-  "timestamp": "RFC3339"        // When command was created
+  "status": "pending|retrying|failed|done", // Processing status
+  "timestamp": "RFC3339"        // When command was created (ISO 8601 format)
 }
 ```
 
@@ -238,9 +245,9 @@ The command queue is a **persistence layer** for sync commands, ensuring no comm
 6. **Queue Cleanup**: Successfully processed commands removed from queue
 
 #### Example Command Records:
-- `{"table": "Tools", "operation": "add", "data": {"name": "Drill 5mm"}, "status": "done", "timestamp": "2025-09-26T16:51:32Z"}`
+- `{"table": "Tools", "operation": "insert", "data": {"name": "Drill 5mm"}, "status": "done", "timestamp": "2025-09-26T16:51:32Z"}`
 - `{"table": "Cell", "operation": "update", "data": {"id": 3, "status_id": 5, "tools_id": 4}, "status": "done", "timestamp": "2025-09-27T12:18:57Z"}`
-- `{"table": "History", "operation": "add", "data": {"user_id": 1, "tools_id": 4, "description": "Tool issued"}, "status": "done", "timestamp": "2025-09-27T12:18:57Z"}`
+- `{"table": "History", "operation": "insert", "data": {"user_id": 1, "tools_id": 4, "description": "Tool issued"}, "status": "done", "timestamp": "2025-09-27T12:18:57Z"}`
 
 ### Database Models for Sync
 
@@ -249,7 +256,7 @@ The command queue is a **persistence layer** for sync commands, ensuring no comm
 CREATE TABLE Command (
   id INTEGER PRIMARY KEY,
   table_name VARCHAR NOT NULL,    -- Target table name
-  operation VARCHAR NOT NULL,     -- add|update|delete
+  operation VARCHAR NOT NULL,     -- insert|update|delete
   record_id INTEGER,              -- Affected record ID (for updates/deletes)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   device_number INTEGER NOT NULL  -- Source device ID
@@ -299,14 +306,15 @@ CREATE TABLE CommandStatus (
 
 #### Per-Device Threading Model:
 - **Main Thread**: Server lifespan launches device-specific threads
-- **Sync Thread/Thread**: Dedicated thread per vendor device
-- **Scheduler Threads**: Background job scheduling for sync cycles
+- **Sync Thread**: Dedicated background thread per vendor device (daemon=True)
+- **Scheduler Threads**: APScheduler BackgroundScheduler for sync cycles
 - **HTTP Threads**: FastAPI thread pool for concurrent sync requests
+- **Queue-Based Communication**: INBOUND_QUEUES dictionary maps device_id to Queue for message passing
 
 #### Sync Scheduling:
-- **Sender Job**: Every `SENDER_TIMEOUT` seconds (default 30), pending commands pushed
-- **Receiver Job**: Every `RECEIVER_TIMEOUT` seconds (default 60), server pulls new data
-- **Retry Schedule**: Failed pushes retried with exponential backoff via RetryManager
+- **Sender Job**: Every `SENDER_TIMEOUT` seconds (default 15), pending commands pushed
+- **Receiver Job**: Every `RECEIVER_TIMEOUT` seconds (default 30), server pulls new data
+- **Retry Schedule**: Failed pushes retried with exponential backoff via RetryManager (checked every 30s)
 
 ### Error Handling & Resilience
 
