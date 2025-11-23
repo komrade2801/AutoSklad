@@ -4,33 +4,27 @@ import { fetchToolLibraryData } from './init_8_append_plan.js';
 // Функция для создания строк инструмента на основе JSON-данных
 export function generateTools(containerId, jsonToolLibrary) {
     console.log('generateTools');
+    console.log(jsonToolLibrary.tools);
     const container = document.getElementById(containerId);
     container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
 
     // Проходим по инструментам
     for (const toolId in jsonToolLibrary.tools) {
         const toolData = jsonToolLibrary.tools[toolId];
-        console.log(toolData);
+    //    console.log(toolData);
 
         const toolDiv = document.createElement('div');
         // Устанавливаем флекс-контейнер для строки и класс
         toolDiv.id = `tool_type_${toolData.id}`;
-        toolDiv.style.display = 'flex';
-        toolDiv.style.flexDirection = 'row';
-        toolDiv.style.flexWrap = 'nowrap';
-        toolDiv.className = 'tool_type draggable';
+        toolDiv.className = 'tool_type draggable library-tool-div';
         toolDiv.draggable = "true";
-        toolDiv.style.width = '100%';
-        toolDiv.style.cursor = 'pointer';
-        toolDiv.style.borderRadius = '5px';
-        toolDiv.style.backgroundColor = '#D3D3D3A0';
 
 //        toolDiv.setAttribute('data-group-index', groupKey);
 //        toolDiv.setAttribute('data-subgroup-index', subgroupKey);
-        toolDiv.setAttribute('data-value-index', toolData.id);
-        toolDiv.setAttribute('data-value-name', toolData.name);
-        toolDiv.setAttribute('data-value-count', toolData.count);
-        toolDiv.setAttribute('data-value-amount', toolData.amount);
+        toolDiv.setAttribute('data-tool-index', toolData.id);
+        toolDiv.setAttribute('data-tool-name', toolData.name);
+        toolDiv.setAttribute('data-tool-count', toolData.count);
+        toolDiv.setAttribute('data-tool-amount', toolData.amount);
 //        toolDiv.setAttribute('data-group-name', groupData.name);
 //        toolDiv.setAttribute('data-subgroup-name', subgroupData.SGName);
 
@@ -42,18 +36,8 @@ export function generateTools(containerId, jsonToolLibrary) {
         const nameDiv = document.createElement('div');
 
         // Устанавливаем стили для названия инструмента
-        nameDiv.className = 'toolName';
+        nameDiv.className = 'toolName library-tool-name-div';
         nameDiv.textContent = `${toolData.name}`;
-        nameDiv.style.display = 'flex';
-        nameDiv.style.width = '100%';
-        nameDiv.style.height = '30px';
-        nameDiv.style.border = '1px solid #ffffff';
-        nameDiv.style.color = '#003172';
-        nameDiv.style.fontWeight = 'bold';
-        nameDiv.style.fontSize = '14px';
-        nameDiv.style.alignItems = 'center';
-        nameDiv.style.justifyContent = 'start';
-        nameDiv.style.margin = '1px';
         nameDiv.title = `${toolData.name}`;
 
         toolDiv.appendChild(nameDiv);

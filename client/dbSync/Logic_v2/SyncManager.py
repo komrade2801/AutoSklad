@@ -231,6 +231,9 @@ class SyncManager:
         fields = {k: v for k, v in data.items() if k not in ("id", "index")}
         # передаём rec_id первым аргументом, остальное — именованно
 
+        if "id" not in data.items() and rec_id:
+            fields["id"] = rec_id
+
         print(f'[COUNT_FIX] Inserting new record with final rec_id={rec_id}, fields={fields}')
         try:
             crud.add(rec_id, **fields)
@@ -256,11 +259,13 @@ class SyncManager:
     def _increment_count(self, crud, rec_id, delta):
         existing = crud.get(rec_id)
         new_count = existing.count + delta
+        print(f'_increment_count rec_id={rec_id}, crud={crud}, delta={delta}')
         crud.update(index=rec_id, count=new_count)
         return self._serialize(crud.get(rec_id))
 
     def _upsert_update(self, crud, rec_id, data, sync_context=False):
         """Если запись есть — сравниваем и либо возвращаем, либо обновляем."""
+        print(f'_upsert_update rec_id={rec_id}, crud={crud}, data={data}, sync_context={sync_context}')
         existing_obj = crud.get(rec_id)
         if existing_obj is None:
             # Если не нашли запись, логируем и создаём новую

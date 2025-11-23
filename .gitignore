@@ -39,3 +39,17 @@ server/dbSync/Logic_v2/cache/
 server/dbSync/Logic_v2/cache/schema/
 client/dbSync/Logic_v2/cache/
 client/dbSync/Logic_v2/cache/schema/
+
+server/DB/Data/web_vending.db
+server/DB/Data/web_vending.db-shm
+server/DB/Data/web_vending.db-wal
+server/dbSync/Model/sync.db
+server/dbSync/Model/sync.db-shm
+server/dbSync/Model/sync.db-wal
+
+client/DB/Data/vending.db
+client/DB/Data/vending.db-shm
+client/DB/Data/vending.db-wal
+client/dbSync/Model/sync.db
+client/dbSync/Model/sync.db-shm
+client/dbSync/Model/sync.db-wal

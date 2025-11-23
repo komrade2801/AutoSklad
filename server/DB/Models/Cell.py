@@ -34,7 +34,7 @@ class Cell(Base, Model):
             from ..Models.Status import Status
         else:
             Status = Base.metadata.tables["Status"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Status, back_populates="DropOperations")
+        return relationship(Status, back_populates="Cell")
 
     @property
     def groups(self):
@@ -42,7 +42,7 @@ class Cell(Base, Model):
             from ..Models.Group import Group
         else:
             Group = Base.metadata.tables["Groups"].class_  # Получаем класс таблицы, если он уже зарегистрирован.
-        return relationship(Group, back_populates="Cells")
+        return relationship(Group, back_populates="Cell")
 
     # @property
     # def tools(self):
@@ -76,7 +76,7 @@ class Cell(Base, Model):
                 f"number={self.number}, "
                 f"description={self.description}, "
                 f"groups_id={self.groups_id}, "
-                f"tools_id={self.tools_id}"
+                f"tools_id={self.tools_id}, "
                 f"status_id={self.status_id}"
                 f")>")
 

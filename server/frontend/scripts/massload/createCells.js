@@ -3,6 +3,9 @@
         const container = document.getElementById(containerId);
         container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
 
+        console.log('createCells');
+        console.log(jsonObjectCells.rows);
+
         // Проходим по строкам в JSON
         for (const rowKey in jsonObjectCells.rows) {
             const rowData = jsonObjectCells.rows[rowKey];

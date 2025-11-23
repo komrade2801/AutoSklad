@@ -47,7 +47,7 @@ class EngineHistory(BaseCRUD):
         return self.add(
             id=id,
             datetime=datetime_value,
-            Status=status,
+            status=status,
             description=description,
             user_id=user_id,
             user_role_id=role_id,

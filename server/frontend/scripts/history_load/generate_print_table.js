@@ -42,6 +42,8 @@
 //     printArea.innerHTML = tableHTML;
 // }
 export function generatePrintTable(jsonObjectHistory) {
+    console.log("generatePrintTable")
+    console.log(jsonObjectHistory)
     const operations = jsonObjectHistory.operation;
     if (!operations) return;
   
@@ -49,16 +51,22 @@ export function generatePrintTable(jsonObjectHistory) {
     const rows = [];
   
     //Object.values( ).forEach();
-    let op = operations[0];
-    const { cells = [], tools = [], plans = [] } = op;
-    const count = cells.length;
-  
-    for (let i = 0; i < count; i++) {
-      rows.push({
-        cell: cells[i],
-        tool: tools[i] ?? '—',
-        plan: plans[i] ?? '—',
-      });
+    for (const operationKey in operations) {
+        const op = operations[operationKey];
+        console.log(op)
+        const status = op.status.trim().toLowerCase();
+        if (status === "на загрузке" || status === "mass_load_init" || status === "объявлена массовая загрузка") {
+            const { cells = [], tools = [], plans = [] } = op;
+            const count = cells.length;
+
+            for (let i = 0; i < count; i++) {
+              rows.push({
+                cell: cells[i],
+                tool: tools[i] ?? '—',
+                plan: plans[i] ?? '—',
+              });
+            }
+        }
     }
       
     // 2. Сортируем по cell (числово)

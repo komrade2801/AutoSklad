@@ -8,7 +8,8 @@ import { jsonObjectHistory } from './init.js';
 let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
 
 export function createTools(containerId, jsonObjectTools) {
-//    console.log(jsonObjectTools)
+    console.log('createTools');
+    console.log(jsonObjectTools.tools);
     const container = document.getElementById(containerId);
     container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
     // Проходим по строкам в JSON
@@ -22,16 +23,14 @@ export function createTools(containerId, jsonObjectTools) {
     for (const [idx, tool] of Object.entries(jsonObjectTools.tools)) {
 //    console.log(idx + ' - ' + tool)
                 // Пропускаем инструменты с sum <= 0
-                if (parseInt(tool.sum) <= 0) continue;
+                var count = parseInt(tool.sum);
+                if (count <= 0) {
+                    count = '-'
+                }
                 const toolDiv = document.createElement('div');
                 // Устанавливаем флекс-контейнер для строки и класс
-                toolDiv.style.display = 'flex';
-                toolDiv.style.flexDirection = 'row';
-                toolDiv.style.flexWrap = 'nowrap';
-                toolDiv.className = 'draggable';
+                toolDiv.className = 'draggable library-tool-div';
                 toolDiv.draggable = "true";
-                toolDiv.style.width = '100%';
-                toolDiv.style.cursor = 'pointer';
 //                toolDiv.content = planData['name'];
                 toolDiv.setAttribute('data-tool-id', tool.id);
 //                toolDiv.setAttribute('data-plan-name', planData.name);
@@ -39,8 +38,6 @@ export function createTools(containerId, jsonObjectTools) {
                 toolDiv.setAttribute('data-tool-name', tool.name);
 //                toolDiv.setAttribute('data-group-name', groupData.name);
                 // Устанавливаем стили для строки инструмента
-                toolDiv.style.height = '32px';
-                toolDiv.style.alignItems = 'center';
                 //Создаем название и количество инструмента
                 const nameDiv = document.createElement('div');
                 const sumDiv = document.createElement('div');
@@ -48,31 +45,13 @@ export function createTools(containerId, jsonObjectTools) {
                 nameDiv.className = 'toolName';
 //                nameDiv.textContent = groupData.name + " " + tool.name;
                 nameDiv.textContent = tool.name;
-                nameDiv.title = tool.description || "Нет описания";
-                nameDiv.style.display = 'flex';
-                nameDiv.style.width = '100%';
-                nameDiv.style.height = '30px';
-                nameDiv.style.backgroundColor = '#D3D3D3A0';
-                nameDiv.style.border = '1px solid #ffffff';
-                nameDiv.style.color = '#003172';
-                nameDiv.style.fontWeight = 'bold';
-                nameDiv.style.fontSize = '14px';
-                nameDiv.style.alignItems = 'center';
-                nameDiv.style.justifyContent = 'start';
-                nameDiv.style.margin = '1px';
+                nameDiv.title = tool.name || "Нет описания";
+                nameDiv.className = 'library-tool-name-div';
                 // Добавляем всплывающую подсказку с полным наименованием инструмента
                 //nameDiv.title = `Инструмент: ${cellData.content.tool}\nЧертёж: ${cellData.content.plan}`;
                 // Устанавливаем стили для количества инструмента
-                sumDiv.textContent = tool.sum;
-                sumDiv.className = 'sumTool';
-                sumDiv.style.display = 'flex';
-                sumDiv.style.width = '35px';
-                sumDiv.style.height = '30px';
-                sumDiv.style.marginRight = '0px'
-                sumDiv.style.border = '1px solid #FFFFFF';
-                sumDiv.style.backgroundColor = '#56b358';
-                sumDiv.style.alignItems = 'center';
-                sumDiv.style.justifyContent = 'center';
+                sumDiv.textContent = count;
+                sumDiv.className = 'sumTool library-tool-sum-div';
                 // Добавляем название и количество в строку инструмента
                 toolDiv.appendChild(nameDiv);
                 toolDiv.appendChild(sumDiv);
@@ -96,26 +75,11 @@ function openMassLoadInput(toolDiv, valueData, planName, toolId, groupName, tool
 
     // Создаем новую строку ввода
     const inputRow = document.createElement('div');
-    inputRow.style.display = 'flex';
-    inputRow.style.flexDirection = 'row';
-    inputRow.style.width = '100%';
-    inputRow.style.height = '32px';
-    inputRow.style.alignItems = 'center';
+    inputRow.className = 'library-tool-row';
 
     // Создаем div для поля ввода, копируя стили из nameDiv
     const inputDiv = document.createElement('div');
-    inputDiv.className = 'toolName';
-    inputDiv.style.display = 'flex';
-    inputDiv.style.width = '100%';
-    inputDiv.style.height = '30px';
-    inputDiv.style.backgroundColor = '#ffffffff';
-    inputDiv.style.border = '1px solid #ffffff';
-    inputDiv.style.color = '#003172';
-    inputDiv.style.fontWeight = 'bold';
-    inputDiv.style.fontSize = '14px';
-    inputDiv.style.alignItems = 'center';
-    inputDiv.style.justifyContent = 'start';
-    inputDiv.style.margin = '1px';
+    inputDiv.className = 'toolName library-tool-input-div';
 
     // Входное поле внутри inputDiv
     const input = document.createElement('input');
@@ -125,41 +89,23 @@ function openMassLoadInput(toolDiv, valueData, planName, toolId, groupName, tool
     input.step = '1';
     input.pattern = '[0-9]*';
     input.inputMode = 'numeric';
-    input.max = valueData.sum.toString();
-    input.style.width = '100%';
-    input.style.height = '100%';
-    input.style.border = 'none';
-    input.style.background = 'transparent';
-    input.style.color = '#003172';
-    input.style.fontWeight = 'bold';
-    input.style.fontSize = '14px';
-    input.style.textAlign = 'left';
+    var max = valueData.sum;
+    if (max <= 0) {
+        max = 99999999;
+    }
+    input.max = max.toString();
+    input.className = 'library-tool-input';
 
     inputDiv.appendChild(input);
 
     // Создаем div для кнопки, копируя стили из sumDiv
     const buttonDiv = document.createElement('div');
-    buttonDiv.className = 'sumTool';
-    buttonDiv.style.display = 'flex';
-    buttonDiv.style.width = '35px';
-    buttonDiv.style.height = '30px';
-    buttonDiv.style.marginRight = '0px';
-    buttonDiv.style.border = '1px solid #FFFFFF';
-    buttonDiv.style.backgroundColor = '#56b358';
-    buttonDiv.style.alignItems = 'center';
-    buttonDiv.style.justifyContent = 'center';
+    buttonDiv.className = 'sumTool library-tool-button-div';
 
     // Кнопка внутри buttonDiv
     const button = document.createElement('button');
+    button.className = 'sumTool library-tool-button';
     button.textContent = '+';
-    button.style.width = '30px';
-    button.style.height = '30px';
-    button.style.border = 'none';
-    button.style.backgroundColor = 'transparent';
-    button.style.color = '#ffff'
-    button.style.fontWeight = 'bold';
-    button.style.fontSize = '16px';
-    button.style.cursor = 'pointer';
 
     buttonDiv.appendChild(button);
 
@@ -167,7 +113,7 @@ function openMassLoadInput(toolDiv, valueData, planName, toolId, groupName, tool
     button.addEventListener('click', (event) => {
         event.stopPropagation();
         const amount = parseInt(input.value);
-        if (validateInput(amount, valueData.sum)) {
+        if (validateInput(amount, max)) {
             performMassLoad(amount, planName, toolId, groupName, toolName);
         }
     });

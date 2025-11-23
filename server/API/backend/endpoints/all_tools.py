@@ -181,14 +181,15 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
     responses={400: {"description": "Ошибка формирования JSON"}}
 )
 def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
+    print("get_groups_from_db")
     try:
-        devices_crud = EngineDevice()
-        tools_has_device_crud = EngineToolsHasDevice()
+        # devices_crud = EngineDevice()
+        # tools_has_device_crud = EngineToolsHasDevice()
         # tools_crud = EngineTools()
         tool_type_crud = EngineToolTypes()
         e_group = EngineGroup()
 
-        device = devices_crud.get_device_by_number(device_number)
+        # device = devices_crud.get_device_by_number(device_number)
 
         all_tool_types = tool_type_crud.get_all_tool_types()
 
@@ -197,8 +198,10 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         group_set = set()
         idx = 0
         for tool in all_tool_types:
-            if tool.count <= 0:
-                continue
+            print(tool)
+            count = tool.count
+            if count <= 0:
+                count = '-'
             # # Compute sum of free tools
             # tools = tools_crud.get_tools_by_tool_type(tool.id)
             # count_elements = 0
@@ -232,7 +235,7 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                 "group": immediate_group,
                 "name": tool.name,
                 "description": tool.description,
-                "sum": tool.count
+                "sum": count
             })
             if immediate_group_obj.id not in group_set:
                 group_list.append({
