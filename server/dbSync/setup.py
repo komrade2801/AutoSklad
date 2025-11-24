@@ -5,6 +5,8 @@ import threading
 import logging
 from typing import Dict, Any
 from functools import partial
+
+from DB.Engine.HistoryHasDeviceCRUD import EngineHistoryHasDevice
 # from DB.Data.sqlite_db import SessionLocal
 from DB.session import get_db_session
 from dbSync.Logic_v2.SyncProcessor import SyncProcessor
@@ -283,6 +285,28 @@ def on_new_consumption(record: Dict[str, Any], processor) -> None:
     except Exception as e:
         print(f'[ПОТОК][{threading.current_thread().name}][setup][on_new_consumption][ERROR] - error: {e}, подробности: - {record} {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
 
+def on_new_history(record: Dict[str, Any], processor) -> None:
+    """
+    Callback: после вставки в History автоматически
+    создаёт связь с текущим устройством в HistoryHasDevice.
+    """
+    if not processor:
+        raise
+    # Device_id устанавливается в SyncProcessor перед вызовом SyncManager
+    device_id = processor.current_device_id or None
+    if not device_id:
+        return
+
+    from DB.Engine.HistoryHasDeviceCRUD import HistoryHasDevice
+    e = EngineHistoryHasDevice()
+    try:
+        e.add_link(
+            history_id=record['id']  or record['index'],
+            device_id=device_id
+        )
+    except Exception as e:
+        print(f'[ПОТОК][{threading.current_thread().name}][setup][on_new_history][ERROR] - error: {e}, подробности: - {record} {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+
 
 def init_processor(queue,sender, db_session, retry_manager, cmd_crud, record_crud, status_crud, sync_cfg, schema_cache, schema_analyzer,
                    mapping_config, diagnostic_logger, data_mapper, data_transformer, sync_monitor, json_validator, batch_processor,
@@ -326,6 +350,10 @@ def init_processor(queue,sender, db_session, retry_manager, cmd_crud, record_cru
         register_after_insert(
             'OperationsConsumption',
             partial(on_new_consumption, processor=processor)
+        )
+        register_after_insert(
+            'History',
+            partial(on_new_history, processor=processor)
         )
         return processor
     except Exception as e:
