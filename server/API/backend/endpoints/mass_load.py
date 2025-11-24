@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 import dbSync
+from API.backend.endpoints.all_users import user_barcode
 from API.backend.endpoints.color_map import STATUS_COLORS
 from Core.authorization import AuthService
 from DB.Engine.HelpCRUD import EngineHelp
@@ -432,10 +433,16 @@ def save_mass_load(
     # print(request)
     # 1) авторизация
     validation = auth_service.validation_user(request)
-    # print(validation)
     if isinstance(validation, RedirectResponse) or ("status" in getattr(validation, "data", {})):
         raise HTTPException(
-            status_code=402, detail="Неавторизованный доступ запрещён")
+            status_code=401, detail="Неавторизованный доступ запрещён")
+
+    try:
+        validation.user_barcode
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=401, detail="Неавторизованный доступ запрещён")
 
     # 2) получаем устройство
     e_device = EngineDevice()
@@ -545,7 +552,7 @@ def save_mass_load(
                 tools_id=tool_type.id,
                 datetime_value=datetime.datetime.now(),
                 status=status_load.id,
-                description=status_load.description
+                description=status_load.description,
             )
             new_history = e_stories.get_history_by_id(story_id)
             if not new_history:

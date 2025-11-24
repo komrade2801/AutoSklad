@@ -5,7 +5,9 @@ import traceback
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from starlette.requests import Request
+from starlette.responses import RedirectResponse
 
+from Core.authorization import AuthService
 from DB.Engine.CellCRUD import EngineCell
 from API.backend.endpoints.mass_load import save_mass_load, MassLoadCreate, History
 # from typing import List
@@ -34,6 +36,7 @@ from fastapi import HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from PIL import Image, ImageDraw, ImageFont
 
+auth_service = AuthService()
 
 all_plans_router = APIRouter(tags=["All Plans"])
 
@@ -255,6 +258,20 @@ def create_plan(
     plan_id = None
     __exception = False
     __e = None
+
+    # 1) авторизация
+    validation = auth_service.validation_user(request)
+    if isinstance(validation, RedirectResponse) or ("status" in getattr(validation, "data", {})):
+        raise HTTPException(
+            status_code=401, detail="Неавторизованный доступ запрещён")
+
+    try:
+        validation.user_barcode
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=401, detail="Неавторизованный доступ запрещён")
+
     if not device:
         raise HTTPException(status_code=404, detail="Устройство не найдено")
     try:
