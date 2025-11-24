@@ -407,7 +407,7 @@ class ActionMapper:
         #     return {'trigger': 'err_rights'}
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
-        print(f"write_db_tool_consumption {index}, {args}, {kwargs}, {self.select_tool}, {self.select_cell}")
+        print(f"write_db_tool_consumption {index}, {args}, {kwargs}, {self.select_tool}, {self.select_cell}, {self.select_plan}")
         """
         Записывает факт расхода инструмента в базу данных.
         user_id: Идентификатор пользователя, который получил инструмент.
@@ -423,9 +423,9 @@ class ActionMapper:
         # if cells != []:
         #     cell = cells[0]
 
-        if not self.select_tool:
+        # if not self.select_tool:
             # self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
-            self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
+        self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
 
         cell = self.select_cell
         if not cell.tools_id:
@@ -509,14 +509,14 @@ class ActionMapper:
             description=f"Инструмент {self.select_tool.id} потребление зафиксировано.",
         )
 
-        self.select_plan = None
-
         if not operation_id:
+            self.select_plan = None
             print("Не удалось записать потребление операции.")
             return {'trigger': 'view_err'}
 
         if not self.plan_cell_list:
             print("write_db_tool_consumption trigger")
+            self.select_plan = None
             return {'trigger': 'view_ok'}
         else:
             print("write_db_tool_consumption cell_list")
