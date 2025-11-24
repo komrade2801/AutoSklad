@@ -152,7 +152,7 @@ class EngineCell(BaseCRUD):
         """
         Возвращает список всех пустых ячеек в таблице Cell.
         """
-        return self.session.query(Cell).filter(Cell.tools_id == 0).all()
+        return self.session.query(Cell).filter(Cell.tools_id == None).all()
 
     def get_cells_by_description(self, description: str) -> List[Cell]:
         """
