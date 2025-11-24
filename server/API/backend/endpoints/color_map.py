@@ -7,11 +7,8 @@ ColorMapValue = Union[str, Dict[bool, str]]
 
 STATUS_COLORS: dict[str, ColorMapValue] = {
     # === start_system ===
-    # если нет плана — оранжевый, если есть — тёмно‑зелёный
-    "start_system": {
-        False: "#ff4f00",  # Orange для свободного
-        True:  "#2C8822",  # ForestGreen для занятых
-    },
+    # цвет по умолчанию, если статус - пустая ячейка
+    "start_system": "#979797",
 
     # === mass_drop_ready ===
     # массовая загрузка готова
