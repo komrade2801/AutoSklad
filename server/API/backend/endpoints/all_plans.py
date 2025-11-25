@@ -324,16 +324,20 @@ def create_plan(
             for tool in plan.tools:
                 total_tools += tool['quantity']
 
-            if total_tools > len(empty_cells):
+            if total_tools > len(empty_cells) - 6:
                 raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
 
             operation = {}
             number = 1
+            cell_checked = 0
             cell_used = 0
             for tool in plan.tools:
                 for count in range(tool['quantity']):
-                    print(f"create_plan tool: {tool}, cell_used: {cell_used}")
-                    cell = empty_cells[cell_used]
+                    print(f"create_plan tool: {tool}, cell_used: {cell_checked}")
+                    cell = empty_cells[cell_checked]
+                    cell_checked += 1
+                    if cell.number in {1, 36, 71, 106, 141, 176}:
+                        continue
                     cell_used += 1
                     print(f"create_plan cell: {cell}")
                     load_operation = History(cell=cell.id, tool=tool['id'], plan=plan_id)
