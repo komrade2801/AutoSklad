@@ -337,7 +337,8 @@ def create_plan(
                     cell = empty_cells[cell_checked]
                     cell_checked += 1
                     if cell.number in {1, 36, 71, 106, 141, 176}:
-                        continue
+                        cell = empty_cells[cell_checked]
+                        cell_checked += 1
                     cell_used += 1
                     print(f"create_plan cell: {cell}")
                     load_operation = History(cell=cell.id, tool=tool['id'], plan=plan_id)

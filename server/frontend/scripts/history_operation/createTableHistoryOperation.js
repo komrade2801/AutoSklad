@@ -14,6 +14,7 @@ export function createTableHistoryOperation(containerId, jsonHistoryOperation) {
 
     if (data != undefined) {
         $('#operation_history_table').bootstrapTable('load', data);
+        $('#operation_history_table').bootstrapTable('refreshOptions', {'sortName': 'date', 'sortOrder': 'desc'});
         $('#operation_history_table').bootstrapTable('hideLoading');
     }
 
