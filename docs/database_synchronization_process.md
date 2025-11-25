@@ -207,4 +207,14 @@ SQLite-база с WAL-режимом, NullPool, check_same_thread=False для 
 - Host/port: endpoints сервера (клиент: `config.json`, сервер: `options.py`).
 - `command_queue.json`: Путь к файлу очереди команд (по умолчанию в корне клиента/сервера).
 
+## Недавние улучшения (ноябрь 2025)
+- **Фильтрация служебных полей**: `SyncManager._handle_update/_upsert_update` убирают `id`, `index`, `created_at`, `updated_at`, что устраняет ошибки вида `unexpected keyword argument` и защищает служебные timestamp’ы.
+- **Upsert-поведение**: при неудачном `update()` автоматически выполняется повторная вставка/обновление, поэтому команды больше не падают с `ValueError: Update failed for record ...`.
+- **Обработка History/Status**: правило `extract_status_from_history` в `DataTransformer` извлекает `Status.id` в integer `status`, а маппинги History дополнены полями `Status`, `plan_id`.
+- **Согласованность схем**: `sync_fields.json` для `Consumption`, `Load`, `LoadOperations`, `PlanToolTypes` теперь содержат все обязательные колонки (`history_id`, `plan_id`, `status_id`, `tool_types_id`, `load_id`, и т.д.), поэтому NOT NULL ограничения соблюдаются.
+- **Связи внутри батча**: `BatchProcessor` и `SyncManager._handle_insert()` автоматически ищут подходящий `history_id` в текущем батче или БД, что устраняет `Consumption.history_id`/`Load.history_id` ошибки.
+- **BaseCRUD hardening**: метод `add()` фильтрует неизвестные колонки, а `update()` требует keyword-only `index`, предотвращая передачу лишних аргументов в CRUDы и Engine-классы.
+- **Обратная связь клиенту**: `CommandSender` теперь учитывает `response["statuses"]` и помечает команды `done/failed/retrying` по реальным результатам вместо слепого `done`.
+- **Mass Load UI**: drag&drop-скрипты (`createCells.js`, `drag_and_drop.js`, `deleteLoad.js`) блокируют ячейки `1/36/71/106/141/176`, запрещая добавление инструментов и массовое сохранение в недоступные позиции.
+
 Эта документация охватывает полный цикл синхронизации с ссылками на файлы, функции и базы данных.
