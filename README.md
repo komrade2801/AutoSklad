@@ -148,8 +148,10 @@ Key entry points:
 - Ports/firewall:
   - Ensure server `port` is open and client `network.port` is free
   - On Windows, allow Python in Defender Firewall; on Linux, open with `ufw`
-
-
+ 
+## Maintenance scripts
+- `cleanup_databases.ps1`: утилита из корня репозитория удаляет рабочие SQLite (`server/dbSync/Model/sync.db`, `client/dbSync/Model/sync.db`, `server/DB/Data/web_vending.db`, `client/DB/Data/vending.db`), очереди команд и очищает кэш схем/полей (`server|client/dbSync/Logic_v2/cache/{schema,fields}`). Аргументы: `-ProjectRoot "<path>"` для явной директории и `-Force` для пропуска подтверждения. После очистки кэши пересоздаются на следующем handshake.
+ 
 ## Development
 - Python versions: 3.10–3.12
 - Activate virtual environments for both `server/` and `client/`

@@ -1,4 +1,6 @@
     // Функция для создания ячеек на основе JSON-данных
+    const BLOCKED_CELL_IDS = new Set([1, 36, 71, 106, 141, 176]);
+
     export function createCells(containerId, jsonObjectCells) {
         const container = document.getElementById(containerId);
         container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
@@ -34,6 +36,14 @@
                 cellDiv.style.alignItems = 'center';
                 cellDiv.style.justifyContent = 'center';
                 cellDiv.style.margin = '1px';
+
+                if (BLOCKED_CELL_IDS.has(Number(cellData.id))) {
+                    cellDiv.classList.add('cell-blocked');
+                    cellDiv.style.opacity = '0.4';
+                    cellDiv.setAttribute('data-blocked', 'true');
+                    cellDiv.setAttribute('data-tooltip', 'Ячейка недоступна');
+                    cellData.block = true;
+                }
 
                 // Добавляем текстовое содержимое (номер ячейки)
                 cellDiv.textContent = cellData.id;

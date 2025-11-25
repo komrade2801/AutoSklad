@@ -7,6 +7,8 @@ import { createHistory } from './createHistory.js';
 import { searchCellById } from './searchCellById.js';
 import { initializeDragAndDrop } from './drag_and_drop.js';
 
+const BLOCKED_CELL_IDS = new Set([1, 36, 71, 106, 141, 176]);
+
 
 export function deleteLoad(jsonObjectHistory, jsonObjectCells, jsonObjectTools, planName, toolId, cellId) {
     //console.log(planName)
@@ -21,7 +23,9 @@ export function deleteLoad(jsonObjectHistory, jsonObjectCells, jsonObjectTools, 
 
     cell.backgroundColor = '#69696910';
 
-    cell.block = false;
+    if (!BLOCKED_CELL_IDS.has(Number(cellId))) {
+        cell.block = false;
+    }
 
     // Вносим изменения в инструмент: найти по id и увеличить sum
     let toolFound = false;

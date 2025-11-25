@@ -44,7 +44,10 @@
     "description": "description",
     "tools_id": "tools_id",
     "mass_load_id": "mass_load_id",
-    "cell_id": "cell_id"
+    "cell_id": "cell_id",
+    "plan_id": "plan_id",
+    "history_id": "history_id",
+    "status_id": "status_id"
   },
   "History": {
     "id": "id",
