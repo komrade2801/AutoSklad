@@ -6,6 +6,8 @@ import { createHistory } from './createHistory.js';
 import { searchCellById } from './searchCellById.js';
 import { deleteLoad } from './deleteLoad.js';
 
+const BLOCKED_CELL_IDS = new Set([1, 36, 71, 106, 141, 176]);
+
 // Функция для поиска инструмента по ID
 function findToolById(toolsData, toolId) {
     for (const [idx, tool] of Object.entries(toolsData.tools)) {
@@ -82,6 +84,10 @@ export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
 
     //console.log("updateCellsJSON успешно вызвана")
     //console.log(cellId)
+    if (BLOCKED_CELL_IDS.has(Number(cellId))) {
+        console.warn('Попытка загрузить в заблокированную ячейку', cellId);
+        return;
+    }
 
     const cell = searchCellById(cellId);
 
@@ -109,6 +115,10 @@ export function updateCellsJSON(jsonObjectCells, planName, toolName, cellId) {
 
 // Функция для генерации JSON-History с историей текущей загрузки
 export function updateJsonHistory(jsonObjectHistory, planName, toolId, toolName, cellId, cellNumber) {
+    if (BLOCKED_CELL_IDS.has(Number(cellId))) {
+        console.warn('Попытка сохранить историю для заблокированной ячейки', cellId);
+        return;
+    }
     // Убедимся, что jsonObjectHistory.operation существует
     if (!jsonObjectHistory.operation) {
         jsonObjectHistory.operation = {}; // Инициализируем, если это null или undefined
