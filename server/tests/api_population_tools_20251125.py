@@ -264,6 +264,44 @@ class ApiConnectivityTest:
         print(f"\nTool types created successfully: {created_tools}/{len(tools_data)}")
         print(f"Individual tools created: {total_tools_created}")
 
+        mass_load_data = {
+            "operation": {
+                "1": {"cell": "2", "tool": "2", "plan": 0},
+                "2": {"cell": "3", "tool": "1", "plan": 0},
+                "3": {"cell": "36", "tool": "63", "plan": 0},
+                "4": {"cell": "37", "tool": "62", "plan": 0},
+                "5": {"cell": "38", "tool": "61", "plan": 0},
+                "6": {"cell": "41", "tool": "68", "plan": 0},
+                "7": {"cell": "42", "tool": "67", "plan": 0},
+                "8": {"cell": "43", "tool": "66", "plan": 0},
+                "9": {"cell": "44", "tool": "65", "plan": 0},
+                "10": {"cell": "45", "tool": "64", "plan": 0},
+                "11": {"cell": "72", "tool": "11", "plan": 0},
+                "12": {"cell": "73", "tool": "10", "plan": 0},
+                "13": {"cell": "74", "tool": "9", "plan": 0},
+                "14": {"cell": "150", "tool": "39", "plan": 0},
+                "15": {"cell": "177", "tool": "38", "plan": 0},
+                "16": {"cell": "178", "tool": "37", "plan": 0},
+                "17": {"cell": "179", "tool": "36", "plan": 0},
+                "18": {"cell": "180", "tool": "35", "plan": 0},
+                "19": {"cell": "181", "tool": "34", "plan": 0},
+                "20": {"cell": "186", "tool": "29", "plan": 0},
+            }
+        }
+
+        print(f"\n--- Creating Mass Load ---")
+        response = self.make_request("POST", "/backend/mass_load_tools/1", mass_load_data)
+
+        if response and isinstance(response, dict) and response.get("status") == 200:
+            print(f"\n--- Mass Load created ---")
+
+        # Log to file
+        with log_file.open("a", encoding="utf-8") as f:
+            f.write(f"Tool Type: {json.dumps(mass_load_data, ensure_ascii=False)}\n")
+            f.write(f"Response: {json.dumps(response, ensure_ascii=False) if response else 'No response'}\n\n")
+
+        # Small delay between requests
+        time.sleep(0.5)
 
         # Test library endpoint to verify data
         print("\n" + "=" * 40)
