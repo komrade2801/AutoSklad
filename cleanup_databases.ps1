@@ -105,6 +105,12 @@ $filesToDelete = @(
     "client/DB/Data/vending.db"
 )
 
+# Cache directories to clear (schema/fields)
+$cacheDirectories = @(
+    "server/dbSync/Logic_v2/cache/schema",
+    "client/dbSync/Logic_v2/cache/schema"
+)
+
 # 2. Show what we're about to do
 Write-InfoMessage ""
 Write-InfoMessage "AutoSklad Database Cleanup Script"
@@ -116,6 +122,18 @@ foreach ($relativePath in $filesToDelete) {
     $fullPath = Join-Path $ProjectRoot $relativePath
     $exists = Test-Path $fullPath
     if ($exists) {
+        Write-Host "  FOUND: $relativePath" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  NOT FOUND: $relativePath" -ForegroundColor Yellow
+    }
+}
+
+Write-InfoMessage ""
+Write-InfoMessage "Cache directories to clear:"
+foreach ($relativePath in $cacheDirectories) {
+    $fullPath = Join-Path $ProjectRoot $relativePath
+    if (Test-Path $fullPath) {
         Write-Host "  FOUND: $relativePath" -ForegroundColor Green
     }
     else {
@@ -139,6 +157,8 @@ Write-InfoMessage ""
 
 $deletedCount = 0
 $notFoundCount = 0
+$cacheClearedCount = 0
+$cacheMissingCount = 0
 
 # 4. Delete each file
 foreach ($relativePath in $filesToDelete) {
@@ -162,9 +182,32 @@ foreach ($relativePath in $filesToDelete) {
 
 # 5. Summary
 Write-InfoMessage ""
+Write-InfoMessage "Clearing cache directories..."
+Write-InfoMessage ""
+foreach ($relativePath in $cacheDirectories) {
+    $fullPath = Join-Path $ProjectRoot $relativePath
+    if (Test-Path $fullPath) {
+        try {
+            Get-ChildItem -Path $fullPath -File | Remove-Item -Force -ErrorAction Stop
+            Write-SuccessMessage "Cleared cache: $relativePath"
+            $cacheClearedCount++
+        }
+        catch {
+            Write-ErrorMessage "Failed to clear cache: $relativePath - $($_.Exception.Message)"
+        }
+    }
+    else {
+        Write-WarningMessage "Cache directory not found: $relativePath"
+        $cacheMissingCount++
+    }
+}
+
+Write-InfoMessage ""
 Write-InfoMessage "Cleanup Summary:"
 Write-InfoMessage "- Files successfully deleted: $deletedCount"
 Write-InfoMessage "- Files not found: $notFoundCount"
+Write-InfoMessage "- Cache directories cleared: $cacheClearedCount"
+Write-InfoMessage "- Cache directories missing: $cacheMissingCount"
 
 if ($deletedCount -eq $filesToDelete.Count) {
     Write-SuccessMessage "All database files have been cleaned up!"
