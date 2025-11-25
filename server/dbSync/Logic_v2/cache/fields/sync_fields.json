@@ -159,8 +159,8 @@
   "PlanToolTypes": {
     "id": "id",
     "plan_id": "plan_id",
-    "tool_type_id": "tool_type_id",
-    "count": "count"
+    "tool_types_id": "tool_types_id",
+    "tool_types_count": "tool_types_count"
   },
   "Rights": {
     "id": "id",
