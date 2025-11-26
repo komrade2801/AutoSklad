@@ -193,7 +193,7 @@ class ActionMapper:
             # 'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
             'read_db_rights_tool': lambda tool_type_id, name, group_name, tool_description: self.read_db_rights_tool(tool_type_id, name, group_name, tool_description),
             'read_db_get_cell': lambda tool_id, tool_name: self.read_db_get_cell(tool_id, tool_name),
-            'read_db_get_cells': lambda plan_id: self.read_db_get_cells(plan_id),
+            'read_db_get_cells': lambda tool_list: self.read_db_get_cells(tool_list),
             'read_db_get_more_cells': lambda cells_list, trigger='': self.read_db_get_more_cells(cells_list),
             # "": None,
             'read_db_user_operations': lambda user_id: self.read_db_user_operations(user_id),
@@ -305,8 +305,8 @@ class ActionMapper:
         # Возвращаем номер первой найденной ячейки
         return {"trigger": "send_number", "number": selected_cell.number, "tool_name": tool_name} if selected_cell else None
 
-    def read_db_get_cells(self, plan_id):
-        print(f"read_db_get_cells {plan_id}")
+    def read_db_get_cells(self, tool_list):
+        print(f"read_db_get_cells {tool_list}")
         """
         Читает номер ячеек (cell.number) по ID чертежа.
 
@@ -315,15 +315,18 @@ class ActionMapper:
         """
         # Получаем все ячейки, связанные с данным чертежом
 
-        plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+        # plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+
 
         cells_list = []
 
         needed_tools = 0
-        for plan_tool_type in plan_tool_types:
-            tool_type = self.e_tool_types.get_tool_type_by_id(plan_tool_type.tool_types_id)
+        # for plan_tool_type in plan_tool_types:
+        for tool_id in tool_list:
+            tool_type = self.e_tool_types.get_tool_type_by_id(tool_id)
 
-            needed_tools += plan_tool_type.tool_types_count
+            needed_tools += tool_list[tool_id]
+            # needed_tools += plan_tool_type.tool_types_count
 
             # tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
 
@@ -344,7 +347,7 @@ class ActionMapper:
                     if self.select_plan and load and load.plan_id == self.select_plan.id:
                         cells_list.append(cell)
                         found_tools += 1
-                        if found_tools == plan_tool_type.tool_types_count:
+                        if found_tools == tool_list[tool_id]:
                             break
 
         # Если результат пустой, возвращаем None
@@ -476,6 +479,7 @@ class ActionMapper:
             user_id=self.current_user.id,
             role_id=self.e_user.get_user_by_id(self.current_user.id).role_id,
             tools_id=self.select_tool.id,
+            plan_id=self.select_plan.id if self.select_plan else None,
             datetime_value=datetime.datetime.now(),
             status=status.id,
             description=f"Инструмент {self.select_tool.id} выдано пользователю {self.current_user.id}.",
@@ -1366,6 +1370,7 @@ class ActionMapper:
                     datetime_value=datetime.datetime.now(),
                     status=ready_status.id,
                     description=ready_status.description,
+                    plan_id=history.plan_id,
                 )
                 # # Обновляем статус ячейки
                 # cell = self.e_cell.get(load.cell_id)
@@ -1891,7 +1896,12 @@ class ActionMapper:
         """
         try:
             # Получаем чертеж по штрих-коду
-            plan = self.e_plan.get_plan_by_barcode(barcode)
+            # plan = self.e_plan.get_plan_by_barcode(barcode)
+
+            barcode_parts = barcode.split("/\r?\n/")
+            designation = barcode_parts[0]
+
+            plan = self.e_plan.get_plan_by_designation(designation)
 
             if plan:
                 return {'plan_id' : plan.id}  # Возвращаем идентификатор чертежа

@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="icons">
+    <file>count-down.png</file>
+    <file>count-up.png</file>
     <file>checked.png</file>
     <file>unchecked.png</file>
   </qresource>

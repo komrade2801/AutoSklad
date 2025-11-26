@@ -275,23 +275,29 @@ def create_plan(
     if not device:
         raise HTTPException(status_code=404, detail="Устройство не найдено")
     try:
-        # created_plans = []
-        # for plan in plan_data.plans:
-        plan_id = max(plans_crud.get_all_ids(), default=0) + 1
-        if not plan.barcode:
-            plan.barcode = random.randint(111111111, 999999999)
-        result = plans_crud.add_plan(
-            index=plan_id,
-            enterprise=plan.enterprise,
-            barcode=plan.barcode,
-            name=plan.name,
-            description=plan.description,
-            designation=plan.designation,
-            index_list=plan.index_list,
-            list_count=plan.list_count,
-            parent_plan=plan.parent_plan,
-            parent_plan_id=plan.parent_plan_id,
-        )
+
+        active_plan = plans_crud.get_plan_by_designation(plan.designation)
+
+        if not active_plan:
+            # created_plans = []
+            # for plan in plan_data.plans:
+            plan_id = max(plans_crud.get_all_ids(), default=0) + 1
+            if not plan.barcode:
+                plan.barcode = random.randint(111111111, 999999999)
+            result = plans_crud.add_plan(
+                index=plan_id,
+                enterprise=plan.enterprise,
+                barcode=plan.barcode,
+                name=plan.name,
+                description=plan.description,
+                designation=plan.designation,
+                index_list=plan.index_list,
+                list_count=plan.list_count,
+                parent_plan=plan.parent_plan,
+                parent_plan_id=plan.parent_plan_id,
+            )
+        else:
+            plan_id = active_plan.id
         # tools_has_device_crud
 
         for idx, tool in enumerate(plan.tools):
