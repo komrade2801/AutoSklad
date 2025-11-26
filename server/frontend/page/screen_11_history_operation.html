@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="../assets/jquery-resizable-columns/jquery.resizableColumns.css">
     <script src="../assets/jquery-resizable-columns/jquery.resizableColumns.js"></script>
     <script src="../assets/bootstrap-table/1.25.0/extensions/resizable/bootstrap-table-resizable.js"></script>
+    <script src="../assets/moment/moment.js"></script>
 
     <link rel="stylesheet" href="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.css">
     <script src="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.js"></script>
@@ -168,8 +169,8 @@
                     //column custom formatter
                     function dateTimeSorter(a, b) {
 
-                        var a_number = datnum(a, "DD.MM.YYYY HH:mm:ss");
-                        var b_number = datnum(b, "DD.MM.YYYY HH:mm:ss");
+                        var a_number = datnum(a, "HH:mm:ss DD.MM.YYYY");
+                        var b_number = datnum(b, "HH:mm:ss DD.MM.YYYY");
 
                         a = a_number;
                         b = b_number;
@@ -182,10 +183,10 @@
                     function datnum(dateString, format) {
                         var date;
                         try {
-                        //    date = moment(dateString, format);
-                        //    return date.valueOf();
-                            date = new Date(dateString)
-                            return date.getTime();
+                            date = moment(dateString, format);
+                            return date.valueOf();
+                        //    date = new Date(dateString)
+                        //    return date.getTime();
                         }catch {
                             return 0;
                         }

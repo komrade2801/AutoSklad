@@ -2,6 +2,7 @@ from typing import List, Optional
 
 # from DB.Engine.ToolsCRUD import EngineTools
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
+from DB.Engine.PlanCRUD import EnginePlan
 from DB.Engine.UserCRUD import EngineUser
 from DB.Models.History import History
 from DB.Engine.HistoryCRUD import EngineHistory
@@ -31,6 +32,7 @@ class EngineHistoryOperation:
         # self.tool_crud = EngineTools()
         self.tool_types_crud = EngineToolTypes()
         self.user_crud = EngineUser()
+        self.plan_crud = EnginePlan()
 
     def _transform_history_record(self, record: History) -> dict:
         """
@@ -39,8 +41,9 @@ class EngineHistoryOperation:
         :param record: Экземпляр History.
         :return: Словарь с полями date, name_operation, tool, plan, user, device.
         """
-        date_str = record.datetime.strftime("%Y.%m.%d %H:%M:%S") if record.datetime else "None"
+        date_str = record.datetime.strftime("%H:%M:%S %d.%m.%Y") if record.datetime else "None"
         name_operation = record.description or "None"
+        plan = self.plan_crud.get_plan_by_id(record.plan_id) if record.plan_id else None
 
         # Получаем имя пользователя
         if record.user_id:
@@ -59,8 +62,7 @@ class EngineHistoryOperation:
         else:
             tool_name = "None"
 
-        # План — если понадобится отдельный объект, можно здесь добавить
-        plan_name = "None"  #TODO Пока заглушка, нужно — добавить логику
+        plan_name = plan.designation if plan else "Без чертежа"
 
         return {
             "date": date_str,

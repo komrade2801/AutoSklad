@@ -78,6 +78,15 @@ class EnginePlan(BaseCRUD):
         """
         return self.session.query(self.model).filter_by(barcode=barcode).one_or_none()
 
+    def get_plan_by_designation(self, designation: str) -> Optional[Plan]:
+        """
+        Получает чертеж по штрих-коду.
+
+        :param designation: Обозначение чертежа.
+        :return: Объект Plan или None, если чертеж не найден.
+        """
+        return self.session.query(self.model).filter_by(designation=designation).first()
+
     def get_plans_by_enterprise(self, enterprise: str) -> List[Plan]:
         """
         Возвращает список чертежей по названию предприятия.
