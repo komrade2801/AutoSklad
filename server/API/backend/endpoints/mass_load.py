@@ -553,6 +553,7 @@ def save_mass_load(
                 datetime_value=datetime.datetime.now(),
                 status=status_load.id,
                 description=status_load.description,
+                plan_id=request_plan,
             )
             new_history = e_stories.get_history_by_id(story_id)
             if not new_history:

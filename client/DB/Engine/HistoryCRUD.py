@@ -30,6 +30,7 @@ class EngineHistory(BaseCRUD):
                     tools_id: int,
                     datetime_value,
                     status: Optional[int] = None,
+                    plan_id: Optional[int] = None,
                     description: Optional[str] = None) \
             -> bool:
         """
@@ -51,7 +52,8 @@ class EngineHistory(BaseCRUD):
             description=description,
             user_id=user_id,
             user_role_id=role_id,
-            tools_id=tools_id
+            tools_id=tools_id,
+            plan_id=plan_id
         )
 
     def get_history_by_id(self, history_id: int) -> Optional[History]:
