@@ -16,11 +16,13 @@ class EngineSettings(BaseCRUD):
         'bool': lambda x: bool(int(x)),  # Store as 0/1 in DB
         'json': json.loads
     }
+    
+    # Общий кэш для всех экземпляров класса
+    _cache: Dict[str, Any] = {}
+    _cache_lock = Lock()
 
     def __init__(self, session=None):
         super().__init__(session=session, model=Settings)
-        self._cache: Dict[str, Any] = {}
-        self._cache_lock = Lock()
 
     def load_all_to_cache(self) -> Dict[str, Any]:
         """Загружает все настройки в кэш"""
@@ -32,8 +34,22 @@ class EngineSettings(BaseCRUD):
                 self._cache[setting.key] = value
             return self._cache.copy()
 
+    def _ensure_cache_loaded(self):
+        """Проверяет и загружает кэш, если он пустой"""
+        with self._cache_lock:
+            if not self._cache:
+                try:
+                    settings = self.all()
+                    for setting in settings:
+                        value = self._cast_value(setting.value, setting.value_type)
+                        self._cache[setting.key] = value
+                except Exception:
+                    # Если таблица Settings еще не создана, игнорируем ошибку
+                    pass
+
     def get_cached(self, key: str) -> Optional[Any]:
         """Получить значение настройки из кэша"""
+        self._ensure_cache_loaded()
         with self._cache_lock:
             return self._cache.get(key)
 
