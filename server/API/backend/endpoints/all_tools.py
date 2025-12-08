@@ -15,6 +15,7 @@ from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
 # from DB.Engine.ToolsCRUD import EngineTools
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
 from DB.Engine.GroupCRUD import EngineGroup
+from DB.Engine.LoadCRUD import EngineLoad
 # from DB.Engine.CellCRUD import EngineCell
 #
 # from DB.Engine.CellHasDeviceCRUD import EngineCellHasDevice
@@ -188,6 +189,7 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         # tools_crud = EngineTools()
         tool_type_crud = EngineToolTypes()
         e_group = EngineGroup()
+        e_load = EngineLoad()
 
         # device = devices_crud.get_device_by_number(device_number)
 
@@ -200,6 +202,11 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         for tool in all_tool_types:
             print(tool)
             count = tool.count
+            # Вычитаем занятые инструменты (зарезервированные в massload, загруженные в vending, или потребленные)
+            # Логика соответствует mass_load.py: export_tools
+            loads = e_load.find_by_tools_id(tool.id)
+            if loads:
+                count -= len(loads)
             if count <= 0:
                 count = '-'
             # # Compute sum of free tools
@@ -237,8 +244,9 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                 "description": tool.description,
                 "sum": count
             })
-            if immediate_group_obj.id not in group_set:
+            if immediate_group_obj and immediate_group_obj.id not in group_set:
                 group_list.append({
+                    "id": immediate_group_obj.id,
                     "group": immediate_group,
                     "parent_group": parent_group,
                     "description": immediate_group_obj.description,
@@ -246,6 +254,34 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                 })
                 group_set.add(immediate_group_obj.id)
             idx += 1
+
+        # Добавляем все группы без инструментов
+        all_groups = e_group.get_all_groups()
+        for group in all_groups:
+            if group.id not in group_set:
+                # Построение полного пути для группы (логика аналогична обработке групп из инструментов)
+                parent_group = "-"
+                full_path = group.name if group.name else "Unknown"
+                
+                if group.paren_group_id and group.paren_group_id != 0:
+                    parent_group_obj = e_group.get_group_by_id(group.paren_group_id)
+                    parent_group = parent_group_obj.name if parent_group_obj else "-"
+                    
+                    cur_parent_group_id = parent_group_obj.id if parent_group_obj else 0
+                    while cur_parent_group_id != 0:
+                        cur_parent_group = e_group.get_group_by_id(cur_parent_group_id)
+                        cur_parent_group_id = cur_parent_group.paren_group_id if cur_parent_group else 0
+                        if cur_parent_group:
+                            full_path = cur_parent_group.name + "/" + full_path
+                
+                group_list.append({
+                    "id": group.id,
+                    "group": group.name if group.name else "Unknown",
+                    "parent_group": parent_group,
+                    "description": group.description if group.description else "",
+                    "full": full_path
+                })
+                group_set.add(group.id)
 
         return {"tools": tool_list, "groups": group_list}
 

@@ -213,6 +213,7 @@ class GroupsCreate(BaseModel):
     parent_group: int
     description: str
     img: str
+    group_id: Optional[int] = None  # Для обновления существующей группы
 
 # Модель ответа для добавления групп
 class GroupsAddResponse(BaseModel):

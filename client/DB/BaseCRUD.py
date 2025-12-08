@@ -262,6 +262,8 @@ class CoreEngine:
         :param kwargs: Поля и значения для создания объекта.
         :return: True при успешном добавлении.
         """
+        # ВАЖНО: Убираем sync_context - он нужен только для декоратора @sync_aware
+        kwargs.pop('sync_context', None)
 
         with self.transaction() as db:
 
@@ -282,6 +284,9 @@ class CoreEngine:
         :param kwargs: поля и новые значения
         :return: True, если запись найдена и обновлена, иначе False
         """
+        # ВАЖНО: Убираем sync_context - он нужен только для декоратора @sync_aware
+        kwargs.pop('sync_context', None)
+        
         with self.transaction() as db:
             instance = db.query(self.model).filter_by(id=index).one_or_none()
             if not instance:
@@ -291,13 +296,17 @@ class CoreEngine:
         self._cache.clear()
         return True
 
-    def delete(self, index: int) -> bool:
+    def delete(self, index: int, **kwargs) -> bool:
         """
         Удаляет запись по id и очищает кеш.
 
         :param index: Значение поля id
+        :param kwargs: дополнительные параметры (например, sync_context)
         :return: True, если запись найдена и удалена, иначе False
         """
+        # ВАЖНО: Убираем sync_context - он нужен только для декоратора @sync_aware
+        kwargs.pop('sync_context', None)
+        
         with self.transaction() as db:
             instance = db.query(self.model).filter_by(id=index).one_or_none()
             if not instance:

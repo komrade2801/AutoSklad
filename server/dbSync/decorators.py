@@ -52,6 +52,17 @@ def sync_aware(func):
             kwargs['index'] = __id
             return func(self, *args, **kwargs)
         # -----------------------------------------------------
+        
+        # --- Если sync_context=True, НЕ создаем локальную команду (применяем команду из sync) ---
+        sync_context = kwargs.pop('sync_context', False)
+        if sync_context:
+            table_name  = getattr(self.model, "__tablename__", self.model.__name__)
+            method_name = func.__name__
+            print(f"[{threading.current_thread().name}][decorators][wraps] "
+                  f"обработали БЕЗ синхронизации. func: {method_name}, table: {table_name}, "
+                  f"args: {args}, kwargs: {kwargs}")
+            return func(self, *args, **kwargs)
+        # -----------------------------------------------------
 
         table_name  = getattr(self.model, "__tablename__", self.model.__name__)
         method_name = func.__name__

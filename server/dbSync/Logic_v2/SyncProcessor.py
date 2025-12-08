@@ -305,12 +305,22 @@ class SyncProcessor:
             # 3) Транзакция только для запросов в БД
             with cmd_crud.transaction(), record_crud.transaction():
                 pending = cmd_crud.get_pending_for_device(device)
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor][prepare_pull] Найдено {len(pending)} pending команд для device={device}. [{datetime.now()}]')
+                for cmd in pending:
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor][prepare_pull]   - Команда ID={cmd.id}, table={cmd.table_name}, operation={cmd.operation}, record_id={cmd.record_id}')
                 records = record_crud.get_bulk_records([c.id for c in pending])
 
                 for cmd in pending:
-                    raw = records.get(cmd.id, {})
-                    json_data = self.data_mapper.map_outgoing(cmd.table_name, raw)
-                    post = self.data_transformer.postprocess(cmd.table_name, json_data)
+                    # Для DELETE операций используем cmd.record_id напрямую, так как DELETE не требует полных данных
+                    if cmd.operation.upper() == "DELETE":
+                        # Для DELETE используем record_id из команды
+                        post = {"index": cmd.record_id} if cmd.record_id else {}
+                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor][prepare_pull] DELETE команда: table={cmd.table_name}, record_id={cmd.record_id}, data={post}')
+                    else:
+                        # Для ADD/UPDATE используем данные из Record
+                        raw = records.get(cmd.id, {})
+                        json_data = self.data_mapper.map_outgoing(cmd.table_name, raw)
+                        post = self.data_transformer.postprocess(cmd.table_name, json_data)
 
                     # last_modified — в той же сессии, без отдельного lock
                     lm = None
@@ -319,7 +329,7 @@ class SyncProcessor:
                         lm = rec.last_modified.isoformat()
 
                     commands.append({
-                        "id": cmd.id,
+                        "id": str(cmd.id),  # Преобразуем ID в строку для соответствия схеме валидации
                         "table": cmd.table_name,
                         "operation": cmd.operation.upper(),
                         "data": post,

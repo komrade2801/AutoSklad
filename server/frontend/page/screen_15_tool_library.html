@@ -362,8 +362,36 @@
                                  editButton.innerHTML = "✏️";
                                  editButton.title = "Редактировать";
         
-                                 editButton.addEventListener('click', function () {
-                                     console.log("Редактировать - Клик был: " + index);
+                                 editButton.addEventListener('click', async function () {
+                                     const groupId = row.id;
+                                     if (!groupId) {
+                                         console.error("ID группы не найден");
+                                         return;
+                                     }
+                                     
+                                     // Проверяем, занята ли группа
+                                     try {
+                                         const checkResponse = await fetch(`../backend/check_group_busy/${groupId}`);
+                                         if (!checkResponse.ok) {
+                                             throw new Error("Ошибка проверки группы");
+                                         }
+                                         const checkData = await checkResponse.json();
+                                         
+                                         if (checkData.is_busy) {
+                                             alert("Данный инструмент используется в вендинге.\nРедактировать можно только свободный инструмент.");
+                                             return;
+                                         }
+                                         
+                                         // Переходим на страницу редактирования с параметром group_id
+                                         let url = '../screen_23_add_group.html';
+                                         let targetUrl = new URL(url, window.location.origin).href;
+                                         let token = localStorage.getItem('token');
+                                         let full_url = targetUrl + "?token=" + token + "&group_id=" + groupId;
+                                         window.location.href = full_url;
+                                     } catch (error) {
+                                         console.error('Ошибка при проверке группы:', error);
+                                         alert('Ошибка при проверке группы');
+                                     }
                                  });
         
                                  actionsDiv.appendChild(editButton);
@@ -376,8 +404,43 @@
                                  deleteButton.innerHTML = "❌";
                                  deleteButton.title = "Удалить";
         
-                                 deleteButton.addEventListener('click', function () {
-                                     console.log("Удалить - Клик был: " + index);
+                                 deleteButton.addEventListener('click', async function () {
+                                     const groupId = row.id;
+                                     if (!groupId) {
+                                         console.error("ID группы не найден");
+                                         return;
+                                     }
+                                     
+                                     // Подтверждение удаления
+                                     if (!confirm("Вы уверены, что хотите удалить эту группу?")) {
+                                         return;
+                                     }
+                                     
+                                     // Удаляем группу (endpoint сам проверит занятость)
+                                     try {
+                                         const deleteResponse = await fetch(`../backend/delete_group/${groupId}`, {
+                                             method: 'DELETE'
+                                         });
+                                         
+                                         if (!deleteResponse.ok) {
+                                             const errorData = await deleteResponse.json();
+                                             alert(errorData.detail || "Ошибка при удалении группы");
+                                             return;
+                                         }
+                                         
+                                         const result = await deleteResponse.json();
+                                         alert(result.message || "Группа успешно удалена");
+                                         
+                                         // Перезагружаем страницу для обновления таблицы
+                                         let url = '../screen_15_tool_library.html';
+                                         let targetUrl = new URL(url, window.location.origin).href;
+                                         let token = localStorage.getItem('token');
+                                         let full_url = targetUrl + "?token=" + token;
+                                         window.location.href = full_url;
+                                     } catch (error) {
+                                         console.error('Ошибка при удалении группы:', error);
+                                         alert('Ошибка при удалении группы');
+                                     }
                                  });
         
                                  actionsDiv.appendChild(deleteButton);

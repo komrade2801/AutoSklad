@@ -254,7 +254,7 @@ class SyncManager:
             # Вариант 1: index явно указан в данных
             target_id = clean_data["index"]
             try:
-                crud.add(**clean_data)
+                crud.add(sync_context=sync_context, **clean_data)
             except (RuntimeError, Exception) as e:
                 # Если возникла ошибка (например, IntegrityError из-за race condition),
                 # проверяем, не появилась ли запись между проверкой и вставкой
@@ -273,7 +273,7 @@ class SyncManager:
             # Вариант 2: используем rec_id как index
             target_id = rec_id
             try:
-                crud.add(index=rec_id, **clean_data)
+                crud.add(index=rec_id, sync_context=sync_context, **clean_data)
             except (RuntimeError, Exception) as e:
                 # Если возникла ошибка (например, IntegrityError из-за race condition),
                 # проверяем, не появилась ли запись между проверкой и вставкой
@@ -328,7 +328,7 @@ class SyncManager:
             # Получаем валидные колонки модели
             valid_columns = {col.name for col in crud.model.__table__.columns}
             clean_data = {k: v for k, v in clean_data.items() if k in valid_columns}
-            crud.add(index=rec_id, **clean_data)
+            crud.add(index=rec_id, sync_context=sync_context, **clean_data)
             new_obj = crud.get(rec_id)
             return self._serialize(new_obj) if new_obj else None
 
@@ -349,7 +349,7 @@ class SyncManager:
                 return self._serialize(existing_obj)
 
         print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_upsert_update] Record {rec_id} in {crud.model.__tablename__} updating (sync_context={sync_context})')
-        crud.update(index=rec_id, **incoming)
+        crud.update(index=rec_id, sync_context=sync_context, **incoming)
         return self._serialize(crud.get(rec_id))
 
     def _handle_update(self, crud, data, rec_id):
@@ -383,7 +383,7 @@ class SyncManager:
         
         # Вызываем update с явным указанием index
         try:
-            success = crud.update(index=rec_id, **update_data)
+            success = crud.update(index=rec_id, sync_context=True, **update_data)
             if not success:
                 # Если обновление не удалось, возможно из-за IntegrityError, пробуем upsert
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] Update returned False for record {rec_id}, trying upsert')
@@ -401,7 +401,7 @@ class SyncManager:
     def _handle_delete(self, crud, rec_id):
         existing = crud.get(rec_id)
         if existing:
-            crud.delete(rec_id)
+            crud.delete(index=rec_id, sync_context=True)
             return self._serialize(existing)
         else:
             return {"id": rec_id}
