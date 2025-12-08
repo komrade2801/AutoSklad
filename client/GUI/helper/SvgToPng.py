@@ -12,16 +12,38 @@ class SvgToPng:
     def __init__(self):
         self.src = ""
 
-    def get_pixmap(self):
-        return self.get_pixmap_QtSvg()
+    def get_pixmap(self, width=None, height=None):
+        return self.get_pixmap_QtSvg(width, height)
 
-    def get_pixmap_QtSvg(self) -> QtGui.QPixmap:
+    def get_pixmap_QtSvg(self, width=None, height=None) -> QtGui.QPixmap:
+        """
+        Рендерит SVG в QPixmap с указанными размерами.
+        
+        :param width: Ширина pixmap. Если None, определяется из SVG.
+        :param height: Высота pixmap. Если None, определяется из SVG.
+        :return: QPixmap с отрендеренным SVG
+        """
         # Загрузка SVG-кода
         renderer = QtSvg.QSvgRenderer()
-        renderer.load(QtCore.QByteArray(self.src.encode()))
+        if not renderer.load(QtCore.QByteArray(self.src.encode())):
+            # Если не удалось загрузить, возвращаем пустой pixmap
+            return QtGui.QPixmap(51, 51)
+        
+        # Определяем размеры из SVG или используем переданные
+        if width is None or height is None:
+            view_box = renderer.viewBox()
+            if view_box.isValid() and view_box.width() > 0 and view_box.height() > 0:
+                # Используем размеры из viewBox
+                width = int(view_box.width())
+                height = int(view_box.height())
+            else:
+                # Пытаемся получить размеры из атрибутов SVG
+                # Размеры по умолчанию для иконок кнопок
+                width = 51
+                height = 51
 
         # Создание пиксмапа из SVG-кода
-        pixmap = QtGui.QPixmap(464, 371)
+        pixmap = QtGui.QPixmap(width, height)
         pixmap.fill(QtCore.Qt.transparent)
         painter = QtGui.QPainter(pixmap)
         renderer.render(painter)

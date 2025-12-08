@@ -18,15 +18,18 @@
   },
   "network": {
     "ip": "127.0.0.1",
-    "port": 8080
+    "port": 8080,
+    "subnet_mask": "255.255.255.0",
+    "gateway": "192.168.1.1",
+    "dns": "8.8.8.8"
   },
   "serial": {
     "port": "COM29",
-    "baudrate": 9600
+    "baudrate": 115200
   },
   "barcode": {
     "port": "COM1",
-    "baudrate": 9600
+    "baudrate": 19200
   },
   "key": {
     "aes": ""
@@ -36,7 +39,7 @@
     "serial": "/dev/serial0"
   },
   "locks": {
-    "load_locked": 0,
+    "load_locked": false,
     "drop_locked": false
   },
   "logs": {

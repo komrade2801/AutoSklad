@@ -23,6 +23,9 @@ class SignatureConfig(BaseModel):
 class NetworkConfig(BaseModel):
     ip: IPv4Address
     port: int = 8080
+    subnet_mask: Optional[IPv4Address] = None
+    gateway: Optional[IPv4Address] = None
+    dns: Optional[IPv4Address] = None
 
 
 class SerialConfig(BaseModel):

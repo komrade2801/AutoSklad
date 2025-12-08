@@ -36,6 +36,12 @@ class Executor:
         try:
             if isinstance(value, dict):
                 result = mapper.execute(current, **value)
+            elif isinstance(value, (tuple, list)) and value:
+                # Если value - кортеж или список, распаковываем как позиционные аргументы
+                result = mapper.execute(current, *value)
+            elif value is None:
+                # Если value None, используем значение по умолчанию
+                result = mapper.execute(current, {"index": 0})
             else:
                 return result, map.state()
         except Exception as e:
