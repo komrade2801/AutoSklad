@@ -77,11 +77,6 @@ class CommandQueue:
         self.queue: List[Dict] = []
         self._lock = threading.RLock()
         self._load_queue()
-        # При запуске оставляем только последнее корректное задание
-        with self._lock:
-            if len(self.queue) > 1:
-                self.queue = [self.queue[-1]]
-                self._save_queue()
 
     def _load_queue(self):
         """Загружает очередь из файла, если он существует."""
@@ -94,7 +89,11 @@ class CommandQueue:
                             self.queue = []
                         else:
                             all_commands = json.loads(raw)
-                            self.queue = [all_commands[-1]] if all_commands else []
+                            # Восстанавливаем только активные команды, чтобы не терять pending/retrying
+                            self.queue = [
+                                cmd for cmd in all_commands
+                                if cmd.get("status") in ("pending", "retrying")
+                            ]
                     print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][_load_queue] Очередь загружена из кэша. [{datetime.now()}]')
                 except (json.JSONDecodeError, IOError) as e:
                     print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][_load_queue][ERROR][JSONDecodeError] - Создали чистый кеш. [{datetime.now()}]')

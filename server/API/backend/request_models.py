@@ -232,6 +232,7 @@ class ToolsCreate(BaseModel):
     count: int
     img: str
     tools: Dict[str, Any]
+    tool_type_id: Optional[int] = None  # Для обновления существующего инструмента
 
 
 # Модель ответа для добавления инструментов

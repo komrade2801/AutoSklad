@@ -137,7 +137,18 @@ def create_groups(data: GroupsCreate, db: Session = Depends(get_db)):
                     raise HTTPException(
                         status_code=404, detail="Группа для обновления не найдена")
                 
-                # Обновляем группу
+                # Проверяем, изменились ли данные (избегаем лишних команд синхронизации)
+                has_changes = (
+                    existing_group.name != data.group_name or
+                    existing_group.description != data.description or
+                    existing_group.paren_group_id != group_parent_id
+                )
+                
+                if not has_changes:
+                    print(f"[create_groups] Данные не изменились, пропускаем UPDATE (избегаем лишней синхронизации)")
+                    return GroupsAddResponse(status=200, message="Группа не изменилась")
+                
+                # Обновляем группу (декоратор @sync_aware создаст команду синхронизации)
                 print(f"[create_groups] Обновление группы: name={data.group_name}, description={data.description}, paren_group_id={group_parent_id}")
                 success = group_crud.update_group(
                     group_id=data.group_id,
@@ -149,6 +160,9 @@ def create_groups(data: GroupsCreate, db: Session = Depends(get_db)):
                     print(f"[create_groups] ОШИБКА: Не удалось обновить группу с ID {data.group_id}")
                     raise HTTPException(
                         status_code=400, detail="Не удалось обновить группу")
+                
+                # Очищаем кеш ПОСЛЕ успешного обновления
+                group_crud._cache.clear()
                 print(f"[create_groups] Группа успешно обновлена")
                 return GroupsAddResponse(status=200, message="Группа успешно обновлена")
             else:
@@ -160,14 +174,20 @@ def create_groups(data: GroupsCreate, db: Session = Depends(get_db)):
                 if len(existing_groups) == 0:
                     print(f"[create_groups] Группа с именем '{data.group_name}' не найдена, создаём новую")
                     print(f"[create_groups] Параметры создания: name={data.group_name}, description={data.description}, paren_group_id={group_parent_id}")
-                    group = group_crud.create_group(name=data.group_name,
+                    # Декоратор @sync_aware автоматически создаст команду синхронизации ADD
+                    group = group_crud.create_group(
+                        name=data.group_name,
                         description=data.description,
-                        paren_group_id=group_parent_id)
+                        paren_group_id=group_parent_id
+                    )
                     print(f"[create_groups] Результат create_group: {group}")
                     if not group:
                         print(f"[create_groups] ОШИБКА: create_group вернул None. Возможные причины: ошибка при добавлении в БД или генерации ID")
                         raise HTTPException(
-                            status_code=400, detail="Не удалось создать")
+                            status_code=400, detail="Не удалось создать группу")
+                    
+                    # Очищаем кеш ПОСЛЕ успешного создания
+                    group_crud._cache.clear()
                     print(f"[create_groups] Группа успешно создана с ID: {group.id}")
                 else:
                     print(f"[create_groups] Группа с именем '{data.group_name}' уже существует (ID: {[g.id for g in existing_groups]})")
@@ -345,16 +365,34 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
         
         def check_group_busy_recursive(group_id: int) -> Tuple[bool, str]:
             """Рекурсивно проверяет занятость группы и всех вложенных групп"""
+            e_drop_operations = EngineDropOperations()
+            e_consumption_operations = EngineOperationsConsumption()
+            
             all_group_ids = get_all_nested_groups(group_id)
             
             for gid in all_group_ids:
                 tool_types = tool_type_crud.get_by_group(gid)
                 for tool_type in tool_types:
+                    # Проверяем Load (массовая загрузка)
                     loads = e_load.find_by_tools_id(tool_type.id)
                     if loads:
                         group = group_crud.get_group_by_id(gid)
                         group_name = group.name if group else f"ID {gid}"
-                        return True, f"Группа '{group_name}' (ID: {gid}) содержит занятые инструменты"
+                        return True, f"Группа '{group_name}' (ID: {gid}) содержит инструменты в массовой загрузке"
+                    
+                    # Проверяем DropOperations (загружен в вендинг)
+                    drop_operations = e_drop_operations.get_operations_by_tool(tool_type.id)
+                    if drop_operations:
+                        group = group_crud.get_group_by_id(gid)
+                        group_name = group.name if group else f"ID {gid}"
+                        return True, f"Группа '{group_name}' (ID: {gid}) содержит инструменты, загруженные в вендинг"
+                    
+                    # Проверяем OperationsConsumption (выдан в вендинге)
+                    consumption_operations = e_consumption_operations.get_operations_by_tool(tool_type.id)
+                    if consumption_operations:
+                        group = group_crud.get_group_by_id(gid)
+                        group_name = group.name if group else f"ID {gid}"
+                        return True, f"Группа '{group_name}' (ID: {gid}) содержит инструменты, выданные в вендинге"
             
             return False, ""
         
@@ -374,11 +412,18 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
                 tool_types = tool_type_crud.get_by_group(gid)
                 print(f"[delete_group] Удаление номенклатур для группы {gid}: найдено {len(tool_types)}")
                 for tool_type in tool_types:
-                    # Декоратор @sync_aware автоматически создаст команду синхронизации
-                    if tool_type_crud.delete_tool_type(tool_type.id):
+                    # Декоратор @sync_aware автоматически создаст команду синхронизации DELETE
+                    print(f"[delete_group] Удаление номенклатуры {tool_type.id} ({tool_type.name})")
+                    success = tool_type_crud.delete_tool_type(tool_type.id)
+                    if success:
                         deleted_tool_types_count += 1
-                        print(f"[delete_group] Удалена номенклатура {tool_type.id}")
-                tool_type_crud._cache.clear()
+                        print(f"[delete_group] Номенклатура {tool_type.id} успешно удалена")
+                    else:
+                        print(f"[delete_group] ОШИБКА: Не удалось удалить номенклатуру {tool_type.id}")
+                
+                # Очищаем кеш после удаления всех номенклатур группы
+                if tool_types:
+                    tool_type_crud._cache.clear()
             
             # Удаляем группы (в обратном порядке - сначала дочерние)
             for gid in reversed(all_group_ids):
@@ -386,20 +431,25 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
                 group_name = group_before.name if group_before else f"ID {gid}"
                 
                 print(f"[delete_group] Попытка удаления группы {gid} ({group_name})")
-                # Декоратор @sync_aware автоматически создаст команду синхронизации
-                if group_crud.delete_group(gid):
+                # Декоратор @sync_aware автоматически создаст команду синхронизации DELETE
+                success = group_crud.delete_group(gid)
+                
+                if success:
                     deleted_groups_count += 1
-                    group_crud._cache.clear()
-                    print(f"[delete_group] Группа {gid} ({group_name}) успешно удалена")
+                    print(f"[delete_group] Группа {gid} ({group_name}) успешно удалена из БД")
                     
-                    # Проверка удаления
+                    # Проверка удаления (для диагностики)
                     group_after = group_crud.get_group_by_id(gid)
                     if group_after:
                         print(f"[delete_group] ВНИМАНИЕ: Группа {gid} все еще существует после удаления!")
                     else:
                         print(f"[delete_group] Подтверждено: группа {gid} удалена из БД")
                 else:
-                    print(f"[delete_group] ОШИБКА: Не удалось удалить группу {gid} ({group_name})")
+                    print(f"[delete_group] ОШИБКА: delete_group вернул False для {gid} ({group_name})")
+            
+            # Очищаем кеш после удаления всех групп
+            if deleted_groups_count > 0:
+                group_crud._cache.clear()
             
             return deleted_groups_count, deleted_tool_types_count
         
@@ -421,11 +471,12 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
         
         # Выполняем рекурсивное удаление
         # Декоратор @sync_aware автоматически создаст команды синхронизации для каждой операции
+        # ВАЖНО: Каждая операция DELETE создаст отдельную команду в CommandQueue
         print(f"[delete_group] Начало рекурсивного удаления группы {group_id}...")
         deleted_groups_count, deleted_tool_types_count = delete_group_recursive(group_id)
         print(f"[delete_group] Удаление завершено: групп={deleted_groups_count}, номенклатур={deleted_tool_types_count}")
         
-        # Очищаем кеш после всех удалений
+        # Финальная очистка кеша (если еще не очищен)
         group_crud._cache.clear()
         tool_type_crud._cache.clear()
         

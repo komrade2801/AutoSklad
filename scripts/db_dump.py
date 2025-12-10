@@ -71,7 +71,7 @@ class DatabaseDumper:
         """Get table schema information"""
         try:
             cursor = self.connection.cursor()
-            cursor.execute(f"PRAGMA table_info({table})")
+            cursor.execute(f'PRAGMA table_info("{table}")')
             columns = []
             for row in cursor.fetchall():
                 columns.append({
@@ -91,9 +91,9 @@ class DatabaseDumper:
         try:
             if last_rows:
                 # Get last N rows using ORDER BY rowid DESC
-                query = f"SELECT * FROM {table} ORDER BY rowid DESC LIMIT {limit}"
+                query = f'SELECT * FROM "{table}" ORDER BY rowid DESC LIMIT {limit}'
             else:
-                query = f"SELECT * FROM {table} LIMIT {limit}"
+                query = f'SELECT * FROM "{table}" LIMIT {limit}'
 
             cursor = self.connection.cursor()
             cursor.execute(query)
