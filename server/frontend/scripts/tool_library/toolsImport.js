@@ -43,3 +43,6 @@ function changeTab(idToShow, idToHide) {
     elemToShow.show();
     elemToHide.hide();
 }
+
+// Делаем функцию доступной глобально
+window.changeTab = changeTab;

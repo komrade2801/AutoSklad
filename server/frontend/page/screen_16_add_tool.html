@@ -275,6 +275,60 @@
     </div>
 
     <script>
+        // Функция для загрузки данных инструмента при редактировании
+        async function loadToolData(toolTypeId) {
+            try {
+                const response = await fetch(`../backend/get_tool_type_by_id/${toolTypeId}`);
+                if (!response.ok) {
+                    throw new Error("Ошибка загрузки данных инструмента");
+                }
+                const toolData = await response.json();
+                
+                // Заполняем форму данными инструмента
+                document.getElementById("tool_name").value = toolData.name || "";
+                document.getElementById("tool_description").value = toolData.description || "";
+                
+                // Устанавливаем группу
+                const groupSelect = document.getElementById("select_group");
+                if (toolData.group_id && toolData.group_id > 0) {
+                    groupSelect.value = toolData.group_id;
+                } else {
+                    groupSelect.value = 0;
+                }
+                
+                // Устанавливаем количество
+                if (toolData.count && toolData.count > 0) {
+                    document.getElementById("useToolCount").checked = true;
+                    document.getElementById("tool_count").value = toolData.count;
+                    showToolCount(); // Показываем блок с количеством
+                    // Обновляем таблицу с количеством инструментов
+                    updateTable();
+                } else {
+                    document.getElementById("useToolCount").checked = false;
+                    document.getElementById("tool_count").value = 1;
+                }
+                
+                // Сохраняем ID инструмента для обновления
+                window.currentToolTypeId = toolTypeId;
+            } catch (error) {
+                console.error('Ошибка при загрузке данных инструмента:', error);
+                alert('Ошибка при загрузке данных инструмента');
+            }
+        }
+
+        // Проверяем наличие параметра tool_type_id в URL при загрузке страницы
+        // Используем setTimeout, чтобы дать время для загрузки групп через init_16_add_tool.js
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const toolTypeId = urlParams.get('tool_type_id');
+            if (toolTypeId) {
+                // Ждем загрузки групп (примерно 500мс должно хватить)
+                setTimeout(() => {
+                    loadToolData(parseInt(toolTypeId));
+                }, 500);
+            }
+        });
+
         function showToolCount() {
             const elem = document.getElementById("ToolCountBlock");
             console.log(elem);
@@ -299,7 +353,14 @@
             // const subgroup = document.getElementById("search_subgroup").value.trim();
             const toolName = toolNameInput.value.trim();
             const description = document.getElementById("tool_description").value.trim();
-            const count = parseInt(countInput.value, 10);
+
+            // Инициализация count в зависимости от useCount
+            let count;
+            if (useCount) {
+                count = parseInt(countInput.value, 10);
+            } else {
+                count = 0;
+            }
 
             // Валидация обязательных полей
             if (isNaN(groupId)) {
@@ -325,8 +386,6 @@
                     countInput.focus();
                     return;
                 }
-            } else {
-                count = 0;
             }
 
             const tableRows = document.querySelectorAll("#tools_table tbody tr");
@@ -351,6 +410,11 @@
                 count: count,
                 tools: tools
             };
+            
+            // Если редактируем существующий инструмент, добавляем tool_type_id
+            if (window.currentToolTypeId) {
+                data.tool_type_id = window.currentToolTypeId;
+            }
         
             const endpointUrl = '../backend/create_tools';
         

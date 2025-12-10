@@ -201,11 +201,17 @@
                 <script>
                     $("input[name=options-tabs]").change(function () {
                         console.log(this.value);
+                        // Сохраняем выбранную вкладку в localStorage
+                        localStorage.setItem('toolLibraryActiveTab', this.value);
                         if(this.value == "tools")
                         {
-                            changeTab("#tool_library_div", "#group_library_div");
+                            if (typeof window.changeTab === 'function') {
+                                window.changeTab("#tool_library_div", "#group_library_div");
+                            }
                         } else {
-                            changeTab("#group_library_div", "#tool_library_div");
+                            if (typeof window.changeTab === 'function') {
+                                window.changeTab("#group_library_div", "#tool_library_div");
+                            }
                         }
                     });
                 </script>
@@ -279,8 +285,36 @@
                                  editButton.innerHTML = "✏️";
                                  editButton.title = "Редактировать";
         
-                                 editButton.addEventListener('click', function () {
-                                     console.log("Редактировать - Клик был: " + index);
+                                 editButton.addEventListener('click', async function () {
+                                     const toolTypeId = row.id;
+                                     if (!toolTypeId) {
+                                         console.error("ID инструмента не найден");
+                                         return;
+                                     }
+                                     
+                                     // Проверяем, занят ли инструмент
+                                     try {
+                                         const checkResponse = await fetch(`../backend/check_tool_busy/${toolTypeId}`);
+                                         if (!checkResponse.ok) {
+                                             throw new Error("Ошибка проверки инструмента");
+                                         }
+                                         const checkData = await checkResponse.json();
+                                         
+                                         if (checkData.is_busy) {
+                                             alert("Данный инструмент используется в вендинге.\nРедактировать можно только свободный инструмент.\n" + checkData.message);
+                                             return;
+                                         }
+                                         
+                                         // Переходим на страницу редактирования с параметром tool_type_id
+                                         let url = '../screen_16_add_tool.html';
+                                         let targetUrl = new URL(url, window.location.origin).href;
+                                         let token = localStorage.getItem('token');
+                                         let full_url = targetUrl + "?token=" + token + "&tool_type_id=" + toolTypeId;
+                                         window.location.href = full_url;
+                                     } catch (error) {
+                                         console.error('Ошибка при проверке инструмента:', error);
+                                         alert('Ошибка при проверке инструмента');
+                                     }
                                  });
         
                                  actionsDiv.appendChild(editButton);
@@ -293,8 +327,43 @@
                                  deleteButton.innerHTML = "❌";
                                  deleteButton.title = "Удалить";
         
-                                 deleteButton.addEventListener('click', function () {
-                                     console.log("Удалить - Клик был: " + index);
+                                 deleteButton.addEventListener('click', async function () {
+                                     const toolTypeId = row.id;
+                                     if (!toolTypeId) {
+                                         console.error("ID инструмента не найден");
+                                         return;
+                                     }
+                                     
+                                     // Подтверждение удаления
+                                     if (!confirm("Вы уверены, что хотите удалить этот инструмент?")) {
+                                         return;
+                                     }
+                                     
+                                     // Удаляем инструмент (endpoint сам проверит занятость)
+                                     try {
+                                         const deleteResponse = await fetch(`../backend/delete_tool_type/${toolTypeId}`, {
+                                             method: 'DELETE'
+                                         });
+                                         
+                                         if (!deleteResponse.ok) {
+                                             const errorData = await deleteResponse.json();
+                                             alert(errorData.detail || "Ошибка при удалении инструмента");
+                                             return;
+                                         }
+                                         
+                                         const result = await deleteResponse.json();
+                                         alert(result.message || "Инструмент успешно удален");
+                                         
+                                         // Перезагружаем страницу для обновления таблицы
+                                         let url = '../screen_15_tool_library.html';
+                                         let targetUrl = new URL(url, window.location.origin).href;
+                                         let token = localStorage.getItem('token');
+                                         let full_url = targetUrl + "?token=" + token;
+                                         window.location.href = full_url;
+                                     } catch (error) {
+                                         console.error('Ошибка при удалении инструмента:', error);
+                                         alert('Ошибка при удалении инструмента');
+                                     }
                                  });
         
                                  actionsDiv.appendChild(deleteButton);
