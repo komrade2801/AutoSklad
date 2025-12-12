@@ -23,7 +23,7 @@ STATUS_COLORS: dict[str, ColorMapValue] = {
 
     # === mass_drop_init ===
     # массовая загрузка начата
-    "mass_drop_init": "#1E90FF",    # DodgerBlue
+    "mass_drop_init": "#9d1212",    # DodgerBlue
 
     # === mass_load_init ===
     # массовая выгрузка начата - загрузка инициирована, но инструменты ещё не размещены

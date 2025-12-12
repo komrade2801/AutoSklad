@@ -71,8 +71,9 @@ class EngineDrop(BaseCRUD):
                 cell_id: int,
                 mass_drop_id: int,
                 tools_id: int,
-                plan_id: int,
                 history_id: int,
+                 status_id: int,
+                plan_id: Optional[int] = None,
                 description: Optional[str] = None,
         ) -> bool:
         """
@@ -92,6 +93,7 @@ class EngineDrop(BaseCRUD):
             cell_id=cell_id,
             mass_drop_id=mass_drop_id,
             tools_id=tools_id,
+            status_id=status_id,
             plan_id=plan_id,
             history_id=history_id
         )

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session, joinedload
 # from sqlalchemy.exc import IntegrityError
 from typing import Optional, List
@@ -27,6 +29,7 @@ class EngineMassDrop(BaseCRUD):
 
     def add_task(self,
              index: int,
+             created_at: datetime,
              description: Optional[str] = None
         ) -> bool:
         """
@@ -36,7 +39,7 @@ class EngineMassDrop(BaseCRUD):
         :param description: Описание задачи.
         :return: True если задача успешно добавлена, иначе False.
         """
-        return self.add(index=index, description=description)
+        return self.add(index=index, created_at=created_at, description=description)
 
     def get_task(self, task_id: int) -> Optional["MassDrop"]:
         """

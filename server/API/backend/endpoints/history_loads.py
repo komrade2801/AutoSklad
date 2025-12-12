@@ -220,7 +220,7 @@ def get_history_loads(db: Session = Depends(get_db)):
             user_name = f"{user.family} {user.first_name}" if user else "—"
 
             # 5) Статус: из самой операции
-            status = stat_crud.get(latest_op.status_id) if history else None
+            status = stat_crud.get(mass.status_id) if history else None
             status_desc = status.description if status and status.description else (status.stype if status else "—")
 
             # 7) Формат полей

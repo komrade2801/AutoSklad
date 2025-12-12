@@ -72,7 +72,7 @@ def get_history_operation(device_number: int):
     operations = []
     if operations_list:
         for idx, op in enumerate(operations_list):
-            print(f"op: {op}")
+            # print(f"op: {op}")
             operations.append({
                 "id": op.get("id", "None"),
                 "date": op.get("date", "None"),
