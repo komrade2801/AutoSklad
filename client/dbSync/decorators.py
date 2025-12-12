@@ -86,14 +86,20 @@ def sync_aware(func):
         if "kwargs" in payload and isinstance(payload["kwargs"], dict):
             payload = payload["kwargs"]
 
+        print(f"payload {payload}")
         record_id   = payload.get("id") or payload.get("index") or payload.get('args')[0]
+        print(f"record_id {record_id}")
+        kwargs_value = payload.get("kwargs")
+        print(f"kwargs_value {kwargs_value}")
+        if not kwargs_value:
+            kwargs_value = payload
 
         # __id = payload.get('id') or payload.get('index')
         if not record_id:
             raise ValueError("record must be have id or index provided and cannot be None or empty.")
 
 
-        payload_key = f"id:{record_id}" if record_id is not None else json.dumps(payload, sort_keys=True)
+        payload_key = f"id:{record_id}, {str(kwargs_value)}" if record_id is not None else json.dumps(payload, sort_keys=True)
         dedup_key   = (table_name, method_name, payload_key)
 
         # 4) Если уже выполняли эту операцию — выйдем сразу
