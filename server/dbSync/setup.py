@@ -379,13 +379,19 @@ def init_receiver(device_id, proc, transport, ):
 def init_sender(device_id, proc, queue, transport):
     try:
         from .Logic_v2.CommandSender import CommandSender
+        from .Logic_v2.CommandOrderer import CommandOrderer
+        
+        # Создаём CommandOrderer для оптимизации команд перед отправкой
+        command_orderer = CommandOrderer(logger=proc.diagnostic_logger if proc else None)
+        
         send = CommandSender(
             transport=transport,
             queue=queue,
             sync_processor=proc,
-            device_id=device_id
+            device_id=device_id,
+            command_orderer=command_orderer  # 🆕 Передаём CommandOrderer
         )
-        print('[setup]init_sender')
+        print('[setup]init_sender with CommandOrderer')
         return send
     except Exception as e:
         print(f'[ПОТОК][{threading.current_thread().name}][setup][init_sender][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')

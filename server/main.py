@@ -28,6 +28,17 @@ dbSync.init_db = True
 initialize_database_if_needed()
 dbSync.init_db = False
 
+# 2) Инициализируем кэш настроек после создания БД
+try:
+    from DB.Engine.SettingsCRUD import EngineSettings
+    settings_crud = EngineSettings()
+    settings_crud.load_all_to_cache()
+    print("[INFO] Settings cache initialized successfully")
+except Exception as e:
+    # Если таблица Settings еще не создана или произошла ошибка, продолжаем работу
+    print(f"[WARN] Failed to initialize settings cache: {e}")
+    print("[INFO] Continuing with default settings from options.py")
+
 # Import routers only AFTER DB is initialized to avoid early SQL queries
 front_router = importlib.import_module("frontend.front_router").front_router
 backend_router = importlib.import_module("API.backend.routers").backend_router

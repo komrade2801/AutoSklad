@@ -46,6 +46,26 @@ function initialization(element_name) {
         },
     });
     $('#group_library_table').bootstrapTable('showLoading');
+    
+    // Восстанавливаем выбранную вкладку из localStorage
+    // Используем setTimeout, чтобы убедиться, что все элементы DOM готовы
+    setTimeout(() => {
+        const savedTab = localStorage.getItem('toolLibraryActiveTab');
+        if (savedTab === 'groups') {
+            // Устанавливаем radio button на "Группы"
+            $('#tab2').prop('checked', true);
+            // Переключаем отображение
+            if (typeof window.changeTab === 'function') {
+                window.changeTab("#group_library_div", "#tool_library_div");
+            }
+        } else {
+            // По умолчанию "Инструменты"
+            $('#tab1').prop('checked', true);
+            if (typeof window.changeTab === 'function') {
+                window.changeTab("#tool_library_div", "#group_library_div");
+            }
+        }
+    }, 100);
 }
 
 // Делаем функцию доступной глобально

@@ -193,8 +193,8 @@
         <span style="font-size: 24px;">Вы уверены, что хотите отменить добавление группы?</span>
         <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Введённые данные не сохранятся.</span>
         <div style="display: flex; flex-direction: row; margin-top: 50px;">
-            <button class="btn_vending" onclick="show_conf('none')" style="margin-right: 20px;">Назад</button>
-            <button class="btn_vending" onclick="show_conf('none')">Отменить добавление</button>
+            <button class="btn_vending" onclick="window.location.href='/screen_15_tool_library.html?token='+localStorage.getItem('token')" style="margin-right: 20px;">Назад</button>
+            <button class="btn_vending" onclick="window.location.href='/screen_15_tool_library.html?token='+localStorage.getItem('token')">Отменить добавление</button>
         </div>
     </div>
     <div class="d-flex flex-column" style="height: 100%; width: 100%; position: static; margin-left: 0px; color: rgb(255,255,255);">
@@ -245,6 +245,44 @@
     </div>
 
     <script>
+        // Функция для загрузки данных группы при редактировании
+        async function loadGroupData(groupId) {
+            try {
+                const response = await fetch(`../backend/get_group_by_id/${groupId}`);
+                if (!response.ok) {
+                    throw new Error("Ошибка загрузки данных группы");
+                }
+                const groupData = await response.json();
+                
+                // Заполняем форму данными группы
+                document.getElementById("group_name").value = groupData.name || "";
+                document.getElementById("group_description").value = groupData.description || "";
+                
+                // Устанавливаем родительскую группу
+                const parentGroupSelect = document.getElementById("select_parent_group");
+                if (groupData.parent_group && groupData.parent_group > 0) {
+                    parentGroupSelect.value = groupData.parent_group;
+                } else {
+                    parentGroupSelect.value = 0;
+                }
+                
+                // Сохраняем ID группы для обновления
+                window.currentGroupId = groupId;
+            } catch (error) {
+                console.error('Ошибка при загрузке данных группы:', error);
+                alert('Ошибка при загрузке данных группы');
+            }
+        }
+
+        // Проверяем наличие параметра group_id в URL при загрузке страницы
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const groupId = urlParams.get('group_id');
+            if (groupId) {
+                loadGroupData(parseInt(groupId));
+            }
+        });
+
         // Функция, собирающая данные из формы и таблицы, формирующая JSON и отправляющая его на сервер
         function collectDataAndSend() {
             // Получение значений из полей формы
@@ -274,6 +312,11 @@
                 description: description,
                 img: "",
             };
+            
+            // Если редактируем существующую группу, добавляем group_id
+            if (window.currentGroupId) {
+                data.group_id = window.currentGroupId;
+            }
         
             const endpointUrl = '../backend/create_groups';
         

@@ -83,6 +83,58 @@ class CnfCRUD:
         """
         self.config.network.ip = ip
         self._save_config()
+    
+    def get_subnet_mask(self) -> Optional[str]:
+        """
+        Возвращает маску подсети из секции network.
+        """
+        return str(self.config.network.subnet_mask) if self.config.network.subnet_mask else None
+    
+    def set_subnet_mask(self, mask: str) -> None:
+        """
+        Устанавливает маску подсети в секции network и сохраняет конфигурацию.
+        """
+        self.config.network.subnet_mask = mask
+        self._save_config()
+    
+    def get_gateway(self) -> Optional[str]:
+        """
+        Возвращает адрес шлюза из секции network.
+        """
+        return str(self.config.network.gateway) if self.config.network.gateway else None
+    
+    def set_gateway(self, gateway: str) -> None:
+        """
+        Устанавливает адрес шлюза в секции network и сохраняет конфигурацию.
+        """
+        self.config.network.gateway = gateway
+        self._save_config()
+    
+    def get_dns(self) -> Optional[str]:
+        """
+        Возвращает адрес DNS из секции network.
+        """
+        return str(self.config.network.dns) if self.config.network.dns else None
+    
+    def set_dns(self, dns: str) -> None:
+        """
+        Устанавливает адрес DNS в секции network и сохраняет конфигурацию.
+        """
+        self.config.network.dns = dns
+        self._save_config()
+    
+    def get_server_ip(self) -> str:
+        """
+        Возвращает IP-адрес сервера из секции server.
+        """
+        return str(self.config.server.ip)
+    
+    def set_server_ip(self, ip: str) -> None:
+        """
+        Устанавливает новый IP-адрес сервера в секции server и сохраняет конфигурацию.
+        """
+        self.config.server.ip = ip
+        self._save_config()
 
     # Методы работы с последовательным портом
     def get_serial(self) -> Dict[str, Any]:

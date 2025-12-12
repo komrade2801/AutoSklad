@@ -213,6 +213,7 @@ class GroupsCreate(BaseModel):
     parent_group: int
     description: str
     img: str
+    group_id: Optional[int] = None  # Для обновления существующей группы
 
 # Модель ответа для добавления групп
 class GroupsAddResponse(BaseModel):
@@ -231,6 +232,7 @@ class ToolsCreate(BaseModel):
     count: int
     img: str
     tools: Dict[str, Any]
+    tool_type_id: Optional[int] = None  # Для обновления существующего инструмента
 
 
 # Модель ответа для добавления инструментов

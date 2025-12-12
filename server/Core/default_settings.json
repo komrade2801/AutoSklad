@@ -50,7 +50,8 @@
     "value_type": "str",
     "category": "security",
     "description": "Ключ подписи JWT",
-    "is_sensitive": true
+    "is_sensitive": true,
+    "requires_restart": true
   },
   {
     "key": "BASE_URL",
@@ -79,7 +80,8 @@
     "value_type": "str",
     "category": "security",
     "description": "Ключ шифрования синхронизации",
-    "is_sensitive": true
+    "is_sensitive": true,
+    "requires_restart": true
   },
   {
     "key": "DB_HOST",

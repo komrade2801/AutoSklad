@@ -19,11 +19,15 @@ class BaseCRUD(CoreEngine):
         super().__init__(session, model, cache_maxsize=cache_maxsize, cache_ttl=cache_ttl)
 
     @sync_aware
-    def add(self, *, index: int,  **kwargs):
+    def add(self, *, index: int, **kwargs):
+        # Убираем sync_context перед передачей в CoreEngine
+        kwargs.pop('sync_context', None)
         return super().add(id=index, **kwargs)
 
     @sync_aware
     def update(self, *, index: int, **kwargs) -> bool:
+        # Убираем sync_context перед передачей в CoreEngine
+        kwargs.pop('sync_context', None)
         try:
             with self.transaction() as db:
                 instance = db.query(self.model).filter_by(id=index).one_or_none()
@@ -42,5 +46,7 @@ class BaseCRUD(CoreEngine):
             return True
 
     @sync_aware
-    def delete(self, *, index: int):
+    def delete(self, *, index: int, **kwargs):
+        # Убираем sync_context перед передачей в CoreEngine
+        kwargs.pop('sync_context', None)
         return super().delete(index=index)

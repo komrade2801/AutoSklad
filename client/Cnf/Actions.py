@@ -1,12 +1,16 @@
 from typing import Any, Dict, Optional, Union
+import logging
 
 from Cnf.CRUD import CnfCRUD
+from Core.network_manager import NetworkManager
 
 
 # Реализация функций
 class CnfActions:
     def __init__(self):
         self.cnf = CnfCRUD()
+        self.network_manager = NetworkManager()
+        self.logger = logging.getLogger(__name__)
 
     def write_cnf_lock_load(self, locked: bool) -> None:
         self.cnf.set_load_lock(locked)
@@ -32,6 +36,48 @@ class CnfActions:
 
     def write_cnf_IP(self, ip: str) -> None:
         self.cnf.set_ip(ip)
+    
+    def write_cnf_network(self, *args) -> None:
+        """
+        Сохраняет все настройки сети: IP устройства, IP сервера, маску, шлюз и DNS.
+        Также применяет настройки к системному сетевому интерфейсу на Linux/Raspberry Pi.
+        
+        :param args: Кортеж (device_ip, server_ip, subnet_mask, gateway, dns)
+        """
+        if len(args) < 2:
+            raise ValueError("write_cnf_network требует минимум 2 аргумента: device_ip и server_ip")
+        
+        device_ip = args[0]
+        server_ip = args[1]
+        subnet_mask = args[2] if len(args) > 2 and args[2] else None
+        gateway = args[3] if len(args) > 3 and args[3] else None
+        dns = args[4] if len(args) > 4 and args[4] else None
+        
+        # Сохраняем настройки в config.json
+        self.cnf.set_ip(device_ip)
+        self.cnf.set_server_ip(server_ip)
+        if subnet_mask:
+            self.cnf.set_subnet_mask(subnet_mask)
+        if gateway:
+            self.cnf.set_gateway(gateway)
+        if dns:
+            self.cnf.set_dns(dns)
+        
+        # Применяем настройки к системному интерфейсу (только на Linux/Raspberry Pi)
+        # Не применяем немедленно, т.к. настройки будут применены после перезагрузки
+        # через обновленный dhcpcd.conf
+        success, error_msg = self.network_manager.apply_network_settings(
+            ip=device_ip,
+            subnet_mask=subnet_mask,
+            gateway=gateway,
+            dns=dns,
+            apply_immediate=False  # Настройки применятся после перезагрузки
+        )
+        
+        if not success:
+            self.logger.warning(f"Не удалось применить сетевые настройки к системе: {error_msg}")
+            # Не выбрасываем исключение, т.к. настройки сохранены в config.json
+            # и могут быть применены вручную или после перезагрузки
 
     def read_cnf_lock_load(self, index) -> bool:
         return self.cnf.get_load_lock()

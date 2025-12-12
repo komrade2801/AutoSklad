@@ -52,6 +52,17 @@ def sync_aware(func):
             kwargs['index'] = __id
             return func(self, *args, **kwargs)
         # -----------------------------------------------------
+        
+        # --- Если sync_context=True, НЕ создаем локальную команду (применяем команду из sync) ---
+        sync_context = kwargs.pop('sync_context', False)
+        if sync_context:
+            table_name  = getattr(self.model, "__tablename__", self.model.__name__)
+            method_name = func.__name__
+            print(f"[{threading.current_thread().name}][decorators][wraps] "
+                  f"обработали БЕЗ синхронизации. func: {method_name}, table: {table_name}, "
+                  f"args: {args}, kwargs: {kwargs}")
+            return func(self, *args, **kwargs)
+        # -----------------------------------------------------
 
         table_name  = getattr(self.model, "__tablename__", self.model.__name__)
         method_name = func.__name__
@@ -119,6 +130,34 @@ def sync_aware(func):
         # 7) Сохраняем результат для дедупликации
         with _lock:
             _state.setdefault(device_id, {})[dedup_key] = result
+            
+            # 🆕 Если это DELETE операция - очищаем кэш для этой записи
+            # Это позволяет повторно создать запись после удаления
+            if method_name == "delete":
+                # Находим все ключи для этой записи (add, update, delete) и удаляем их
+                record_id = payload.get("id") or payload.get("index")
+                if record_id is not None:
+                    # Ищем все ключи для этой таблицы и записи
+                    # payload_key имеет формат: "id:{record_id}, {kwargs_value}"
+                    # Ищем все ключи, где payload_key начинается с "id:{record_id}"
+                    keys_to_remove = []
+                    device_state = _state.get(device_id, {})
+                    
+                    for key in list(device_state.keys()):
+                        # key = (table_name, method_name, payload_key)
+                        if key[0] == table_name:  # Та же таблица
+                            key_payload = key[2]  # payload_key из ключа
+                            if key_payload.startswith(f"id:{record_id}"):
+                                keys_to_remove.append(key)
+                    
+                    # Удаляем найденные ключи
+                    for key in keys_to_remove:
+                        device_state.pop(key, None)
+                    
+                    if keys_to_remove:
+                        print(f"[{threading.current_thread().name}][decorators][wraps] "
+                              f"Очищен кэш дедупликации для {table_name} id={record_id} "
+                              f"({len(keys_to_remove)} ключей) после DELETE операции")
 
         # 8) Кладём «локальную» команду в очередь на отправку серверу
         queue_in = INBOUND_QUEUES.get(device_id)

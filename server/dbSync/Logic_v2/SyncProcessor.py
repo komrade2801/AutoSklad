@@ -23,6 +23,7 @@ from .SyncMonitor import SyncMonitor
 from .RetryManager import RetryCommand  # RetryManager,
 from .JSONSchemaValidator import JSONSchemaValidator
 from .DiagnosticLogger import DiagnosticLogger
+from .CommandOrderer import CommandOrderer
 # from docs.docs import CommandCRUD, RecordCRUD
 # from dbSync.Engines.CommandStatusEngine import CommandStatusCRUD
 # from dbSync.Engines.SyncConfigEngine import SyncConfigCRUD
@@ -197,6 +198,9 @@ class SyncProcessor:
         self.diagnostic_logger = diagnostic_logger
         self.sync_monitor = sync_monitor
         self.retry_manager = retry_manager
+        
+        # CommandOrderer для валидации и упорядочивания команд
+        self.command_orderer = CommandOrderer(logger=diagnostic_logger)
         self.json_validator = json_validator
 
         self.sync_manager = sync_manager
@@ -305,12 +309,22 @@ class SyncProcessor:
             # 3) Транзакция только для запросов в БД
             with cmd_crud.transaction(), record_crud.transaction():
                 pending = cmd_crud.get_pending_for_device(device)
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor][prepare_pull] Найдено {len(pending)} pending команд для device={device}. [{datetime.now()}]')
+                for cmd in pending:
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor][prepare_pull]   - Команда ID={cmd.id}, table={cmd.table_name}, operation={cmd.operation}, record_id={cmd.record_id}')
                 records = record_crud.get_bulk_records([c.id for c in pending])
 
                 for cmd in pending:
-                    raw = records.get(cmd.id, {})
-                    json_data = self.data_mapper.map_outgoing(cmd.table_name, raw)
-                    post = self.data_transformer.postprocess(cmd.table_name, json_data)
+                    # Для DELETE операций используем cmd.record_id напрямую, так как DELETE не требует полных данных
+                    if cmd.operation.upper() == "DELETE":
+                        # Для DELETE используем record_id из команды
+                        post = {"index": cmd.record_id} if cmd.record_id else {}
+                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor][prepare_pull] DELETE команда: table={cmd.table_name}, record_id={cmd.record_id}, data={post}')
+                    else:
+                        # Для ADD/UPDATE используем данные из Record
+                        raw = records.get(cmd.id, {})
+                        json_data = self.data_mapper.map_outgoing(cmd.table_name, raw)
+                        post = self.data_transformer.postprocess(cmd.table_name, json_data)
 
                     # last_modified — в той же сессии, без отдельного lock
                     lm = None
@@ -319,7 +333,7 @@ class SyncProcessor:
                         lm = rec.last_modified.isoformat()
 
                     commands.append({
-                        "id": cmd.id,
+                        "id": str(cmd.id),  # Преобразуем ID в строку для соответствия схеме валидации
                         "table": cmd.table_name,
                         "operation": cmd.operation.upper(),
                         "data": post,
@@ -388,6 +402,48 @@ class SyncProcessor:
             # 2. Валидация JSON
             self.json_validator.validate({"commands": commands}, "push_commands")
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Валидация JSON завершена. [{datetime.now()}]')
+            
+            # 2.5. ═══ ВАЛИДАЦИЯ И УПОРЯДОЧИВАНИЕ КОМАНД ═══
+            original_count = len(commands)
+            ordered_commands, orderer_warnings = self.command_orderer.order_and_validate(commands)
+            
+            if orderer_warnings:
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'CommandOrderer validation warnings ({len(orderer_warnings)}):')
+                for i, warn in enumerate(orderer_warnings[:10], 1):  # Показываем первые 10
+                    print(f'  {i}. ⚠️  {warn}')
+                if len(orderer_warnings) > 10:
+                    print(f'  ... и ещё {len(orderer_warnings) - 10} warnings')
+                
+                self.diagnostic_logger.log_warning("Command order validation", {
+                    "warnings_count": len(orderer_warnings),
+                    "warnings": orderer_warnings[:5]  # Первые 5 в лог
+                })
+            
+            if len(ordered_commands) < original_count:
+                compressed_count = original_count - len(ordered_commands)
+                compression_ratio = compressed_count / original_count if original_count > 0 else 0
+                
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'CommandOrderer оптимизировал команды: {original_count} → {len(ordered_commands)} '
+                      f'(удалено {compressed_count}, сжатие {compression_ratio:.1%})')
+                
+                self.diagnostic_logger.log_info("Commands optimized by CommandOrderer", {
+                    "original_count": original_count,
+                    "optimized_count": len(ordered_commands),
+                    "compressed_count": compressed_count,
+                    "compression_ratio": f"{compression_ratio:.1%}"
+                })
+            
+            # Работаем с упорядоченными командами
+            commands = ordered_commands
+            
+            # Если после оптимизации нет команд - выходим
+            if not commands:
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                      f'Нет команд после оптимизации CommandOrderer, выходим.')
+                return []
+            # ═══════════════════════════════════════════
 
             # 3. ───── ФИЛЬТРАЦИЯ ДУБЛИКАТОВ ─────
             filtered: List[Dict[str, Any]] = []

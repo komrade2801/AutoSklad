@@ -102,6 +102,7 @@ class CommandSender:
             endpoint: str = "/sync/push",
             sync_processor: Optional[SyncProcessor] = None,
             logger: Optional[DiagnosticLogger] = None,
+            command_orderer = None,  # Optional[CommandOrderer]
     ) -> None:
         self.transport = transport
         self.queue = queue
@@ -109,6 +110,7 @@ class CommandSender:
         self.endpoint = endpoint
         self.sync_processor = sync_processor
         self.logger = logger
+        self.command_orderer = command_orderer  # Для оптимизации команд перед отправкой
 
         self._handshaken = False
         self._server_schema = None
@@ -182,6 +184,64 @@ class CommandSender:
                     return
 
         print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] {len(pending)} pending команд для отправки. {datetime.datetime.now()}')
+
+        # --- 🆕 ОПТИМИЗАЦИЯ КОМАНД ПЕРЕД ОТПРАВКОЙ ---
+        if self.command_orderer:
+            original_pending_count = len(pending)
+            
+            # Создаём маппинг ID → команда для быстрого доступа
+            id_to_cmd = {cmd["id"]: cmd for cmd in pending}
+            
+            # Формируем команды для CommandOrderer
+            commands_for_orderer = [
+                {
+                    "_cmd_id": cmd["id"],  # Внутренний ID для обратной связи
+                    "operation": cmd["operation"].upper(),
+                    "table": cmd["table"],
+                    "data": cmd["data"],
+                    "timestamp": cmd["timestamp"]
+                }
+                for cmd in pending
+            ]
+            
+            # Оптимизируем и упорядочиваем
+            optimized_commands, orderer_warnings = self.command_orderer.order_and_validate(commands_for_orderer)
+            
+            if orderer_warnings:
+                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] '
+                      f'CommandOrderer warnings ({len(orderer_warnings)}):')
+                for i, warn in enumerate(orderer_warnings[:5], 1):
+                    print(f'  {i}. ⚠️  {warn}')
+                if len(orderer_warnings) > 5:
+                    print(f'  ... и ещё {len(orderer_warnings) - 5} warnings')
+            
+            # Если произошла оптимизация (сжатие команд)
+            if len(optimized_commands) < original_pending_count:
+                compression_ratio = (original_pending_count - len(optimized_commands)) / original_pending_count
+                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] '
+                      f'Оптимизировано команд: {original_pending_count} → {len(optimized_commands)} '
+                      f'(сжатие {compression_ratio:.1%})')
+                
+                # Собираем ID команд, которые остались после оптимизации
+                optimized_cmd_ids = {cmd.get("_cmd_id") for cmd in optimized_commands if "_cmd_id" in cmd}
+                
+                # Находим команды, которые были удалены при оптимизации
+                removed_cmd_ids = [cmd_id for cmd_id in id_to_cmd.keys() if cmd_id not in optimized_cmd_ids]
+                
+                # Помечаем удалённые команды как done (они избыточны)
+                for removed_id in removed_cmd_ids:
+                    self.queue.mark_as_done(removed_id)
+                    removed_cmd = id_to_cmd[removed_id]
+                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] '
+                          f'Удалена избыточная команда: {removed_cmd["table"]}.{removed_cmd["operation"]} '
+                          f'(ID: {removed_id[:8]}...)')
+                
+                # Обновляем pending - оставляем только оптимизированные команды
+                pending = [cmd for cmd in pending if cmd["id"] in optimized_cmd_ids]
+                
+                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] '
+                      f'Команд для отправки после оптимизации: {len(pending)}')
+        # --- КОНЕЦ ОПТИМИЗАЦИИ ---
 
         # --- Готовим payload ---
         schema_hash = self._schema_hash or ""

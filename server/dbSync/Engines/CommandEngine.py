@@ -99,19 +99,23 @@ class CommandCRUD(BaseCRUD):
                     device_number=device_number,
                     created_at=datetime.utcnow()
                 )
-                super().add(**cmd.to_dict())  # Используем базовый метод добавления
+                # Добавляем команду напрямую в сессию
+                db.add(cmd)
+                db.flush()  # Получаем ID команды
 
                 # Создаем связанные сущности через их CRUD-классы
-                RecordCRUD().add(
+                record_crud = RecordCRUD(session=db)
+                record_crud.add(
                     command_id=cmd.id,
                     data_json=data_json
                 )
 
-                CommandStatusCRUD().add(
+                status_crud = CommandStatusCRUD(session=db)
+                status_crud.add_status(
                     command_id=cmd.id,
                     status="PENDING"
                 )
-                print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][INFO] - команда создана. [{datetime.now()}]")
+                print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][INFO] - команда создана с ID={cmd.id}. [{datetime.now()}]")
                 return cmd.id
 
         except IntegrityError as e:
@@ -209,13 +213,13 @@ class CommandCRUD(BaseCRUD):
     def get_pending_for_device(self, device_number: int):
         cache_key = self._make_key("pending_for_device", device_number)
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            cached_result = self._cache[cache_key]
+            print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][get_pending_for_device][CACHE] - device={device_number}, найдено {len(cached_result)} команд из кеша. [{datetime.now()}]")
+            return cached_result
 
         try:
-            cache_key = self._make_key("pending_for_device", device_number)
-            if cache_key in self._cache:
-                return self._cache[cache_key]
-
+            print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][get_pending_for_device][DB] - запрос к БД для device={device_number}. [{datetime.now()}]")
+            
             # 1) Подзапрос: самый свежий статус каждой команды
             subquery = (
                 self.session.query(CommandStatus.command_id,
@@ -240,6 +244,10 @@ class CommandCRUD(BaseCRUD):
                 filters=filters,
                 order_by=desc(Command.created_at)
             )
+
+            print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][get_pending_for_device][DB] - найдено {len(_pending)} команд для device={device_number}. [{datetime.now()}]")
+            for cmd in _pending:
+                print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][get_pending_for_device][DB]   - Команда ID={cmd.id}, table={cmd.table_name}, operation={cmd.operation}, record_id={cmd.record_id}")
 
             # Кэшируем вручную (или внутри join_filter_order)
             self._cache[cache_key] = _pending

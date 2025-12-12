@@ -19,12 +19,15 @@ class ActionMapper:
             'read_cnf_IP': self._cnf_actions.read_cnf_IP,
             'write_cnf_serial': lambda *a: self._cnf_actions.write_cnf_serial(*a),
             'write_cnf_IP': lambda ip: self._cnf_actions.write_cnf_IP(ip),
+            'write_cnf_network': lambda *args: self._cnf_actions.write_cnf_network(*args),
             'write_cnf_lock_load': lambda index: self._cnf_actions.write_cnf_lock_load(index),
             'read_cnf_lock_load': self._cnf_actions.read_cnf_lock_load,
             'read_cnf_lock_drop': self._cnf_actions.read_cnf_lock_drop,
             'write_cnf_lock_drop': lambda index: self._cnf_actions.write_cnf_lock_drop(index),
             'write_log_critical_err': lambda err: self._cnf_actions.write_log_critical_err(err),
             'read_cnf_signature':  lambda index: self._cnf_actions.read_cnf_signature(index),
+            'read_cnf_barcode': lambda index: self._cnf_actions.read_cnf_barcode(index),
+            'write_cnf_barcode': lambda port, baudrate: self._cnf_actions.write_cnf_barcode(port, baudrate),
         }
 
     def execute(self, act: str, *args, **kwargs) -> Any:

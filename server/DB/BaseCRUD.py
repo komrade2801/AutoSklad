@@ -12,6 +12,7 @@ base_crud.py
 - Внутренний кеш с TTL и ограничением размера (_cache), автоматически инвалидация при изменении данных.
 """
 
+import traceback
 from sqlalchemy import ClauseElement, func
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError, IntegrityError
@@ -260,15 +261,36 @@ class CoreEngine:
         :param kwargs: Поля и значения для создания объекта.
         :return: True при успешном добавлении.
         """
+        # ВАЖНО: Убираем sync_context - он нужен только для декоратора @sync_aware
+        kwargs.pop('sync_context', None)
+        
         # Фильтруем только валидные колонки модели
         valid_keys = set(c.name for c in self.model.__table__.columns)
         clean = {k: v for k, v in kwargs.items() if k in valid_keys}
         
-        with self.transaction() as db:
-            instance = self.model(**clean)
-            db.add(instance)
-        self._cache.clear()
-        return True
+        print(f"[CoreEngine.add] Параметры для создания: {clean}")
+        try:
+            with self.transaction() as db:
+                instance = self.model(**clean)
+                print(f"[CoreEngine.add] Создан экземпляр модели: {instance}")
+                db.add(instance)
+                print(f"[CoreEngine.add] Экземпляр добавлен в сессию")
+                # Делаем flush, чтобы получить ID и проверить на ошибки
+                db.flush()
+                print(f"[CoreEngine.add] Flush выполнен, ID объекта: {getattr(instance, 'id', 'не установлен')}")
+            print(f"[CoreEngine.add] Транзакция закоммичена успешно")
+            self._cache.clear()
+            return True
+        except IntegrityError as e:
+            print(f"[CoreEngine.add] ОШИБКА IntegrityError: {e}")
+            print(traceback.format_exc())
+            self.session.rollback()
+            raise RuntimeError(f"Integrity error: {e}") from e
+        except Exception as e:
+            print(f"[CoreEngine.add] ОШИБКА при добавлении: {e}")
+            print(traceback.format_exc())
+            self.session.rollback()
+            raise
 
     def update(self, *, index: int=0, **kwargs) -> bool:
         """
@@ -278,6 +300,9 @@ class CoreEngine:
         :param kwargs: поля и новые значения
         :return: True, если запись найдена и обновлена, иначе False
         """
+        # ВАЖНО: Убираем sync_context - он нужен только для декоратора @sync_aware
+        kwargs.pop('sync_context', None)
+        
         with self.transaction() as db:
             instance = db.query(self.model).filter_by(id=index).one_or_none()
             if not instance:
@@ -287,13 +312,17 @@ class CoreEngine:
         self._cache.clear()
         return True
 
-    def delete(self, *, index: int=0) -> bool:
+    def delete(self, *, index: int=0, **kwargs) -> bool:
         """
         Удаляет запись по id и очищает кеш.
 
         :param index: Значение поля id
+        :param kwargs: дополнительные параметры (например, sync_context)
         :return: True, если запись найдена и удалена, иначе False
         """
+        # ВАЖНО: Убираем sync_context - он нужен только для декоратора @sync_aware
+        kwargs.pop('sync_context', None)
+        
         with self.transaction() as db:
             instance = db.query(self.model).filter_by(id=index).one_or_none()
             if not instance:

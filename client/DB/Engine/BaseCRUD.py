@@ -22,16 +22,22 @@ class BaseCRUD(CoreEngine):
 
     @sync_aware
     def add(self, *args, **kwargs):
+        # Убираем sync_context перед передачей в CoreEngine
+        kwargs.pop('sync_context', None)
         clean = self._coerce_types(kwargs)
         return super().add(**clean) # *args,
 
     @sync_aware
     def update(self, *args, **kwargs):
+        # Убираем sync_context перед передачей в CoreEngine
+        kwargs.pop('sync_context', None)
         clean = self._coerce_types(kwargs)
-        return super().update(*args,**clean)
+        return super().update(*args, **clean)
 
     @sync_aware
     def delete(self, *args, **kwargs):
+        # Убираем sync_context перед передачей в CoreEngine
+        kwargs.pop('sync_context', None)
         clean = self._coerce_types(kwargs)
         return super().delete(*args, **clean)
 

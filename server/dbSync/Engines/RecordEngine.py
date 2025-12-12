@@ -145,7 +145,8 @@ class RecordCRUD(BaseCRUD):
         """
         print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_last_for_command][INFO] - command_id: {command_id}. [{datetime.now()}]")
         return (
-            self.filter_by(command_id=command_id)
+            self.session.query(self.model)
+            .filter_by(command_id=command_id)
             .order_by(desc(Record.last_modified))
             .limit(1)
             .first()

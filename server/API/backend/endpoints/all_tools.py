@@ -15,6 +15,7 @@ from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
 # from DB.Engine.ToolsCRUD import EngineTools
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
 from DB.Engine.GroupCRUD import EngineGroup
+from DB.Engine.LoadCRUD import EngineLoad
 # from DB.Engine.CellCRUD import EngineCell
 #
 # from DB.Engine.CellHasDeviceCRUD import EngineCellHasDevice
@@ -122,29 +123,80 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
         #         paren_group_id=0
         #     )
 
-        existing_tool = tool_type_crud.find_tool_types_by_name(name=data.tool_name)
-        print(f"tool_type {existing_tool}")
-        if not existing_tool:
-            # 3. Создать новый тип инструмента
-            new_tt_id = max(tool_type_crud.get_all_ids(), default=0) + 1
-            tool_type_crud.add_tool_type(
-                tool_type_id=new_tt_id,
+        # Если передан tool_type_id, обновляем существующий инструмент
+        if data.tool_type_id and data.tool_type_id > 0:
+            print(f"[create_tools] Режим обновления инструмента с ID: {data.tool_type_id}")
+            existing_tool = tool_type_crud.get_tool_type_by_id(data.tool_type_id)
+            if not existing_tool:
+                print(f"[create_tools] ОШИБКА: Инструмент для обновления с ID {data.tool_type_id} не найден")
+                raise HTTPException(
+                    status_code=404, detail="Инструмент для обновления не найден")
+            
+            # Проверяем, изменились ли данные (избегаем лишних команд синхронизации)
+            has_changes = (
+                existing_tool.name != data.tool_name or
+                existing_tool.description != data.description or
+                existing_tool.count != data.count or
+                existing_tool.img != data.img or
+                existing_tool.groups_id != data.group_id
+            )
+            
+            if not has_changes:
+                print(f"[create_tools] Данные не изменились, пропускаем UPDATE (избегаем лишней синхронизации)")
+                return ToolsAddResponse(status=200, message="Инструмент не изменился")
+            
+            # Обновляем инструмент (декоратор @sync_aware создаст команду синхронизации)
+            print(f"[create_tools] Обновление инструмента: name={data.tool_name}, description={data.description}, count={data.count}, groups_id={data.group_id}")
+            success = tool_type_crud.update_tool_type(
+                id=data.tool_type_id,
                 name=data.tool_name,
                 description=data.description,
                 count=data.count,
                 img=data.img,
                 groups_id=data.group_id,
             )
+            if not success:
+                print(f"[create_tools] ОШИБКА: Не удалось обновить инструмент с ID {data.tool_type_id}")
+                raise HTTPException(
+                    status_code=400, detail="Не удалось обновить инструмент")
+            
+            # Очищаем кеш ПОСЛЕ успешного обновления
+            tool_type_crud._cache.clear()
+            print(f"[create_tools] Инструмент успешно обновлен")
+            return ToolsAddResponse(status=200, message="Инструмент успешно обновлен")
         else:
-            tool_type = existing_tool[0]
-            tool_type_crud.update_tool_type(
-                id=tool_type.id,
-                name=tool_type.name,
-                description=tool_type.description,
-                count=tool_type.count + data.count,
-                img=tool_type.img,
-                groups_id=tool_type.groups_id,
-            )
+            # Создаём новый инструмент
+            existing_tool = tool_type_crud.find_tool_types_by_name(name=data.tool_name)
+            print(f"[create_tools] Поиск существующего инструмента с именем '{data.tool_name}': {existing_tool}")
+            if not existing_tool:
+                # Создать новый тип инструмента (декоратор @sync_aware создаст команду синхронизации)
+                new_tt_id = max(tool_type_crud.get_all_ids(), default=0) + 1
+                print(f"[create_tools] Создание нового инструмента с ID {new_tt_id}")
+                tool_type_crud.add_tool_type(
+                    tool_type_id=new_tt_id,
+                    name=data.tool_name,
+                    description=data.description,
+                    count=data.count,
+                    img=data.img,
+                    groups_id=data.group_id,
+                )
+                print(f"[create_tools] Инструмент {new_tt_id} успешно создан")
+            else:
+                # Инструмент существует - увеличиваем count (декоратор @sync_aware создаст команду UPDATE)
+                tool_type = existing_tool[0]
+                print(f"[create_tools] Инструмент существует (ID {tool_type.id}), увеличиваем count: {tool_type.count} + {data.count}")
+                tool_type_crud.update_tool_type(
+                    id=tool_type.id,
+                    name=tool_type.name,
+                    description=tool_type.description,
+                    count=tool_type.count + data.count,
+                    img=tool_type.img,
+                    groups_id=tool_type.groups_id,
+                )
+                print(f"[create_tools] Count обновлен для инструмента {tool_type.id}")
+            
+            # Очищаем кеш ПОСЛЕ успешной операции
+            tool_type_crud._cache.clear()
 
         # # 4. Добавить каждую единицу инвентаря
         # for inv in data.tools.values():
@@ -188,6 +240,7 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         # tools_crud = EngineTools()
         tool_type_crud = EngineToolTypes()
         e_group = EngineGroup()
+        e_load = EngineLoad()
 
         # device = devices_crud.get_device_by_number(device_number)
 
@@ -200,6 +253,11 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         for tool in all_tool_types:
             print(tool)
             count = tool.count
+            # Вычитаем занятые инструменты (зарезервированные в massload, загруженные в vending, или потребленные)
+            # Логика соответствует mass_load.py: export_tools
+            loads = e_load.find_by_tools_id(tool.id)
+            if loads:
+                count -= len(loads)
             if count <= 0:
                 count = '-'
             # # Compute sum of free tools
@@ -232,13 +290,15 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
 
 
             tool_list.append({
+                "id": tool.id,
                 "group": immediate_group,
                 "name": tool.name,
                 "description": tool.description,
                 "sum": count
             })
-            if immediate_group_obj.id not in group_set:
+            if immediate_group_obj and immediate_group_obj.id not in group_set:
                 group_list.append({
+                    "id": immediate_group_obj.id,
                     "group": immediate_group,
                     "parent_group": parent_group,
                     "description": immediate_group_obj.description,
@@ -246,6 +306,34 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
                 })
                 group_set.add(immediate_group_obj.id)
             idx += 1
+
+        # Добавляем все группы без инструментов
+        all_groups = e_group.get_all_groups()
+        for group in all_groups:
+            if group.id not in group_set:
+                # Построение полного пути для группы (логика аналогична обработке групп из инструментов)
+                parent_group = "-"
+                full_path = group.name if group.name else "Unknown"
+                
+                if group.paren_group_id and group.paren_group_id != 0:
+                    parent_group_obj = e_group.get_group_by_id(group.paren_group_id)
+                    parent_group = parent_group_obj.name if parent_group_obj else "-"
+                    
+                    cur_parent_group_id = parent_group_obj.id if parent_group_obj else 0
+                    while cur_parent_group_id != 0:
+                        cur_parent_group = e_group.get_group_by_id(cur_parent_group_id)
+                        cur_parent_group_id = cur_parent_group.paren_group_id if cur_parent_group else 0
+                        if cur_parent_group:
+                            full_path = cur_parent_group.name + "/" + full_path
+                
+                group_list.append({
+                    "id": group.id,
+                    "group": group.name if group.name else "Unknown",
+                    "parent_group": parent_group,
+                    "description": group.description if group.description else "",
+                    "full": full_path
+                })
+                group_set.add(group.id)
 
         return {"tools": tool_list, "groups": group_list}
 
@@ -358,3 +446,173 @@ def get_tool_types_from_db(device_number: int, db: Session = Depends(get_db)):
 #         result["groups"][group_key]["value"][str(tool_type.id)] = tool_entry
 #
 #     return result
+
+
+@all_tools_router.get(
+    "/get_tool_type_by_id/{tool_type_id}",
+    status_code=status.HTTP_200_OK,
+    responses={404: {"description": "Инструмент не найден"}}
+)
+def get_tool_type_by_id(tool_type_id: int, db: Session = Depends(get_db)):
+    """
+    Получает информацию об инструменте по его ID.
+    """
+    try:
+        tool_type_crud = EngineToolTypes()
+        tool_type = tool_type_crud.get_tool_type_by_id(tool_type_id)
+        
+        if not tool_type:
+            raise HTTPException(
+                status_code=404, 
+                detail="Инструмент не найден"
+            )
+        
+        return {
+            "id": tool_type.id,
+            "name": tool_type.name,
+            "description": tool_type.description if tool_type.description else "",
+            "count": tool_type.count,
+            "group_id": tool_type.groups_id if tool_type.groups_id else 0
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ошибка получения инструмента: {e}"
+        )
+
+
+@all_tools_router.get(
+    "/check_tool_busy/{tool_type_id}",
+    status_code=status.HTTP_200_OK,
+    responses={404: {"description": "Инструмент не найден"}}
+)
+def check_tool_busy(tool_type_id: int, db: Session = Depends(get_db)):
+    """
+    Проверяет, занят ли инструмент (есть ли у него записи в Load, DropOperations или OperationsConsumption).
+    Возвращает True, если инструмент занят (есть в massload/loaded/consumed).
+    """
+    try:
+        tool_type_crud = EngineToolTypes()
+        e_load = EngineLoad()
+        e_drop_operations = EngineDropOperations()
+        e_consumption_operations = EngineOperationsConsumption()
+        
+        tool_type = tool_type_crud.get_tool_type_by_id(tool_type_id)
+        if not tool_type:
+            raise HTTPException(
+                status_code=404, 
+                detail="Инструмент не найден"
+            )
+        
+        # Проверяем Load (массовая загрузка)
+        loads = e_load.find_by_tools_id(tool_type_id)
+        if loads:
+            return {"is_busy": True, "message": "Инструмент используется в массовой загрузке"}
+        
+        # Проверяем DropOperations (выгрузка - инструмент загружен в вендинг)
+        drop_operations = e_drop_operations.get_operations_by_tool(tool_type_id)
+        if drop_operations:
+            return {"is_busy": True, "message": "Инструмент загружен в вендинг"}
+        
+        # Проверяем OperationsConsumption (выдача - инструмент выдан в вендинге)
+        consumption_operations = e_consumption_operations.get_operations_by_tool(tool_type_id)
+        if consumption_operations:
+            return {"is_busy": True, "message": "Инструмент выдан в вендинге"}
+        
+        return {"is_busy": False, "message": "Инструмент свободен"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ошибка проверки инструмента: {e}"
+        )
+
+
+@all_tools_router.delete(
+    "/delete_tool_type/{tool_type_id}",
+    status_code=status.HTTP_200_OK,
+    responses={400: {"description": "Инструмент занят или ошибка удаления"}, 404: {"description": "Инструмент не найден"}}
+)
+def delete_tool_type(tool_type_id: int, db: Session = Depends(get_db)):
+    """
+    Удаляет инструмент, если он свободен (нет записей в Load, DropOperations или OperationsConsumption).
+    
+    ВАЖНО: Использует обычные CRUD методы с декоратором @sync_aware для автоматической синхронизации.
+    """
+    try:
+        tool_type_crud = EngineToolTypes()
+        e_load = EngineLoad()
+        e_drop_operations = EngineDropOperations()
+        e_consumption_operations = EngineOperationsConsumption()
+        
+        # Проверяем существование инструмента
+        tool_type = tool_type_crud.get_tool_type_by_id(tool_type_id)
+        if not tool_type:
+            raise HTTPException(
+                status_code=404, 
+                detail="Инструмент не найден"
+            )
+        
+        # Проверяем занятость инструмента
+        loads = e_load.find_by_tools_id(tool_type_id)
+        if loads:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Данный инструмент используется в массовой загрузке.\nУдалить можно только свободный инструмент."
+            )
+        
+        drop_operations = e_drop_operations.get_operations_by_tool(tool_type_id)
+        if drop_operations:
+            raise HTTPException(
+                status_code=400,
+                detail="Данный инструмент загружен в вендинг.\nУдалить можно только свободный инструмент."
+            )
+        
+        consumption_operations = e_consumption_operations.get_operations_by_tool(tool_type_id)
+        if consumption_operations:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Данный инструмент выдан в вендинге.\nУдалить можно только свободный инструмент."
+            )
+        
+        # Выполняем удаление
+        # Декоратор @sync_aware автоматически создаст команду синхронизации DELETE
+        print(f"[delete_tool_type] Удаление инструмента {tool_type_id}...")
+        success = tool_type_crud.delete_tool_type(tool_type_id)
+        
+        if success:
+            print(f"[delete_tool_type] Инструмент {tool_type_id} успешно удален из БД")
+            
+            # Очищаем кеш ПОСЛЕ успешного удаления (чтобы синхронизация успела отработать)
+            tool_type_crud._cache.clear()
+            
+            # Проверка удаления (для диагностики)
+            tool_type_after = tool_type_crud.get_tool_type_by_id(tool_type_id)
+            if tool_type_after:
+                print(f"[delete_tool_type] ВНИМАНИЕ: Инструмент {tool_type_id} все еще существует после удаления!")
+            else:
+                print(f"[delete_tool_type] Подтверждено: инструмент {tool_type_id} удален из БД")
+        else:
+            print(f"[delete_tool_type] ОШИБКА: delete_tool_type вернул False для {tool_type_id}")
+            raise HTTPException(
+                status_code=400,
+                detail="Не удалось удалить инструмент"
+            )
+        
+        return {
+            "status": 200,
+            "message": "Инструмент успешно удален"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Ошибка удаления инструмента: {e}"
+        )
