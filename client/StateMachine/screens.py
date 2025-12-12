@@ -39,4 +39,5 @@ screen = {
     'screen_8_select_tool': ['btn_ico_up', 'btn_back', 'btn_ico_back', 'btn_down', 'btn_up', 'btn_ico_down'],
     'screen_9_select_tool_by_plan': ['btn_ico_up', 'btn_back', 'btn_ico_back', 'btn_down', 'btn_up', 'btn_ico_down'],
     'screen_33_select_plan': ['btn_back'],
+    'screen_35_plan_complete_confirmation': ['btn_ok', 'btn_back']
 }

@@ -32,3 +32,4 @@ from .ui_classes.Ui_screen_30_shutdown import Ui_screen_30_shutdown
 from .ui_classes.Ui_screen_31_reboot import Ui_screen_31_reboot
 from .ui_classes.Ui_screen_32_wait import Ui_screen_32_wait
 from .ui_classes.Ui_screen_33_select_plan import Ui_screen_33_select_plan
+from .ui_classes.Ui_screen_35_plan_complete_confirmation import Ui_screen_35_plan_complete_confirmation

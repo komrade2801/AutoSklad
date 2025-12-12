@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui\widgets\widget_15_mass_load.ui'
+# Form implementation generated from reading ui file 'ui\widgets\widget_17_mass_drop.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -11,12 +11,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_widget_15_mass_load(object):
-    def setupUi(self, widget_15_mass_load):
-        widget_15_mass_load.setObjectName("widget_15_mass_load")
-        widget_15_mass_load.resize(440, 75)
-        widget_15_mass_load.setLayoutDirection(QtCore.Qt.LeftToRight)
-        widget_15_mass_load.setStyleSheet("QLabel {\n"
+class Ui_widget_17_mass_drop(object):
+    def setupUi(self, widget_17_mass_drop):
+        widget_17_mass_drop.setObjectName("widget_17_mass_drop")
+        widget_17_mass_drop.resize(440, 75)
+        widget_17_mass_drop.setLayoutDirection(QtCore.Qt.LeftToRight)
+        widget_17_mass_drop.setStyleSheet("QLabel {\n"
 "    color: #FFFFFF;\n"
 "    border-width: 0px;\n"
 "    border-radius: 0px;\n"
@@ -47,7 +47,7 @@ class Ui_widget_15_mass_load(object):
 "    image: url(:/icons/checked.png)\n"
 "}\n"
 "")
-        self.group_name = QtWidgets.QLabel(widget_15_mass_load)
+        self.group_name = QtWidgets.QLabel(widget_17_mass_drop)
         self.group_name.setGeometry(QtCore.QRect(10, 5, 271, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
@@ -122,7 +122,7 @@ class Ui_widget_15_mass_load(object):
         self.group_name.setFont(font)
         self.group_name.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.group_name.setObjectName("group_name")
-        self.tools_name = QtWidgets.QLabel(widget_15_mass_load)
+        self.tools_name = QtWidgets.QLabel(widget_17_mass_drop)
         self.tools_name.setGeometry(QtCore.QRect(10, 35, 271, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
@@ -197,7 +197,7 @@ class Ui_widget_15_mass_load(object):
         self.tools_name.setFont(font)
         self.tools_name.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.tools_name.setObjectName("tools_name")
-        self.lbl_info = QtWidgets.QLabel(widget_15_mass_load)
+        self.lbl_info = QtWidgets.QLabel(widget_17_mass_drop)
         self.lbl_info.setGeometry(QtCore.QRect(290, 5, 60, 30))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
@@ -207,7 +207,7 @@ class Ui_widget_15_mass_load(object):
         self.lbl_info.setFont(font)
         self.lbl_info.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.lbl_info.setObjectName("lbl_info")
-        self.cell_number = QtWidgets.QLabel(widget_15_mass_load)
+        self.cell_number = QtWidgets.QLabel(widget_17_mass_drop)
         self.cell_number.setGeometry(QtCore.QRect(390, 5, 41, 30))
         font = QtGui.QFont()
         font.setFamily("Arial Black")
@@ -217,7 +217,7 @@ class Ui_widget_15_mass_load(object):
         self.cell_number.setFont(font)
         self.cell_number.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.cell_number.setObjectName("cell_number")
-        self.checkBox = QtWidgets.QCheckBox(widget_15_mass_load)
+        self.checkBox = QtWidgets.QCheckBox(widget_17_mass_drop)
         self.checkBox.setEnabled(True)
         self.checkBox.setGeometry(QtCore.QRect(290, 35, 131, 34))
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
@@ -238,7 +238,7 @@ class Ui_widget_15_mass_load(object):
         self.checkBox.setChecked(False)
         self.checkBox.setTristate(False)
         self.checkBox.setObjectName("checkBox")
-        self.background = QtWidgets.QLabel(widget_15_mass_load)
+        self.background = QtWidgets.QLabel(widget_17_mass_drop)
         self.background.setGeometry(QtCore.QRect(0, 0, 440, 75))
         self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.background.setFrameShadow(QtWidgets.QFrame.Sunken)
@@ -251,15 +251,15 @@ class Ui_widget_15_mass_load(object):
         self.cell_number.raise_()
         self.checkBox.raise_()
 
-        self.retranslateUi(widget_15_mass_load)
-        QtCore.QMetaObject.connectSlotsByName(widget_15_mass_load)
+        self.retranslateUi(widget_17_mass_drop)
+        QtCore.QMetaObject.connectSlotsByName(widget_17_mass_drop)
 
-    def retranslateUi(self, widget_15_mass_load):
+    def retranslateUi(self, widget_17_mass_drop):
         _translate = QtCore.QCoreApplication.translate
-        widget_15_mass_load.setWindowTitle(_translate("widget_15_mass_load", "widget_15_mass_load"))
-        self.group_name.setText(_translate("widget_15_mass_load", "Фреза концевая"))
-        self.tools_name.setText(_translate("widget_15_mass_load", "HME435-010030-050-S04"))
-        self.lbl_info.setText(_translate("widget_15_mass_load", "Ячейка:"))
-        self.cell_number.setText(_translate("widget_15_mass_load", "999"))
-        self.checkBox.setText(_translate("widget_15_mass_load", "Загружено"))
+        widget_17_mass_drop.setWindowTitle(_translate("widget_17_mass_drop", "widget_17_mass_drop"))
+        self.group_name.setText(_translate("widget_17_mass_drop", "Фреза концевая"))
+        self.tools_name.setText(_translate("widget_17_mass_drop", "HME435-010030-050-S04"))
+        self.lbl_info.setText(_translate("widget_17_mass_drop", "Ячейка:"))
+        self.cell_number.setText(_translate("widget_17_mass_drop", "999"))
+        self.checkBox.setText(_translate("widget_17_mass_drop", "Выгружено"))
 from ...img import resources_widget_rc

@@ -29,43 +29,52 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         Ожидается, что данные передаются в виде:
         [{'id': 1, 'name': 'Group Name', 'description': 'Description', 'status': 0}, ...]
         """
+        # self.tool_list = {}
+
         try:
-            data = args[0]
+            source = args[1]
+            if source == 'btn_back':
+                print('data restored')
+            else:
+                data = args[0]
 
-            self.plan_number.setText(data[1])
-            self.plan_name.setText(data[2])
+                self.plan_number.setText(data[1])
+                self.plan_name.setText(data[2])
 
-            self.plan_id_val = data[3]
+                self.plan_id_val = data[3]
 
-            tools = data[0]
-            if not tools:
-                return
-            self.listWidget.clear()  # Очищаем список перед добавлением новых данных
+                tools = data[0]
+                if not tools:
+                    return
+                self.listWidget.clear()  # Очищаем список перед добавлением новых данных
 
-            # has_all_tools = True
+                can_be_completed = False
 
-            for tool_data in tools:
-                print(tool_data)
+                for tool_data in tools:
+                    print(tool_data)
 
-                has_tools = tool_data['has_tools']
+                    has_tools = tool_data['has_tools']
 
-                # Создаём кастомный виджет
-                widget = WidgetPlanTool()
-                widget.set_data(tool_data, self.toolsCountUpdate)  # Передаём данные в кастомный виджет
-                # widget.event_select_tool = self.handle_select_tool
-                # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
-                list_item = QListWidgetItem(self.listWidget)
-                list_item.setSizeHint(widget.sizeHint())  # Используем размер из виджета
+                    # Создаём кастомный виджет
+                    widget = WidgetPlanTool()
+                    widget.set_data(tool_data, self.toolsCountUpdate)  # Передаём данные в кастомный виджет
+                    # widget.event_select_tool = self.handle_select_tool
+                    # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
+                    list_item = QListWidgetItem(self.listWidget)
+                    list_item.setSizeHint(widget.sizeHint())  # Используем размер из виджета
 
-                if tool_data["load_count"] == 0:
-                    # has_all_tools = False
-                    widget.setDisabled(True)
-                    widget.background.setStyleSheet("background-color: grey")
+                    if tool_data["load_count"] == 0:
+                        widget.setDisabled(True)
+                        widget.background.setStyleSheet("background-color: grey")
 
-                self.listWidget.addItem(list_item)
-                self.listWidget.setItemWidget(list_item, widget)
+                    if tool_data["load_count"] < tool_data["plan_count"]:
+                        can_be_completed = True
 
-            self.setOkButtonState(False)
+                    self.listWidget.addItem(list_item)
+                    self.listWidget.setItemWidget(list_item, widget)
+
+                self.setOkButtonState(False)
+                self.setCompleteButtonState(can_be_completed)
 
         except Exception as e:
             print(traceback.format_exc())
@@ -79,7 +88,9 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
             #     return {"tool_type_id": self.value[0], "name": self.value[1], "group_name": self.value[2], "tool_description": self.value[3]}
             # else:
             #     return {"plan_id": self.plan_id_val}
-            return {"tool_list": self.tool_list}
+            value = self.tool_list
+            self.tool_list = {}
+            return {"tool_list": value, "plan_id": self.plan_id_val}
         except:
             print(traceback.format_exc())
 
@@ -94,7 +105,7 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
     def toolsCountUpdate(self, id: int, count: int):
         print(f"toolsCountUpdate id {id}, count {count}")
 
-        if count == 0:
+        if count == 0 and self.tool_list.get(id):
             self.tool_list.pop(id)
         else:
             self.tool_list.update({id: count})
@@ -116,3 +127,14 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(icon_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
         self.btn_ok.setIcon(icon1)
+
+    def setCompleteButtonState(self, state):
+        if state:
+            icon_path = ":/icons/plan-completed.png"
+            self.btn_complete.setDisabled(False)
+        else:
+            icon_path = ":/icons/plan-completed_disabled.png"
+            self.btn_complete.setDisabled(True)
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap(icon_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
+        self.btn_complete.setIcon(icon1)

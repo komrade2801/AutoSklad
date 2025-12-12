@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>plan-completed_disabled.png</file>
+    <file>plan-completed.png</file>
     <file>ok_disabled.png</file>
     <file>error.png</file>
     <file>reboot.png</file>

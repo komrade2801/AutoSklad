@@ -16,7 +16,31 @@ class Ui_screen_14_stockman(object):
         screen_14_stockman.setObjectName("screen_14_stockman")
         screen_14_stockman.resize(480, 801)
         screen_14_stockman.setAutoFillBackground(False)
-        screen_14_stockman.setStyleSheet("background-color: #1A4789;")
+        screen_14_stockman.setStyleSheet("QWidget{\n"
+"    background-color: #1A4789;\n"
+"}\n"
+"QLabel {\n"
+"    background: none;\n"
+"    color: #FFFFFF;\n"
+"    border-width: 0px;\n"
+"    border-radius: 0px;\n"
+"}\n"
+"#background {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #1A4789;\n"
+"    border-width: 2px;\n"
+"    border-style: groove;\n"
+"    border-color: #ff9923;\n"
+"    border-radius: 0px;\n"
+"}\n"
+"QPushButton {\n"
+"    color: #000000;\n"
+"    background-color: #86B7F4;\n"
+"    border-width: 2px;\n"
+"    border-style: outset;\n"
+"    border-color: #EAA657;\n"
+"    border-radius: 10px;\n"
+"}")
         self.lbl_info_1 = QtWidgets.QLabel(screen_14_stockman)
         self.lbl_info_1.setGeometry(QtCore.QRect(95, 170, 290, 30))
         palette = QtGui.QPalette()
@@ -90,7 +114,6 @@ class Ui_screen_14_stockman(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_info_1.setFont(font)
-        self.lbl_info_1.setStyleSheet("color: #FFFFFF;")
         self.lbl_info_1.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_info_1.setObjectName("lbl_info_1")
         self.lbl_name_2 = QtWidgets.QLabel(screen_14_stockman)
@@ -166,7 +189,6 @@ class Ui_screen_14_stockman(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_name_2.setFont(font)
-        self.lbl_name_2.setStyleSheet("color: #FFFFFF;")
         self.lbl_name_2.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_name_2.setObjectName("lbl_name_2")
         self.lbl_info_3 = QtWidgets.QLabel(screen_14_stockman)
@@ -242,7 +264,6 @@ class Ui_screen_14_stockman(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_info_3.setFont(font)
-        self.lbl_info_3.setStyleSheet("color: #FFFFFF;")
         self.lbl_info_3.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_info_3.setObjectName("lbl_info_3")
         self.lbl_name = QtWidgets.QLabel(screen_14_stockman)
@@ -318,7 +339,6 @@ class Ui_screen_14_stockman(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_name.setFont(font)
-        self.lbl_name.setStyleSheet("color: #FFFFFF;")
         self.lbl_name.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_name.setObjectName("lbl_name")
         self.lbl_timeout_back = QtWidgets.QLabel(screen_14_stockman)
@@ -393,11 +413,10 @@ class Ui_screen_14_stockman(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_timeout_back.setFont(font)
-        self.lbl_timeout_back.setStyleSheet("color: #FFFFFF;")
         self.lbl_timeout_back.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_timeout_back.setObjectName("lbl_timeout_back")
         self.btn_summary = QtWidgets.QPushButton(screen_14_stockman)
-        self.btn_summary.setGeometry(QtCore.QRect(91, 540, 301, 50))
+        self.btn_summary.setGeometry(QtCore.QRect(91, 560, 301, 50))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -471,15 +490,9 @@ class Ui_screen_14_stockman(object):
         self.btn_summary.setFont(font)
         self.btn_summary.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_summary.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_summary.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_summary.setObjectName("btn_summary")
         self.btn_warehouse_group = QtWidgets.QPushButton(screen_14_stockman)
-        self.btn_warehouse_group.setGeometry(QtCore.QRect(91, 610, 301, 50))
+        self.btn_warehouse_group.setGeometry(QtCore.QRect(91, 620, 301, 50))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -553,15 +566,9 @@ class Ui_screen_14_stockman(object):
         self.btn_warehouse_group.setFont(font)
         self.btn_warehouse_group.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_warehouse_group.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_warehouse_group.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_warehouse_group.setObjectName("btn_warehouse_group")
         self.lbl_info_2 = QtWidgets.QLabel(screen_14_stockman)
-        self.lbl_info_2.setGeometry(QtCore.QRect(32, 280, 416, 36))
+        self.lbl_info_2.setGeometry(QtCore.QRect(32, 270, 416, 36))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -633,11 +640,10 @@ class Ui_screen_14_stockman(object):
         font.setBold(True)
         font.setWeight(75)
         self.lbl_info_2.setFont(font)
-        self.lbl_info_2.setStyleSheet("color: #FFFFFF;")
         self.lbl_info_2.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_info_2.setObjectName("lbl_info_2")
         self.btn_mass_load = QtWidgets.QPushButton(screen_14_stockman)
-        self.btn_mass_load.setGeometry(QtCore.QRect(91, 470, 301, 50))
+        self.btn_mass_load.setGeometry(QtCore.QRect(91, 440, 301, 50))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -711,15 +717,9 @@ class Ui_screen_14_stockman(object):
         self.btn_mass_load.setFont(font)
         self.btn_mass_load.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_mass_load.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_mass_load.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_mass_load.setObjectName("btn_mass_load")
         self.btn_select_group = QtWidgets.QPushButton(screen_14_stockman)
-        self.btn_select_group.setGeometry(QtCore.QRect(91, 330, 301, 50))
+        self.btn_select_group.setGeometry(QtCore.QRect(91, 320, 301, 50))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -793,12 +793,6 @@ class Ui_screen_14_stockman(object):
         self.btn_select_group.setFont(font)
         self.btn_select_group.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_select_group.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_select_group.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_select_group.setObjectName("btn_select_group")
         self.btn_back = QtWidgets.QPushButton(screen_14_stockman)
         self.btn_back.setGeometry(QtCore.QRect(245, 745, 231, 50))
@@ -874,12 +868,6 @@ class Ui_screen_14_stockman(object):
         self.btn_back.setFont(font)
         self.btn_back.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_back.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_back.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_back.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/icons/back.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -888,7 +876,6 @@ class Ui_screen_14_stockman(object):
         self.btn_back.setObjectName("btn_back")
         self.lbl_info_ico = QtWidgets.QLabel(screen_14_stockman)
         self.lbl_info_ico.setGeometry(QtCore.QRect(150, 10, 180, 160))
-        self.lbl_info_ico.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.lbl_info_ico.setText("")
         self.lbl_info_ico.setPixmap(QtGui.QPixmap(":/icons/avatar.png"))
         self.lbl_info_ico.setScaledContents(True)
@@ -968,12 +955,6 @@ class Ui_screen_14_stockman(object):
         self.btn_open_door.setFont(font)
         self.btn_open_door.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_open_door.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_open_door.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_open_door.setText("")
         icon1 = QtGui.QIcon()
         icon1.addPixmap(QtGui.QPixmap(":/icons/unlock.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -981,7 +962,7 @@ class Ui_screen_14_stockman(object):
         self.btn_open_door.setIconSize(QtCore.QSize(37, 37))
         self.btn_open_door.setObjectName("btn_open_door")
         self.btn_select_plan = QtWidgets.QPushButton(screen_14_stockman)
-        self.btn_select_plan.setGeometry(QtCore.QRect(91, 400, 301, 50))
+        self.btn_select_plan.setGeometry(QtCore.QRect(91, 380, 301, 50))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -1055,13 +1036,83 @@ class Ui_screen_14_stockman(object):
         self.btn_select_plan.setFont(font)
         self.btn_select_plan.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         self.btn_select_plan.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.btn_select_plan.setStyleSheet("color: #000000;\n"
-"background-color: #86B7F4;\n"
-"border-width: 2px;\n"
-"border-style: outset;\n"
-"border-color: #EAA657;\n"
-"border-radius: 10px;")
         self.btn_select_plan.setObjectName("btn_select_plan")
+        self.btn_mass_drop = QtWidgets.QPushButton(screen_14_stockman)
+        self.btn_mass_drop.setGeometry(QtCore.QRect(90, 500, 301, 50))
+        palette = QtGui.QPalette()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.WindowText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.ButtonText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.PlaceholderText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.WindowText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.ButtonText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.PlaceholderText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.WindowText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Button, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Text, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Base, brush)
+        brush = QtGui.QBrush(QtGui.QColor(134, 183, 244))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.Window, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0, 128))
+        brush.setStyle(QtCore.Qt.NoBrush)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
+        self.btn_mass_drop.setPalette(palette)
+        font = QtGui.QFont()
+        font.setFamily("Arial Black")
+        font.setPointSize(16)
+        font.setBold(True)
+        font.setWeight(75)
+        self.btn_mass_drop.setFont(font)
+        self.btn_mass_drop.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
+        self.btn_mass_drop.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.btn_mass_drop.setObjectName("btn_mass_drop")
 
         self.retranslateUi(screen_14_stockman)
         QtCore.QMetaObject.connectSlotsByName(screen_14_stockman)
@@ -1080,4 +1131,5 @@ class Ui_screen_14_stockman(object):
         self.btn_mass_load.setText(_translate("screen_14_stockman", "Массовая загрузка"))
         self.btn_select_group.setText(_translate("screen_14_stockman", "Выбрать инструмент"))
         self.btn_select_plan.setText(_translate("screen_14_stockman", "Выбрать чертеж"))
+        self.btn_mass_drop.setText(_translate("screen_14_stockman", "Массовая выгрузка"))
 from ..img import resources_rc

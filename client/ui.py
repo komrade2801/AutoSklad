@@ -31,6 +31,7 @@ from GUI.screen_30_shutdown import screen_30_shutdown
 from GUI.screen_31_reboot import screen_31_reboot
 from GUI.screen_32_wait import screen_32_wait
 from GUI.screen_33_select_plan import screen_33_select_plan
+from GUI.screen_35_plan_complete_confirmation import screen_35_plan_complete_confirmation
 screen_register = {
         "screen_1_welcome": screen_1_welcome,
         "screen_2_help": screen_2_help,
@@ -65,4 +66,5 @@ screen_register = {
         "screen_31_reboot": screen_31_reboot,
         "screen_32_wait": screen_32_wait,
         "screen_33_select_plan": screen_33_select_plan,
+        "screen_35_plan_complete_confirmation": screen_35_plan_complete_confirmation
     }

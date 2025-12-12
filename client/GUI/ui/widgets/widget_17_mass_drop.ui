@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>widget_15_mass_load</class>
- <widget class="QWidget" name="widget_15_mass_load">
+ <class>widget_17_mass_drop</class>
+ <widget class="QWidget" name="widget_17_mass_drop">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>widget_15_mass_load</string>
+   <string>widget_17_mass_drop</string>
   </property>
   <property name="layoutDirection">
    <enum>Qt::LeftToRight</enum>
@@ -574,7 +574,7 @@ QCheckBox::indicator:checked {
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Загружено</string>
+    <string>Выгружено</string>
    </property>
    <property name="iconSize">
     <size>

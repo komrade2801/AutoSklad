@@ -412,7 +412,6 @@ class Ui_screen_15_mass_load(object):
         self.listWidget = QtWidgets.QListWidget(screen_15_mass_load)
         self.listWidget.setEnabled(True)
         self.listWidget.setGeometry(QtCore.QRect(5, 100, 471, 631))
-        self.listWidget.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));")
         self.listWidget.setObjectName("listWidget")
 
         self.retranslateUi(screen_15_mass_load)
