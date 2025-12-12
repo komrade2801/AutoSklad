@@ -193,7 +193,7 @@ class ActionMapper:
             # 'read_db_rights_tool': lambda tool_id, name: self.read_db_rights_tool(tool_id, name),
             'read_db_rights_tool': lambda tool_type_id, name, group_name, tool_description: self.read_db_rights_tool(tool_type_id, name, group_name, tool_description),
             'read_db_get_cell': lambda tool_id, tool_name: self.read_db_get_cell(tool_id, tool_name),
-            'read_db_get_cells': lambda tool_list: self.read_db_get_cells(tool_list),
+            'read_db_get_cells': lambda tool_list, plan_id: self.read_db_get_cells(tool_list),
             'read_db_get_more_cells': lambda cells_list, trigger='': self.read_db_get_more_cells(cells_list),
             # "": None,
             'read_db_user_operations': lambda user_id: self.read_db_user_operations(user_id),
@@ -206,6 +206,8 @@ class ActionMapper:
             'read_db_plans': lambda: self.read_db_plans(1),
             'read_db_plan': lambda index: self.read_db_plans(index),
             'read_db_get_plan_tools': lambda plan_id, plan_designation, plan_name: self.read_db_get_plan_tools(plan_id, plan_designation, plan_name),
+            'read_db_plan_complete': lambda tool_list, plan_id: self.read_db_plan_complete(plan_id),
+            'write_db_plan_complete': lambda tool_list, plan_id: self.write_db_plan_complete(plan_id),
             # "": None,
             'read_db_group_collection': lambda index: self.read_db_group_collection(index),
             'read_db_groups': lambda index: self.read_db_groups(),
@@ -352,6 +354,7 @@ class ActionMapper:
 
         # Если результат пустой, возвращаем None
         print(f"needed by plan: {needed_tools}, found: {len(cells_list)}")
+        print(f"cells_list: {cells_list}")
         if not cells_list or needed_tools > len(cells_list):
             return {"trigger": "err_data"}
 
@@ -418,39 +421,13 @@ class ActionMapper:
         :return: True, если операция выполнена успешно, иначе False.
         """
 
-        dbSync.init_db = False
+        # dbSync.init_db = False
 
         # # Проверить наличие инструмента в ячейке
         # cells = self.e_cell.get_cells_by_tool(self.select_tool.id)
         # cell = None
         # if cells != []:
         #     cell = cells[0]
-
-        # if not self.select_tool:
-            # self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
-        self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
-
-        cell = self.select_cell
-        if not cell.tools_id:
-            # print(
-            #     f"Инструмент с идентификатором {self.select_tool.id} не найдено ни в одной ячейке.")
-            print(
-                f"В ячейке {self.select_cell.number} не найдено инструментов.")
-            return {'trigger': 'view_err'}
-
-        # Очистить ячейку (удалить инструмент из неё)
-        cleared = self.e_cell.update_cell(
-            id=cell.id,
-            number=cell.number,
-            description='Старт',
-            groups_id=None,
-            tools_id=None,
-            status_id=1,
-        )
-        if not cleared:
-            print(
-                f"Failed to clear tool {self.select_tool.id} from cell {cell.id}.")
-            return {'trigger': 'view_err'}
 
         # Получить статус "расход"
         status = self.e_status.find_by_name("consumption")
@@ -460,10 +437,39 @@ class ActionMapper:
             self.e_status.add(
                 index=index,
                 stype="consumption",
-                description="Инструмент выдан!"
+                description="Инструмент выдан!",
+                created_at=datetime.datetime.now()
             )
             status = self.e_status.get_status_by_id(status_id=index)
             # return {'trigger': 'view_err'}
+
+        # if not self.select_tool:
+            # self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
+        self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
+
+        cell = self.e_cell.get_cell_by_id(self.select_cell.id)
+        if not cell.tools_id:
+            # print(
+            #     f"Инструмент с идентификатором {self.select_tool.id} не найдено ни в одной ячейке.")
+            print(
+                f"В ячейке {self.select_cell.number} не найдено инструментов.")
+            return {'trigger': 'view_err'}
+
+        # Очистить ячейку (удалить инструмент из неё)
+        cleared = self.e_cell.update_cell(
+                cell_id=cell.id,
+                number=cell.number,
+                description='Старт',
+                groups_id=None,
+                tools_id=None,
+                status_id=1,
+            )
+        if not cleared:
+            print(
+                f"Failed to clear tool {self.select_tool.id} from cell {cell.id}.")
+            return {'trigger': 'view_err'}
+
+        print(f"cleared {cleared}")
 
         # loads = self.e_load.find_by_cell_id(cell.id)
         # load = max(loads, key=lambda rec: rec.id) if loads else None
@@ -495,7 +501,8 @@ class ActionMapper:
             cells_id=cell.id,
             tool_id=self.select_tool.id,
             plan_id=self.select_plan.id if self.select_plan else None,
-            history_id=history_id
+            history_id=history_id,
+            status_id=status.id,
         )
         if not consumption_id:
             print("Не удалось записать расход инструмента.")
@@ -1062,22 +1069,93 @@ class ActionMapper:
             print(traceback.format_exc())
             return []
 
-    def read_db_mass_drop_tools(self, index) -> Optional[MassDrop]:
+    def read_db_mass_drop_tools(self, index) -> List[dict]:
+        print(f"read_db_mass_drop_tools. index: {index} ")
         """
         Возвращает последний добавленный объект из таблицы MassDrop.
 
         :return: Объект MassDrop с максимальным значением id или None, если таблица пуста.
         """
-        # Получить все записи из таблицы MassDrop
-        mass_drops = self.e_mass_drop.all()
+        # # Получить все записи из таблицы MassDrop
+        # mass_drops = self.e_mass_drop.all()
+        #
+        # if not mass_drops:
+        #     return None  # Если таблица пуста, возвращаем None
+        #
+        # # Найти запись с максимальным id
+        # latest_mass_drop = max(mass_drops, key=lambda md: md.id)
+        #
+        # return latest_mass_drop
 
-        if not mass_drops:
-            return None  # Если таблица пуста, возвращаем None
+        # Лямбда для создания словаря ячейки
+        def create_cell_dict(cell, tool_type):
+            # Safe lookups with null checks to prevent AttributeError
+            group = self.e_group.get_group_by_id(cell.groups_id) if cell.groups_id else None
 
-        # Найти запись с максимальным id
-        latest_mass_drop = max(mass_drops, key=lambda md: md.id)
+            return {
+                "group_name": group.name if group else "Без группы",
+                "tools_name": tool_type.name if tool_type else "Неизвестный инструмент",
+                "cell_number": cell.number,
+            }
 
-        return latest_mass_drop
+        try:
+            # 1. Найти статус с типом "mass_drop_init"
+            status = self.e_status.all()
+            status_init_id = next(
+                (s.id for s in status if s.stype == "mass_drop_init"), None)
+            print(f"status_id: {status_init_id}")
+
+            if not status_init_id:
+                raise ValueError("Статус 'mass_drop_init' не найден.")
+
+            if self.e_mass_load.count() == 0:
+                print(f"Данные о массовой загрузке отсутствуют")
+                return []
+
+            cells_ids = set()
+            cell_list = []
+            # mass_loads = self.e_mass_load.all()
+            loads = self.e_load.find_by_status_id(status_init_id)
+            loads.sort(key=lambda rec: rec.id, reverse=True)
+            drops = self.e_drop.find_by_status_id(status_init_id)
+            print(f"drops: {drops}")
+            for drop in drops:
+                cell = self.e_cell.get_cell_by_id(drop.cell_id)
+                # print(f"cell: {cell}")
+                # print(f"cell.status_id {cell.status_id} == status_id {status_id}")
+                if cell.status_id == status_init_id and cell.id not in cells_ids:
+                    cells_ids.add(cell.id)
+
+                    tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
+                    cell_list.append(create_cell_dict(cell, tool_type))
+                # operations = self.e_load_operations.get_operations_by_load_id(
+                #     load.id)
+                # history = self.e_history.get_history_by_id(load.history_id)
+                # print(f"operations: {operations}")
+                # 2. Найти последние операции загрузки, связанные с этим статусом
+                # Проверяем, что есть ровно одна операция и ее статус — mass_load_init
+                # if len(operations) == 1 and operations[0].status_id == status_id:
+                #     # Если load подходит, добавляем его в список
+                #     cells_ids.append(load.cell_id)
+
+            # # Получение идентификаторов загрузок
+            # cell_list = []
+            # for _id in cells_ids:
+            #     cell = self.e_cell.get_cell_by_id(_id)
+            #     # print(f"cell: {cell}")
+            #     # print(f"tool: {self.e_tool_types.get_tool_type_by_id(cell.tools_id)}")
+            #
+            #     tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
+            #
+            #     cell_list.append(create_cell_dict(cell, tool_type))
+
+            print(f"cell_list: {cell_list}")
+            return cell_list
+
+        except Exception as e:
+            print(f"Ошибка при выполнении запроса: {e}")
+            print(traceback.format_exc())
+            return []
 
     def read_db_mass_drop_tools_by_plan(self, plan_id: int) -> List[ToolTypes]:
         """
@@ -1179,53 +1257,94 @@ class ActionMapper:
 
         :return: True, если операция выполнена успешно, иначе False.
         """
+        print(f"write_db_drop_tool_groups {_}")
         result = True
+        user_id = self.current_user.id
+
         try:
-            mass_drop_id = max(self.e_mass_drop.get_all_ids())
 
-            drops_by_mass_drop = self.e_drop.get_by_mass_drop_id(mass_drop_id)
-            target_operations = []
-            for drop in drops_by_mass_drop:
-                target_operations.append(
-                    self.e_drop_operations.get_operations_by_drop_id(drop.id))
+            statuses = self.e_status.all()
+            status_init = next(
+                (s.id for s in statuses if s.stype == "mass_drop_init"), None)
 
+            # Получить статус "расход"
+            status_ready = self.e_status.find_by_name("mass_drop_ready")
+            if not status_ready:
+                print("Статус «Инструмент извлечён из аппарата» не найден.")
+                index = max(self.e_status.get_all_ids(), default=0) + 1
+                self.e_status.add(
+                    index=index,
+                    stype="mass_drop_ready",
+                    description="Инструмент извлечён из аппарата",
+                    created_at=datetime.datetime.now()
+                )
+                status_ready = self.e_status.get_status_by_id(status_id=index)
+
+            target_histories = []
             target_cells = []
-            for drop in drops_by_mass_drop:
-                target_cells.append(self.e_cell.get(drop.cell_id))
+            target_tools = []
 
-            # target_tools = []
-            # for drop in drops_by_mass_drop:
-            #     target_tools.append(self.e_tools.get(drop.tools_id))
+            drops = self.e_drop.all()
+            print(f"drops: {drops}")
+            for drop in drops:
+                cell = self.e_cell.get_cell_by_id(drop.cell_id)
+                if cell and cell.status_id == status_init:
+                    history = self.e_history.get_history_by_id(drop.history_id)
+                    target_histories.append(history)
 
-            # result = result and self.e_mass_drop.delete(mass_drop_id)
+                    target_cells.append(self.e_cell.get_cell_by_id(drop.cell_id))
+                    tool_type = self.e_tool_types.get(drop.tools_id)
 
-            # for drop in drops_by_mass_drop:
-            #     result = result and self.e_drop.delete(drop.id)
+                    # Если группа не найдена — создаём новую с именем первого слова из tool.name
+                    group = self.e_group.get_group_by_id(tool_type.groups_id)
+                    if group is None:
+                        first_word = tool_type.name.split()[0]
+                        new_group_id = max(
+                            self.e_group.get_all_ids(), default=0) + 1
+                        self.e_group.add(id=new_group_id, name=first_word)
+                        tool_type.groups_id = new_group_id
 
-            history = []
+                    # target_tools.append(self.e_tools.get(load.tools_id))
+                    target_tools.append(self.e_tool_types.get_tool_type_by_id(drop.tools_id))
 
-            for operations in target_operations:
-                for operation in operations:
-                    history.append(operation.history_id)
-                    # result = result and self.e_drop_operations.delete(
-                    #     operation.id)
+            for cell in target_cells:
+                result = result and self.e_cell.update_cell(
+                    cell_id=cell.id,
+                    number=cell.number,
+                    description='Старт',
+                    groups_id=None,
+                    tools_id=None,
+                    status_id=1,
+                )
 
-            # for target_cell in target_cells:
-            #     # if target_cell:
-            #     result = result and self.e_cell.delete(target_cell.id)
-            #
-            # for target_tool in target_tools:
-            #     result = result and self.e_tools.delete(target_tool.id)
-            #
-            # for story_id in history:
-            #     result = result and self.e_history.delete(story_id)
+            for history in target_histories:
+                user = self.e_user.get(user_id)
+                history_id = max(self.e_history.get_all_ids()) + 1
+                result = result and self.e_history.add_history(
+                    id=history_id,
+                    user_id=user.id,
+                    role_id=user.role_id,
+                    tools_id=history.tools_id,
+                    datetime_value=datetime.datetime.now(),
+                    status=status_ready.id,
+                    description=status_ready.description,
+                    plan_id=history.plan_id,
+                )
+
+            for drop in drops:
+                drop_dict = drop.to_dict()
+                drop_dict['status_id'] = status_ready.id
+                self.e_load.update(index=drop.id, **drop_dict)
+
+            self.e_mass_drop._cache.clear()  # Для MassLoad (get_all_ids, all)
+            self.e_drop._cache.clear()       # Для Load (find_by_mass_load_id, get)
+
+            return result
 
         except Exception as e:
             print(e)
             print(traceback.format_exc())
             return False
-
-        return result
 
     def write_db_load_tool_groups(self, _) -> bool:
         """
@@ -1313,11 +1432,14 @@ class ActionMapper:
                 ready_status = self.e_status.get(index)
 
             for cell in target_cells:
-                # cell = self.e_cell.get()
-                cell_dict = cell.to_dict()
-                cell_dict['status_id'] = ready_status.id
-                cell_dict['description'] = ready_status.description
-                result = result and self.e_cell.update_cell(**(cell_dict))
+                result = result and self.e_cell.update_cell(
+                    cell_id=cell.id,
+                    number=cell.number,
+                    description=ready_status.description,
+                    groups_id=cell.groups_id,
+                    tools_id=cell.tools_id,
+                    status_id=ready_status.id,
+                )
             # Добавляем запись операций в LoadOperations и ячеек в Cell о готовности к использованию.
             # for operations in target_operations:
             #     access = True
@@ -1848,6 +1970,182 @@ class ActionMapper:
             plan_tool_list.append(tool_object)
 
         return plan_tool_list, plan_designation, plan_name, plan_id
+
+    def read_db_plan_complete(self, plan_id):
+        print(f"read_db_plan_complete plan_id {plan_id}")
+
+        plan = self.e_plan.get_plan_by_id(plan_id)
+        # self.select_plan = plan
+
+        plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+
+        plan_tool_list = []
+
+        for plan_tool_type in plan_tool_types:
+            tool_object = {}
+            tool_type = self.e_tool_types.get_tool_type_by_id(plan_tool_type.tool_types_id)
+
+            tool_object["tool_type"] = tool_type
+            tool_object["total_count"] = tool_type.count
+            tool_object["plan_count"] = plan_tool_type.tool_types_count
+
+            tool_load_count = 0
+            cells = self.e_cell.get_cells_by_tool(tool_type.id)
+            for cell in cells:
+                if cell.status_id in [3, 7]:
+                    loads = self.e_load.find_by_cell_id(cell.id)
+                    load = max(loads, key=lambda rec: rec.id) if loads else None
+                    if self.select_plan and load and load.plan_id == self.select_plan.id:
+                        tool_load_count += 1
+
+            tool_object["load_count"] = tool_load_count
+
+            if plan_tool_type.tool_types_count <= tool_load_count:
+                has_tools = True
+            else:
+                has_tools = False
+
+            tool_object["has_tools"] = has_tools
+
+            plan_tool_list.append(tool_object)
+
+        print(f"read_db_plan_complete call view_plan_complete':{plan_id}: plan_id, 'designation': {plan.designation}, 'tool_list': {plan_tool_list}")
+        return {'plan_id': plan_id, 'designation': plan.designation, 'tool_list': plan_tool_list}
+
+
+    def write_db_plan_complete(self, plan_id):
+        print(f"write_db_plan_complete plan_id {plan_id}")
+
+        result = True
+        user_id = self.current_user.id
+
+        plan = self.e_plan.get_plan_by_id(plan_id)
+        # self.select_plan = plan
+
+        plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan_id)
+
+        # target_histories = []
+        # target_cells = []
+        # target_tools = []
+        # target_loads = []
+        drops = []
+
+        for plan_tool_type in plan_tool_types:
+            # tool_type = self.e_tool_types.get_tool_type_by_id(plan_tool_type.tool_types_id)
+            # target_tools.append(tool_type)
+
+            cells = self.e_cell.get_cells_by_tool(plan_tool_type.tool_types_id)
+            for cell in cells:
+                if cell.status_id in [3, 7]:
+                    loads = self.e_load.find_by_cell_id(cell.id)
+                    load = max(loads, key=lambda rec: rec.id) if loads else None
+                    if self.select_plan and load and load.plan_id == self.select_plan.id:
+                        history = self.e_history.get_history_by_id(load.history_id)
+                        # target_histories.append(history)
+                        # target_cells.append(cell)
+                        # target_loads.append(load)
+                        drops.append({'cell': cell, 'load': load, 'history': history})
+
+        # 1. Найти или создать статус "mass_drop_init"
+        all_statuses = self.e_status.all()
+        mass_drop_status = next(
+            (s for s in all_statuses if s.stype == "mass_drop_init"), None)
+
+        if not mass_drop_status:
+            mass_drop_status_id = max(self.e_status.get_all_ids(), default=0) + 1
+            self.e_status.add(
+                index=mass_drop_status_id,
+                stype="mass_drop_init",
+                description="Начальный статус для массового удаления"
+            )
+            mass_drop_status = self.e_status.get(mass_drop_status_id)
+
+        # 2. Создать запись в таблице MassDrop
+        mass_drop_id = self.e_mass_drop.get_all_ids()
+        mass_drop_id = max(mass_drop_id, default=0) + 1
+
+        mass_drop_description = f"Mass drop for plan {plan_id}"
+        self.e_mass_drop.add(
+            id=mass_drop_id,
+            description=mass_drop_description,
+            created_at=datetime.datetime.now()
+        )
+
+        if not mass_drop_id:
+            raise ValueError("Не удалось создать запись в таблице MassDrop.")
+
+        for drop in drops:
+            print(f"drop {drop}")
+            cell = drop["cell"]
+            load = drop["load"]
+            history = drop["history"]
+
+            tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
+            print(f"tool_type {tool_type}")
+
+            result = result and self.e_cell.update_cell(
+                cell_id=cell.id,
+                number=cell.number,
+                description=mass_drop_status.description,
+                groups_id=cell.groups_id,
+                tools_id=cell.tools_id,
+                status_id=mass_drop_status.id,
+            )
+
+            # Добавляем новые записи истории
+            user = self.e_user.get(user_id)
+            history_id = max(self.e_history.get_all_ids()) + 1
+            result = result and self.e_history.add_history(
+                id=history_id,
+                user_id=user.id,
+                role_id=user.role_id,
+                tools_id=tool_type.id,
+                datetime_value=datetime.datetime.now(),
+                status=mass_drop_status.id,
+                description=mass_drop_status.description,
+                plan_id=load.plan_id,
+            )
+
+            drop_id = max(self.e_drop.get_all_ids(), default=0) + 1
+
+            # 3. Создать записи в таблице Drop
+            result = result and self.e_drop.add_drop(
+                index=drop_id,
+                tools_id=tool_type.id,
+                mass_drop_id=mass_drop_id,
+                cell_id=cell.id,
+                plan_id=plan_id,
+                history_id=history_id,
+                status_id=mass_drop_status.id,
+                created_at=datetime.datetime.now(),
+                description=f"Выгрузка инструмента {tool_type.name} для чертежа {plan.designation}"
+            )
+
+            if not result:
+                raise ValueError("Не удалось создать записи в таблице Drop.")
+
+            drops_by_cell = self.e_drop.get_by_cell_id(cell.id)
+            drops_by_cell.sort(key=lambda rec: rec.id, reverse=True)
+
+            operation_indx = self.e_drop_operations.get_all_ids()
+            operation_indx = max(operation_indx, default=0) + 1
+
+            operation_added = self.e_drop_operations.add_operation(
+                index=operation_indx,
+                drop_id=drops_by_cell[0].id,
+                tools_id=tool_type.id,
+                status_id=mass_drop_status.id,
+                history_id=history_id,
+                description="Создана операция массового удаления",
+            )
+
+            print(f"operation_added {operation_added}")
+
+            if not operation_added:
+                raise ValueError(
+                    f"Не удалось создать запись в таблице DropOperations для Drop ID {drops_by_cell[0]}.")
+
+        return {"trigger": "plan_completed"}
 
     def read_db_plans(self, index):
         print(f"read_db_plans index {index}")

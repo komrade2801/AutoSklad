@@ -106,8 +106,7 @@ class EngineCell(BaseCRUD):
     #         tools_id=tools_id,
     #         status_id=status_id,
     #     )
-    def update_cell(self, *,
-                    id: int=0,
+    def update_cell(self, cell_id: int,
                     number=None,
                     description=None,
                     groups_id=None,
@@ -121,12 +120,13 @@ class EngineCell(BaseCRUD):
             :param groups_id:
             :param description:
             :param number:
-            :param id: Уникальный идентификатор ячейки.
+            :param index: Уникальный идентификатор ячейки.
             :return: True, если запись успешно обновлена, иначе False.
         """
-        print(f"update_cell {id}, {number}, {description}, {groups_id}, {tools_id}, {status_id}")
+        print(f"update_cell {cell_id}, {number}, {description}, {groups_id}, {tools_id}, {status_id}")
+
         # 1) Загружаем из БД текущее состояние
-        instance = self.session.query(self.model).get(id)
+        instance = self.session.query(self.model).get(cell_id)
         if not instance:
             return False
 
@@ -143,14 +143,13 @@ class EngineCell(BaseCRUD):
         # if status_id is not None and instance.status_id != status_id:
         updates['status_id'] = status_id
 
-        print(f"updates {updates}")
-
         # 3) Если нечего менять — вернём True, потому что ошибок нет
         if not updates:
             return True
 
+        print(f"updates {cell_id}, {updates}")
         # 4) Иначе передаём только изменившиеся поля
-        return self.update(index=id, **updates)
+        return self.update(index=cell_id, **updates)
 
     def delete_cell(self, cell_id: int) -> bool:
         """

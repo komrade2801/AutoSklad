@@ -66,6 +66,6 @@ class History(Base, Model):
                 f"description={self.description}, "
                 f"user_id={self.user_id}, "
                 f"user_role_id={self.user_role_id}, "
-                f"tools_id={self.tools_id}"
+                f"tools_id={self.tools_id}, "
                 f"plan_id={self.plan_id}, "
                 f")>")

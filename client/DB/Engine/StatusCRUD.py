@@ -35,7 +35,7 @@ class EngineStatus(BaseCRUD):
         # Передаем сессию и модель Status в конструктор BaseCRUD
         super().__init__(session, Status)
 
-    def add(self, index: int, stype: str, description: Optional[str] = None) -> bool:
+    def add(self, index: int, stype: str, description: Optional[str] = None, created_at: Optional[datetime] = None) -> bool:
         """
         Добавляет новый статус в таблицу.
 
@@ -46,7 +46,7 @@ class EngineStatus(BaseCRUD):
         """
         # Используем параметры для создания записи
         try:
-            return super().add(id=index, stype=stype, description=description, created_at=datetime.datetime.now())
+            return super().add(id=index, stype=stype, description=description, created_at=created_at)
         except Exception as e:
             print(traceback.format_exc())
             return False

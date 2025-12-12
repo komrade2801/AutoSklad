@@ -24,7 +24,8 @@ class EngineConsumption(BaseCRUD):
                         cells_id: int,
                         tool_id: int,
                         plan_id: int,
-                        history_id: int) -> bool:
+                        history_id: int,
+                        status_id: int) -> bool:
         """
         Получает ячейку по её уникальному идентификатору.
 
@@ -38,7 +39,8 @@ class EngineConsumption(BaseCRUD):
             cell_id=cells_id,
             tools_id=tool_id,
             plan_id=plan_id,
-            history_id=history_id)
+            history_id=history_id,
+            status_id=status_id)
 
     def get_consumption_by_id(self, consumption_id: int) -> Optional[Consumption]:
         """

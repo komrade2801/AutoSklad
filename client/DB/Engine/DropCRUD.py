@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -63,7 +65,25 @@ class EngineDrop(BaseCRUD):
         """
         return self.session.query(self.model).filter_by(cell_id=cell_id).all()
 
-    def add_drop(self, tools_id: int, mass_drop_id: int, cell_id: int, description: Optional[str] = None) -> bool:
+    def find_by_status_id(self, status_id: int) -> List[Drop]:
+        """
+        Возвращает список записей Drop, связанных с указанным status_id.
+
+        :param status_id: Идентификатор статуса.
+        :return: Список записей Drop.
+        """
+        return self.session.query(self.model).filter_by(status_id=status_id).all()
+
+    def add_drop(self,
+                index: int,
+                 tools_id: int,
+                 mass_drop_id: int,
+                 cell_id: int,
+                 plan_id: int,
+                 history_id: int,
+                 status_id: int,
+                 created_at: Optional[datetime] = None,
+                 description: Optional[str] = None) -> bool:
         """
         Добавляет новую запись в таблицу Drop.
 
@@ -73,7 +93,15 @@ class EngineDrop(BaseCRUD):
         :param description: Описание операции.
         :return: True если запись успешно добавлена, иначе False.
         """
-        return self.add(tools_id=tools_id, mass_drop_id=mass_drop_id, cell_id=cell_id, description=description)
+        return self.add(index=index,
+                        tools_id=tools_id,
+                        mass_drop_id=mass_drop_id,
+                        cell_id=cell_id,
+                        plan_id=plan_id,
+                        history_id=history_id,
+                        status_id=status_id,
+                        created_at=created_at,
+                        description=description)
 
     def update_drop(self, drop_id: int, **kwargs) -> bool:
         """
