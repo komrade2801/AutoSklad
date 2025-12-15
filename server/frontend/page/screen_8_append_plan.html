@@ -253,26 +253,56 @@
               </div>
             </div>
             <script>
+                var qr_rows = []
                 function fillManualFields(elem) {
-                    if(event.key === 'Enter') {
+                //    console.log(event.key)
+                    if (event.key === 'Tab') {
+                        event.preventDefault();
                         console.log(elem.value);
-                        const lines = elem.value.split(/\r?\n/);
-                        console.log(lines);
 
-                        const enterpriseInput = document.getElementById('enterpriseInput');
-                        const designationInput = document.getElementById('designationInput');
-                        const nameInput = document.getElementById('nameInput');
-                        const descriptionInput = document.getElementById('descriptionInput');
+                        qr_rows.push(elem.value);
+                        elem.value = '';
+                    }
+                    if(event.key === 'Enter') {
 
-                        enterpriseInput.value = lines[3];
-                        designationInput.value = lines[0];
-                        nameInput.value = lines[5];
-                        descriptionInput.value = lines[4];
+                        fetch("/backend/qr/", {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({'content': qr_rows})
+                          })
+                          .then(response => {
+                            if (!response.ok) {
+                              return response.text().then(text => {
+                                throw new Error(`Ошибка ${response.status}: ${text}`);
+                              });
+                            }
+                            return response.json();
+                          })
+                          .then(data => {
+                            console.log('Результат декодировки:', data);
 
-                        const qrCodeInput = document.getElementById('qrCodeInput');
-                        qrCodeInput.placeholder = 'QR-код отсканирован успешно'
-                        qrCodeInput.blur();
-                        qrCodeInput.value = '';
+                            const enterpriseInput = document.getElementById('enterpriseInput');
+                            const designationInput = document.getElementById('designationInput');
+                            const nameInput = document.getElementById('nameInput');
+                            const descriptionInput = document.getElementById('descriptionInput');
+
+                            enterpriseInput.value = data.content[3];
+                            designationInput.value = data.content[0];
+                            nameInput.value = data.content[5];
+                            descriptionInput.value = data.content[4];
+
+                            const qrCodeInput = document.getElementById('qrCodeInput');
+                            qrCodeInput.placeholder = 'QR-код отсканирован успешно'
+                            qrCodeInput.blur();
+                            qrCodeInput.value = '';
+
+                            qr_rows = []
+                          })
+                          .catch(err => {
+                            console.error('Ошибка при декодировании:', err);
+                          });
                     }
                 }
             </script>
