@@ -5,6 +5,7 @@ from API.backend.endpoints.all_groups import all_groups_router
 from API.backend.endpoints.all_users import all_users_router
 from API.backend.endpoints.mass_drop import mass_drop_router
 from API.backend.endpoints.mass_load import mass_load_router
+from API.backend.endpoints.qr_scanner import qr_scanner_router
 from API.backend.endpoints.tools import tools_router
 from API.backend.endpoints.history import history_router
 from API.backend.endpoints.all_plans import all_plans_router
@@ -49,3 +50,4 @@ backend_router.include_router(mass_drop_router)
 backend_router.include_router(all_device_router)
 backend_router.include_router(status_router)
 backend_router.include_router(settings_router)
+backend_router.include_router(qr_scanner_router)
