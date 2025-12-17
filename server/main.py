@@ -16,9 +16,20 @@ import dbSync
 import faulthandler
 import os
 import sys
+import signal
+import logging
+import platform
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # 1) Сразу убеждаемся, что БД создана (init_db сам перезапустит программу, если файла пока нет)
 faulthandler.enable(all_threads=True, file=open("crash.log", "w"))
@@ -56,45 +67,85 @@ sync_router = importlib.import_module("dbSync.Transport.routers").sync_router
 # ------------------------------------------------------------
 # 3) При старте приложения: читаем все устройства и запускаем по каждому поток sync
 # ------------------------------------------------------------
+# Глобальная переменная для хранения списка запущенных устройств
+sync_device_ids: List[int] = []
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # сюда соберём запущенные device_id
-    sync_device_ids: List[int] = []
+    global sync_device_ids
+    sync_device_ids = []
 
     # ====== startup ======
+    logger.info("=" * 60)
+    logger.info("Запуск сервера AutoSklad...")
+    logger.info("=" * 60)
 
-    crud = EngineDevice()
-    devices = crud.get_all_devices()
-    for dev in devices:
-        conf = json.loads(dev.details or "{}")
-        net = conf.get("network", {})
-        ip = net.get("ip")
-        port = net.get("port")
-        if not ip or not port:
-            continue
+    try:
+        crud = EngineDevice()
+        devices = crud.get_all_devices()
+        logger.info(f"Найдено устройств: {len(devices)}")
+        
+        for dev in devices:
+            conf = json.loads(dev.details or "{}")
+            net = conf.get("network", {})
+            ip = net.get("ip")
+            port = net.get("port")
+            if not ip or not port:
+                logger.warning(f"Устройство {dev.number}: пропущено (нет IP/port в конфигурации)")
+                continue
 
-        device_id = dev.number
-        # вызываем start_sync (он сам создаёт внутренний поток)
-        start_sync(
-            device_id,
-            host=ip,
-            port=port,
-            # TODO: доработать и добавить в базу данных таблицу Device -> details -> device_token
-            token="<YOUR_JWT_TOKEN>",
-            # HMAC-секрет TODO: доработать и добавить в базу данных таблицу Device -> details -> HMAC
-            secret=b"supersecret",
-            aes=AES_KEY,                 # <— передаём именно его
-            scheduler_sender_timeout=SENDER_TIMEOUT,
-            scheduler_receiver_timeout=RECEIVER_TIMEOUT
-        )
-        sync_device_ids.append(device_id)
+            device_id = dev.number
+            logger.info(f"Запуск синхронизации для устройства {device_id} ({ip}:{port})")
+            
+            # вызываем start_sync (он сам создаёт внутренний поток)
+            start_sync(
+                device_id,
+                host=ip,
+                port=port,
+                # TODO: доработать и добавить в базу данных таблицу Device -> details -> device_token
+                token="<YOUR_JWT_TOKEN>",
+                # HMAC-секрет TODO: доработать и добавить в базу данных таблицу Device -> details -> HMAC
+                secret=b"supersecret",
+                aes=AES_KEY,                 # <— передаём именно его
+                scheduler_sender_timeout=SENDER_TIMEOUT,
+                scheduler_receiver_timeout=RECEIVER_TIMEOUT
+            )
+            sync_device_ids.append(device_id)
+            logger.info(f"✓ Синхронизация для устройства {device_id} запущена")
+        
+        logger.info(f"Всего запущено синхронизаций: {len(sync_device_ids)}")
+        logger.info("Сервер готов к работе")
+        logger.info("=" * 60)
+    except Exception as e:
+        logger.error(f"Ошибка при запуске синхронизации: {e}", exc_info=True)
 
     yield  # <- здесь приложение запускается и начинает принимать HTTP-запросы
 
     # ====== shutdown ======
-    for device_id in sync_device_ids:
-        stop_sync(device_id)
-    # dbSync закроет свои внутренние потоки самостоятельно
+    logger.info("=" * 60)
+    logger.info("Начало корректного завершения работы сервера...")
+    logger.info("=" * 60)
+    
+    try:
+        if sync_device_ids:
+            logger.info(f"Остановка синхронизации для {len(sync_device_ids)} устройств...")
+            for device_id in sync_device_ids:
+                try:
+                    logger.info(f"Остановка синхронизации устройства {device_id}...")
+                    stop_sync(device_id)
+                    logger.info(f"✓ Синхронизация устройства {device_id} остановлена")
+                except Exception as e:
+                    logger.error(f"Ошибка при остановке устройства {device_id}: {e}", exc_info=True)
+        else:
+            logger.info("Нет активных синхронизаций для остановки")
+        
+        # dbSync закроет свои внутренние потоки самостоятельно
+        logger.info("Все синхронизации остановлены")
+        logger.info("=" * 60)
+        logger.info("Сервер корректно завершил работу")
+        logger.info("=" * 60)
+    except Exception as e:
+        logger.error(f"Ошибка при завершении работы: {e}", exc_info=True)
 
 # Добавляем MIME-тип для файлов .js
 mimetypes.add_type("application/javascript", ".js")
@@ -148,10 +199,60 @@ async def get_manifest():
 
 
 # ------------------------------------------------------------
+# 4) Обработка сигналов для корректного завершения
+# ------------------------------------------------------------
+def signal_handler(signum, frame):
+    """Обработчик сигналов для корректного завершения работы"""
+    signal_name = signal.Signals(signum).name
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info(f"Получен сигнал {signal_name} ({signum})")
+    logger.info("Инициируется корректное завершение работы...")
+    logger.info("=" * 60)
+    
+    # Останавливаем все синхронизации
+    global sync_device_ids
+    if sync_device_ids:
+        logger.info(f"Остановка {len(sync_device_ids)} активных синхронизаций...")
+        for device_id in sync_device_ids[:]:  # Копируем список для безопасной итерации
+            try:
+                stop_sync(device_id)
+                logger.info(f"✓ Синхронизация устройства {device_id} остановлена")
+            except Exception as e:
+                logger.error(f"Ошибка при остановке устройства {device_id}: {e}")
+    
+    # Завершаем работу
+    logger.info("Завершение работы сервера...")
+    sys.exit(0)
+
+
+# Регистрируем обработчики сигналов
+signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C (работает на всех платформах)
+if platform.system() != "Windows":
+    # SIGTERM доступен только на Unix-подобных системах
+    signal.signal(signal.SIGTERM, signal_handler)
+
+
+# ------------------------------------------------------------
 # 5) Точка входа
 # ------------------------------------------------------------
 if __name__ == "__main__":
-    uvicorn.run(app, host=Host, port=port)
+    try:
+        logger.info(f"Запуск сервера на {Host}:{port}")
+        uvicorn.run(
+            app, 
+            host=Host, 
+            port=port,
+            log_level="info",
+            access_log=True
+        )
+    except KeyboardInterrupt:
+        # Дополнительная обработка KeyboardInterrupt (на случай, если сигнал не сработал)
+        logger.info("Получен KeyboardInterrupt, завершение работы...")
+        signal_handler(signal.SIGINT, None)
+    except Exception as e:
+        logger.error(f"Критическая ошибка при запуске сервера: {e}", exc_info=True)
+        sys.exit(1)
 
 
 # 4. Ловушка в самом конце
