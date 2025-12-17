@@ -1,6 +1,5 @@
 import { openModal } from './modal_window_13.js'
 import { generatePrintTable } from './generate_print_table.js'
-import { jsonObjectHistory } from '../../JSONs/history.js'
 
 
 function printElement(elem) {
@@ -114,18 +113,21 @@ export function generateTableHistoryDrop(jsonHistoryDrop, containerId) {
 
     const container = document.getElementById(containerId);
 
+
+
     const table = document.createElement("table");
-    table.border = "1";
     table.style.width = "100%";
+    table.style.borderCollapse = "collapse";
 
     // Заголовки
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    const headers = ["Дата", "Идентификатор операции", "Пользователь", "Статус", ""];
+    const headers = ["Дата", "Идентификатор операции", "Пользователь", "Статус"];
 
     headers.forEach(headerText => {
         const th = document.createElement("th");
         th.textContent = headerText;
+        th.style.border = '1px solid';
         headerRow.appendChild(th);
     });
 
@@ -136,8 +138,10 @@ export function generateTableHistoryDrop(jsonHistoryDrop, containerId) {
     const operationsArray = Object.values(jsonHistoryDrop.operation);
 
     function parseDate(dateStr) {
-        const [day, month, year] = dateStr.split(".");
-        return new Date(year, month - 1, day);
+        const [time, date] = dateStr.split(" ");
+        const [hour, minute, second] = time.split(":");
+        const [day, month, year] = date.split(".");
+        return new Date(year, month - 1, day, hour, minute, second);
     }
 
     // Найдём самую свежую дату
@@ -160,54 +164,58 @@ export function generateTableHistoryDrop(jsonHistoryDrop, containerId) {
 
         const row = document.createElement("tr");
 
-        const itemDate = parseDate(item.date.trim());
-        const isLatest = isSameDate(itemDate, latestDate);
-        const status = item.status.trim().toLowerCase();
-        const idLoad = item.ID_load.trim();
+//        const itemDate = parseDate(item.date.trim());
+//        const isLatest = isSameDate(itemDate, latestDate);
+//        const status = item.status.trim().toLowerCase();
+        const idDrop = item.ID_drop.trim();
 
         row.style.cursor = "pointer";
 
-        let destinationUrl = `/screen_13_2_random_drop.html?ID_load=${encodeURIComponent('№ ' + idLoad)}`;
+        let destinationUrl = `/screen_13_2_random_drop.html?ID_drop=${encodeURIComponent(idDrop)}`;
 
         console.log(destinationUrl)
 
-        const printerCell = document.createElement("td");
-
-        if (isLatest && status === "на загрузке" ) {
-            // Кнопка с иконкой принтера
-            const printButton = document.createElement("button");
-            printButton.style.width = "35px";
-            printButton.style.height = "35px";
-            printButton.style.backgroundImage = "url('../assets/img/printer.png')"; // Путь к иконке
-            printButton.style.backgroundSize = "contain";
-            printButton.style.backgroundRepeat = "no-repeat";
-            printButton.style.backgroundColor = "transparent";
-            printButton.style.border = "none";
-            printButton.title = "Печать";
-
-            printButton.addEventListener("click", (e) => {
-                e.stopPropagation();
-
-                // Генерируем таблицу
-                generatePrintTable(jsonObjectHistory);
-
-                // Печатаем только содержимое printArea
-                printElement(document.getElementById('printArea'));
-            });
-
-
-            printerCell.appendChild(printButton);
-            //destinationUrl = `/screen_13_1_last_drop.html?ID_load=${encodeURIComponent(idLoad)}`;
-        }
+//        const printerCell = document.createElement("td");
+//
+//        if (isLatest && status === "на загрузке" ) {
+//            // Кнопка с иконкой принтера
+//            const printButton = document.createElement("button");
+//            printButton.style.width = "35px";
+//            printButton.style.height = "35px";
+//            printButton.style.backgroundImage = "url('../assets/img/printer.png')"; // Путь к иконке
+//            printButton.style.backgroundSize = "contain";
+//            printButton.style.backgroundRepeat = "no-repeat";
+//            printButton.style.backgroundColor = "transparent";
+//            printButton.style.border = "none";
+//            printButton.title = "Печать";
+//
+//            printButton.addEventListener("click", (e) => {
+//                e.stopPropagation();
+//
+//                // Генерируем таблицу
+//                generatePrintTable(jsonObjectHistory);
+//
+//                // Печатаем только содержимое printArea
+//                printElement(document.getElementById('printArea'));
+//            });
+//
+//
+//            printerCell.appendChild(printButton);
+//            //destinationUrl = `/screen_13_1_last_drop.html?ID_load=${encodeURIComponent(idLoad)}`;
+//        }
 
         row.innerHTML = `
             <td>${item.date.trim()}</td>
-            <td>${item.ID_load.trim()}</td>
+            <td>${item.ID_drop.trim()}</td>
             <td>${item.user.trim()}</td>
             <td>${item.status.trim()}</td>
         `;
 
-        row.appendChild(printerCell);
+        for (let td of row.querySelectorAll('td')) {
+            td.style.border = '1px solid';
+        }
+
+//        row.appendChild(printerCell);
 
         row.addEventListener("click", () => {
             let token = localStorage.getItem('token');
@@ -217,6 +225,46 @@ export function generateTableHistoryDrop(jsonHistoryDrop, containerId) {
 
         tbody.appendChild(row);
     });
+
+    const printerCell = document.createElement("th");
+    printerCell.style.border = '1px solid';
+
+    // Кнопка с иконкой принтера
+    const printButton = document.createElement("button");
+    printButton.style.width = "35px";
+    printButton.style.height = "35px";
+    printButton.style.backgroundImage = "url('../assets/img/printer.png')"; // Путь к иконке
+    printButton.style.backgroundSize = "contain";
+    printButton.style.backgroundRepeat = "no-repeat";
+    printButton.style.backgroundColor = "transparent";
+    printButton.style.border = "none";
+    printButton.title = "Печать";
+
+    printButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        // Генерируем таблицу
+        generatePrintTable(jsonHistoryDrop);
+
+        // Печатаем только содержимое printArea
+        printElement(document.getElementById('printArea'));
+    });
+
+    printerCell.appendChild(printButton);
+
+    headerRow.appendChild(printButton);
+
+    if (operationsArray.length === 0) {
+        const emptyRow = document.createElement("tr");
+        const emptyTd = document.createElement("td");
+        emptyTd.colSpan = 5;  // Для столбцов: Дата, Идентификатор операции, Пользователь, Статус, ""
+        emptyTd.textContent = "История выгрузок пуста";
+        emptyTd.style.textAlign = "center";
+        emptyTd.style.fontStyle = "italic";
+        emptyTd.style.border = '1px solid';
+        emptyRow.appendChild(emptyTd);
+        tbody.appendChild(emptyRow);
+    }
 
     table.appendChild(tbody);
 

@@ -1,5 +1,5 @@
-export function createTableRandomLoad(data, containerId) {
-        let table = '<table style="width: 100%; border-style: solid;">';
+export function createTableRandomDrop(data, containerId) {
+        let table = '<table style="width: 100%;">';
         table += '<tr><th>Ячейка</th><th>Инструмент</th><th>Группа</th><th>Чертёж</th></tr>';
 
         // Сортировка по номеру ячейки

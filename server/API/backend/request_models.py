@@ -314,6 +314,26 @@ class HistoryLoadUpdate(BaseModel):
     tool_id: Optional[int]
     timestamp: Optional[datetime]
 
+# Модели для выгрузки
+class HistoryDropResponse(BaseModel):
+    operations: Dict[str, Any]
+
+
+class HistoryDrop(BaseModel):
+    id: int
+    tool_id: int
+    timestamp: datetime
+
+
+class HistoryDropCreate(BaseModel):
+    tool_id: int
+    timestamp: datetime
+
+
+class HistoryDropUpdate(BaseModel):
+    tool_id: Optional[int]
+    timestamp: Optional[datetime]
+
 class HistoryOperationEntry(BaseModel):
     id: int
     name_operation: str

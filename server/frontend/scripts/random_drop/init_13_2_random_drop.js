@@ -1,15 +1,13 @@
-
-import { createTableRandomLoad } from './createTableRandomDrop.js';
-import { jsonHistoryRandomLoad } from '../../JSONs/json_random_load.js';
-
+import { createTableRandomDrop } from './createTableRandomDrop.js';
 import { nav_btn_add } from '../nav_btn_load.js';
-
 import { navbar_add } from '../navbar.js';
+import { initData } from '../crud.js';
 
+window.jsonHistoryRandomDrop = window.jsonHistoryRandomDrop || {};
 
 function Id_title() {
   const params = new URLSearchParams(window.location.search);
-  const raw = params.get("ID_load");
+  const raw = params.get("ID_drop");
   let num = NaN;
   if (raw) {
     const m = raw.match(/№\s*(\d+)/);
@@ -20,11 +18,11 @@ function Id_title() {
   return num;
 }
 
-
 function initialization(element_name) {
     if (localStorage.getItem('token') === null){
         console.log('token не обнаружен в хранилище!');
         window.location.href='/';
+        return;
     }
 
     nav_btn_add(element_name);
@@ -37,7 +35,7 @@ function initialization(element_name) {
       return;
     }
 
-    initData(`../backend/random_drop?idDrop=${idNumber}`)
+    initData(`../backend/random_drop?ID_drop=${idNumber}`)
       .then(data => {
         if (data) {
           window.jsonHistoryRandomDrop = data;
@@ -50,5 +48,4 @@ function initialization(element_name) {
   });
 }
 
-// Делаем функцию доступной глобально
 window.initialization = initialization;

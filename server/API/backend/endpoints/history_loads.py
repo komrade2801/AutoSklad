@@ -12,6 +12,7 @@ from API.backend.request_models import (
     HistoryLoadCreate,  # Модель для создания записи загрузки
     HistoryLoadUpdate  # Модель для обновления записи загрузки
 )
+from DB.Engine.GroupCRUD import EngineGroup
 # from DB.Data.db_depends import get_db
 from DB.session import get_db
 from DB.Engine.CellCRUD import EngineCell
@@ -71,6 +72,8 @@ def get_random_load(
     cell_crud = EngineCell()
     # tools_crud = EngineTools()
     tool_types_crud = EngineToolTypes()
+    plan_crud = EnginePlan()
+    group_crud = EngineGroup()
 
     # Проверяем, что такая массовая загрузка есть
     mass = mass_crud.get(ID_load)
@@ -83,25 +86,29 @@ def get_random_load(
 
     # Для каждой записи Load — находим связанную последнюю операцию
     for idx, load in enumerate(loads, start=1):
-        ops = op_crud.filter_by(load_id=load.id)
-        if not ops:
-            continue
+        # ops = op_crud.filter_by(load_id=load.id)
+        # if not ops:
+        #     continue
         # выбираем самую позднюю по дате
-        latest_op = max(ops, key=lambda o: o.date)
+        # latest_op = max(ops, key=lambda o: o.date)
 
         # Инструмент и его тип/группа/чертёж (plan_id)
         # tool = tools_crud.get(latest_op.load_tools_id)
-        tool_type = tool_types_crud.get(latest_op.load_tools_id) if latest_op else None
+        tool_type = tool_types_crud.get(load.tools_id)
+
+        group = group_crud.get(tool_type.groups_id)
 
         # Ячейка
         cell = cell_crud.get(load.cell_id)
+
+        plan = plan_crud.get(load.plan_id)
 
         # Формируем запись
         result[str(idx)] = {
             "cell": str(cell.id) if cell else "",
             "tool": tool_type.name if tool_type else "",
-            "plan": "",
-            "group": tool_type.groups_id and str(tool_type.groups_id) or ""
+            "plan": plan.designation if plan else "",
+            "group": group.name if group else ""
         }
 
     return {"operation": result}
