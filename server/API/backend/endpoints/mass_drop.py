@@ -115,9 +115,11 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
                 print(f"tool_type {tool_type}")
 
                 loads = e_load.find_by_cell_id(cell.id)
+                print(f"loads {loads}")
 
                 if loads:
                     load = max(loads, key=lambda rec: rec.id)
+                    print(f"load {load}")
 
                     plan = e_plan.get_plan_by_id(load.plan_id)
 
@@ -182,17 +184,18 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
                             stype="mass_drop_init",
                             description="Объявлена массовая загрузка"
                         )
+                        mass_drop_status = e_status.get_status_by_id(status_id=index)
 
-                    status_drop = e_status.find_by_name("mass_drop_init")
+                    # status_drop = e_status.find_by_name("mass_drop_init")
 
-                    if not status_drop:
-                        index = max(e_status.get_all_ids(), default=0)
-                        e_status.add(
-                            index=index + 1,
-                            stype="mass_drop_init",
-                            description="Инициализирована массовая загрузка"
-                        )
-                        status_drop = e_status.get_status_by_id(status_id=index)
+                    # if not status_drop:
+                    #     index = max(e_status.get_all_ids(), default=0)
+                    #     e_status.add(
+                    #         index=index + 1,
+                    #         stype="mass_drop_init",
+                    #         description="Инициализирована массовая загрузка"
+                    #     )
+                    #     status_drop = e_status.get_status_by_id(status_id=index)
 
                     # e_tools_has_device.unlink_tool_from_device(
                     #     tools_id=tool_to_drop.id,
@@ -203,8 +206,8 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
                         cell_id=cell.id,
                         groups_id=cell.groups_id,
                         tools_id=cell.tools_id,
-                        description=status_drop.description,
-                        status_id=status_drop.id
+                        description=mass_drop_status.description,
+                        status_id=mass_drop_status.id
                     )
 
                     bardcode = validation.user_barcode
@@ -241,8 +244,8 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
                     # )
 
                     story_id = max(e_stories.get_all_ids(), default=0) + 1
-                    bardcode = validation.user_barcode
-                    user = e_user.get_user_by_barcode(bardcode)
+                    barcode = validation.user_barcode
+                    user = e_user.get_user_by_barcode(barcode)
 
                     if not user:
                         raise HTTPException(status_code=402, detail="Пользователь не найден")
@@ -264,7 +267,7 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
                         index=operation_id,
                         drop_id=drop_id,
                         tools_id=tool_type.id,
-                        status_id=status_drop.id,
+                        status_id=mass_drop_status.id,
                         history_id=history_id,
                         description="",
                     )

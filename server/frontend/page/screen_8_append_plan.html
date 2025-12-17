@@ -203,6 +203,10 @@
                         <label class="btn btn-outline-tabs btn-lg" for="tab2">Ввести вручную</label>
                     </div>
                     <script>
+                        $(document).ready(function() {
+                            document.getElementById('qrCodeInput').focus();
+                        });
+
                         $("input[name=options-tabs]").change(function () {
                             console.log(this.value);
                             const elements = document.getElementsByClassName('plan-input');
@@ -216,6 +220,7 @@
                             const element = document.getElementById('qrCodeInput');
                             if(this.value == "qr"){
                                 element.disabled = false;
+                                element.focus();
                             } else {
                                 element.disabled = true;
                             }
