@@ -288,10 +288,25 @@
                             const nameInput = document.getElementById('nameInput');
                             const descriptionInput = document.getElementById('descriptionInput');
 
-                            enterpriseInput.value = data.content[3];
-                            designationInput.value = data.content[0];
-                            nameInput.value = data.content[5];
-                            descriptionInput.value = data.content[4];
+                            // Заполняем поля из новой структуры ответа
+                            enterpriseInput.value = data.enterprise || "";
+                            designationInput.value = data.designation || "";
+                            nameInput.value = data.name || "";
+                            descriptionInput.value = data.description || "";
+
+                            // Автоматически переключаем на вкладку "Ввести вручную" для возможности редактирования
+                            const autoTab = document.getElementById('tab2');
+                            if (autoTab) {
+                                autoTab.checked = true;
+                                // Триггерим событие change для обновления состояния полей
+                                autoTab.dispatchEvent(new Event('change'));
+                            }
+
+                            // Убеждаемся, что поля редактируемы
+                            enterpriseInput.disabled = false;
+                            designationInput.disabled = false;
+                            nameInput.disabled = false;
+                            descriptionInput.disabled = false;
 
                             const qrCodeInput = document.getElementById('qrCodeInput');
                             qrCodeInput.placeholder = 'QR-код отсканирован успешно'

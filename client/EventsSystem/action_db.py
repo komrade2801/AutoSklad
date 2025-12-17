@@ -2188,25 +2188,92 @@ class ActionMapper:
         print(f"read_db_plan_id. barcode: {barcode}")
         """
         Получает идентификатор чертежа по штрих-коду из базы данных.
+        Парсит строку QR-кода, извлекая designation из первого блока и добавляя блок 4 через дефис.
 
-        :param barcode: Штрих-код чертежа.
+        :param barcode: Штрих-код чертежа (может быть словарем {'barcode': str} или строкой).
         :return: Идентификатор чертежа (int), если чертеж найден, иначе None.
         """
         try:
-            # Получаем чертеж по штрих-коду
-            # plan = self.e_plan.get_plan_by_barcode(barcode)
-
-            barcode_parts = barcode.split("/\r?\n/")
-            designation = barcode_parts[0]
-
+            # Извлекаем строку из словаря, если barcode - словарь
+            if isinstance(barcode, dict):
+                barcode_str = barcode.get('barcode', '')
+            else:
+                barcode_str = str(barcode)
+            
+            if not barcode_str:
+                print(f"read_db_plan_id: пустой штрих-код")
+                return None
+            
+            print(f"read_db_plan_id: парсинг строки: {repr(barcode_str)}")
+            
+            # Парсим строку: разбиваем по табуляциям или пробелам
+            # Примеры:
+            # "5108\t01.11.2025 0:00:00\t12.11.2025 8:50:25\t\t39\t\t6\t\t0"
+            # "5108  01.11.2025 0:00:00  12.11.2025 8:50:25  Производство  39  Вал  6  шт  0"
+            
+            designation = ""
+            
+            # Вариант 1: Если есть табуляции, разбиваем по ним
+            if '\t' in barcode_str:
+                parts = barcode_str.split('\t')
+                print(f"read_db_plan_id: разбито по табуляциям, блоков: {len(parts)}")
+                for i, part in enumerate(parts):
+                    print(f"  Блок [{i}]: {repr(part)}")
+                
+                # Блок 0 (первый) → designation
+                if len(parts) > 0:
+                    designation = parts[0].strip()
+                
+                # Блок 4 (индекс 4) → добавляется к designation через дефис
+                if len(parts) > 4 and parts[4].strip():
+                    block_4 = parts[4].strip()
+                    if designation:
+                        designation = f"{designation}-{block_4}"
+                    else:
+                        designation = block_4
+                    print(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
+            else:
+                # Вариант 2: Разбиваем по пробелам (множественным)
+                # Используем split() без аргументов для разбиения по любым пробелам
+                parts = barcode_str.split()
+                print(f"read_db_plan_id: разбито по пробелам, блоков: {len(parts)}")
+                for i, part in enumerate(parts):
+                    print(f"  Блок [{i}]: {repr(part)}")
+                
+                # Блок 0 (первый) → designation
+                if len(parts) > 0:
+                    designation = parts[0]
+                
+                # Блок 4 (индекс 4) → добавляется к designation через дефис
+                if len(parts) > 4 and parts[4]:
+                    block_4 = parts[4]
+                    if designation:
+                        designation = f"{designation}-{block_4}"
+                    else:
+                        designation = block_4
+                    print(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
+            
+            if not designation:
+                print(f"read_db_plan_id: не удалось извлечь designation из строки")
+                return None
+            
+            print(f"read_db_plan_id: итоговый designation: {repr(designation)}")
+            
+            # Ищем чертеж по designation
             plan = self.e_plan.get_plan_by_designation(designation)
 
             if plan:
-                return {'plan_id' : plan.id}  # Возвращаем идентификатор чертежа
-
+                print(f"read_db_plan_id: найден чертеж с ID: {plan.id}")
+                return {'plan_id': plan.id}  # Возвращаем идентификатор чертежа
             else:
-                print(f"Чертеж с штрих-кодом {barcode} не найден.")
+                print(f"read_db_plan_id: чертеж с designation {repr(designation)} не найден.")
                 return None
+
+        except Exception as e:
+            print(f"read_db_plan_id: ошибка при обработке штрих-кода: {e}")
+            import traceback
+            print(traceback.format_exc())
+            return None
 
             # TODO: временная заглушка на поиск инструмента вместо чертежа
             """

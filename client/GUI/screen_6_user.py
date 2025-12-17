@@ -1,6 +1,6 @@
 import traceback
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_6_user import Ui_screen_6_user
 from GUI.ico.ico_avatar import Avatar
@@ -11,6 +11,9 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         self.setupUi(self)
         self.update_icon()  # Вызов метода для обновления иконки
 
+        # Устанавливаем политику фокуса для приема всех событий клавиатуры
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        
         # Таймер для проверки видимости
         self.visibility_timer = QtCore.QTimer(self)
         self.visibility_timer.timeout.connect(self.check_visibility)
@@ -21,7 +24,7 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         # Атрибуты для обработки ввода штрих-кода
         self._barcode_buffer = ""
         self._barcode_timer = QtCore.QTimer(self)
-        self._barcode_timer.setInterval(400)  # 400 мс
+        self._barcode_timer.setInterval(1500)  # 1500 мс - увеличенный таймаут как fallback
         self._barcode_timer.setSingleShot(True)
         self._barcode_timer.timeout.connect(self._process_barcode)
         self.event_enter_barcode = lambda barcode: print("Получен штрих-код:", barcode)
@@ -40,7 +43,12 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         super().showEvent(event)
         self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
-        # Запуск таймера для обработки ввода штрих-кода
+        # Устанавливаем фокус на виджет для приема всех событий клавиатуры
+        self.setFocus()
+        # Отключаем фокус у всех кнопок, чтобы пробел не активировал их
+        for button in self.findChildren(QtWidgets.QPushButton):
+            button.setFocusPolicy(QtCore.Qt.NoFocus)
+        # Запуск таймера для обработки ввода штрих-кода (fallback на случай, если Enter не придет)
         self._barcode_timer.start()
 
     def hideEvent(self, event):
@@ -52,19 +60,56 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         self._barcode_timer.stop()
 
     def keyPressEvent(self, event):
+        # Обработка Enter/Return - основной механизм завершения ввода QR-кода
         if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
-            return  # Игнорируем нажатия Enter
+            if self._barcode_buffer:
+                self._barcode_timer.stop()  # Останавливаем таймер
+                print(f"[QR] Enter нажат, обработка буфера: {repr(self._barcode_buffer)}")
+                self._process_barcode()  # Немедленно обрабатываем
+            event.accept()  # Явно принимаем событие
+            return
 
-        if event.text().isdigit():  # Проверяем, что введена цифра
+        # ВАЖНО: Обрабатываем Tab как обычный символ для QR-кода, а не как навигацию
+        if event.key() == QtCore.Qt.Key_Tab:
+            # Добавляем табуляцию в буфер
+            self._barcode_buffer += '\t'
+            print(f"[QR] Добавлен Tab, буфер: {repr(self._barcode_buffer)}")
+            # Перезапускаем таймер как fallback
+            self._barcode_timer.start()
+            event.accept()  # Явно принимаем событие, чтобы предотвратить стандартную обработку Tab
+            return  # Предотвращаем стандартную обработку Tab (переключение фокуса)
+
+        # ВАЖНО: Обрабатываем пробел (Space) явно, чтобы он не активировал кнопки
+        if event.key() == QtCore.Qt.Key_Space:
+            # Добавляем пробел в буфер
+            self._barcode_buffer += ' '
+            print(f"[QR] Добавлен пробел, буфер: {repr(self._barcode_buffer)}")
+            # Перезапускаем таймер как fallback
+            self._barcode_timer.start()
+            event.accept()  # Явно принимаем событие, чтобы предотвратить активацию кнопок
+            return  # Предотвращаем стандартную обработку пробела (активация кнопки)
+
+        # Принимаем ЛЮБОЙ символ (не только цифры) для поддержки QR-кодов с буквами, пробелами, табуляциями
+        if event.text():
             self._barcode_buffer += event.text()
-            self._barcode_timer.start()  # Перезапускаем таймер при каждом нажатии
+            # Перезапускаем таймер как fallback
+            self._barcode_timer.start()
+            print(f"[QR] Добавлен символ: {repr(event.text())}, буфер: {repr(self._barcode_buffer)}")
+            event.accept()  # Явно принимаем событие
 
     def _process_barcode(self):
-        print(f"_process_barcode. buffer: {self._barcode_buffer}")
+        print(f"[QR] _process_barcode. buffer: {repr(self._barcode_buffer)}")
         if self._barcode_buffer:
-            barcode={'barcode':self._barcode_buffer}
-            self._barcode_buffer = ""
-            self.event_enter_barcode(barcode)
+            # Очищаем буфер от завершающих символов (\n, \r)
+            cleaned_buffer = self._barcode_buffer.strip()
+            if cleaned_buffer:
+                barcode = {'barcode': cleaned_buffer}
+                print(f"[QR] Отправка штрих-кода: {repr(cleaned_buffer)}")
+                self._barcode_buffer = ""
+                self.event_enter_barcode(barcode)
+            else:
+                print(f"[QR] Буфер пуст после очистки, пропуск")
+                self._barcode_buffer = ""
 
     def update_icon(self):
         # Установка нового pixmap

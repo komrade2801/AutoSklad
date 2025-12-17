@@ -66,7 +66,10 @@ export function createTableAllPlans(containerId, jsonAllPlans) {
     Object.values(jsonAllPlans).forEach(plan => {
         console.log(plan);
         let row = document.createElement("tr");
-        [plan.enterprise, plan.name, plan.numberPlan].forEach(value => {
+        // Исправлено: поменяны местами plan.name и plan.numberPlan
+        // Заголовки: "Название проекта", "Номер чертежа", "Название детали"
+        // Данные: enterprise, numberPlan (designation), name
+        [plan.enterprise, plan.numberPlan, plan.name].forEach(value => {
         //[plan.nameProject, plan.numberPlan, plan.nameDetail].forEach(value => {, plan.description, plan.barcode
             let td = document.createElement("td");
             td.textContent = value;
