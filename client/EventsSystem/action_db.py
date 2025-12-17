@@ -1334,7 +1334,7 @@ class ActionMapper:
             for drop in drops:
                 drop_dict = drop.to_dict()
                 drop_dict['status_id'] = status_ready.id
-                self.e_load.update(index=drop.id, **drop_dict)
+                self.e_drop.update(index=drop.id, **drop_dict)
 
             self.e_mass_drop._cache.clear()  # Для MassLoad (get_all_ids, all)
             self.e_drop._cache.clear()       # Для Load (find_by_mass_load_id, get)
