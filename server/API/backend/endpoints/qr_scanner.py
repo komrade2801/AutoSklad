@@ -62,12 +62,11 @@ def get_qr_text(data: QrRequest):
     strings = data.content
     decoded_strings = []
     
-    # Декодируем все строки
+    # Логируем все строки без перекодирования
     for idx, string in enumerate(strings):
         logger.info(f"Строка {idx} (исходная): {repr(string)}")
-        text_string = string.encode().decode('u8').encode('cp1251', 'ignore').decode('u8', 'ignore')
-        decoded_strings.append(text_string)
-        logger.info(f"Строка {idx} (декодированная): {repr(text_string)}")
+        decoded_strings.append(string)
+        logger.info(f"Строка {idx} (сохранена без изменений): {repr(string)}")
     
     blocks = []
     
@@ -168,3 +167,4 @@ def get_qr_text(data: QrRequest):
             'enterprise': "",
             'description': ""
         }
+    
