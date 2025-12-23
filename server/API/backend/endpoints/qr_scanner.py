@@ -42,11 +42,18 @@ class QrResponse(BaseModel):
 def get_qr_text(data: QrRequest):
     """
     Декодирует строки QR-кода и парсит их.
-    Ожидается одна строка с табуляциями в качестве разделителей.
+    Поддерживает два формата:
+    1. Массив строк (каждая строка - отдельный блок)
+    2. Одна строка с табуляциями в качестве разделителей
+    
+    Логика парсинга:
     Блок 0 (первый) → designation
-    Блок 5 (6-й, индекс 5) → добавляется к designation через дефис
-    Блок 6 (7-й, индекс 6) → name
-    enterprise и description → пустые строки
+    Блок 3 (четвертый, индекс 3) → enterprise
+    Блок 4 (пятый, индекс 4) → добавляется к designation через дефис
+    Блок 5 (шестой, индекс 5) → name
+    description → пустая строка
+    
+    Поддерживает пустые блоки (две табуляции подряд = пустой блок)
     """
     logger.info("=" * 60)
     logger.info("QR декодирование: начало обработки")
@@ -62,24 +69,47 @@ def get_qr_text(data: QrRequest):
         decoded_strings.append(text_string)
         logger.info(f"Строка {idx} (декодированная): {repr(text_string)}")
     
-    # Данные приходят уже разбитыми на отдельные строки (блоки)
-    # Каждая строка в массиве - это отдельный блок
-    if decoded_strings:
-        # Используем весь массив как массив блоков
+    blocks = []
+    
+    # Если пришла одна строка с табуляциями - разбиваем её
+    if len(decoded_strings) == 1 and '\t' in decoded_strings[0]:
+        logger.info("Обнаружена одна строка с табуляциями, разбиваем на блоки")
+        # Разбиваем по табуляциям, сохраняя пустые блоки
+        raw_blocks = decoded_strings[0].split('\t')
+        # Обрабатываем каждый блок
+        for block in raw_blocks:
+            blocks.append(block)
+        logger.info(f"Разбито на {len(blocks)} блоков")
+    else:
+        # Используем массив строк как массив блоков
         blocks = decoded_strings
-        logger.info(f"Количество блоков в массиве: {len(blocks)}")
-        
+        logger.info(f"Используем массив строк как блоки (количество: {len(blocks)})")
+    
+    if blocks:
         # Логируем все блоки
         for i, block in enumerate(blocks):
             block_stripped = block.strip()
             logger.info(f"  Блок [{i}]: {repr(block)} (длина: {len(block)}, после strip: {repr(block_stripped)})")
         
         # Блок 0 (первый) → designation
-        designation = blocks[0].strip() if len(blocks) > 0 else ""
+        designation = blocks[0].strip() if len(blocks) > 0 and blocks[0].strip() else ""
         logger.info(f"Блок 0 → designation (начальное): {repr(designation)}")
         
-        # Блок 4 (индекс 4) → добавляется к designation через дефис
-        # По логам видно, что '39' находится в блоке 4, а не в блоке 5
+        # Блок 3 (четвертый, индекс 3) → enterprise
+        enterprise = ""
+        if len(blocks) > 3:
+            block_3_raw = blocks[3]
+            block_3 = block_3_raw.strip()
+            logger.info(f"Блок 3 (индекс 3): {repr(block_3_raw)} → после strip: {repr(block_3)}")
+            if block_3:  # Если блок не пустой после strip
+                enterprise = block_3
+                logger.info(f"  Блок 3 → enterprise: {repr(enterprise)}")
+            else:
+                logger.info(f"  Блок 3 пустой, enterprise останется пустым")
+        else:
+            logger.warning(f"Блок 3 отсутствует (всего блоков: {len(blocks)})")
+        
+        # Блок 4 (пятый, индекс 4) → добавляется к designation через дефис
         if len(blocks) > 4:
             block_4_raw = blocks[4]
             block_4 = block_4_raw.strip()
@@ -92,20 +122,25 @@ def get_qr_text(data: QrRequest):
                 designation = f"{designation}-{block_4}" if designation else block_4
                 logger.info(f"  Добавлен блок 4 к designation: {repr(old_designation)} → {repr(designation)}")
             else:
-                logger.warning(f"  Блок 4 пустой, не добавляется к designation")
+                logger.info(f"  Блок 4 пустой, не добавляется к designation")
         else:
             logger.warning(f"Блок 4 отсутствует (всего блоков: {len(blocks)})")
         
-        # Блок 6 (индекс 6) → name
-        if len(blocks) > 6:
-            name = blocks[6].strip()
-            logger.info(f"Блок 6 (индекс 6) → name: {repr(name)}")
+        # Блок 5 (шестой, индекс 5) → name
+        name = ""
+        if len(blocks) > 5:
+            block_5_raw = blocks[5]
+            block_5 = block_5_raw.strip()
+            logger.info(f"Блок 5 (индекс 5): {repr(block_5_raw)} → после strip: {repr(block_5)}")
+            if block_5:  # Если блок не пустой после strip
+                name = block_5
+                logger.info(f"Блок 5 → name: {repr(name)}")
+            else:
+                logger.info(f"  Блок 5 пустой, name останется пустым")
         else:
-            name = ""
-            logger.warning(f"Блок 6 отсутствует (всего блоков: {len(blocks)})")
+            logger.warning(f"Блок 5 отсутствует (всего блоков: {len(blocks)})")
         
-        # enterprise и description → пустые строки
-        enterprise = ""
+        # description → пустая строка
         description = ""
         
         result = {

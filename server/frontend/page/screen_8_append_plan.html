@@ -269,6 +269,13 @@
                         elem.value = '';
                     }
                     if(event.key === 'Enter') {
+                        event.preventDefault();
+                        
+                        // Если в textarea остался текст, который не был добавлен в массив - добавляем его
+                        if (elem.value && elem.value.trim()) {
+                            qr_rows.push(elem.value);
+                            elem.value = '';
+                        }
 
                         fetch("/backend/qr/", {
                             method: 'POST',
@@ -322,6 +329,7 @@
                           })
                           .catch(err => {
                             console.error('Ошибка при декодировании:', err);
+                            alert('Ошибка при декодировании QR-кода: ' + err.message);
                           });
                     }
                 }
