@@ -15,44 +15,81 @@ export function deleteLoad(jsonObjectHistory, jsonObjectCells, jsonObjectTools, 
     //console.log(toolId)
     //console.log(cellId)
 
+    // ИСПРАВЛЕНО: используем window.appData.cells напрямую для гарантии актуальных данных
+    const cellsData = window.appData.cells || jsonObjectCells;
+    
     // Вносим изменения в ячейку
     const cell = searchCellById(cellId)
+    
+    if (!cell) {
+        console.error(`Cell with id ${cellId} not found`);
+        return;
+    }
+
+    console.log(`[deleteLoad] Before update - cell ${cellId}:`, {
+        backgroundColor: cell.backgroundColor,
+        content: cell.content,
+        block: cell.block
+    });
 
     cell.content.plan = "None";
     cell.content.tool = "None";
 
-    cell.backgroundColor = '#69696910';
+    // ИСПРАВЛЕНО: устанавливаем правильный цвет для пустой ячейки
+    // Используем цвет из легенды: #979797 для пустых ячеек
+    cell.backgroundColor = '#979797';
 
     if (!BLOCKED_CELL_IDS.has(Number(cellId))) {
         cell.block = false;
     }
 
+    console.log(`[deleteLoad] After update - cell ${cellId}:`, {
+        backgroundColor: cell.backgroundColor,
+        content: cell.content,
+        block: cell.block
+    });
+
     // Вносим изменения в инструмент: найти по id и увеличить sum
+    // ИСПРАВЛЕНО: используем новый формат данных tools.tools вместо plans.groups.value
     let toolFound = false;
-    for (const planKey in jsonObjectTools.plans) {
-        const plan = jsonObjectTools.plans[planKey];
-        for (const groupKey in plan.groups) {
-            const group = plan.groups[groupKey];
-            for (const valueKey in group.value) {
-                const value = group.value[valueKey];
-                if (value.id == toolId) {
-                    value.sum = (parseInt(value.sum, 10) + 1).toString();
-                    toolFound = true;
-                    break;
+    const toolsData = jsonObjectTools.tools || {};
+    
+    for (const [idx, tool] of Object.entries(toolsData)) {
+        if (tool.id == toolId) {
+            // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
+            if (tool.sum === undefined || tool.sum === null) {
+                // Для инструментов с бесконечным запасом не изменяем sum
+                // (можно оставить как есть или установить специальное значение)
+            } else {
+                const currentSum = parseInt(tool.sum, 10);
+                if (!isNaN(currentSum)) {
+                    // Если sum <= 0 (бесконечный запас), не увеличиваем
+                    // Иначе увеличиваем на 1
+                    if (currentSum > 0) {
+                        tool.sum = (currentSum + 1).toString();
+                    }
+                    // Для бесконечного запаса (sum <= 0) оставляем как есть
                 }
             }
-            if (toolFound) break;
+            toolFound = true;
+            break;
         }
-        if (toolFound) break;
     }
 
     // Вносим изменения в историю
-    // Ищем индекс операции, которую нужно удалить
+    // ИСПРАВЛЕНО: используем window.appData.history для гарантии актуальных данных
+    const historyData = window.appData.history || jsonObjectHistory;
+    if (!historyData.operation) {
+        historyData.operation = {};
+    }
+    
+    // ИСПРАВЛЕНО: ищем по operationData.tool, а не operationData.toolId
     let targetIndex = null;
 
-    for (const operationKey in jsonObjectHistory.operation) {
-        const operationData = jsonObjectHistory.operation[operationKey];
-        if (operationData.cell == cellId && operationData.toolId == toolId) {
+    for (const operationKey in historyData.operation) {
+        const operationData = historyData.operation[operationKey];
+        // ИСПРАВЛЕНО: используем tool вместо toolId
+        if (operationData.cell == cellId && operationData.tool == toolId) {
             targetIndex = parseInt(operationKey, 10); // Сохраняем индекс для удаления
             break;
         }
@@ -60,25 +97,33 @@ export function deleteLoad(jsonObjectHistory, jsonObjectCells, jsonObjectTools, 
 
     if (targetIndex !== null) {
         // Удаляем операцию с указанным индексом
-        delete jsonObjectHistory.operation[targetIndex];
+        delete historyData.operation[targetIndex];
 
         // Сдвигаем оставшиеся индексы на 1 вверх
-        for (const operationKey in jsonObjectHistory.operation) {
+        for (const operationKey in historyData.operation) {
             var currentKey = parseInt(operationKey, 10);
             if (currentKey > targetIndex) {
                 const newKey = (currentKey - 1).toString();
-                jsonObjectHistory.operation[newKey] = jsonObjectHistory.operation[operationKey];
-                delete jsonObjectHistory.operation[operationKey];
+                historyData.operation[newKey] = historyData.operation[operationKey];
+                delete historyData.operation[operationKey];
             }
         }
     }
+    
+    // Обновляем window.appData.history
+    window.appData.history = historyData;
 
     console.log(jsonObjectTools)
     //console.log(toolId)
     //console.log(cellId)
     //console.log("Это конец удаления")
-    createCells('cells-container', jsonObjectCells);
-    createTools('tools-container', jsonObjectTools);
-    createHistory('history', jsonObjectHistory, toolId);
+    
+    // ИСПРАВЛЕНО: используем window.appData.cells для гарантии актуальных данных
+    // Обновляем window.appData.cells для синхронизации
+    window.appData.cells = cellsData;
+    
+    createCells('cells-container', cellsData);
+    createTools('tools-container', window.appData.tools || jsonObjectTools);
+    createHistory('history', historyData, toolId);
     initializeDragAndDrop();
 }

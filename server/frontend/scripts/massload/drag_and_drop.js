@@ -42,10 +42,31 @@ export function updateToolsJSONMass(toolsData, toolId, subtractAmount) {
         console.error("Tool not found for id:", toolId);
         return;
     }
-    const { tool, valueKey } = found;
+    const { tool } = found;
+
+    // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
+    if (tool.sum === undefined || tool.sum === null) {
+        // Для инструментов с бесконечным запасом не уменьшаем sum
+        // (можно оставить как есть или установить специальное значение)
+        return;
+    }
+
+    const currentSum = parseInt(tool.sum, 10);
+    if (isNaN(currentSum)) {
+        console.warn(`Invalid sum value for tool ${toolId}:`, tool.sum);
+        return;
+    }
+
+    // Если sum <= 0 (бесконечный запас), не уменьшаем
+    if (currentSum <= 0) {
+        // Для бесконечного запаса не изменяем sum
+        return;
+    }
 
     // Уменьшаем значение sum на указанное количество
-    tool.sum -= subtractAmount;
+    const newSum = currentSum - subtractAmount;
+    // Не позволяем sum стать отрицательным (должно быть >= 0)
+    tool.sum = Math.max(0, newSum).toString();
 
     // Обновляем отображение элементов на странице
     createTools('tools-container', toolsData);
@@ -196,6 +217,42 @@ export function initializeDragAndDrop() {
         const targetCell = event.target;
         const cellId = targetCell.id;
         const cellNumber = targetCell.textContent;
+
+        // ИСПРАВЛЕНО: проверяем доступное количество перед загрузкой
+        const found = findToolById(toolsData, toolId);
+        if (found) {
+            const { tool } = found;
+            let availableCount = 0;
+            
+            if (tool.sum === undefined || tool.sum === null) {
+                // Бесконечный запас - разрешаем загрузку
+                availableCount = Infinity;
+            } else {
+                const currentSum = parseInt(tool.sum, 10);
+                if (!isNaN(currentSum)) {
+                    if (currentSum <= 0) {
+                        // Бесконечный запас
+                        availableCount = Infinity;
+                    } else {
+                        availableCount = currentSum;
+                    }
+                } else {
+                    console.warn(`Invalid sum value for tool ${toolId}:`, tool.sum);
+                    alert('Ошибка: некорректное количество инструмента');
+                    return;
+                }
+            }
+
+            // Если доступное количество ограничено и равно 0, запрещаем загрузку
+            if (availableCount !== Infinity && availableCount <= 0) {
+                alert('Нет доступных инструментов для загрузки');
+                return;
+            }
+        } else {
+            console.error("Tool not found for id:", toolId);
+            alert('Ошибка: инструмент не найден');
+            return;
+        }
 
         updateToolsJSON(toolsData, toolId);
         updateCellsJSON(cellData, planName, toolName, cellId);

@@ -32,7 +32,19 @@
                 cellDiv.style.width = '44px';
                 cellDiv.style.height = cellData.type === 'big' ? '70px' : '50px';
                 cellDiv.style.border = '1px solid #FFFFFF';
-                cellDiv.style.backgroundColor = cellData.backgroundColor;
+                
+                // ИСПРАВЛЕНО: убеждаемся, что цвет применяется правильно
+                // Если ячейка пустая (content.tool === "None" и content.plan === "None"), используем серый цвет
+                let backgroundColor = cellData.backgroundColor;
+                if (cellData.content && cellData.content.tool === "None" && cellData.content.plan === "None") {
+                    // Используем цвет из легенды: #979797 для пустых ячеек
+                    backgroundColor = '#979797';
+                }
+                // Нормализуем цвет: если это старый формат #69696910, заменяем на правильный
+                if (backgroundColor === '#69696910') {
+                    backgroundColor = '#979797';
+                }
+                cellDiv.style.backgroundColor = backgroundColor;
                 cellDiv.style.alignItems = 'center';
                 cellDiv.style.justifyContent = 'center';
                 cellDiv.style.margin = '1px';

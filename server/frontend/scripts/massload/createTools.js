@@ -22,10 +22,17 @@ export function createTools(containerId, jsonObjectTools) {
 //                const valueData = groupData.value[valueKey];
     for (const [idx, tool] of Object.entries(jsonObjectTools.tools)) {
 //    console.log(idx + ' - ' + tool)
-                // Пропускаем инструменты с sum <= 0
-                var count = parseInt(tool.sum);
-                if (count <= 0) {
-                    count = '-'
+                // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
+                var count;
+                if (tool.sum === undefined || tool.sum === null) {
+                    count = '-'; // Бесконечный запас
+                } else {
+                    const parsedSum = parseInt(tool.sum, 10);
+                    if (isNaN(parsedSum) || parsedSum <= 0) {
+                        count = '-'; // Бесконечный запас
+                    } else {
+                        count = parsedSum;
+                    }
                 }
                 const toolDiv = document.createElement('div');
                 // Устанавливаем флекс-контейнер для строки и класс
@@ -89,9 +96,17 @@ function openMassLoadInput(toolDiv, valueData, planName, toolId, groupName, tool
     input.step = '1';
     input.pattern = '[0-9]*';
     input.inputMode = 'numeric';
-    var max = valueData.sum;
-    if (max <= 0) {
-        max = 99999999;
+    // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
+    var max;
+    if (valueData.sum === undefined || valueData.sum === null) {
+        max = 99999999; // Бесконечный запас
+    } else {
+        const parsedSum = parseInt(valueData.sum, 10);
+        if (isNaN(parsedSum) || parsedSum <= 0) {
+            max = 99999999; // Бесконечный запас
+        } else {
+            max = parsedSum;
+        }
     }
     input.max = max.toString();
     input.className = 'library-tool-input';

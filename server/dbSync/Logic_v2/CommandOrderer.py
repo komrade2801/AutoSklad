@@ -122,6 +122,17 @@ class CommandOrderer:
         "INSERT": 2,  # Синоним ADD
     }
     
+    # Критические таблицы, для которых НЕЛЬЗЯ сжимать множественные UPDATE
+    # Каждое изменение состояния критично для синхронизации
+    # Основано на анализе схем данных: Cell имеет критичные переходы состояний
+    # (status_id, tools_id, groups_id) которые должны сохраняться последовательно
+    CRITICAL_STATE_TABLES = {
+        "Cell",  # Критично: status_id, tools_id меняются при массовой загрузке/выдаче
+        # Можно добавить другие таблицы с критичными состояниями:
+        # "LoadOperations",  # Если нужно отслеживать каждый шаг операции
+        # "DropOperations",  # Если нужно отслеживать каждый шаг операции
+    }
+    
     def __init__(self, logger=None):
         """
         Инициализация CommandOrderer.
@@ -270,8 +281,14 @@ class CommandOrderer:
         Правила оптимизации:
         1. DELETE отменяет все предыдущие операции (кроме DELETE+ADD воскрешения)
         2. Множественные UPDATE сливаются в один с объединёнными данными
+           ИСКЛЮЧЕНИЕ: Для критических таблиц (Cell) все UPDATE сохраняются последовательно
         3. ADD + UPDATE = ADD с объединёнными данными
+           ИСКЛЮЧЕНИЕ: Для критических таблиц (Cell) ADD и UPDATE сохраняются отдельно
         4. Два ADD подряд = последний ADD (перезапись)
+        
+        Критические таблицы (CRITICAL_STATE_TABLES):
+        - Cell: каждое изменение status_id, tools_id, groups_id критично для синхронизации
+          состояния ячейки (массовая загрузка → выдача → очистка)
         
         :param grouped: Сгруппированные команды
         :return: (compressed_commands, warnings)
@@ -333,44 +350,65 @@ class CommandOrderer:
                 operations = [item["command"]["operation"].upper() for item in items]
             
             # Правило 3: Множественные UPDATE → один UPDATE
+            # ИСКЛЮЧЕНИЕ: Для критических таблиц (Cell) НЕ сжимаем UPDATE,
+            # так как каждое изменение состояния критично для синхронизации
             update_indices = [i for i, op in enumerate(operations) if op == "UPDATE"]
             if len(update_indices) > 1:
-                # Объединяем все UPDATE в один
-                merged_data = {}
-                first_update_item = None
-                
-                for i in update_indices:
-                    item = items[i]
-                    merged_data.update(item["command"]["data"])
-                    if first_update_item is None:
-                        first_update_item = item
-                
-                # Обновляем данные в первом UPDATE
-                if first_update_item:
-                    first_update_item["command"]["data"] = merged_data
+                if table in self.CRITICAL_STATE_TABLES:
+                    # Для критических таблиц сохраняем все UPDATE последовательно
+                    warnings.append(
+                        f"Record {table}:{rec_id} - Multiple UPDATE operations detected for critical state table. "
+                        f"Keeping all {len(update_indices)} updates in sequence (no compression)."
+                    )
+                    # Не сжимаем - оставляем все UPDATE как есть
+                else:
+                    # Для обычных таблиц объединяем все UPDATE в один
+                    merged_data = {}
+                    first_update_item = None
                     
-                    # Удаляем остальные UPDATE, оставляем только первый
-                    items = [item for i, item in enumerate(items) 
-                            if operations[i] != "UPDATE" or i == update_indices[0]]
-                    operations = [item["command"]["operation"].upper() for item in items]
+                    for i in update_indices:
+                        item = items[i]
+                        merged_data.update(item["command"]["data"])
+                        if first_update_item is None:
+                            first_update_item = item
+                    
+                    # Обновляем данные в первом UPDATE
+                    if first_update_item:
+                        first_update_item["command"]["data"] = merged_data
+                        
+                        # Удаляем остальные UPDATE, оставляем только первый
+                        items = [item for i, item in enumerate(items) 
+                                if operations[i] != "UPDATE" or i == update_indices[0]]
+                        operations = [item["command"]["operation"].upper() for item in items]
             
             # Правило 4: ADD + UPDATE = ADD с объединёнными данными
+            # ИСКЛЮЧЕНИЕ: Для критических таблиц сохраняем UPDATE после ADD
             if len(operations) >= 2 and operations[0] in ("ADD", "INSERT"):
-                accumulated_data = items[0]["command"]["data"].copy()
-                has_updates = False
-                
-                for i in range(1, len(items)):
-                    if operations[i] == "UPDATE":
-                        accumulated_data.update(items[i]["command"]["data"])
-                        has_updates = True
-                
-                if has_updates:
-                    # Обновляем данные в ADD
-                    items[0]["command"]["data"] = accumulated_data
+                if table in self.CRITICAL_STATE_TABLES:
+                    # Для критических таблиц сохраняем UPDATE после ADD
+                    # (ADD создаёт запись, UPDATE меняет состояние - оба важны)
+                    warnings.append(
+                        f"Record {table}:{rec_id} - ADD followed by UPDATE for critical state table. "
+                        f"Keeping both operations in sequence."
+                    )
+                    # Не сжимаем - оставляем ADD и все UPDATE как есть
+                else:
+                    # Для обычных таблиц объединяем ADD + UPDATE
+                    accumulated_data = items[0]["command"]["data"].copy()
+                    has_updates = False
                     
-                    # Удаляем все UPDATE после ADD
-                    items = [items[0]] + [item for i, item in enumerate(items[1:], 1) 
-                                         if operations[i] != "UPDATE"]
+                    for i in range(1, len(items)):
+                        if operations[i] == "UPDATE":
+                            accumulated_data.update(items[i]["command"]["data"])
+                            has_updates = True
+                    
+                    if has_updates:
+                        # Обновляем данные в ADD
+                        items[0]["command"]["data"] = accumulated_data
+                        
+                        # Удаляем все UPDATE после ADD
+                        items = [items[0]] + [item for i, item in enumerate(items[1:], 1) 
+                                             if operations[i] != "UPDATE"]
             
             # Добавляем оптимизированные команды для этой записи
             compressed.extend(items)

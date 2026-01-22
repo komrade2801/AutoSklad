@@ -325,6 +325,40 @@ CommandQueue → CommandSender → CommandOrderer → SyncProcessor → BatchPro
 
 **Результат**: Сокращение команд на 30-80% в типичных сценариях.
 
+#### Критические таблицы (CRITICAL_STATE_TABLES) 🆕
+
+**Проблема**: Для некоторых таблиц каждое изменение состояния критично для синхронизации и не может быть сжато.
+
+**Пример проблемы с Cell**:
+- При массовой загрузке: `status_id` меняется последовательно: `1` (пустая) → `2` (mass_load_init) → `3` (loaded)
+- При выдаче: `status_id` меняется: `3` (loaded) → `4` (consumption), `tools_id` → `NULL`
+- Если сжать `[UPDATE {status_id:2}, UPDATE {status_id:3}]` → `[UPDATE {status_id:3}]`, теряется промежуточное состояние
+
+**Решение**: Для критических таблиц (например, `Cell`) множественные UPDATE **НЕ сжимаются**:
+
+```python
+CRITICAL_STATE_TABLES = {
+    "Cell",  # Критично: status_id, tools_id, groups_id меняются при операциях
+}
+
+# Для Cell: все UPDATE сохраняются последовательно
+[UPDATE Cell {id:2, status_id:2}, UPDATE Cell {id:2, status_id:3}]
+  → [UPDATE Cell {id:2, status_id:2}, UPDATE Cell {id:2, status_id:3}] + warning
+
+# Для обычных таблиц: UPDATE сжимаются
+[UPDATE ToolTypes {id:1, count:5}, UPDATE ToolTypes {id:1, count:10}]
+  → [UPDATE ToolTypes {id:1, count:10}]
+```
+
+**Критерии для добавления таблицы в CRITICAL_STATE_TABLES**:
+- Таблица имеет поля состояния (`status_id`, `tools_id`, `groups_id` и т.д.)
+- Каждое изменение состояния должно быть синхронизировано
+- Промежуточные состояния важны для логики приложения
+- Потеря промежуточных состояний приводит к неконсистентности данных
+
+**Текущие критические таблицы**:
+- `Cell`: каждое изменение `status_id`, `tools_id`, `groups_id` критично при массовой загрузке/выдаче
+
 #### Топологическая сортировка
 
 Упорядочивание команд по FK зависимостям:
