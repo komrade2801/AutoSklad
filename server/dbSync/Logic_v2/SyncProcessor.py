@@ -404,89 +404,49 @@ class SyncProcessor:
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Валидация JSON завершена. [{datetime.now()}]')
             
             # 2.5. ═══ ВАЛИДАЦИЯ И УПОРЯДОЧИВАНИЕ КОМАНД ═══
-            original_count = len(commands)
-            ordered_commands, orderer_warnings = self.command_orderer.order_and_validate(commands)
-            
-            if orderer_warnings:
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'CommandOrderer validation warnings ({len(orderer_warnings)}):')
-                for i, warn in enumerate(orderer_warnings[:10], 1):  # Показываем первые 10
-                    print(f'  {i}. ⚠️  {warn}')
-                if len(orderer_warnings) > 10:
-                    print(f'  ... и ещё {len(orderer_warnings) - 10} warnings')
-                
-                self.diagnostic_logger.log_warning("Command order validation", {
-                    "warnings_count": len(orderer_warnings),
-                    "warnings": orderer_warnings[:5]  # Первые 5 в лог
-                })
-            
-            if len(ordered_commands) < original_count:
-                compressed_count = original_count - len(ordered_commands)
-                compression_ratio = compressed_count / original_count if original_count > 0 else 0
-                
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'CommandOrderer оптимизировал команды: {original_count} → {len(ordered_commands)} '
-                      f'(удалено {compressed_count}, сжатие {compression_ratio:.1%})')
-                
-                self.diagnostic_logger.log_info("Commands optimized by CommandOrderer", {
-                    "original_count": original_count,
-                    "optimized_count": len(ordered_commands),
-                    "compressed_count": compressed_count,
-                    "compression_ratio": f"{compression_ratio:.1%}"
-                })
-            
-            # Работаем с упорядоченными командами
-            commands = ordered_commands
-            
-            # Если после оптимизации нет команд - выходим
-            if not commands:
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Нет команд после оптимизации CommandOrderer, выходим.')
-                return []
+            # ВРЕМЕННО ОТКЛЮЧЕНО для диагностики проблемы с пропадающими командами
+            # original_count = len(commands)
+            # ordered_commands, orderer_warnings = self.command_orderer.order_and_validate(commands)
+            # 
+            # if orderer_warnings:
+            #     print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+            #           f'CommandOrderer validation warnings ({len(orderer_warnings)}):')
+            #     for i, warn in enumerate(orderer_warnings[:10], 1):  # Показываем первые 10
+            #         print(f'  {i}. ⚠️  {warn}')
+            #     if len(orderer_warnings) > 10:
+            #         print(f'  ... и ещё {len(orderer_warnings) - 10} warnings')
+            #     
+            #     self.diagnostic_logger.log_warning("Command order validation", {
+            #         "warnings_count": len(orderer_warnings),
+            #         "warnings": orderer_warnings[:5]  # Первые 5 в лог
+            #     })
+            # 
+            # if len(ordered_commands) < original_count:
+            #     compressed_count = original_count - len(ordered_commands)
+            #     compression_ratio = compressed_count / original_count if original_count > 0 else 0
+            #     
+            #     print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+            #           f'CommandOrderer оптимизировал команды: {original_count} → {len(ordered_commands)} '
+            #           f'(удалено {compressed_count}, сжатие {compression_ratio:.1%})')
+            #     
+            #     self.diagnostic_logger.log_info("Commands optimized by CommandOrderer", {
+            #         "original_count": original_count,
+            #         "optimized_count": len(ordered_commands),
+            #         "compressed_count": compressed_count,
+            #         "compression_ratio": f"{compression_ratio:.1%}"
+            #     })
+            # 
+            # # Работаем с упорядоченными командами
+            # commands = ordered_commands
+            # 
+            # # Если после оптимизации нет команд - выходим
+            # if not commands:
+            #     print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+            #           f'Нет команд после оптимизации CommandOrderer, выходим.')
+            #     return []
             # ═══════════════════════════════════════════
 
-            # 3. ───── ФИЛЬТРАЦИЯ ДУБЛИКАТОВ ─────
-            filtered: List[Dict[str, Any]] = []
-            for cmd in commands:
-                op = cmd["operation"].upper()
-                data = cmd.get("data", {}) or {}
-                rec_id = data.get("id")
-
-                print(f'[DIAGNOSTIC][SERVER] Command operation: {op}, rec_id: {rec_id}')
-                print(f'[DIAGNOSTIC][SERVER] Command data keys: {list(data.keys())}')
-
-                # если это ADD с заданным ID, и запись на сервере уже точно совпадает — пропускаем
-                if op == "ADD" and rec_id is not None:
-                    existing = self.sync_manager.get_current_data(
-                        table=cmd["table"],
-                        work_session=self.work_session,
-                        rec_id=rec_id
-                    )
-                    print(f'[DIAGNOSTIC][SERVER] Existing data lookup for ADD operation: {existing}')
-
-                    if existing is not None:
-                        print('[DIAGNOSTIC][SERVER] Existing record found, checking for duplicates')
-                        if all(existing.get(k) == v for k, v in data.items() if k not in ("id", "index")):
-                            print(f"[SyncProcessor] Пропускаем дубликат ADD для {cmd['table']} id={rec_id}")
-                            continue
-                        else:
-                            print(f"[DIAGNOSTIC][SERVER] Record exists but differs, will update via upsert")
-                    else:
-                        print('[DIAGNOSTIC][SERVER] No existing record, will create new')
-                filtered.append(cmd)
-
-            print(f'[DIAGNOSTIC][SERVER] Commands after filtering: {len(filtered)} (before: {len(commands)})')
-
-            # если после фильтрации нечего делать — сразу уходим
-            if not filtered:
-                print(f"[SyncProcessor] Нет новых команд после фильтрации дубликатов, выходим.")
-                return []
-
-            # дальше работаем уже с отфильтрованным списком
-            commands = filtered
-            # ────────────────────────────────────
-
-            # 4. Основная транзакция по командам
+            # 3. Основная транзакция по командам
             with self._schema_lock, self.cmd_crud.transaction(), self.status_crud.transaction():
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ' f'Транзакция начата. Устройство: {device}. [{datetime.now()}]')
                 mapping = self._get_mapping(client_schema_hash)

@@ -10,11 +10,6 @@ from dbSync.Logic_v2.DataTransformer import DataTransformer
 logger = logging.getLogger(__name__)
 log = logging.getLogger("sync.decorator")
 
-# Для каждого device храним (last_payload_key, last_result)
-# _state: dict[int, tuple[str, any]] = {}
-_state = {}
-_lock = threading.Lock()
-
 # создайте и настройте глобальный трансформер где-нибудь в инициализации приложения
 _global_transformer = DataTransformer()  # <-- зарегистрируйте в нём ваши правила
 
@@ -27,16 +22,10 @@ def get_global_transformer() -> DataTransformer:
 def sync_aware(func):
     """
     Декоратор для CRUD-методов:
-      – вычисляет ключ payload_key (на основе payload['id'] или всего payload JSON)
-      – если payload_key == предыдущему для этого device_id:
-          • НЕ вызывает func
-          • сразу возвращает last_result
-      – иначе:
-          • валидирует payload
-          • вызывает func → получает result
-          • запоминает (payload_key, result)
-          • кладёт команду в очередь
-          • возвращает result
+      – валидирует payload через DataTransformer
+      – вызывает func → получает result
+      – кладёт команду в очередь для синхронизации
+      – возвращает result
     """
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -93,33 +82,18 @@ def sync_aware(func):
             for name, val in bound.arguments.items()
             if name != "self"
         }
-        # 3) Считаем ключ дедупликации
-        record_id   = payload.get("id") or payload.get("index")
-        kwargs_value = payload.get("kwargs")
 
-        # если данные пришли в record["kwargs"], распакуем их
-        # if "kwargs" in payload and isinstance(payload["kwargs"], dict):
-        #     payload = payload["kwargs"]
-        __id = payload.get('id') or payload.get('index')
-        if not __id:
+        # Проверяем наличие id или index
+        record_id = payload.get("id") or payload.get("index")
+        if not record_id:
             raise ValueError("record must be have id or index provided and cannot be None or empty.")
 
-        payload_key = f"id:{record_id}, {str(kwargs_value)}" if record_id is not None else json.dumps(payload, sort_keys=True)
-        dedup_key   = (table_name, method_name, payload_key)
-
-        # 4) Если уже выполняли эту операцию — выйдем сразу
-        with _lock:
-            device_state = _state.get(device_id, {})
-            if dedup_key in device_state:
-                # print(f"[{threading.current_thread().name}][decorators][wraps] "       f"Вышли без исполнения операции. func: {method_name}, table: {table_name}, "       f"args: {args}, kwargs: {kwargs}")
-                return device_state[dedup_key]
-
-        # 5) Валидация данных через трансформер
+        # Валидация данных через трансформер
         transformer = get_global_transformer()
         if not transformer.validate(table_name, kwargs):
             raise ValueError(f"Validation failed for table '{table_name}' with payload: {kwargs}")
 
-        # 6) Собственно вызываем CRUD-метод
+        # Вызываем CRUD-метод
         try:
             print(f"[{threading.current_thread().name}][decorators][wraps] Запустили синхронизацию. func: {method_name}, table: {table_name}, args: {args}, kwargs: {kwargs}")
             result = func(self, *args, **kwargs)
@@ -127,39 +101,7 @@ def sync_aware(func):
             print(f"[{threading.current_thread().name}][decorators][wraps] Ошибка вызова func: {e}. func: {method_name}, table: {table_name}, args: {args}, kwargs: {kwargs}")
             raise
 
-        # 7) Сохраняем результат для дедупликации
-        with _lock:
-            _state.setdefault(device_id, {})[dedup_key] = result
-            
-            # 🆕 Если это DELETE операция - очищаем кэш для этой записи
-            # Это позволяет повторно создать запись после удаления
-            if method_name == "delete":
-                # Находим все ключи для этой записи (add, update, delete) и удаляем их
-                record_id = payload.get("id") or payload.get("index")
-                if record_id is not None:
-                    # Ищем все ключи для этой таблицы и записи
-                    # payload_key имеет формат: "id:{record_id}, {kwargs_value}"
-                    # Ищем все ключи, где payload_key начинается с "id:{record_id}"
-                    keys_to_remove = []
-                    device_state = _state.get(device_id, {})
-                    
-                    for key in list(device_state.keys()):
-                        # key = (table_name, method_name, payload_key)
-                        if key[0] == table_name:  # Та же таблица
-                            key_payload = key[2]  # payload_key из ключа
-                            if key_payload.startswith(f"id:{record_id}"):
-                                keys_to_remove.append(key)
-                    
-                    # Удаляем найденные ключи
-                    for key in keys_to_remove:
-                        device_state.pop(key, None)
-                    
-                    if keys_to_remove:
-                        print(f"[{threading.current_thread().name}][decorators][wraps] "
-                              f"Очищен кэш дедупликации для {table_name} id={record_id} "
-                              f"({len(keys_to_remove)} ключей) после DELETE операции")
-
-        # 8) Кладём «локальную» команду в очередь на отправку серверу
+        # Кладём «локальную» команду в очередь на отправку серверу
         queue_in = INBOUND_QUEUES.get(device_id)
         if queue_in:
             queue_in.put({

@@ -383,48 +383,7 @@ class SyncProcessor:
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
                   f'Валидация JSON завершена. [{datetime.now()}]')
 
-            # 3. ───── ФИЛЬТРАЦИЯ ДУБЛИКАТОВ ─────
-            filtered: List[Dict[str, Any]] = []
-            for cmd in commands:
-                op = cmd["operation"].upper()
-                data = cmd.get("data", {}) or {}
-                rec_id = data.get("id") or data.get("index")
-
-                print(f'[DIAGNOSTIC][CLIENT] Command operation: {op}, rec_id: {rec_id}')
-                print(f'[DIAGNOSTIC][CLIENT] Command data keys: {list(data.keys())}')
-
-                # если это ADD с заданным ID, и запись на сервере уже точно совпадает — пропускаем
-                if op == "ADD" and rec_id is not None:
-                    existing = self.sync_manager.get_current_data(
-                        table=cmd["table"],
-                        work_session=self.work_session,
-                        rec_id=rec_id
-                    )
-                    print(f'[DIAGNOSTIC][CLIENT] Existing data lookup for ADD operation: {existing}')
-
-                    if existing is not None:
-                        print('[DIAGNOSTIC][CLIENT] Existing record found, checking for duplicates')
-                        if all(existing.get(k) == v for k, v in data.items() if k not in ("id", "index")):
-                            print(f"[SyncProcessor] Пропускаем дубликат ADD для {cmd['table']} id={rec_id}")
-                            continue
-                        else:
-                            print(f"[DIAGNOSTIC][CLIENT] Record exists but differs, will update via upsert")
-                    else:
-                        print('[DIAGNOSTIC][CLIENT] No existing record, will create new')
-                filtered.append(cmd)
-
-            print(f'[DIAGNOSTIC][CLIENT] Commands after filtering: {len(filtered)} (before: {len(commands)})')
-
-            # если после фильтрации нечего делать — сразу уходим
-            if not filtered:
-                print(f"[SyncProcessor] Нет новых команд после фильтрации дубликатов, выходим.")
-                return []
-
-            # дальше работаем уже с отфильтрованным списком
-            commands = filtered
-            # ────────────────────────────────────
-
-            # 4. Основная транзакция по командам
+            # 3. Основная транзакция по командам
             with self._schema_lock, self.cmd_crud.transaction(), self.status_crud.transaction():
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
                       f'Транзакция начата. Устройство: {device}. [{datetime.now()}]')

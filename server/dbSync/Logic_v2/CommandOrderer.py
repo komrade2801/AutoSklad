@@ -85,10 +85,11 @@ class CommandOrderer:
         "ToolsNorm": 33,
         
         # Уровень 4: Операции первого уровня
-        "Load": 40,
-        "Drop": 41,
-        "Consumption": 42,
-        "History": 43,
+        # History должна быть перед Load/Drop/Consumption, так как они имеют FK на History
+        "History": 40,
+        "Load": 41,        # Depends on: History, Cell, ToolTypes, MassLoad, Plan, Status
+        "Drop": 42,        # Depends on: History, Cell, ToolTypes, MassDrop, Plan, Status
+        "Consumption": 43, # Depends on: History, Cell, ToolTypes, Plan, Status
         "Command": 44,
         
         # Уровень 5: Детализация операций
@@ -127,10 +128,12 @@ class CommandOrderer:
     # Основано на анализе схем данных: Cell имеет критичные переходы состояний
     # (status_id, tools_id, groups_id) которые должны сохраняться последовательно
     CRITICAL_STATE_TABLES = {
+        # Таблицы массовых операций - каждое изменение критично
+        "Load",  # Каждая Load запись должна быть создана отдельно (массовая загрузка)
+        "MassLoad",  # Массовые операции
+        "LoadOperations",  # Каждое изменение состояния операции важно
+        "DropOperations",  # Каждое изменение состояния операции важно
         "Cell",  # Критично: status_id, tools_id меняются при массовой загрузке/выдаче
-        # Можно добавить другие таблицы с критичными состояниями:
-        # "LoadOperations",  # Если нужно отслеживать каждый шаг операции
-        # "DropOperations",  # Если нужно отслеживать каждый шаг операции
     }
     
     def __init__(self, logger=None):
@@ -550,7 +553,14 @@ class CommandOrderer:
         - ToolTypes.groups_id → Group.id
         - Tools.tool_type_id → ToolTypes.id
         - Cell.tools_id → ToolTypes.id
-        - Load/Drop/Consumption → Cell, ToolTypes, History
+        - Load.history_id → History.id (NOT NULL, required)
+        - Load.cell_id → Cell.id (NOT NULL, required)
+        - Load.tools_id → ToolTypes.id (NOT NULL, required)
+        - Load.mass_load_id → MassLoad.id (NOT NULL, required)
+        - Drop.history_id → History.id (NOT NULL, required)
+        - Drop.cell_id → Cell.id (NOT NULL, required)
+        - Consumption.history_id → History.id (NOT NULL, required)
+        - Consumption.cell_id → Cell.id (NOT NULL, required)
         
         :param commands: Отсортированные команды
         :return: (validated_commands, warnings)
@@ -585,6 +595,20 @@ class CommandOrderer:
                                 f"ADD ToolTypes {rec_id} with groups_id={groups_id}, "
                                 f"but Group {groups_id} was deleted in this batch. FK violation likely."
                             )
+                        elif parent_key not in created:
+                            # Проверяем, что родитель будет создан в этом batch
+                            parent_will_be_created = any(
+                                cmd.get("table") == "Group" and 
+                                (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == groups_id and
+                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                for cmd in commands
+                            )
+                            if not parent_will_be_created:
+                                warnings.append(
+                                    f"ADD ToolTypes {rec_id} with groups_id={groups_id}, "
+                                    f"but Group {groups_id} is not being created in this batch. "
+                                    f"Assuming it exists on server."
+                                )
                 
                 elif table == "Cell":
                     tools_id = data.get("tools_id")
@@ -595,6 +619,122 @@ class CommandOrderer:
                                 f"ADD Cell {rec_id} with tools_id={tools_id}, "
                                 f"but ToolTypes {tools_id} was deleted in this batch. FK violation likely."
                             )
+                        elif parent_key not in created:
+                            parent_will_be_created = any(
+                                cmd.get("table") == "ToolTypes" and 
+                                (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == tools_id and
+                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                for cmd in commands
+                            )
+                            if not parent_will_be_created:
+                                warnings.append(
+                                    f"ADD Cell {rec_id} with tools_id={tools_id}, "
+                                    f"but ToolTypes {tools_id} is not being created in this batch. "
+                                    f"Assuming it exists on server."
+                                )
+                
+                elif table == "Load":
+                    # Load depends on: History, Cell, ToolTypes, MassLoad, Plan, Status
+                    history_id = data.get("history_id")
+                    cell_id = data.get("cell_id")
+                    tools_id = data.get("tools_id")
+                    mass_load_id = data.get("mass_load_id")
+                    
+                    # Critical: History must exist (NOT NULL FK)
+                    if history_id:
+                        history_key = ("History", history_id)
+                        if history_key in deleted:
+                            warnings.append(
+                                f"ADD Load {rec_id} with history_id={history_id}, "
+                                f"but History {history_id} was deleted in this batch. FK violation will occur!"
+                            )
+                        elif history_key not in created:
+                            # Check if History will be created in this batch
+                            history_will_be_created = any(
+                                cmd.get("table") == "History" and 
+                                (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == history_id and
+                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                for cmd in commands
+                            )
+                            if not history_will_be_created:
+                                warnings.append(
+                                    f"ADD Load {rec_id} with history_id={history_id}, "
+                                    f"but History {history_id} is not being created in this batch. "
+                                    f"FK violation will occur! History must be created before Load."
+                                )
+                    
+                    # Check other required FKs
+                    if cell_id:
+                        cell_key = ("Cell", cell_id)
+                        if cell_key in deleted:
+                            warnings.append(
+                                f"ADD Load {rec_id} with cell_id={cell_id}, "
+                                f"but Cell {cell_id} was deleted in this batch. FK violation likely."
+                            )
+                    
+                    if tools_id:
+                        tools_key = ("ToolTypes", tools_id)
+                        if tools_key in deleted:
+                            warnings.append(
+                                f"ADD Load {rec_id} with tools_id={tools_id}, "
+                                f"but ToolTypes {tools_id} was deleted in this batch. FK violation likely."
+                            )
+                    
+                    if mass_load_id:
+                        mass_load_key = ("MassLoad", mass_load_id)
+                        if mass_load_key in deleted:
+                            warnings.append(
+                                f"ADD Load {rec_id} with mass_load_id={mass_load_id}, "
+                                f"but MassLoad {mass_load_id} was deleted in this batch. FK violation likely."
+                            )
+                
+                elif table == "Drop":
+                    # Drop depends on: History, Cell, ToolTypes, MassDrop, Plan, Status
+                    history_id = data.get("history_id")
+                    if history_id:
+                        history_key = ("History", history_id)
+                        if history_key in deleted:
+                            warnings.append(
+                                f"ADD Drop {rec_id} with history_id={history_id}, "
+                                f"but History {history_id} was deleted in this batch. FK violation will occur!"
+                            )
+                        elif history_key not in created:
+                            history_will_be_created = any(
+                                cmd.get("table") == "History" and 
+                                (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == history_id and
+                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                for cmd in commands
+                            )
+                            if not history_will_be_created:
+                                warnings.append(
+                                    f"ADD Drop {rec_id} with history_id={history_id}, "
+                                    f"but History {history_id} is not being created in this batch. "
+                                    f"FK violation will occur! History must be created before Drop."
+                                )
+                
+                elif table == "Consumption":
+                    # Consumption depends on: History, Cell, ToolTypes, Plan, Status
+                    history_id = data.get("history_id")
+                    if history_id:
+                        history_key = ("History", history_id)
+                        if history_key in deleted:
+                            warnings.append(
+                                f"ADD Consumption {rec_id} with history_id={history_id}, "
+                                f"but History {history_id} was deleted in this batch. FK violation will occur!"
+                            )
+                        elif history_key not in created:
+                            history_will_be_created = any(
+                                cmd.get("table") == "History" and 
+                                (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == history_id and
+                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                for cmd in commands
+                            )
+                            if not history_will_be_created:
+                                warnings.append(
+                                    f"ADD Consumption {rec_id} with history_id={history_id}, "
+                                    f"but History {history_id} is not being created in this batch. "
+                                    f"FK violation will occur! History must be created before Consumption."
+                                )
             
             elif operation == "DELETE":
                 deleted.add(key)
@@ -622,6 +762,44 @@ class CommandOrderer:
                                 if other_data.get("tools_id") == rec_id:
                                     warnings.append(
                                         f"DELETE ToolTypes {rec_id} while {other_table} (tools_id={rec_id}) still exists. "
+                                        f"FK constraint violation likely."
+                                    )
+                
+                elif table == "History":
+                    # Проверяем Load, Drop, Consumption, LoadOperations, DropOperations, OperationsConsumption
+                    for other_cmd in commands:
+                        other_table = other_cmd.get("table")
+                        if other_table in ("Load", "Drop", "Consumption", "LoadOperations", "DropOperations", "OperationsConsumption"):
+                            if other_cmd["operation"].upper() != "DELETE":
+                                other_data = other_cmd.get("data", {})
+                                if other_data.get("history_id") == rec_id:
+                                    warnings.append(
+                                        f"DELETE History {rec_id} while {other_table} (history_id={rec_id}) still exists. "
+                                        f"FK constraint violation will occur!"
+                                    )
+                
+                elif table == "Cell":
+                    # Проверяем Load, Drop, Consumption
+                    for other_cmd in commands:
+                        other_table = other_cmd.get("table")
+                        if other_table in ("Load", "Drop", "Consumption"):
+                            if other_cmd["operation"].upper() != "DELETE":
+                                other_data = other_cmd.get("data", {})
+                                if other_data.get("cell_id") == rec_id:
+                                    warnings.append(
+                                        f"DELETE Cell {rec_id} while {other_table} (cell_id={rec_id}) still exists. "
+                                        f"FK constraint violation likely."
+                                    )
+                
+                elif table == "MassLoad":
+                    # Проверяем Load
+                    for other_cmd in commands:
+                        if other_cmd.get("table") == "Load":
+                            if other_cmd["operation"].upper() != "DELETE":
+                                other_data = other_cmd.get("data", {})
+                                if other_data.get("mass_load_id") == rec_id:
+                                    warnings.append(
+                                        f"DELETE MassLoad {rec_id} while Load (mass_load_id={rec_id}) still exists. "
                                         f"FK constraint violation likely."
                                     )
         
