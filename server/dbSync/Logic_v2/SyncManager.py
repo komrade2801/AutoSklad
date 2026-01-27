@@ -409,6 +409,8 @@ class SyncManager:
     def get_current_data(self, table: str, rec_id: Any, work_session: Session = None) -> Optional[Dict[str, Any]]:
         """
         Возвращает текущее состояние записи для детекта конфликтов.
+        Принудительно обновляет сессию перед чтением, чтобы гарантированно видеть
+        изменения, сделанные операцией выдачи инструмента.
         """
 
         if isinstance(work_session, sessionmaker):
@@ -423,8 +425,23 @@ class SyncManager:
         if crud_cls is None:
             raise ValueError(f"Неизвестная таблица: {table}")
 
+        # Принудительное обновление сессии перед чтением
+        # Это гарантирует, что мы получим актуальные данные из БД, а не устаревшие из кэша сессии
+        # Сначала получаем сессию, которую будет использовать CRUD
+        from DB.session import get_db_session
+        session_to_use = self._session if self._session else get_db_session()
+        
+        try:
+            if session_to_use:
+                session_to_use.commit()
+                session_to_use.expire_all()
+                print(f"[SyncManager][get_current_data] Session expired before getting {table} id={rec_id} - fresh data will be loaded from DB")
+        except Exception as e:
+            print(f"[SyncManager][get_current_data] Warning: Failed to expire session before getting {table} id={rec_id}: {e}")
+
         # тут мы **вызываем** конструктор EngineX()
-        crud = crud_cls()
+        # Передаем сессию, чтобы использовать ту же сессию, которую мы только что обновили
+        crud = crud_cls(session=session_to_use)
 
         if rec_id is None:
             return None

@@ -19,13 +19,13 @@ class EngineMassDrop(BaseCRUD):
     Класс EngineMassDrop, наследующий возможности BaseCRUD для работы с таблицей MassDrop.
     """
 
-    def __init__(self, session_db: Session=None):
+    def __init__(self, session: Session=None):
         """
         Инициализация EngineMassDrop.
 
-        :param session_db: Объект сессии SQLAlchemy для работы с базой данных.
+        :param session: Объект сессии SQLAlchemy для работы с базой данных.
         """
-        super().__init__(session=session_db, model=MassDrop)
+        super().__init__(session=session, model=MassDrop)
 
     def add_task(self,
              index: int,

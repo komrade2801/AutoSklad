@@ -351,6 +351,8 @@ class SyncManager:
     def get_current_data(self, table: str, rec_id: Any, work_session: Session = None) -> Optional[Dict[str, Any]]:
         """
         Возвращает текущее состояние записи для детекта конфликтов.
+        Принудительно обновляет сессию перед чтением, чтобы гарантированно видеть
+        изменения, сделанные операцией выдачи инструмента.
         """
 
         if isinstance(work_session, sessionmaker):
@@ -364,6 +366,15 @@ class SyncManager:
         crud_cls = self.crud_registry.get(normalized_table)
         if crud_cls is None:
             raise ValueError(f"Неизвестная таблица: {table!r}")
+
+        # Принудительное обновление сессии перед чтением
+        # Это гарантирует, что мы получим актуальные данные из БД, а не устаревшие из кэша сессии
+        try:
+            self._session.commit()
+            self._session.expire_all()
+            print(f"[SyncManager][get_current_data] Session expired before getting {table} id={rec_id} - fresh data will be loaded from DB")
+        except Exception as e:
+            print(f"[SyncManager][get_current_data] Warning: Failed to expire session before getting {table} id={rec_id}: {e}")
 
         # тут мы **вызываем** конструктор EngineX()
         crud = crud_cls(self._session)
@@ -383,6 +394,24 @@ class SyncManager:
         elif isinstance(record, dict):
             return record
         else:
+            return None
+
+    def get_status_stype(self, status_id: Any) -> Optional[str]:
+        """
+        Возвращает тип статуса (stype) по id для разрешения конфликтов LWW.
+        Используется, чтобы при remote_stype in ('mass_load_init', 'mass_load_ready',
+        'mass_drop_init', 'mass_drop_ready') входящие данные принимались.
+        """
+        if status_id is None:
+            return None
+        try:
+            crud_cls = self.crud_registry.get("Status")
+            if crud_cls is None:
+                return None
+            crud = crud_cls(self._session)
+            rec = crud.get(status_id)
+            return getattr(rec, "stype", None) if rec else None
+        except Exception:
             return None
 
     def list(self, table: str) -> List[Any]:

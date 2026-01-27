@@ -21,8 +21,12 @@ class Executor:
 
     def handle_widget_executor(self, start, current, map, value, handle_callback_executor):
 
+        # Результат read_cnf_lock_drop (True/False) при переходе в read_db_mass_drop_tools:
+        # брать последнюю MassDrop, не искать по id (проверять до «not value»)
+        if isinstance(value, bool):
+            value = {"index": None}
         # Если value не задан или ложное, задаём значение по умолчанию
-        if not value:
+        elif not value:
             value = {"index": 0}
         # Если value не является словарём, оборачиваем его в словарь
         elif isinstance(value, Plan):

@@ -1,5 +1,6 @@
 import threading
 import json
+import traceback
 from functools import wraps
 import logging
 import inspect
@@ -95,21 +96,59 @@ def sync_aware(func):
 
         # Вызываем CRUD-метод
         try:
-            print(f"[{threading.current_thread().name}][decorators][wraps] Запустили синхронизацию. func: {method_name}, table: {table_name}, args: {args}, kwargs: {kwargs}")
+            print(f"[{threading.current_thread().name}][decorators][wraps] Запустили синхронизацию. func: {method_name}, table: {table_name}, "
+                  f"device_id={device_id}, record_id={record_id}, args: {args}, kwargs: {kwargs}")
             result = func(self, *args, **kwargs)
+            print(f"[{threading.current_thread().name}][decorators][wraps] CRUD-метод выполнен успешно. func: {method_name}, table: {table_name}, "
+                  f"device_id={device_id}, record_id={record_id}")
         except Exception as e:
-            print(f"[{threading.current_thread().name}][decorators][wraps] Ошибка вызова func: {e}. func: {method_name}, table: {table_name}, args: {args}, kwargs: {kwargs}")
+            print(f"[{threading.current_thread().name}][decorators][wraps][ERROR] Ошибка вызова func: {e}. func: {method_name}, table: {table_name}, "
+                  f"device_id={device_id}, record_id={record_id}, args: {args}, kwargs: {kwargs}")
+            logger.error(
+                f"Error calling CRUD method {table_name}.{method_name}(record_id={record_id}). "
+                f"device_id={device_id}, error: {e}, traceback: {traceback.format_exc()}"
+            )
             raise
 
         # Кладём «локальную» команду в очередь на отправку серверу
         queue_in = INBOUND_QUEUES.get(device_id)
         if queue_in:
-            queue_in.put({
-                "type":      "local",
-                "table":     table_name,
-                "operation": method_name,
-                "data":      kwargs,    # ровно те ключи, что пришли в функцию
-            })
+            try:
+                queue_in.put({
+                    "type":      "local",
+                    "table":     table_name,
+                    "operation": method_name,
+                    "data":      kwargs,    # ровно те ключи, что пришли в функцию
+                })
+                print(f"[{threading.current_thread().name}][decorators][wraps] "
+                      f"Команда добавлена в очередь. table={table_name}, operation={method_name}, "
+                      f"device_id={device_id}, record_id={record_id}")
+            except Exception as e:
+                # ⚠️ КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ - команда не была создана!
+                error_msg = (
+                    f"ОШИБКА ПРИ ДОБАВЛЕНИИ В ОЧЕРЕДЬ! Команда НЕ создана. "
+                    f"table={table_name}, operation={method_name}, device_id={device_id}, "
+                    f"record_id={record_id}, error={e}"
+                )
+                print(f"[{threading.current_thread().name}][decorators][wraps][ERROR] {error_msg}")
+                logger.error(
+                    f"Failed to put command in queue for device_id={device_id}. "
+                    f"Command NOT created: {table_name}.{method_name}(record_id={record_id}). "
+                    f"Error: {e}, traceback: {traceback.format_exc()}"
+                )
+        else:
+            # ⚠️ КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ
+            error_msg = (
+                f"ОЧЕРЕДЬ НЕ НАЙДЕНА! Команда НЕ создана. "
+                f"table={table_name}, operation={method_name}, device_id={device_id}, "
+                f"record_id={record_id}, available_devices={list(INBOUND_QUEUES.keys())}"
+            )
+            print(f"[{threading.current_thread().name}][decorators][wraps][ERROR] {error_msg}")
+            logger.error(
+                f"INBOUND_QUEUE missing for device_id={device_id}. "
+                f"Command NOT created: {table_name}.{method_name}(record_id={record_id}). "
+                f"Available devices: {list(INBOUND_QUEUES.keys())}"
+            )
 
         return result
 

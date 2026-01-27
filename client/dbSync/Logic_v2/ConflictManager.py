@@ -163,10 +163,142 @@ class ConflictManager:
         """
         Разрешает конфликт значений через выбранную стратегию.
 
+        Для LWW: нормализация id/index, при конфликте status_id приоритет у локальных
+        данных (чтобы не затирать выдачу/в процессе данными сервера). Исключение: при
+        remote_status_stype in (mass_load_init, mass_load_ready, mass_drop_init, mass_drop_ready)
+        входящие данные принимаются.
+        
+        КРИТИЧЕСКОЕ ПРАВИЛО для Cell: локальные активные операции (load_ready, mass_load_ready)
+        защищены от затирания, НО массовые операции с сервера имеют приоритет.
+
         :param strategy: Ключ стратегии из зарегистрированных.
         :return: Объединённый или выбранный результат.
         :raises KeyError: если стратегия не найдена.
         """
+        if strategy in ("last_write_wins", "LWW"):
+            remote_norm = dict(remote_data)
+            if "index" in remote_norm and "id" not in remote_norm:
+                remote_norm["id"] = remote_norm.pop("index")
+            remote_status_stype = kwargs.get("remote_status_stype")
+            table = kwargs.get("table")
+            
+            # === КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Для Cell добавляем защиту локальных активных операций ===
+            if table == "Cell":
+                local_status_id = local_data.get("status_id")
+                remote_status_id = remote_norm.get("status_id")
+                local_status_stype = kwargs.get("local_status_stype")
+                
+                # 1. Массовые операции с сервера имеют приоритет (даже над активными операциями)
+                if remote_status_stype in ("mass_load_init", "mass_load_ready", 
+                                            "mass_drop_init", "mass_drop_ready"):
+                    merged = dict(local_data)
+                    merged.update(remote_norm)
+                    if self.logger:
+                        self.logger.log_info(
+                            "LWW: accepting remote (mass operation)",
+                            {
+                                "remote_status_stype": remote_status_stype,
+                                "local_status_id": local_status_id,
+                                "remote_status_id": remote_status_id
+                            },
+                        )
+                    return merged
+                
+                # 2. Защита локальных активных операций (load_ready, mass_load_ready)
+                # Проверяем по stype, если доступен, иначе по status_id (3 или 7)
+                if local_status_id:
+                    is_active_operation = False
+                    if local_status_stype:
+                        # Проверяем по stype (надежнее)
+                        is_active_operation = local_status_stype in ("load_ready", "mass_load_ready")
+                    elif local_status_id in (3, 7):
+                        # Fallback: проверяем по status_id (3 = mass_load_ready, 7 = load_ready)
+                        is_active_operation = True
+                    
+                    if is_active_operation:
+                        # ИСКЛЮЧЕНИЕ: Если удаленный статус - это результат команды выдачи инструмента
+                        # (start_system после consumption), то принимаем удаленные данные
+                        # Это означает, что клиент отправил команду обновления ячейки, и сервер подтвердил её
+                        if remote_status_stype == "start_system" and remote_status_id == 1:
+                            # Удаленные данные - это результат команды выдачи инструмента от клиента
+                            # Принимаем их, даже если локальные данные имеют статус активной операции
+                            merged = dict(local_data)
+                            merged.update(remote_norm)
+                            if self.logger:
+                                self.logger.log_info(
+                                    "LWW: accepting remote (client command result - tool consumption)",
+                                    {
+                                        "local_status_stype": local_status_stype or f"status_id={local_status_id}",
+                                        "local_status_id": local_status_id,
+                                        "remote_status_id": remote_status_id,
+                                        "remote_status_stype": remote_status_stype
+                                    },
+                                )
+                            return merged
+                        
+                        # Исключение: массовые операции с сервера уже обработаны выше
+                        # Здесь защищаем от других операций
+                        if self.logger:
+                            self.logger.log_info(
+                                "LWW: keeping local data (active operation)",
+                                {
+                                    "local_status_stype": local_status_stype or f"status_id={local_status_id}",
+                                    "local_status_id": local_status_id,
+                                    "remote_status_id": remote_status_id,
+                                    "remote_status_stype": remote_status_stype
+                                },
+                            )
+                        return local_data
+                
+                # 3. Для Cell в остальных случаях — стандартная логика по status_id
+                if local_status_id and remote_status_id:
+                    if local_status_id != remote_status_id:
+                        if self.logger:
+                            self.logger.log_info(
+                                "LWW: keeping local data (status_id differs)",
+                                {
+                                    "local_status_id": local_status_id, 
+                                    "remote_status_id": remote_status_id
+                                },
+                            )
+                        return local_data
+            
+            # === СТАНДАРТНАЯ ЛОГИКА для остальных таблиц ===
+            # Массовая загрузка: при remote_stype mass_load_init/mass_load_ready принимаем входящие
+            if remote_status_stype in ("mass_load_init", "mass_load_ready"):
+                merged = dict(local_data)
+                merged.update(remote_norm)
+                if self.logger:
+                    self.logger.log_info(
+                        "LWW: accepting remote (mass_load)",
+                        {"remote_status_stype": remote_status_stype},
+                    )
+                return merged
+            # Массовая выгрузка: при remote_stype mass_drop_init/mass_drop_ready принимаем входящие,
+            # иначе ячейки не переходят в «Объявлена массовая выгрузка» и write_db_drop_tool_groups не находит их
+            if remote_status_stype in ("mass_drop_init", "mass_drop_ready"):
+                merged = dict(local_data)
+                merged.update(remote_norm)
+                if self.logger:
+                    self.logger.log_info(
+                        "LWW: accepting remote (mass_drop)",
+                        {"remote_status_stype": remote_status_stype},
+                    )
+                return merged
+            if "status_id" in local_data and "status_id" in remote_norm:
+                if local_data["status_id"] != remote_norm["status_id"]:
+                    if self.logger:
+                        self.logger.log_info(
+                            "LWW: keeping local data (status_id differs)",
+                            {"local_status_id": local_data["status_id"], "remote_status_id": remote_norm["status_id"]},
+                        )
+                    return local_data
+            merged = dict(local_data)
+            merged.update(remote_norm)
+            if self.logger:
+                self.logger.log_info(f"Applied data strategy 'LWW' (merged) result keys: {list(merged.keys())}")
+            return merged
+
         strat = self._data_strategies.get(strategy)
         if not strat:
             raise KeyError(f"Data strategy '{strategy}' is not registered")

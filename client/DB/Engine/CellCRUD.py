@@ -52,11 +52,19 @@ class EngineCell(BaseCRUD):
     def get_cell_by_id(self, cell_id: int) -> Optional[Cell]:
         """
         Получает ячейку по её уникальному идентификатору.
+        Принудительно обновляет данные из БД, игнорируя кеш сессии SQLAlchemy.
 
         :param cell_id: Уникальный идентификатор ячейки.
         :return: Объект Cell или None, если запись не найдена.
         """
-        return self.get(cell_id)
+        # Принудительное обновление данных из БД, игнорируя кеш сессии
+        # populate_existing=True заставляет SQLAlchemy перезагрузить объекты из БД,
+        # даже если они уже есть в identity map сессии
+        try:
+            result = self.session.query(self.model).execution_options(populate_existing=True).filter_by(id=cell_id).first()
+        except Exception:
+            result = None
+        return result
 
     # noinspection PyTypeChecker
     def get_cells_with_groups_and_tools(self) -> list[Cell]:
@@ -172,12 +180,15 @@ class EngineCell(BaseCRUD):
     def get_cells_by_tool(self, tool_id: int) -> List[Cell]:  #
         """
         Возвращает список всех ячеек, связанных с указанным инструментом.
+        Принудительно обновляет данные из БД, игнорируя кеш сессии SQLAlchemy.
 
         :param tool_id: Уникальный идентификатор инструмента.
         :return: Список объектов Cell.
         """
-        # return self.session.query(Cell).filter(Cell.tools_id == tool_id).all()
-        return self.session.query(self.model).filter_by(tools_id=tool_id).all()
+        # Принудительное обновление данных из БД, игнорируя кеш сессии
+        # populate_existing=True заставляет SQLAlchemy перезагрузить объекты из БД,
+        # даже если они уже есть в identity map сессии
+        return self.session.query(self.model).execution_options(populate_existing=True).filter_by(tools_id=tool_id).all()
 
     def get_all_cells(self) -> List[Cell]:
         """

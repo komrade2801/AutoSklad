@@ -161,7 +161,7 @@ class CommandOrderer:
         
         Последовательность обработки:
         1. Группировка по (table, record_id)
-        2. Сжатие последовательностей для каждой записи
+        2. Возврат всех команд без оптимизации (временно отключено)
         3. Валидация корректности операций
         4. Топологическая сортировка по таблицам и операциям
         5. Финальная проверка зависимостей FK
@@ -190,7 +190,7 @@ class CommandOrderer:
             # Шаг 1: Группировка по (table, record_id)
             grouped = self._group_by_record(commands)
             
-            # Шаг 2: Сжатие последовательностей для каждой записи
+            # Шаг 2: Возврат всех команд без оптимизации (временно отключено)
             compressed, compress_warnings = self._compress_sequences(grouped)
             warnings.extend(compress_warnings)
             
@@ -279,148 +279,28 @@ class CommandOrderer:
         grouped: Dict[Tuple[str, Any], List[Dict]]
     ) -> Tuple[List[Dict], List[str]]:
         """
-        Сжимает последовательности операций для каждой записи.
+        ВРЕМЕННО ОТКЛЮЧЕНО: Возвращает все команды без оптимизации.
         
-        Правила оптимизации:
-        1. DELETE отменяет все предыдущие операции (кроме DELETE+ADD воскрешения)
-        2. Множественные UPDATE сливаются в один с объединёнными данными
-           ИСКЛЮЧЕНИЕ: Для критических таблиц (Cell) все UPDATE сохраняются последовательно
-        3. ADD + UPDATE = ADD с объединёнными данными
-           ИСКЛЮЧЕНИЕ: Для критических таблиц (Cell) ADD и UPDATE сохраняются отдельно
-        4. Два ADD подряд = последний ADD (перезапись)
+        Ранее выполнялось сжатие последовательностей операций для каждой записи,
+        но из-за проблем с потерей команд при синхронизации оптимизация временно отключена.
         
-        Критические таблицы (CRITICAL_STATE_TABLES):
-        - Cell: каждое изменение status_id, tools_id, groups_id критично для синхронизации
-          состояния ячейки (массовая загрузка → выдача → очистка)
+        TODO: Добавить правильную логику оптимизации позже.
         
         :param grouped: Сгруппированные команды
-        :return: (compressed_commands, warnings)
-        
-        Примеры оптимизации:
-        - [ADD, UPDATE, UPDATE] → [ADD с объединёнными данными]
-        - [ADD, UPDATE, DELETE] → [DELETE]
-        - [DELETE, ADD] → [DELETE, ADD] (воскрешение записи)
-        - [ADD, ADD] → [последний ADD]
+        :return: (commands, warnings) - все команды без изменений
         """
-        compressed = []
         warnings = []
+        all_items = []
         
+        # Просто собираем все команды в исходном порядке
         for (table, rec_id), items in grouped.items():
-            operations = [item["command"]["operation"].upper() for item in items]
-            
-            # Правило 1: DELETE отменяет предыдущие операции
-            if "DELETE" in operations:
-                delete_idx = operations.index("DELETE")
-                
-                # Проверяем операции после DELETE
-                if delete_idx < len(operations) - 1:
-                    after_delete = operations[delete_idx + 1:]
-                    
-                    # Разрешаем только один ADD после DELETE (воскрешение)
-                    if after_delete == ["ADD"] or after_delete == ["INSERT"]:
-                        # DELETE + ADD = удаление старой + создание новой записи
-                        compressed.append(items[delete_idx])
-                        compressed.append(items[-1])
-                        
-                        warnings.append(
-                            f"Record {table}:{rec_id} - ADD after DELETE detected. "
-                            f"Keeping both (record resurrection)."
-                        )
-                    else:
-                        # Недопустимые операции после DELETE
-                        warnings.append(
-                            f"Record {table}:{rec_id} - Invalid operations after DELETE: {after_delete}. "
-                            f"Keeping only DELETE."
-                        )
-                        compressed.append(items[delete_idx])
-                else:
-                    # Только DELETE - оставляем его
-                    compressed.append(items[delete_idx])
-                
-                continue
-            
-            # Правило 2: Множественные ADD
-            add_indices = [i for i, op in enumerate(operations) if op in ("ADD", "INSERT")]
-            if len(add_indices) > 1:
-                warnings.append(
-                    f"Record {table}:{rec_id} - Multiple ADD operations at positions {add_indices}. "
-                    f"Keeping only the last one (overwrite)."
-                )
-                # Удаляем все ADD кроме последнего
-                last_add_idx = add_indices[-1]
-                items = [item for i, item in enumerate(items) 
-                        if operations[i] not in ("ADD", "INSERT") or i == last_add_idx]
-                operations = [item["command"]["operation"].upper() for item in items]
-            
-            # Правило 3: Множественные UPDATE → один UPDATE
-            # ИСКЛЮЧЕНИЕ: Для критических таблиц (Cell) НЕ сжимаем UPDATE,
-            # так как каждое изменение состояния критично для синхронизации
-            update_indices = [i for i, op in enumerate(operations) if op == "UPDATE"]
-            if len(update_indices) > 1:
-                if table in self.CRITICAL_STATE_TABLES:
-                    # Для критических таблиц сохраняем все UPDATE последовательно
-                    warnings.append(
-                        f"Record {table}:{rec_id} - Multiple UPDATE operations detected for critical state table. "
-                        f"Keeping all {len(update_indices)} updates in sequence (no compression)."
-                    )
-                    # Не сжимаем - оставляем все UPDATE как есть
-                else:
-                    # Для обычных таблиц объединяем все UPDATE в один
-                    merged_data = {}
-                    first_update_item = None
-                    
-                    for i in update_indices:
-                        item = items[i]
-                        merged_data.update(item["command"]["data"])
-                        if first_update_item is None:
-                            first_update_item = item
-                    
-                    # Обновляем данные в первом UPDATE
-                    if first_update_item:
-                        first_update_item["command"]["data"] = merged_data
-                        
-                        # Удаляем остальные UPDATE, оставляем только первый
-                        items = [item for i, item in enumerate(items) 
-                                if operations[i] != "UPDATE" or i == update_indices[0]]
-                        operations = [item["command"]["operation"].upper() for item in items]
-            
-            # Правило 4: ADD + UPDATE = ADD с объединёнными данными
-            # ИСКЛЮЧЕНИЕ: Для критических таблиц сохраняем UPDATE после ADD
-            if len(operations) >= 2 and operations[0] in ("ADD", "INSERT"):
-                if table in self.CRITICAL_STATE_TABLES:
-                    # Для критических таблиц сохраняем UPDATE после ADD
-                    # (ADD создаёт запись, UPDATE меняет состояние - оба важны)
-                    warnings.append(
-                        f"Record {table}:{rec_id} - ADD followed by UPDATE for critical state table. "
-                        f"Keeping both operations in sequence."
-                    )
-                    # Не сжимаем - оставляем ADD и все UPDATE как есть
-                else:
-                    # Для обычных таблиц объединяем ADD + UPDATE
-                    accumulated_data = items[0]["command"]["data"].copy()
-                    has_updates = False
-                    
-                    for i in range(1, len(items)):
-                        if operations[i] == "UPDATE":
-                            accumulated_data.update(items[i]["command"]["data"])
-                            has_updates = True
-                    
-                    if has_updates:
-                        # Обновляем данные в ADD
-                        items[0]["command"]["data"] = accumulated_data
-                        
-                        # Удаляем все UPDATE после ADD
-                        items = [items[0]] + [item for i, item in enumerate(items[1:], 1) 
-                                             if operations[i] != "UPDATE"]
-            
-            # Добавляем оптимизированные команды для этой записи
-            compressed.extend(items)
+            all_items.extend(items)
         
         # Восстанавливаем исходный порядок (по original_index)
-        compressed.sort(key=lambda x: x["original_index"])
+        all_items.sort(key=lambda x: x["original_index"])
         
         # Возвращаем только команды (без метаданных)
-        return [item["command"] for item in compressed], warnings
+        return [item["command"] for item in all_items], warnings
     
     def _validate_operations(
         self,

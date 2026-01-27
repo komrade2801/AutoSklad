@@ -4,7 +4,7 @@ import threading
 import traceback
 import uuid
 from datetime import datetime
-from typing import List, Dict, TypedDict, Literal, Optional
+from typing import List, Dict, TypedDict, Literal, Optional, Any
 
 # from DB.Data.base import Base
 
@@ -164,6 +164,26 @@ class CommandQueue:
         retrying.sort(key=lambda cmd: cmd.get("timestamp", ""))
         print(f'[CommandQueue][get_retrying_commands] Count retrying: {len(retrying)}')
         return retrying
+
+    def has_pending_or_retrying_for_record(self, table: str, record_id: Any) -> bool:
+        """
+        Проверяет, есть ли в очереди команды со статусом 'pending' или 'retrying'
+        для указанной таблицы и идентификатора записи.
+        
+        :param table: Название таблицы
+        :param record_id: ID записи (может быть в поле 'id' или 'index' в data)
+        :return: True, если найдена хотя бы одна pending/retrying команда для этой записи
+        """
+        for cmd in self.queue:
+            if cmd.get("status") in ("pending", "retrying"):
+                if cmd.get("table") == table:
+                    data = cmd.get("data", {})
+                    # Проверяем оба возможных поля для ID
+                    cmd_record_id = data.get("id") or data.get("index")
+                    if cmd_record_id == record_id:
+                        print(f'[CommandQueue][has_pending_or_retrying_for_record] Found {cmd.get("status")} command for {table} id={record_id}: {cmd.get("id")}')
+                        return True
+        return False
 
     def mark_as_retrying(self, command_id: str):
         """Помечает команду как находящуюся на повторной попытке ('retrying')."""

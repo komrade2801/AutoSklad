@@ -104,25 +104,34 @@ class EngineCell(BaseCRUD):
         if not instance:
             return False
 
-        # 2) Собираем только те поля, которые действительно изменились
+        # 2) Собираем поля для обновления
+        # Для массовой загрузки важно всегда создавать команды синхронизации,
+        # даже если значения не изменились, поэтому добавляем все переданные поля
         updates = {}
-        if number is not None and instance.number != number:
+        if number is not None:
             updates['number'] = number
-        if description is not None and instance.description != description:
+        if description is not None:
             updates['description'] = description
-        # if groups_id is not None and instance.groups_id != groups_id:
-        updates['groups_id'] = groups_id
-        # if tools_id is not None and instance.tools_id != tools_id:
-        updates['tools_id'] = tools_id
-        # if status_id is not None and instance.status_id != status_id:
-        updates['status_id'] = status_id
+        # Для массовой загрузки всегда добавляем groups_id, tools_id, status_id,
+        # чтобы гарантировать создание команды синхронизации
+        if groups_id is not None:
+            updates['groups_id'] = groups_id
+        if tools_id is not None:
+            updates['tools_id'] = tools_id
+        if status_id is not None:
+            updates['status_id'] = status_id
 
         # 3) Если нечего менять — вернём True, потому что ошибок нет
         if not updates:
             return True
 
-        # 4) Иначе передаём только изменившиеся поля
-        return self.update(index=cell_id, **updates)
+        # 4) Всегда вызываем update для создания команды синхронизации
+        # @sync_aware декоратор гарантирует создание команды, даже если значения не изменились
+        print(f"[update_cell] Вызов self.update для cell_id={cell_id}, "
+              f"updates={updates}, device_id={getattr(self, 'device_id', 'NOT SET')}")
+        result = self.update(index=cell_id, **updates)
+        print(f"[update_cell] Результат self.update: {result}")
+        return result
 
     def delete_cell(self, cell_id: int) -> bool:
         """

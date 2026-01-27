@@ -347,10 +347,21 @@ class ActionMapper:
                     loads = self.e_load.find_by_cell_id(cell.id)
                     load = max(loads, key=lambda rec: rec.id) if loads else None
                     if self.select_plan and load and load.plan_id == self.select_plan.id:
-                        cells_list.append(cell)
-                        found_tools += 1
-                        if found_tools == tool_list[tool_id]:
-                            break
+                        # ИСПРАВЛЕНО: Проверяем, не была ли ячейка уже использована для выдачи
+                        # Исключаем ячейки, для которых уже есть Consumption запись для данного плана
+                        consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                        cell_already_consumed = False
+                        for consumption in consumptions:
+                            if consumption.plan_id == self.select_plan.id:
+                                cell_already_consumed = True
+                                break
+                        
+                        # Добавляем ячейку только если она еще не была выдана
+                        if not cell_already_consumed:
+                            cells_list.append(cell)
+                            found_tools += 1
+                            if found_tools == tool_list[tool_id]:
+                                break
 
         # Если результат пустой, возвращаем None
         print(f"needed by plan: {needed_tools}, found: {len(cells_list)}")
@@ -377,9 +388,47 @@ class ActionMapper:
         if not self.plan_cell_list:
             return {"trigger": "view_ok"}
 
-        self.select_cell = self.plan_cell_list.pop(0)
-
-        return {"trigger": "send_number", "number": self.select_cell.number, "tool_name": "Инструмент"} if self.select_cell else None
+        # ИСПРАВЛЕНО: Проверяем ячейки перед выдачей, пропускаем уже выданные
+        while self.plan_cell_list:
+            candidate_cell = self.plan_cell_list[0]
+            
+            # Обновляем сессию для получения актуальных данных
+            try:
+                self.session_local.commit()
+                self.session_local.expire_all()
+            except Exception as e:
+                print(f"[read_db_get_more_cells] Warning: Failed to expire session: {e}")
+            
+            # Получаем актуальное состояние ячейки из БД
+            cell = self.e_cell.get_cell_by_id(candidate_cell.id)
+            
+            # Проверяем, не была ли ячейка уже выдана
+            # 1. Проверяем статус ячейки (должен быть 3 или 7)
+            if cell.status_id not in [3, 7]:
+                print(f"[read_db_get_more_cells] Cell {cell.id} уже выдана (status_id={cell.status_id}), пропускаем")
+                self.plan_cell_list.pop(0)
+                continue
+            
+            # 2. Проверяем наличие Consumption записи для этой ячейки и плана
+            consumptions = self.e_consumption.get_by_cell_id(cell.id)
+            cell_already_consumed = False
+            if self.select_plan:
+                for consumption in consumptions:
+                    if consumption.plan_id == self.select_plan.id:
+                        cell_already_consumed = True
+                        print(f"[read_db_get_more_cells] Cell {cell.id} уже использована для плана {self.select_plan.id}, пропускаем")
+                        break
+            
+            if cell_already_consumed:
+                self.plan_cell_list.pop(0)
+                continue
+            
+            # Ячейка доступна для выдачи
+            self.select_cell = self.plan_cell_list.pop(0)
+            return {"trigger": "send_number", "number": self.select_cell.number, "tool_name": "Инструмент"}
+        
+        # Если все ячейки уже были выданы
+        return {"trigger": "view_ok"}
 
     def read_db_rights_tool(self, tool_type_id, name, group_name, tool_description):
         print(
@@ -446,6 +495,15 @@ class ActionMapper:
         # if not self.select_tool:
             # self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
         self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
+
+        # Принудительное обновление сессии перед получением ячейки
+        # Это гарантирует, что мы получим актуальные данные из БД, а не устаревшие из кэша сессии
+        try:
+            self.session_local.commit()
+            self.session_local.expire_all()
+            print("[write_db_tool_consumption] Session expired before getting cell - fresh data will be loaded from DB")
+        except Exception as e:
+            print(f"[write_db_tool_consumption] Warning: Failed to expire session before getting cell: {e}")
 
         cell = self.e_cell.get_cell_by_id(self.select_cell.id)
         if not cell.tools_id:
@@ -533,6 +591,7 @@ class ActionMapper:
         self.e_load._cache.clear()  # Инвалидация кэша загрузок
         self.e_tool_types._cache.clear()  # Инвалидация кэша типов инструментов
         self.e_group._cache.clear()  # Инвалидация кэша групп
+        self.e_consumption._cache.clear()  # ИСПРАВЛЕНО: Инвалидация кэша потребления (важно для правильного подсчета выданных инструментов)
         
         # 2. Принудительное обновление сессии SQLAlchemy для получения свежих данных из БД
         # Безопасно, так как session_local используется только в GUI потоке и не передается в другие потоки
@@ -794,6 +853,17 @@ class ActionMapper:
             tool_types = []
 
         valid_tool_types = []
+
+        # Инвалидация кеша перед чтением данных о ячейках
+        # Это гарантирует, что мы получим актуальные данные из БД, а не устаревшие из кеша
+        self.e_cell._cache.clear()  # Очистка кеша ячеек
+        try:
+            # Принудительное обновление сессии SQLAlchemy для получения свежих данных из БД
+            self.session_local.commit()
+            self.session_local.expire_all()
+            print("[read_db_tool_names] SQLAlchemy session expired - fresh data will be loaded from DB")
+        except Exception as e:
+            print(f"[read_db_tool_names] Warning: Failed to expire session: {e}")
 
         # for tool in tools:
         #     print(" Эталон tool id " + str(tool.id))
@@ -1123,34 +1193,45 @@ class ActionMapper:
             }
 
         try:
-            # 1. Найти статус с типом "mass_drop_init"
-            status = self.e_status.all()
-            status_init_id = next(
-                (s.id for s in status if s.stype == "mass_drop_init"), None)
-            print(f"status_id: {status_init_id}")
-
-            if not status_init_id:
-                raise ValueError("Статус 'mass_drop_init' не найден.")
-
-            if self.e_mass_load.count() == 0:
-                print(f"Данные о массовой загрузке отсутствуют")
+            # 1. Проверить наличие MassDrop записей
+            if self.e_mass_drop.count() == 0:
+                print(f"Данные о массовой выгрузке отсутствуют")
                 return []
+
+            # 2. Получить последнюю MassDrop запись (или по index, если передан)
+            mass_drops = self.e_mass_drop.all()
+            if not mass_drops:
+                return []
+            
+            # Если передан целочисленный id — ищем MassDrop по id; иначе (None, bool от cnf) — последняя
+            if index is not None and isinstance(index, int):
+                mass_drop = self.e_mass_drop.get_task(index)
+                if not mass_drop:
+                    # id не найден (например 0 при btn_up/btn_down с экрана 17) — брать последнюю
+                    latest_mass_drop = max(mass_drops, key=lambda md: md.id)
+                    mass_drop_id = latest_mass_drop.id
+                else:
+                    mass_drop_id = mass_drop.id
+            else:
+                # Найти запись с максимальным id
+                latest_mass_drop = max(mass_drops, key=lambda md: md.id)
+                mass_drop_id = latest_mass_drop.id
+            
+            print(f"Используем MassDrop с id={mass_drop_id}")
+
+            # 3. Получить все Drop записи для этой MassDrop
+            drops = self.e_drop.get_by_mass_drop_id(mass_drop_id)
+            print(f"drops: {drops}")
 
             cells_ids = set()
             cell_list = []
-            # mass_loads = self.e_mass_load.all()
-            loads = self.e_load.find_by_status_id(status_init_id)
-            loads.sort(key=lambda rec: rec.id, reverse=True)
-            drops = self.e_drop.find_by_status_id(status_init_id)
-            print(f"drops: {drops}")
+            
+            # 4. Для каждого Drop получить ячейку и добавить в список
             for drop in drops:
                 cell = self.e_cell.get_cell_by_id(drop.cell_id)
-                # print(f"cell: {cell}")
-                # print(f"cell.status_id {cell.status_id} == status_id {status_id}")
-                if cell.status_id == status_init_id and cell.id not in cells_ids:
+                if cell and cell.id not in cells_ids:
                     cells_ids.add(cell.id)
-
-                    tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
+                    tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id) if cell.tools_id else None
                     cell_list.append(create_cell_dict(cell, tool_type))
                 # operations = self.e_load_operations.get_operations_by_load_id(
                 #     load.id)
@@ -1973,18 +2054,30 @@ class ActionMapper:
             tool_object["total_count"] = tool_type.count
             tool_object["plan_count"] = plan_tool_type.tool_types_count
 
-            tool_load_count = 0
+            # ИСПРАВЛЕНО: Подсчет доступных инструментов по ячейкам
+            # Считаем количество ячеек с инструментом для данного плана, которые еще не были выданы
+            tool_available_count = 0
             cells = self.e_cell.get_cells_by_tool(tool_type.id)
             for cell in cells:
-                if cell.status_id in [3, 7]:
-                    loads = self.e_load.find_by_cell_id(cell.id)
-                    load = max(loads, key=lambda rec: rec.id) if loads else None
-                    if self.select_plan and load and load.plan_id == self.select_plan.id:
-                        tool_load_count += 1
+                # Проверяем, загружена ли ячейка для данного плана
+                loads = self.e_load.find_by_cell_id(cell.id)
+                load = max(loads, key=lambda rec: rec.id) if loads else None
+                if self.select_plan and load and load.plan_id == self.select_plan.id:
+                    # Проверяем, не была ли ячейка уже выдана для этого плана
+                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                    cell_already_consumed = False
+                    for consumption in consumptions:
+                        if consumption.plan_id == plan_id:
+                            cell_already_consumed = True
+                            break
+                    
+                    # Если ячейка не была выдана, считаем её доступной
+                    if not cell_already_consumed:
+                        tool_available_count += 1
+            
+            tool_object["load_count"] = tool_available_count
 
-            tool_object["load_count"] = tool_load_count
-
-            if plan_tool_type.tool_types_count <= tool_load_count:
+            if plan_tool_type.tool_types_count <= tool_available_count:
                 has_tools = True
             else:
                 has_tools = False
@@ -2013,18 +2106,30 @@ class ActionMapper:
             tool_object["total_count"] = tool_type.count
             tool_object["plan_count"] = plan_tool_type.tool_types_count
 
-            tool_load_count = 0
+            # ИСПРАВЛЕНО: Подсчет доступных инструментов по ячейкам (аналогично read_db_get_plan_tools)
+            # Считаем количество ячеек с инструментом для данного плана, которые еще не были выданы
+            tool_available_count = 0
             cells = self.e_cell.get_cells_by_tool(tool_type.id)
             for cell in cells:
-                if cell.status_id in [3, 7]:
-                    loads = self.e_load.find_by_cell_id(cell.id)
-                    load = max(loads, key=lambda rec: rec.id) if loads else None
-                    if self.select_plan and load and load.plan_id == self.select_plan.id:
-                        tool_load_count += 1
+                # Проверяем, загружена ли ячейка для данного плана
+                loads = self.e_load.find_by_cell_id(cell.id)
+                load = max(loads, key=lambda rec: rec.id) if loads else None
+                if plan and load and load.plan_id == plan.id:
+                    # Проверяем, не была ли ячейка уже выдана для этого плана
+                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                    cell_already_consumed = False
+                    for consumption in consumptions:
+                        if consumption.plan_id == plan_id:
+                            cell_already_consumed = True
+                            break
+                    
+                    # Если ячейка не была выдана, считаем её доступной
+                    if not cell_already_consumed:
+                        tool_available_count += 1
+            
+            tool_object["load_count"] = tool_available_count
 
-            tool_object["load_count"] = tool_load_count
-
-            if plan_tool_type.tool_types_count <= tool_load_count:
+            if plan_tool_type.tool_types_count <= tool_available_count:
                 has_tools = True
             else:
                 has_tools = False

@@ -388,7 +388,7 @@ class SyncProcessor:
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
                       f'Транзакция начата. Устройство: {device}. [{datetime.now()}]')
                 mapping = self._get_mapping(client_schema_hash)
-                ops, failed = [], []
+                ops, failed, skipped_results = [], [], []
 
                 # 5. Подготовка операций
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
@@ -409,7 +409,9 @@ class SyncProcessor:
 
                     # 5c-f. Обработка команды
                     op_result = self._process_single(cmd, mapping)
-                    if not op_result["success"]:
+                    if op_result.get("skipped"):
+                        skipped_results.append(op_result)
+                    elif not op_result["success"]:
                         print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
                               f'Конфликт/ошибка в команде {cmd.get("id")}. [{datetime.now()}]')
                         failed.append(op_result)
@@ -417,12 +419,14 @@ class SyncProcessor:
                         ops.append(op_result)
 
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Подготовлено операций: {len(ops)}, неудач: {len(failed)}. [{datetime.now()}]')
+                      f'Подготовлено операций: {len(ops)}, пропущено: {len(skipped_results)}, неудач: {len(failed)}. [{datetime.now()}]')
 
                 # 6. Пакетное выполнение
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
                       f'Запуск пакетной обработки. [{datetime.now()}]')
                 results = self.batch_processor.execute_batch(ops)
+                # Пропущенные считаем успешно принятыми (COMPLETED), чтобы сервер не пересылал
+                results = results + [{"command_id": r["command_id"], "success": True} for r in skipped_results]
                 print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
                       f'Пакетная обработка завершена. Результатов: {len(results)}. [{datetime.now()}]')
 
@@ -494,20 +498,61 @@ class SyncProcessor:
          - map_incoming → postprocess
          - detect_data_conflict → resolve
 
-        :return: {'command_id', 'table', 'operation','data','id','success', 'error'?}
+        :return: {'command_id', 'table', 'operation','data','id','success', 'skipped'?, 'error'?}
         """
         try:
             table = cmd["table"]
-            rec_id = cmd.get("id") or cmd.get("index")
             raw = cmd.get("data", {})
+            # Нормализация ID входящей команды: сервер может слать 'index', 'id' или оба
+            rec_id = raw.get("id") or raw.get("index")
 
             # DIAGNOSTIC LOGGING: Record ID extraction and source
-            print(f'[DIAGNOSTIC][CLIENT] Command ID extraction: cmd.get("id")={cmd.get("id")}, cmd.get("index")={cmd.get("index")}, final rec_id={rec_id}')
+            print(f'[DIAGNOSTIC][CLIENT] Command ID extraction: raw.id={raw.get("id")}, raw.index={raw.get("index")}, rec_id={rec_id}')
             print(f'[DIAGNOSTIC][CLIENT] Raw data keys: {list(raw.keys())}')
+
+            if rec_id is None:
+                self.diagnostic_logger.log_warning("IGNORED REMOTE UPDATE: No record id in command", {"table": table, "command_id": cmd.get("id")})
+                return {
+                    "command_id": cmd.get("id"),
+                    "id": None,
+                    "table": table,
+                    "operation": cmd.get("operation"),
+                    "data": {},
+                    "success": True,
+                    "skipped": True,
+                }
+
+            is_pull_command = cmd.get("last_modified") is not None
+            # Железобетонная блокировка по Pending: id и index считаем одной записью, сравнение как строки
+            if is_pull_command and hasattr(self, "queue") and self.queue:
+                pending_commands = self.queue.get_pending_commands() + self.queue.get_retrying_commands()
+                is_locked = False
+                for p_cmd in pending_commands:
+                    if p_cmd.get("table") != table:
+                        continue
+                    p_data = p_cmd.get("data", {})
+                    p_id = p_data.get("id") or p_data.get("index")
+                    if str(p_id) == str(rec_id):
+                        is_locked = True
+                        break
+                if is_locked:
+                    self.diagnostic_logger.log_warning(
+                        "IGNORED REMOTE UPDATE: Local pending changes exist",
+                        {"table": table, "id": rec_id, "command_id": cmd.get("id")},
+                    )
+                    return {
+                        "command_id": cmd.get("id"),
+                        "id": rec_id,
+                        "table": table,
+                        "operation": cmd.get("operation"),
+                        "data": {},
+                        "success": True,
+                        "skipped": True,
+                    }
 
             cleaned = self.data_transformer.preprocess(table, raw)
             if not self.data_transformer.validate(table, cleaned):
-                return {"command_id": cmd.get("id") or cmd.get("index"), "success": False, "error": "Validation failed"}
+                return {"command_id": cmd.get("id"), "success": False, "error": "Validation failed"}
 
             # struct conflicts
             server_fields = list(self.server_schema.get(table, {}))
@@ -519,35 +564,75 @@ class SyncProcessor:
             # map & postprocess
             local = self.data_mapper.map_incoming(table, cleaned, mapping.get(table, {}))
             local = self.data_transformer.postprocess(table, local)
-            # Используем только обработанные данные (local), а не raw, чтобы избежать попадания необработанных полей типа Status
-            # raw может содержать вложенные объекты, которые уже обработаны в DataTransformer
-            cmd['data'] = local
-            index = local.get('id') or local.get('index') or rec_id
+            cmd["data"] = local
+            index = local.get("id") or local.get("index") or rec_id
 
             # DIAGNOSTIC LOGGING: Existing data lookup
-            print(f'[DIAGNOSTIC][CLIENT] Processed data keys: {list(local.keys())}')
-            print(f'[DIAGNOSTIC][CLIENT] Potential record IDs: id={local.get("id")}, index={local.get("index")}, chosen={index}')
+            print(f'[DIAGNOSTIC][CLIENT] Processed data keys: {list(local.keys())}, chosen index={index}')
             print(f'[DIAGNOSTIC][CLIENT] About to lookup existing data for table={table}, rec_id={index}')
 
             existing = self.sync_manager.get_current_data(table=table, work_session=SessionLocal(), rec_id=index)
             print(f'[DIAGNOSTIC][CLIENT] Existing data lookup result: {existing}')
 
+            # Защита "Time Travel": если локальная запись новее серверной — не перезаписываем
+            remote_ts_str = cmd.get("last_modified")
+            if existing and remote_ts_str:
+                local_ts = existing.get("updated_at") or existing.get("datetime") or existing.get("date")
+                if local_ts:
+                    try:
+                        local_dt = (
+                            datetime.fromisoformat(str(local_ts).replace("Z", "+00:00"))
+                            if isinstance(local_ts, str)
+                            else local_ts
+                        )
+                        remote_dt = datetime.fromisoformat(str(remote_ts_str).replace("Z", "+00:00"))
+                        if local_dt > remote_dt:
+                            self.diagnostic_logger.log_warning(
+                                "IGNORED OBSOLETE: Local data is newer",
+                                {"table": table, "id": index, "local_ts": str(local_dt), "remote_ts": str(remote_dt)},
+                            )
+                            return {
+                                "command_id": cmd.get("id"),
+                                "id": index,
+                                "table": table,
+                                "operation": cmd.get("operation"),
+                                "data": {},
+                                "success": True,
+                                "skipped": True,
+                            }
+                    except (ValueError, TypeError):
+                        pass
+
             if existing and self.conflict_manager.detect_data_conflict(existing, local):
                 print('[DIAGNOSTIC][CLIENT] Data conflict detected, applying strategy')
-                local = self.conflict_manager.apply_data_strategy(existing, local)
+                remote_stype = None
+                if getattr(self.sync_manager, "get_status_stype", None) and local.get("status_id") is not None:
+                    remote_stype = self.sync_manager.get_status_stype(local.get("status_id"))
+                
+                # Для Cell также получаем локальный stype для защиты активных операций
+                local_stype = None
+                if table == "Cell" and existing.get("status_id"):
+                    local_stype = self.sync_manager.get_status_stype(existing.get("status_id"))
+                
+                local = self.conflict_manager.apply_data_strategy(
+                    existing, local, 
+                    remote_status_stype=remote_stype,
+                    table=table,  # Передаем имя таблицы для специальной логики Cell
+                    local_status_stype=local_stype  # Передаем локальный stype для защиты активных операций
+                )
             else:
                 print('[DIAGNOSTIC][CLIENT] No data conflict or no existing record')
 
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Command processed. [{datetime.now()}]')
-            print(f'[DIAGNOSTIC][CLIENT] Final result: success=True, rec_id={rec_id}')
+            print(f'[DIAGNOSTIC][CLIENT] Final result: success=True, rec_id={index}')
 
             return {
-                "command_id": cmd.get("id") or cmd.get("index"),
-                "id": rec_id,
+                "command_id": cmd.get("id"),
+                "id": index,
                 "table": table,
                 "operation": cmd["operation"],
                 "data": local,
-                "success": True
+                "success": True,
             }
         except Exception as ex:
             print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Одиночная команда не удалась. Подробности: {traceback.format_exc()} [{datetime.now()}]')
