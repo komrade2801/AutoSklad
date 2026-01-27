@@ -525,6 +525,30 @@ class ActionMapper:
             print("Не удалось записать потребление операции.")
             return {'trigger': 'view_err'}
 
+        # Инвалидация кэша для немедленного обновления данных о наличии инструментов
+        # Это гарантирует, что данные обновятся сразу после выдачи, не дожидаясь синхронизации
+        
+        # 1. Очистка кэша CRUD-классов (TTLCache)
+        self.e_cell._cache.clear()  # Инвалидация кэша ячеек
+        self.e_load._cache.clear()  # Инвалидация кэша загрузок
+        self.e_tool_types._cache.clear()  # Инвалидация кэша типов инструментов
+        self.e_group._cache.clear()  # Инвалидация кэша групп
+        
+        # 2. Принудительное обновление сессии SQLAlchemy для получения свежих данных из БД
+        # Безопасно, так как session_local используется только в GUI потоке и не передается в другие потоки
+        # expire_all() заставит SQLAlchemy перезагрузить все объекты из БД при следующем запросе
+        try:
+            # Коммитим все изменения перед expire_all
+            self.session_local.commit()
+            # Обновляем сессию - все объекты будут перезагружены из БД при следующем запросе
+            self.session_local.expire_all()
+            print("SQLAlchemy session expired - fresh data will be loaded from DB")
+        except Exception as e:
+            # Если произошла ошибка, не прерываем выполнение
+            print(f"Warning: Failed to expire session: {e}")
+        
+        print("Cache invalidated after tool consumption")
+
         if not self.plan_cell_list:
             print("write_db_tool_consumption trigger")
             self.select_plan = None
