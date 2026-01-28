@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Cleans up database and command queue files from AutoSklad project
+    Cleans up database, command queue and sync log files from AutoSklad project
 
 .DESCRIPTION
-    Deletes all database files and command queue JSON files from both
+    Deletes all database files, command queue JSON files and sync logs from both
     client and server directories, regardless of absolute project path.
 
 .PARAMETER ProjectRoot
@@ -102,7 +102,9 @@ $filesToDelete = @(
     "server/command_queue.json",
     "client/command_queue.json",
     "server/DB/Data/web_vending.db",
-    "client/DB/Data/vending.db"
+    "client/DB/Data/vending.db",
+    "server/logs/sync.log",
+    "client/logs/sync.log"
 )
 
 # Cache directories to clear (schema/fields)

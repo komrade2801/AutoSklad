@@ -1166,22 +1166,9 @@ class ActionMapper:
     def read_db_mass_drop_tools(self, index) -> List[dict]:
         print(f"read_db_mass_drop_tools. index: {index} ")
         """
-        Возвращает последний добавленный объект из таблицы MassDrop.
-
-        :return: Объект MassDrop с максимальным значением id или None, если таблица пуста.
+        Возвращает список ячеек по всем ещё не обработанным массовым выгрузкам (все concurrent mass_drop).
+        Объединяет инструменты из клиентской и серверной массовых выгрузок в одном меню.
         """
-        # # Получить все записи из таблицы MassDrop
-        # mass_drops = self.e_mass_drop.all()
-        #
-        # if not mass_drops:
-        #     return None  # Если таблица пуста, возвращаем None
-        #
-        # # Найти запись с максимальным id
-        # latest_mass_drop = max(mass_drops, key=lambda md: md.id)
-        #
-        # return latest_mass_drop
-
-        # Лямбда для создания словаря ячейки
         def create_cell_dict(cell, tool_type):
             # Safe lookups with null checks to prevent AttributeError
             group = self.e_group.get_group_by_id(cell.groups_id) if cell.groups_id else None
@@ -1193,68 +1180,27 @@ class ActionMapper:
             }
 
         try:
-            # 1. Проверить наличие MassDrop записей
-            if self.e_mass_drop.count() == 0:
-                print(f"Данные о массовой выгрузке отсутствуют")
+            statuses = self.e_status.all()
+            status_init_id = next(
+                (s.id for s in statuses if s.stype == "mass_drop_init"), None)
+            if status_init_id is None:
                 return []
 
-            # 2. Получить последнюю MassDrop запись (или по index, если передан)
-            mass_drops = self.e_mass_drop.all()
-            if not mass_drops:
-                return []
-            
-            # Если передан целочисленный id — ищем MassDrop по id; иначе (None, bool от cnf) — последняя
-            if index is not None and isinstance(index, int):
-                mass_drop = self.e_mass_drop.get_task(index)
-                if not mass_drop:
-                    # id не найден (например 0 при btn_up/btn_down с экрана 17) — брать последнюю
-                    latest_mass_drop = max(mass_drops, key=lambda md: md.id)
-                    mass_drop_id = latest_mass_drop.id
-                else:
-                    mass_drop_id = mass_drop.id
-            else:
-                # Найти запись с максимальным id
-                latest_mass_drop = max(mass_drops, key=lambda md: md.id)
-                mass_drop_id = latest_mass_drop.id
-            
-            print(f"Используем MassDrop с id={mass_drop_id}")
-
-            # 3. Получить все Drop записи для этой MassDrop
-            drops = self.e_drop.get_by_mass_drop_id(mass_drop_id)
-            print(f"drops: {drops}")
+            # Все Drop со статусом mass_drop_init из любых MassDrop (клиент, сервер) — одно общее меню
+            drops = self.e_drop.all()
+            drops_pending = [d for d in drops if d.status_id == status_init_id]
+            print(f"drops pending (all mass_drops): {len(drops_pending)}")
 
             cells_ids = set()
             cell_list = []
-            
-            # 4. Для каждого Drop получить ячейку и добавить в список
-            for drop in drops:
+            for drop in drops_pending:
                 cell = self.e_cell.get_cell_by_id(drop.cell_id)
                 if cell and cell.id not in cells_ids:
                     cells_ids.add(cell.id)
                     tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id) if cell.tools_id else None
                     cell_list.append(create_cell_dict(cell, tool_type))
-                # operations = self.e_load_operations.get_operations_by_load_id(
-                #     load.id)
-                # history = self.e_history.get_history_by_id(load.history_id)
-                # print(f"operations: {operations}")
-                # 2. Найти последние операции загрузки, связанные с этим статусом
-                # Проверяем, что есть ровно одна операция и ее статус — mass_load_init
-                # if len(operations) == 1 and operations[0].status_id == status_id:
-                #     # Если load подходит, добавляем его в список
-                #     cells_ids.append(load.cell_id)
 
-            # # Получение идентификаторов загрузок
-            # cell_list = []
-            # for _id in cells_ids:
-            #     cell = self.e_cell.get_cell_by_id(_id)
-            #     # print(f"cell: {cell}")
-            #     # print(f"tool: {self.e_tool_types.get_tool_type_by_id(cell.tools_id)}")
-            #
-            #     tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
-            #
-            #     cell_list.append(create_cell_dict(cell, tool_type))
-
-            print(f"cell_list: {cell_list}")
+            print(f"cell_list: {len(cell_list)}")
             return cell_list
 
         except Exception as e:
@@ -1388,12 +1334,14 @@ class ActionMapper:
             target_histories = []
             target_cells = []
             target_tools = []
+            target_drops = []  # только обработанные (все concurrent mass_drop с ячейкой в mass_drop_init)
 
             drops = self.e_drop.all()
-            print(f"drops: {drops}")
+            print(f"drops (all): {len(drops)}")
             for drop in drops:
                 cell = self.e_cell.get_cell_by_id(drop.cell_id)
                 if cell and cell.status_id == status_init:
+                    target_drops.append(drop)
                     history = self.e_history.get_history_by_id(drop.history_id)
                     target_histories.append(history)
 
@@ -1436,13 +1384,15 @@ class ActionMapper:
                     plan_id=history.plan_id,
                 )
 
-            for drop in drops:
+            for drop in target_drops:
                 drop_dict = drop.to_dict()
                 drop_dict['status_id'] = status_ready.id
                 self.e_drop.update(index=drop.id, **drop_dict)
 
             self.e_mass_drop._cache.clear()  # Для MassLoad (get_all_ids, all)
             self.e_drop._cache.clear()       # Для Load (find_by_mass_load_id, get)
+            self.e_cell._cache.clear()      # Ячейки освобождены — инвалидация для планов и массовой выгрузки
+            self.e_history._cache.clear()   # Добавлены записи истории
 
             return result
 
@@ -2273,6 +2223,12 @@ class ActionMapper:
             if not operation_added:
                 raise ValueError(
                     f"Не удалось создать запись в таблице DropOperations для Drop ID {drops_by_cell[0]}.")
+
+        # Инвалидация кеша после завершения чертежа — чтобы меню массовой выгрузки и выдача по плану видели актуальные данные
+        self.e_drop._cache.clear()
+        self.e_mass_drop._cache.clear()
+        self.e_cell._cache.clear()
+        self.e_history._cache.clear()
 
         return {"trigger": "plan_completed"}
 
