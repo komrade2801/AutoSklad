@@ -674,14 +674,43 @@ class SyncProcessor:
         """
         Получает одну локальную команду от декоратора и кладёт её
         в очередь CommandQueue, чтобы позже отправить на сервер.
+        Также создаёт запись в таблице Command для синхронизации с клиентом.
         """
         try:
-
+            # Добавляем команду в локальную очередь для отправки на сервер
             self.queue.add_command(
                 table=cmd["table"],
                 operation=cmd["operation"],
                 data=cmd["data"]
             )
+            
+            # Создаём запись в таблице Command для синхронизации с клиентом
+            # Это необходимо для того, чтобы клиент мог получить изменения через pull
+            record_id = cmd["data"].get("id") or cmd["data"].get("index")
+            if record_id and self.current_device_id:
+                import json
+                try:
+                    data_json = json.dumps(cmd["data"], ensure_ascii=False)
+                    operation = cmd["operation"].upper()
+                    if operation == "UPDATE":
+                        operation = "UPDATE"
+                    elif operation in ("ADD", "INSERT"):
+                        operation = "ADD"
+                    elif operation == "DELETE":
+                        operation = "DELETE"
+                    
+                    self.cmd_crud.add_command(
+                        table_name=cmd["table"],
+                        operation=operation,
+                        record_id=record_id,
+                        device_number=self.current_device_id,
+                        data_json=data_json
+                    )
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Команда создана в таблице Command. table={cmd["table"]}, operation={operation}, record_id={record_id}, device_number={self.current_device_id} [{datetime.now()}]')
+                except Exception as cmd_error:
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Ошибка создания команды в таблице Command: {cmd_error} [{datetime.now()}]')
+                    # Не прерываем выполнение, так как команда уже добавлена в локальную очередь
+            
             self.diagnostic_logger.log_info(
                 "Local command enqueued",
                 {"table": cmd["table"], "operation": cmd["operation"]}

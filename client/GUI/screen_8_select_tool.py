@@ -36,9 +36,9 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
             self.lbl_name_group.setText(name)
 
             tools = args[0][0]
+            self.listWidget.clear()  # Всегда очищаем список (в т.ч. когда инструментов 0 — чтобы не показывать устаревший список)
             if not tools:
                 return
-            self.listWidget.clear()  # Очищаем список перед добавлением новых данных
             try:
                 for tool in tools:
                     print(f"tool: {tool}")

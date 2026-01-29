@@ -46,6 +46,7 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         """
         groups = args[0]
         print(args[0])
+        self.listWidget.clear()  # Всегда очищаем список (в т.ч. когда групп с инструментом 0 — чтобы не показывать устаревшие)
         if not groups:
             return
         print(groups)
@@ -57,7 +58,6 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         # if not isinstance(groups[0], Group):
         #     return
 
-        self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:
             for group, count in groups.items():
                 print(group)

@@ -443,14 +443,37 @@ class ActionMapper:
                 if cell.status_id in [3, 7]:
                     loads = self.e_load.find_by_cell_id(cell.id)
                     load = max(loads, key=lambda rec: rec.id) if loads else None
+                    
+                    # ИСПРАВЛЕНО: Проверяем, не был ли инструмент уже выдан (есть ли Consumption запись)
+                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                    cell_already_consumed = False
+                    
                     if self.select_plan:
+                        # Для плановых инструментов проверяем Consumption с тем же plan_id
                         if load and load.plan_id == self.select_plan.id:
-                            self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
-                            return self.select_tool.id, name, group_name, tool_description
+                            for consumption in consumptions:
+                                if consumption.plan_id == self.select_plan.id:
+                                    cell_already_consumed = True
+                                    print(f"[read_db_rights_tool] Cell {cell.id} уже использована для плана {self.select_plan.id}, пропускаем")
+                                    break
+                            
+                            # Возвращаем инструмент только если он еще не был выдан
+                            if not cell_already_consumed:
+                                self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
+                                return self.select_tool.id, name, group_name, tool_description
                     else:
+                        # Для свободных инструментов проверяем Consumption без plan_id
                         if load and not load.plan_id:
-                            self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
-                            return self.select_tool.id, name, group_name, tool_description
+                            for consumption in consumptions:
+                                if not consumption.plan_id:
+                                    cell_already_consumed = True
+                                    print(f"[read_db_rights_tool] Cell {cell.id} уже использована (свободный инструмент), пропускаем")
+                                    break
+                            
+                            # Возвращаем инструмент только если он еще не был выдан
+                            if not cell_already_consumed:
+                                self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
+                                return self.select_tool.id, name, group_name, tool_description
             print(f"Свободные инструменты \"{name}\" не найдены.")
             return {'trigger': 'err_rights'}
         else:
@@ -917,7 +940,18 @@ class ActionMapper:
                         loads = self.e_load.find_by_cell_id(cell.id)
                         load = max(loads, key=lambda rec: rec.id) if loads else None
                         if load and not load.plan_id:
-                            valid_tools_count += 1
+                            # ИСПРАВЛЕНО: Проверяем, не был ли инструмент уже выдан (есть ли Consumption запись)
+                            consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                            cell_already_consumed = False
+                            for consumption in consumptions:
+                                if not consumption.plan_id:  # Для свободных инструментов проверяем Consumption без plan_id
+                                    cell_already_consumed = True
+                                    print(f"[read_db_tool_names] Cell {cell.id} уже использована (свободный инструмент), пропускаем")
+                                    break
+                            
+                            # Учитываем ячейку только если инструмент еще не был выдан
+                            if not cell_already_consumed:
+                                valid_tools_count += 1
 
             print(f"tool_type: {tool_type}, valid_tools_count: {valid_tools_count}")
 

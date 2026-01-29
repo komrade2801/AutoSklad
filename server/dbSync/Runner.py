@@ -262,6 +262,8 @@ def start_sync(
                     # print(f'[ПОТОК][{threading.current_thread().name}][runner] msg_type: {msg_type}, msg: {json.dumps(msg, ensure_ascii=False)}')
                     cmd = msg  # содержит table, operation, data
                     try:
+                        # Устанавливаем current_device_id для правильной синхронизации
+                        processor.current_device_id = device_id
                         # Здесь SyncProcessor должен иметь метод enqueue_local_command
                         print(
                             f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации попытка запустить процессор')
