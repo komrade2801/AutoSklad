@@ -34,3 +34,4 @@ class SyncConfig:
         # таймауты
         self.sender_timeout = int(srv["sender_timeout"])
         self.receiver_timeout = int(srv["receiver_timeout"])
+        self.push_http_timeout = int(srv.get("push_http_timeout", 120))

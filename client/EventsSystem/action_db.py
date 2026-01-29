@@ -247,6 +247,27 @@ class ActionMapper:
             'read_db_err': lambda *args, **kwargs: print(),
         }
 
+    def _invalidate_availability_caches(self, log_prefix: str = ""):
+        """
+        Инвалидирует кэши, влияющие на подсчёт доступных инструментов (экран групп и экран инструментов).
+        Вызывать:
+        - перед чтением: read_db_groups, read_db_tool_names, read_db_group_collection, read_db_tools_collection, read_db_get_more_cells;
+        - после записи: write_db_tool_consumption, write_db_load_tool_groups, write_db_drop_tool_groups,
+          write_db_mass_load_tools_by_*, write_db_mass_drop_tools_by_*.
+        Подсчёт доступных ведётся только по ячейкам Cell с нужным статусом (3, 7), без привязки к Consumption.
+        """
+        self.e_cell._cache.clear()
+        self.e_load._cache.clear()
+        self.e_tool_types._cache.clear()
+        self.e_group._cache.clear()
+        try:
+            self.session_local.commit()
+            self.session_local.expire_all()
+            if log_prefix:
+                print(f"[{log_prefix}] Availability caches invalidated, fresh data will be loaded from DB")
+        except Exception as e:
+            print(f"[_invalidate_availability_caches] Warning: {e}")
+
     def write_db_err_rights(self, *args, **kwargs):
         # Преобразуем позиционные аргументы в строку
         args_str = ' '.join(map(str, args))
@@ -388,20 +409,14 @@ class ActionMapper:
         if not self.plan_cell_list:
             return {"trigger": "view_ok"}
 
-        # ИСПРАВЛЕНО: Проверяем ячейки перед выдачей, пропускаем уже выданные
+        # Проверяем ячейки перед выдачей, пропускаем уже выданные (защита от двойной выдачи)
         while self.plan_cell_list:
             candidate_cell = self.plan_cell_list[0]
-            
-            # Обновляем сессию для получения актуальных данных
-            try:
-                self.session_local.commit()
-                self.session_local.expire_all()
-            except Exception as e:
-                print(f"[read_db_get_more_cells] Warning: Failed to expire session: {e}")
-            
-            # Получаем актуальное состояние ячейки из БД
+            self._invalidate_availability_caches("read_db_get_more_cells")
             cell = self.e_cell.get_cell_by_id(candidate_cell.id)
-            
+            if not cell:
+                self.plan_cell_list.pop(0)
+                continue
             # Проверяем, не была ли ячейка уже выдана
             # 1. Проверяем статус ячейки (должен быть 3 или 7)
             if cell.status_id not in [3, 7]:
@@ -488,53 +503,42 @@ class ActionMapper:
         print(f"write_db_tool_consumption {index}, {args}, {kwargs}, {self.select_tool}, {self.select_cell}, {self.select_plan}")
         """
         Записывает факт расхода инструмента в базу данных.
-        user_id: Идентификатор пользователя, который получил инструмент.
-        tool_id: Идентификатор инструмента, который был израсходован.
-        :return: True, если операция выполнена успешно, иначе False.
+        Перед выдачей инвалидирует кэши и заново читает ячейку из БД, чтобы исключить двойную выдачу
+        при медленном обновлении UI/кэша (повторное нажатие или параллельный запрос).
         """
+        if not self.select_cell:
+            print("[write_db_tool_consumption] select_cell не задана.")
+            return {'trigger': 'view_err'}
 
-        # dbSync.init_db = False
+        # Инвалидация кэшей и сессии до чтения ячейки — гарантирует актуальное состояние из БД,
+        # чтобы при повторном вызове (двойной клик / медленный UI) увидеть уже очищенную ячейку и отклонить выдачу
+        self._invalidate_availability_caches("write_db_tool_consumption")
 
-        # # Проверить наличие инструмента в ячейке
-        # cells = self.e_cell.get_cells_by_tool(self.select_tool.id)
-        # cell = None
-        # if cells != []:
-        #     cell = cells[0]
+        cell = self.e_cell.get_cell_by_id(self.select_cell.id)
+        if not cell:
+            print(f"[write_db_tool_consumption] Ячейка {self.select_cell.id} не найдена.")
+            return {'trigger': 'view_err'}
+        # Проверка по актуальным данным из БД: ячейка должна быть в статусе «готово к выдаче» (3 или 7) и содержать инструмент
+        if cell.status_id not in (3, 7):
+            print(f"[write_db_tool_consumption] Ячейка {cell.id} уже выдана или недоступна (status_id={cell.status_id}).")
+            return {'trigger': 'view_err'}
+        if not cell.tools_id:
+            print(f"[write_db_tool_consumption] В ячейке {self.select_cell.number} не найдено инструментов.")
+            return {'trigger': 'view_err'}
 
-        # Получить статус "расход"
+        self.select_tool = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
+
         status = self.e_status.find_by_name("consumption")
         if not status:
             print("Статус «расход» не найден.")
-            index = max(self.e_status.get_all_ids(), default=0) + 1
+            idx = max(self.e_status.get_all_ids(), default=0) + 1
             self.e_status.add(
-                index=index,
+                index=idx,
                 stype="consumption",
                 description="Инструмент выдан!",
                 created_at=datetime.datetime.now()
             )
-            status = self.e_status.get_status_by_id(status_id=index)
-            # return {'trigger': 'view_err'}
-
-        # if not self.select_tool:
-            # self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
-        self.select_tool = self.e_tool_types.get_tool_type_by_id(self.select_cell.tools_id)
-
-        # Принудительное обновление сессии перед получением ячейки
-        # Это гарантирует, что мы получим актуальные данные из БД, а не устаревшие из кэша сессии
-        try:
-            self.session_local.commit()
-            self.session_local.expire_all()
-            print("[write_db_tool_consumption] Session expired before getting cell - fresh data will be loaded from DB")
-        except Exception as e:
-            print(f"[write_db_tool_consumption] Warning: Failed to expire session before getting cell: {e}")
-
-        cell = self.e_cell.get_cell_by_id(self.select_cell.id)
-        if not cell.tools_id:
-            # print(
-            #     f"Инструмент с идентификатором {self.select_tool.id} не найдено ни в одной ячейке.")
-            print(
-                f"В ячейке {self.select_cell.number} не найдено инструментов.")
-            return {'trigger': 'view_err'}
+            status = self.e_status.get_status_by_id(status_id=idx)
 
         # Очистить ячейку (удалить инструмент из неё)
         cleared = self.e_cell.update_cell(
@@ -606,30 +610,8 @@ class ActionMapper:
             print("Не удалось записать потребление операции.")
             return {'trigger': 'view_err'}
 
-        # Инвалидация кэша для немедленного обновления данных о наличии инструментов
-        # Это гарантирует, что данные обновятся сразу после выдачи, не дожидаясь синхронизации
-        
-        # 1. Очистка кэша CRUD-классов (TTLCache)
-        self.e_cell._cache.clear()  # Инвалидация кэша ячеек
-        self.e_load._cache.clear()  # Инвалидация кэша загрузок
-        self.e_tool_types._cache.clear()  # Инвалидация кэша типов инструментов
-        self.e_group._cache.clear()  # Инвалидация кэша групп
-        self.e_consumption._cache.clear()  # ИСПРАВЛЕНО: Инвалидация кэша потребления (важно для правильного подсчета выданных инструментов)
-        
-        # 2. Принудительное обновление сессии SQLAlchemy для получения свежих данных из БД
-        # Безопасно, так как session_local используется только в GUI потоке и не передается в другие потоки
-        # expire_all() заставит SQLAlchemy перезагрузить все объекты из БД при следующем запросе
-        try:
-            # Коммитим все изменения перед expire_all
-            self.session_local.commit()
-            # Обновляем сессию - все объекты будут перезагружены из БД при следующем запросе
-            self.session_local.expire_all()
-            print("SQLAlchemy session expired - fresh data will be loaded from DB")
-        except Exception as e:
-            # Если произошла ошибка, не прерываем выполнение
-            print(f"Warning: Failed to expire session: {e}")
-        
-        print("Cache invalidated after tool consumption")
+        self._invalidate_availability_caches("write_db_tool_consumption")
+        self.e_consumption._cache.clear()
 
         if not self.plan_cell_list:
             print("write_db_tool_consumption trigger")
@@ -648,7 +630,7 @@ class ActionMapper:
         :param group_id: ID группы, для которой извлекаются инструменты.
         :return: Список инструментов в формате словарей.
         """
-
+        self._invalidate_availability_caches("read_db_tools_collection")
         # Лямбда для создания словаря инструментов
         def create_tool_dict(cell, tool):
             return {
@@ -818,10 +800,11 @@ class ActionMapper:
     def read_db_tool_names(self, group_id, group_name):
         """
         Возвращает список инструментов, готовых к выдаче, связанных с указанной группой.
-        Учитываются статусы инструментов в таблице Cell и информация из LoadOperations, DropOperations и OperationsConsumption.
+        Доступное количество считается только по ячейкам Cell с статусом 3 или 7 и свободной нагрузке (Load.plan_id is None),
+        без привязки к операциям выдачи (Consumption). При выдаче ячейка обнуляется (status_id=1), поэтому счёт остаётся корректным.
 
         :param group_id: ID группы, для которой извлекаются инструменты.
-        :return: Список объектов Tools, готовых к выдаче.
+        :return: Список объектов Tools, готовых к выдаче, с полем count.
         """
         self.select_plan = None
         # Лямбда для создания словаря инструментов
@@ -877,16 +860,7 @@ class ActionMapper:
 
         valid_tool_types = []
 
-        # Инвалидация кеша перед чтением данных о ячейках
-        # Это гарантирует, что мы получим актуальные данные из БД, а не устаревшие из кеша
-        self.e_cell._cache.clear()  # Очистка кеша ячеек
-        try:
-            # Принудительное обновление сессии SQLAlchemy для получения свежих данных из БД
-            self.session_local.commit()
-            self.session_local.expire_all()
-            print("[read_db_tool_names] SQLAlchemy session expired - fresh data will be loaded from DB")
-        except Exception as e:
-            print(f"[read_db_tool_names] Warning: Failed to expire session: {e}")
+        self._invalidate_availability_caches("read_db_tool_names")
 
         # for tool in tools:
         #     print(" Эталон tool id " + str(tool.id))
@@ -939,19 +913,9 @@ class ActionMapper:
 
                         loads = self.e_load.find_by_cell_id(cell.id)
                         load = max(loads, key=lambda rec: rec.id) if loads else None
+                        # Доступность только по ячейкам Cell с нужным статусом (3, 7) и свободной нагрузке; без привязки к Consumption
                         if load and not load.plan_id:
-                            # ИСПРАВЛЕНО: Проверяем, не был ли инструмент уже выдан (есть ли Consumption запись)
-                            consumptions = self.e_consumption.get_by_cell_id(cell.id)
-                            cell_already_consumed = False
-                            for consumption in consumptions:
-                                if not consumption.plan_id:  # Для свободных инструментов проверяем Consumption без plan_id
-                                    cell_already_consumed = True
-                                    print(f"[read_db_tool_names] Cell {cell.id} уже использована (свободный инструмент), пропускаем")
-                                    break
-                            
-                            # Учитываем ячейку только если инструмент еще не был выдан
-                            if not cell_already_consumed:
-                                valid_tools_count += 1
+                            valid_tools_count += 1
 
             print(f"tool_type: {tool_type}, valid_tools_count: {valid_tools_count}")
 
@@ -1423,10 +1387,10 @@ class ActionMapper:
                 drop_dict['status_id'] = status_ready.id
                 self.e_drop.update(index=drop.id, **drop_dict)
 
-            self.e_mass_drop._cache.clear()  # Для MassLoad (get_all_ids, all)
-            self.e_drop._cache.clear()       # Для Load (find_by_mass_load_id, get)
-            self.e_cell._cache.clear()      # Ячейки освобождены — инвалидация для планов и массовой выгрузки
-            self.e_history._cache.clear()   # Добавлены записи истории
+            self.e_mass_drop._cache.clear()
+            self.e_drop._cache.clear()
+            self.e_history._cache.clear()
+            self._invalidate_availability_caches("write_db_drop_tool_groups")
 
             return result
 
@@ -1596,9 +1560,8 @@ class ActionMapper:
                 self.e_load.update(index=load.id, **load_dict)
 
 
-            # Очистка кешей затрагиваемых моделей для актуальности данных
-            self.e_mass_load._cache.clear()  # Для MassLoad (get_all_ids, all)
-            self.e_load._cache.clear()       # Для Load (find_by_mass_load_id, get)
+            self.e_mass_load._cache.clear()
+            self._invalidate_availability_caches("write_db_load_tool_groups")
             logging.info("Cache cleared for mass load confirmation")
 
             return result
@@ -1609,9 +1572,11 @@ class ActionMapper:
 
     def read_db_groups(self):
         """
-        Получает список всех групп из базы данных.
+        Получает список всех групп из базы данных с количеством доступных инструментов по каждой группе.
+        Доступное количество считается только по ячейкам Cell с статусом 3 или 7 и свободной нагрузке (Load.plan_id is None),
+        без привязки к операциям выдачи (Consumption).
 
-        :return: Список словарей с информацией о группах (id, name, description, status).
+        :return: Словарь {Group: count} для корневых групп.
         """
 
         # TODO: Вынести в утилитарный класс
@@ -1625,6 +1590,8 @@ class ActionMapper:
                 parent_group = self.e_group.get_group_by_id(group.paren_group_id)
                 sum_parent_count(
                     group_count_dict, parent_group, count)
+
+        self._invalidate_availability_caches("read_db_groups")
 
         try:
 
@@ -1675,6 +1642,7 @@ class ActionMapper:
 
         :return: Словарь, где ключи - идентификаторы групп, а значения - связанные объекты (Tools, Cells и т.д.).
         """
+        self._invalidate_availability_caches("read_db_group_collection")
         try:
             group_collection = {}
             valid_root_groups = set()
@@ -2581,6 +2549,7 @@ class ActionMapper:
                 raise ValueError(
                     f"Не удалось создать запись в таблице DropOperations для Drop ID {drop_id}.")
 
+        self._invalidate_availability_caches("write_db_mass_drop_tools_by_free")
         return True
 
     def write_db_mass_drop_tools_by_plan(self, plan_id: int, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
@@ -2675,6 +2644,7 @@ class ActionMapper:
                 raise ValueError(
                     f"Не удалось создать запись в таблице DropOperations для Drop ID {drop_id}.")
 
+        self._invalidate_availability_caches("write_db_mass_drop_tools_by_plan")
         return True
 
     def write_db_mass_load_tools_by_plan(self, plan_id: int, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
@@ -2773,6 +2743,7 @@ class ActionMapper:
                 raise ValueError(
                     f"Не удалось создать запись в таблице LoadOperations для Load ID {load_id}.")
 
+        self._invalidate_availability_caches("write_db_mass_load_tools_by_plan")
         return True
 
     def read_db_mass_load_tools(self, *args, **kwargs) -> List[dict]:
@@ -2942,6 +2913,7 @@ class ActionMapper:
                 raise ValueError(
                     f"Не удалось создать запись в таблице LoadOperations для Load ID {load_id}.")
 
+        self._invalidate_availability_caches("write_db_mass_load_tools_by_free")
         return True
 
     def read_db_mass_load_tools_by_plan(self, plan_id):

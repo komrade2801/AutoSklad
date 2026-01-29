@@ -58,6 +58,10 @@ class ServerCommand(TypedDict):
     last_modified: str
 
 
+# Размер батча при отправке push: порядок команд сохраняется
+PUSH_BATCH_SIZE = 30
+
+
 class CommandSender:
     """
     Компонент Push-процесса синхронизации.
@@ -189,79 +193,67 @@ class CommandSender:
 
         print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] {len(pending)} pending команд для отправки (старше retrying). Текущее время: {datetime.datetime.now()}')
 
-        # Подготавливаем payload
         schema_hash = self._schema_hash or ""
-        payload = {
-            "device": self.device_id,
-            "schema_hash": schema_hash,
-            "commands": []
-        }
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] schema_hash: {schema_hash}. Текущее время: {datetime.datetime.now()}')
-        for cmd in pending:
-            payload["commands"].append({
-                "id": cmd["id"],
-                "table": cmd["table"],
-                "operation": cmd["operation"].upper(),
-                "data": cmd["data"],
-            })
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] payload подготовлен. Текущее время: {datetime.datetime.now()}')
 
-        try:
-            if self.logger:
-                self.logger.log_info(f"Sending {len(pending)} pending commands to {self.endpoint}")
-            response = self.transport.send_push(self.endpoint, payload)
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] pending команды отправлены успешно. Текущее время: {datetime.datetime.now()}')
+        # Отправка батчами по PUSH_BATCH_SIZE с сохранением порядка
+        for batch_start in range(0, len(pending), PUSH_BATCH_SIZE):
+            batch = pending[batch_start : batch_start + PUSH_BATCH_SIZE]
+            payload = {
+                "device": self.device_id,
+                "schema_hash": schema_hash,
+                "commands": [
+                    {"id": cmd["id"], "table": cmd["table"], "operation": cmd["operation"].upper(), "data": cmd["data"]}
+                    for cmd in batch
+                ]
+            }
+            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Отправка батча {batch_start // PUSH_BATCH_SIZE + 1} ({len(batch)} команд). Текущее время: {datetime.datetime.now()}')
 
-            # dev-mode
-            if self.sync_processor:
-                self.sync_processor.process_push(
-                    device=self.device_id,
-                    commands=payload["commands"],
-                    client_schema_hash=schema_hash
-                )
+            try:
+                if self.logger:
+                    self.logger.log_info(f"Sending batch of {len(batch)} commands to {self.endpoint}")
+                response = self.transport.send_push(self.endpoint, payload)
+                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Батч отправлен успешно. Текущее время: {datetime.datetime.now()}')
 
-            # Обрабатываем ответ сервера и обновляем статусы команд
-            server_statuses = response.get("statuses", []) if isinstance(response, dict) else []
-            # Создаём словарь для быстрого поиска статуса по ID команды
-            status_map = {str(s.get("id", "")): s for s in server_statuses if s.get("id") is not None}
-            
-            # Обновляем статусы команд в соответствии с ответом сервера
-            for cmd in pending:
-                cmd_id = str(cmd["id"])
-                server_status = status_map.get(cmd_id)
-                
-                if server_status:
-                    # Если сервер вернул статус для этой команды
-                    status = server_status.get("status", "").upper()
-                    if status == "COMPLETED":
-                        self.queue.mark_as_done(cmd_id)
-                        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (сервер вернул COMPLETED)')
-                    elif status in ("FAILED", "ERROR"):
-                        # Если команда упала на сервере, помечаем как failed
-                        self.queue.mark_as_failed(cmd_id)
-                        error_msg = server_status.get("error", "Unknown error")
-                        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как failed (сервер вернул {status}): {error_msg}')
+                if self.sync_processor:
+                    self.sync_processor.process_push(
+                        device=self.device_id,
+                        commands=payload["commands"],
+                        client_schema_hash=schema_hash
+                    )
+
+                # Обрабатываем ответ сервера и обновляем статусы команд батча
+                server_statuses = response.get("statuses", []) if isinstance(response, dict) else []
+                status_map = {str(s.get("id", "")): s for s in server_statuses if s.get("id") is not None}
+
+                for cmd in batch:
+                    cmd_id = str(cmd["id"])
+                    server_status = status_map.get(cmd_id)
+                    if server_status:
+                        status = server_status.get("status", "").upper()
+                        if status == "COMPLETED":
+                            self.queue.mark_as_done(cmd_id)
+                            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (сервер вернул COMPLETED)')
+                        elif status in ("FAILED", "ERROR"):
+                            self.queue.mark_as_failed(cmd_id)
+                            error_msg = server_status.get("error", "Unknown error")
+                            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как failed (сервер вернул {status}): {error_msg}')
+                        else:
+                            self.queue.mark_as_retrying(cmd_id)
+                            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как retrying (неизвестный статус: {status})')
                     else:
-                        # Неизвестный статус - оставляем как retrying
-                        self.queue.mark_as_retrying(cmd_id)
-                        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как retrying (неизвестный статус: {status})')
-                else:
-                    # Если сервер не вернул статус для этой команды, считаем успешной (для обратной совместимости)
-                    self.queue.mark_as_done(cmd_id)
-                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (статус не найден в ответе сервера, считаем успешной)')
-            
-            if self.logger:
-                self.logger.log_info(f"Processed {len(pending)} commands based on server response.")
+                        self.queue.mark_as_done(cmd_id)
+                        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (статус не найден в ответе сервера, считаем успешной)')
 
-        except Exception as err:
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Не удалось отправить pending команды: {err} Текущее время: {datetime.datetime.now()}')
+                if self.logger:
+                    self.logger.log_info(f"Processed batch of {len(batch)} commands based on server response.")
 
-            if self.logger:
-                self.logger.log_error(f"Failed to send pending commands: {err}")
-            # Pending команды становятся retrying для первой попытки
-            for cmd in pending:
-                self.queue.mark_as_retrying(cmd["id"])
-            raise
+            except Exception as err:
+                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Ошибка отправки батча: {err} Текущее время: {datetime.datetime.now()}')
+                if self.logger:
+                    self.logger.log_error(f"Failed to send batch: {err}")
+                for cmd in batch:
+                    self.queue.mark_as_retrying(cmd["id"])
+                raise
 
     def send_single_command(self, cmd: dict) -> None:
         """

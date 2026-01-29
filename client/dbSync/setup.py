@@ -56,7 +56,7 @@ def init_retry_manager(scheduler, queue, sender, diagnostic_logger):
     return retry_manager
 
 
-def init_transport_service(host, token="<YOUR_JWT_TOKEN>", secret=b"supersecret", aes=b"16byteslongkey!!", Port=""):
+def init_transport_service(host, token="<YOUR_JWT_TOKEN>", secret=b"supersecret", aes=b"16byteslongkey!!", Port="", push_http_timeout=120):
     from .Logic_v2.TransportService import TransportService
     if host and not host.startswith("http"):
         host = f"http://{host}"
@@ -65,7 +65,8 @@ def init_transport_service(host, token="<YOUR_JWT_TOKEN>", secret=b"supersecret"
         jwt_token=token,
         hmac_secret=secret,
         aes_key=aes,
-        port=Port
+        port=Port,
+        push_http_timeout=push_http_timeout
     )
     print('[setup]init_transport_service')
     return transport

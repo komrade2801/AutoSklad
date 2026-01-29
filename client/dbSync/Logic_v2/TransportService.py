@@ -52,7 +52,8 @@ class TransportService:
             aes_key: Optional[bytes] = None,
             validator=JSONSchemaValidator(),
             device_id=None,
-            port=""
+            port="",
+            push_http_timeout: int = 120
         ):
         self.port = port
         self.device_id = device_id
@@ -61,6 +62,7 @@ class TransportService:
         self.hmac_secret = hmac_secret
         self.aes_key = aes_key
         self.validator = validator
+        self.push_http_timeout = push_http_timeout
 
     def _get_headers(self) -> Dict[str, str]:
         """
@@ -253,12 +255,12 @@ class TransportService:
         )  # лог итогового URL :contentReference[oaicite:12]{index=12}
 
         # ——————————————————————————————————————————————————————————————————————
-        # 5) Делаем HTTP-запрос (POST)
+        # 5) Делаем HTTP-запрос (POST) с таймаутом для больших батчей
         print(
             f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Шаг 5: отправляем POST-запрос. [{datetime.now()}]"
+            f"Шаг 5: отправляем POST-запрос (timeout={self.push_http_timeout}s). [{datetime.now()}]"
         )  # лог отправки запроса :contentReference[oaicite:13]{index=13}
-        resp = requests.post(url, data=body, headers=headers)
+        resp = requests.post(url, data=body, headers=headers, timeout=self.push_http_timeout)
         try:
             resp.raise_for_status()
         except Exception:

@@ -45,7 +45,8 @@ async def lifespan(app: FastAPI):
         secret=cfg.secret,
         aes=cfg.aes,
         scheduler_sender_timeout=cfg.sender_timeout,
-        scheduler_receiver_timeout=cfg.receiver_timeout
+        scheduler_receiver_timeout=cfg.receiver_timeout,
+        push_http_timeout=cfg.push_http_timeout
     )
     yield
     stop_sync(cfg.device_id)

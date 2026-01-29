@@ -96,7 +96,7 @@ def job_process_retrying(_sender, _retry_manager):
     _sender.process_retrying(_retry_manager)
 
 
-def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", secret=b"supersecret", aes=b"16byteslongkey!!", scheduler_sender_timeout=60, scheduler_receiver_timeout=120):
+def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", secret=b"supersecret", aes=b"16byteslongkey!!", scheduler_sender_timeout=60, scheduler_receiver_timeout=120, push_http_timeout=120):
     if device_id in _active_schedulers:
         logging.getLogger("sync.startup").warning(
             f"[INFO] Already running for device={device_id}")
@@ -120,7 +120,8 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
             token=token,
             secret=secret,
             aes=aes,
-            Port=port
+            Port=port,
+            push_http_timeout=push_http_timeout
         )
         # Создаём все компоненты, в том числе scheduler = init_scheduler()
         # scheduler = init_scheduler()
@@ -310,7 +311,7 @@ def stop_sync(device_id: int):
         f"[STOPPED] Остановлен sync для device={device_id}")
 
 
-def create_sync_components(device_id: int, host, token, secret, aes, Port=""):
+def create_sync_components(device_id: int, host, token, secret, aes, Port="", push_http_timeout=120):
     """
     Инстанцирует все зависимости логического слоя синхронизации для одного устройства.
     """
@@ -339,7 +340,7 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port=""):
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_crud - Успешно.')
 
     transport_service = init_transport_service(
-        host=host, token=token, secret=secret, aes=aes, Port=Port)
+        host=host, token=token, secret=secret, aes=aes, Port=Port, push_http_timeout=push_http_timeout)
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_transport_service - Успешно.')
 
     batch_processor = init_batch_processor(
@@ -414,7 +415,7 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port=""):
             cmd_crud, transport_service, batch_processor, conflict_manager, sender, receiver, retry_manager, scheduler, processor)
 
 
-def _create_sync_components(device_id: int, host, token, secret, aes, Port=""):
+def _create_sync_components(device_id: int, host, token, secret, aes, Port="", push_http_timeout=120):
     """
     Инстанцирует все зависимости логического слоя синхронизации для одного устройства.
     """
@@ -443,7 +444,7 @@ def _create_sync_components(device_id: int, host, token, secret, aes, Port=""):
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_crud - Успешно.')
 
     transport_service = init_transport_service(
-        host=host, token=token, secret=secret, aes=aes, Port=Port)
+        host=host, token=token, secret=secret, aes=aes, Port=Port, push_http_timeout=push_http_timeout)
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_transport_service - Успешно.')
 
     batch_processor = init_batch_processor(
