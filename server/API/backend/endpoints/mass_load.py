@@ -478,28 +478,30 @@ def save_mass_load(
     new_mass_load = None
     loads: list = []
     cell_backs: list = []
-    device_id = device.id
+    device_id = device.id  # PK в БД (для связей HasDevice и т.д.)
+    # Ключ очереди синхронизации на сервере — device_number (см. main.py: start_sync(dev.number))
+    queue_device_id = device_number
     operation_ids: list[int] = []
     story_ids: list[int] = []
 
-    # Проверка наличия очереди синхронизации для устройства
+    # Проверка наличия очереди синхронизации для устройства (очередь зарегистрирована по device_number)
     from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES
-    queue_in = INBOUND_QUEUES.get(device_id)
-    print(f"[save_mass_load] device_id={device_id}, device_number={device_number}, "
+    queue_in = INBOUND_QUEUES.get(queue_device_id)
+    print(f"[save_mass_load] device_id={device_id}, device_number={device_number}, queue_device_id={queue_device_id}, "
           f"queue_in={'EXISTS' if queue_in else 'NOT FOUND'}, "
           f"available_devices={list(INBOUND_QUEUES.keys())}")
     if not queue_in:
-        print(f"[save_mass_load][WARNING] Очередь синхронизации не найдена для device_id={device_id}! "
+        print(f"[save_mass_load][WARNING] Очередь синхронизации не найдена для queue_device_id={queue_device_id}! "
               f"Команды синхронизации НЕ будут созданы.")
 
-    # Устанавливаем device_id для всех CRUD-объектов, чтобы команды синхронизации создавались правильно
-    e_cells.device_id = device_id
-    e_stories.device_id = device_id
-    e_load.device_id = device_id
-    e_load_operation.device_id = device_id
-    e_mass_load.device_id = device_id
-    e_mass_load_has_device.device_id = device_id
-    print(f"[save_mass_load] Установлен device_id={device_id} для CRUD-объектов: "
+    # Устанавливаем device_id для CRUD так, чтобы декоратор @sync_aware клал команды в правильную очередь (по device_number)
+    e_cells.device_id = queue_device_id
+    e_stories.device_id = queue_device_id
+    e_load.device_id = queue_device_id
+    e_load_operation.device_id = queue_device_id
+    e_mass_load.device_id = queue_device_id
+    e_mass_load_has_device.device_id = queue_device_id
+    print(f"[save_mass_load] Установлен device_id={queue_device_id} для CRUD-объектов (ключ очереди): "
           f"e_cells, e_stories, e_load, e_load_operation, e_mass_load, e_mass_load_has_device")
 
     try:
