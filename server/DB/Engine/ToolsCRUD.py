@@ -27,7 +27,7 @@ class EngineTools(BaseCRUD):
     Остальные связи (с Plan, Cell, History) доступны через свойства модели.
     """
 
-    def __init__(self, session_db: Session = None):
+    def __init__(self, session: Session = None):
         # self.e_load_operations = EngineLoadOperations()
         # self.e_load = EngineLoad()
         self.e_load_operations_has_device = EngineLoadOperationsHasDevice()
@@ -36,7 +36,7 @@ class EngineTools(BaseCRUD):
         # self.e_drop = EngineDrop()
         # self.e_drop_operations = EngineDropOperations()
         # self.e_drop_operations_has_device = EngineDropOperationsHasDevice()
-        super().__init__(session=session_db, model=Tools)
+        super().__init__(session=session, model=Tools)
 
     def add_tool(self,
                  tool_id: int,

@@ -153,7 +153,7 @@ def crud_engines(db_session):
     """Создает CRUD движки для работы с БД."""
     return {
         "group": EngineGroup(session=db_session),
-        "tool_types": EngineToolTypes(session_db=db_session),
+        "tool_types": EngineToolTypes(session=db_session),
         "load": EngineLoad(session=db_session),
         "cell": EngineCell(session=db_session),
         "status": EngineStatus(session=db_session),

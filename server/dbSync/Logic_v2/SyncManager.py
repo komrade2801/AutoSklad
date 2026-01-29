@@ -155,7 +155,7 @@ class SyncManager:
         crud_cls = self.crud_registry.get(table)
         if crud_cls is None:
             raise ValueError(f"Неизвестная таблица: {table}")
-        return crud_cls(self._session)
+        return crud_cls(session=self._session)
 
     def _parse_dates(self, data: Dict[str, Any]):
         for key in ("date", "datetime"):
@@ -464,18 +464,20 @@ class SyncManager:
         """
         Возвращает все записи таблицы.
         """
-        crud = self.crud_registry.get(table)
-        if crud is None:
+        crud_cls = self.crud_registry.get(table)
+        if crud_cls is None:
             raise ValueError(f"Неизвестная таблица: {table}")
+        crud = crud_cls(session=self._session)
         return crud.list()
 
     def filter(self, table: str, **conds: Any) -> List[Any]:
         """
         Возвращает записи, удовлетворяющие условиям.
         """
-        crud = self.crud_registry.get(table)
-        if crud is None:
+        crud_cls = self.crud_registry.get(table)
+        if crud_cls is None:
             raise ValueError(f"Неизвестная таблица: {table}")
+        crud = crud_cls(session=self._session)
         return crud.filter(**conds)
 
     def bulk_process(self, commands: List[Dict[str, Any]]) -> List[Any]:
