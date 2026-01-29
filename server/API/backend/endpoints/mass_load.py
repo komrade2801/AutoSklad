@@ -33,6 +33,7 @@ from DB.Engine.UserCRUD import EngineUser
 from DB.Engine.LoadCRUD import EngineLoad
 from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
 from DB.Engine.MassLoadCRUD import EngineMassLoad
+from DB.Engine.MassLoadHasDeviceCRUD import EngineMassLoadHasDevice
 from typing import Dict, List  # , Optional  # Добавлен Optional
 from collections import defaultdict
 from fastapi.responses import RedirectResponse
@@ -461,6 +462,7 @@ def save_mass_load(
     e_operation_has_device = EngineLoadOperationsHasDevice()
     e_history_has_device = EngineHistoryHasDevice()
     e_mass_load = EngineMassLoad()
+    e_mass_load_has_device = EngineMassLoadHasDevice()
     e_cells = EngineCell()
     e_cell_has_device = EngineCellHasDevice()
     e_stories = EngineHistory()
@@ -496,8 +498,9 @@ def save_mass_load(
     e_load.device_id = device_id
     e_load_operation.device_id = device_id
     e_mass_load.device_id = device_id
+    e_mass_load_has_device.device_id = device_id
     print(f"[save_mass_load] Установлен device_id={device_id} для CRUD-объектов: "
-          f"e_cells, e_stories, e_load, e_load_operation, e_mass_load")
+          f"e_cells, e_stories, e_load, e_load_operation, e_mass_load, e_mass_load_has_device")
 
     try:
         # 5) создаём запись MassLoad
@@ -519,6 +522,11 @@ def save_mass_load(
                          description="Инициализирована массовая загрузка")
             mass_load_status = e_status.get_status_by_id(idx)
         status_load = e_status.find_by_name("mass_load_init")
+
+        # Создаём связь MassLoad с Device для синхронизации и отображения в клиенте
+        print(f"[save_mass_load] Создание связи MassLoadHasDevice: mass_load_id={mass_load_id}, device_id={device_id}")
+        e_mass_load_has_device.add_link(mass_load_id=mass_load_id, device_id=device_id)
+        print(f"[save_mass_load] ✅ Связь MassLoadHasDevice создана успешно")
 
         # 6) обрабатываем каждую операцию
         total_operations = len(stories)
@@ -782,6 +790,7 @@ def save_mass_load(
                 )
 
             if mass_load_id is not None:
+                e_mass_load_has_device.delete_link(mass_load_id=mass_load_id, device_id=device_id)
                 e_mass_load.delete(mass_load_id)
         except Exception:
             print(traceback.format_exc())
