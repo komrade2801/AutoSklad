@@ -330,7 +330,33 @@ def create_plan(
             for tool in plan.tools:
                 total_tools += tool['quantity']
 
-            if total_tools > len(empty_cells) - 6:
+            # БЛОКИРОВАННЫЕ ЯЧЕЙКИ: первый столбец каждой строки (1, 36, 71, 106, 141, 176)
+            BLOCKED_CELL_NUMBERS = {1, 36, 71, 106, 141, 176}
+            
+            # Симулируем логику цикла для точного подсчета необходимых ячеек
+            # Каждая заблокированная ячейка требует дополнительную ячейку из списка
+            cell_index = 0
+            cells_needed = 0
+            
+            # Подсчитываем, сколько ячеек фактически понадобится
+            for _ in range(total_tools):
+                if cell_index >= len(empty_cells):
+                    # Недостаточно ячеек
+                    raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
+                
+                # Если текущая ячейка заблокирована, пропускаем её
+                if empty_cells[cell_index].number in BLOCKED_CELL_NUMBERS:
+                    cell_index += 1
+                    cells_needed += 1  # Заблокированная ячейка требует дополнительную
+                    # Проверяем, что есть еще одна ячейка после заблокированной
+                    if cell_index >= len(empty_cells):
+                        raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
+                
+                cell_index += 1
+                cells_needed += 1
+            
+            # Проверяем, достаточно ли ячеек с учетом заблокированных
+            if cells_needed > len(empty_cells):
                 raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
 
             operation = {}
@@ -342,7 +368,7 @@ def create_plan(
                     print(f"create_plan tool: {tool}, cell_used: {cell_checked}")
                     cell = empty_cells[cell_checked]
                     cell_checked += 1
-                    if cell.number in {1, 36, 71, 106, 141, 176}:
+                    if cell.number in BLOCKED_CELL_NUMBERS:
                         cell = empty_cells[cell_checked]
                         cell_checked += 1
                     cell_used += 1
