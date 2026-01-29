@@ -275,9 +275,10 @@ def create_plan(
     if not device:
         raise HTTPException(status_code=404, detail="Устройство не найдено")
 
-    # Ключ очереди синхронизации — device_number (как в main.py start_sync), чтобы команды Plan/PlanToolTypes/MassLoad шли в одну очередь
-    plans_crud.device_id = device_number
-    plan_tool_types_crud.device_id = device_number
+    # Ключ очереди синхронизации — device_number (int, как в main.py start_sync(dev.number))
+    _queue_key = int(device_number)
+    plans_crud.device_id = _queue_key
+    plan_tool_types_crud.device_id = _queue_key
 
     try:
 

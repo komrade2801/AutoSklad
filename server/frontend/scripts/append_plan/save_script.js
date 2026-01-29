@@ -52,25 +52,26 @@
         return;
     }
 
-        // Подготовим объект tools с актуальными значениями из input'ов
+        // Подготовим объект tools с актуальными значениями из input'ов (только строки выбора — .tool-row-block)
     const toolsContainer = document.getElementById("selection_tools");
-    const toolDivs = toolsContainer.querySelectorAll("div");
+    const toolRows = toolsContainer.querySelectorAll(".tool-row-block");
     const tools = [];
 
-    toolDivs.forEach(div => {
-        const nameDiv = div.querySelector(".toolName") || div.firstChild;
+    toolRows.forEach(div => {
+        const nameDiv = div.querySelector(".tool-name-block");
         const input = div.querySelector(".input_amount");
 
         if (nameDiv && input) {
-            const toolId = nameDiv.getAttribute('data-tool-id');
-          const toolName = nameDiv.textContent.trim();
-          const toolCount = parseInt(input.value, 10) || 1;
-          // tools[toolName] = toolCount.toString();
-          tools.push({
-            id: toolId,
-            name: toolName,
-            quantity: toolCount
-          });
+            const toolIdRaw = nameDiv.getAttribute('data-tool-id');
+            const toolId = toolIdRaw != null ? parseInt(toolIdRaw, 10) : NaN;
+            if (Number.isNaN(toolId)) return;
+            const toolName = nameDiv.textContent.trim();
+            const toolCount = parseInt(input.value, 10) || 1;
+            tools.push({
+                id: toolId,
+                name: toolName,
+                quantity: toolCount
+            });
         }
     });
 
@@ -95,12 +96,10 @@
     };
 
     console.log(window.jsonPlan);
-    let device_number = 1;
-    let plan_request = {'plan': window.jsonPlan, 'create_mass_load': createMassLoad};
-    save_all_plans(device_number, plan_request)
-
-    //Перенаправление на другую страницу:
-    window.location.href='../screen_7_plans.html?token=' + localStorage.getItem('token');
+    const device_number = 1;
+    const plan_request = { plan: window.jsonPlan, create_mass_load: createMassLoad };
+    save_all_plans(device_number, plan_request);
+    // Перенаправление выполняется в save_all_plans после успешного ответа
   });
 
 

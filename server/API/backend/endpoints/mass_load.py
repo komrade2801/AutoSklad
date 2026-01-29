@@ -479,8 +479,8 @@ def save_mass_load(
     loads: list = []
     cell_backs: list = []
     device_id = device.id  # PK в БД (для связей HasDevice и т.д.)
-    # Ключ очереди синхронизации на сервере — device_number (см. main.py: start_sync(dev.number))
-    queue_device_id = device_number
+    # Ключ очереди синхронизации на сервере — device_number (int, как в main.py start_sync(dev.number))
+    queue_device_id = int(device_number)
     operation_ids: list[int] = []
     story_ids: list[int] = []
 

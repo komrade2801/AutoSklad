@@ -56,7 +56,9 @@ def sync_aware(func):
 
         table_name  = getattr(self.model, "__tablename__", self.model.__name__)
         method_name = func.__name__
+        # Ключ очереди в INBOUND_QUEUES — всегда int (main.py: start_sync(dev.number)); нормализуем для надёжного поиска
         device_id   = getattr(self, "device_id", 1)
+        queue_key   = int(device_id) if device_id is not None else 1
         # 1) Собираем все реальные аргументы (включая self) через inspect
         # sig   = inspect.signature(func)
         # bound = sig.bind(self, *args, **kwargs)
@@ -110,8 +112,13 @@ def sync_aware(func):
             )
             raise
 
-        # Кладём «локальную» команду в очередь на отправку серверу
-        queue_in = INBOUND_QUEUES.get(device_id)
+        # Кладём «локальную» команду в очередь на отправку (ключ — queue_key, int)
+        queue_in = INBOUND_QUEUES.get(queue_key)
+        if not queue_in and INBOUND_QUEUES:
+            # Fallback: если очередь по device не найдена (другой тип ключа и т.д.), используем первую доступную
+            queue_in = next(iter(INBOUND_QUEUES.values()))
+            print(f"[{threading.current_thread().name}][decorators][wraps] Очередь по queue_key={queue_key} не найдена, использована первая доступная. "
+                  f"available_keys={list(INBOUND_QUEUES.keys())}")
         if queue_in:
             try:
                 queue_in.put({
@@ -137,15 +144,15 @@ def sync_aware(func):
                     f"Error: {e}, traceback: {traceback.format_exc()}"
                 )
         else:
-            # ⚠️ КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ
+            # ⚠️ КРИТИЧЕСКОЕ ЛОГИРОВАНИЕ (очереди нет вообще или fallback не сработал)
             error_msg = (
                 f"ОЧЕРЕДЬ НЕ НАЙДЕНА! Команда НЕ создана. "
-                f"table={table_name}, operation={method_name}, device_id={device_id}, "
+                f"table={table_name}, operation={method_name}, queue_key={queue_key}, "
                 f"record_id={record_id}, available_devices={list(INBOUND_QUEUES.keys())}"
             )
             print(f"[{threading.current_thread().name}][decorators][wraps][ERROR] {error_msg}")
             logger.error(
-                f"INBOUND_QUEUE missing for device_id={device_id}. "
+                f"INBOUND_QUEUE missing for queue_key={queue_key}. "
                 f"Command NOT created: {table_name}.{method_name}(record_id={record_id}). "
                 f"Available devices: {list(INBOUND_QUEUES.keys())}"
             )
