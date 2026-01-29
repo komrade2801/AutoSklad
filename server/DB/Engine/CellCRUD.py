@@ -160,8 +160,22 @@ class EngineCell(BaseCRUD):
     def get_all_empty_cells(self) -> List[Cell]:
         """
         Возвращает список всех пустых ячеек в таблице Cell.
+        Ячейка считается свободной, если tools_id == None или статус start_system.
         """
-        return self.session.query(Cell).filter(Cell.tools_id == None).all()
+        from DB.Engine.StatusCRUD import EngineStatus
+        
+        # Получаем статус start_system
+        e_status = EngineStatus(session=self.session)
+        start_system_status = e_status.find_by_name("start_system")
+        
+        # Если статус start_system найден, учитываем его при фильтрации
+        if start_system_status:
+            return self.session.query(Cell).filter(
+                (Cell.tools_id == None) | (Cell.status_id == start_system_status.id)
+            ).all()
+        else:
+            # Если статус не найден, используем только проверку tools_id
+            return self.session.query(Cell).filter(Cell.tools_id == None).all()
 
     def get_cells_by_description(self, description: str) -> List[Cell]:
         """
