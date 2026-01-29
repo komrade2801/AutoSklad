@@ -52,26 +52,25 @@
         return;
     }
 
-        // Подготовим объект tools с актуальными значениями из input'ов (только строки выбора — .tool-row-block)
+        // Подготовим объект tools с актуальными значениями из input'ов
     const toolsContainer = document.getElementById("selection_tools");
-    const toolRows = toolsContainer.querySelectorAll(".tool-row-block");
+    const toolDivs = toolsContainer.querySelectorAll("div");
     const tools = [];
 
-    toolRows.forEach(div => {
-        const nameDiv = div.querySelector(".tool-name-block");
+    toolDivs.forEach(div => {
+        const nameDiv = div.querySelector(".toolName") || div.firstChild;
         const input = div.querySelector(".input_amount");
 
         if (nameDiv && input) {
-            const toolIdRaw = nameDiv.getAttribute('data-tool-id');
-            const toolId = toolIdRaw != null ? parseInt(toolIdRaw, 10) : NaN;
-            if (Number.isNaN(toolId)) return;
-            const toolName = nameDiv.textContent.trim();
-            const toolCount = parseInt(input.value, 10) || 1;
-            tools.push({
-                id: toolId,
-                name: toolName,
-                quantity: toolCount
-            });
+            const toolId = nameDiv.getAttribute('data-tool-id');
+          const toolName = nameDiv.textContent.trim();
+          const toolCount = parseInt(input.value, 10) || 1;
+          // tools[toolName] = toolCount.toString();
+          tools.push({
+            id: toolId,
+            name: toolName,
+            quantity: toolCount
+          });
         }
     });
 
@@ -96,10 +95,12 @@
     };
 
     console.log(window.jsonPlan);
-    const device_number = 1;
-    const plan_request = { plan: window.jsonPlan, create_mass_load: createMassLoad };
-    save_all_plans(device_number, plan_request);
-    // Перенаправление выполняется в save_all_plans после успешного ответа
+    let device_number = 1;
+    let plan_request = {'plan': window.jsonPlan, 'create_mass_load': createMassLoad};
+    save_all_plans(device_number, plan_request)
+
+    //Перенаправление на другую страницу:
+    window.location.href='../screen_7_plans.html?token=' + localStorage.getItem('token');
   });
 
 
