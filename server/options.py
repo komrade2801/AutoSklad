@@ -8,6 +8,8 @@ SECRET_KEY = "g\xa8\xc9\x04H\xf0F\xe1\xfb\xb6J\xbc\xae\xfaP\xec'\x08\xcb\xa1\xfc
 BASE_URL = f"http://{Host}"
 SENDER_TIMEOUT = 15
 RECEIVER_TIMEOUT = 30
+# Таймаут HTTP для push-запросов (отправка команд на сервер); увеличен для больших батчей
+PUSH_HTTP_TIMEOUT = 120
 AES_KEY = b"16byteslongkey!!"
 
 # ------------------------------MySQL-----------------------------

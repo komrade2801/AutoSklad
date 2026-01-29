@@ -232,6 +232,23 @@ def start_sync(
                           ', '.join(f"{k}: {v}" for k, v in msg.items()))
                     logging.getLogger("sync.runner").info(
                         f"[runner] handling pull: since={msg['since']!r}, hash={msg.get('hash')!r}")
+                    # Сначала обрабатываем все накопившиеся "local" команды (Plan, PlanToolTypes и т.д.),
+                    # чтобы они попали в таблицу Command до prepare_pull — иначе pull не вернёт их клиенту.
+                    while True:
+                        try:
+                            m = queue_in_thread.get_nowait()
+                        except Empty:
+                            break
+                        if m.get("type") == "local":
+                            processor.current_device_id = device_id
+                            try:
+                                processor.enqueue_local_command(m)
+                            except Exception as ex:
+                                diagnostic_logger.info(
+                                    f"Error enqueuing local command before pull: {ex}")
+                        else:
+                            queue_in_thread.put(m)
+                            break
                     try:
                         data = msg.get("hash", "")
                         print(

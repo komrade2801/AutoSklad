@@ -396,10 +396,11 @@ class CommandOrderer:
         Входные: [ADD ToolTypes, DELETE Group, ADD Group]
         Выходные: [DELETE Group, ADD Group, ADD ToolTypes]
         """
-        def sort_key(cmd):
+        def sort_key(item):
+            index, cmd = item
             table = cmd.get("table", "")
             operation = cmd["operation"].upper()
-            timestamp = cmd.get("timestamp", "")
+            timestamp = cmd.get("timestamp", "") or ""
             
             # Приоритет таблицы
             table_priority = self.TABLE_PRIORITY.get(table, 100)
@@ -413,10 +414,11 @@ class CommandOrderer:
             # Приоритет операции (DELETE → UPDATE → ADD)
             op_priority = self.OPERATION_PRIORITY.get(operation, 99)
             
-            # Составной ключ сортировки
-            return (op_priority, table_priority, timestamp)
+            # Составной ключ: индекс сохраняет исходный порядок при равенстве (стабильная сортировка)
+            return (op_priority, table_priority, timestamp, index)
         
-        return sorted(commands, key=sort_key)
+        indexed = list(enumerate(commands))
+        return [cmd for _, cmd in sorted(indexed, key=sort_key)]
     
     def _check_foreign_keys(
         self,

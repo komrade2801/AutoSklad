@@ -53,6 +53,10 @@ class ServerCommand(TypedDict):
     last_modified: str
 
 
+# Размер батча при отправке push: порядок команд сохраняется, FK-зависимости учтены на стороне CommandOrderer
+PUSH_BATCH_SIZE = 30
+
+
 class CommandSender:
     """
     Компонент Push-процесса синхронизации.
@@ -243,65 +247,55 @@ class CommandSender:
                       f'Команд для отправки после оптимизации: {len(pending)}')
         # --- КОНЕЦ ОПТИМИЗАЦИИ ---
 
-        # --- Готовим payload ---
+        # --- Отправка батчами по PUSH_BATCH_SIZE с сохранением порядка ---
         schema_hash = self._schema_hash or ""
-        payload: PushPayload = {
-            "device": self.device_id,
-            "schema_hash": schema_hash,
-            "commands": []
-        }
-
-        # Получаем DataTransformer из SyncProcessor
         transformer: DataTransformer = self.sync_processor.data_transformer
 
-        for cmd in pending:
-            raw_data = cmd["data"]
+        for batch_start in range(0, len(pending), PUSH_BATCH_SIZE):
+            batch = pending[batch_start : batch_start + PUSH_BATCH_SIZE]
+            batch_payload: PushPayload = {
+                "device": self.device_id,
+                "schema_hash": schema_hash,
+                "commands": []
+            }
+            for cmd in batch:
+                raw_data = cmd["data"]
+                enriched_data = transformer.postprocess(cmd["table"], raw_data)
+                batch_payload["commands"].append(ServerCommand(
+                    id=cmd["id"],
+                    table=cmd["table"],
+                    operation=cmd["operation"].upper(),
+                    data=enriched_data,
+                    last_modified=""
+                ))
 
-            if cmd['table'] == "Cell":
-                pass
+            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Отправка батча {batch_start // PUSH_BATCH_SIZE + 1} ({len(batch)} команд). {datetime.datetime.now()}')
 
-            # обогащаем «сырые» данные:
-            enriched_data = transformer.postprocess(cmd["table"], raw_data)
+            try:
+                if self.logger:
+                    self.logger.log_info(f"Sending batch of {len(batch)} commands to {self.endpoint}")
+                response = self.transport.send_push(self.endpoint, batch_payload)
+                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Батч отправлен успешно. {datetime.datetime.now()}')
 
-            payload["commands"].append(ServerCommand(
-                id=cmd["id"],
-                table=cmd["table"],
-                operation=cmd["operation"].upper(),
-                data=enriched_data,
-                last_modified=""  # если не нужен — можно оставить пустым
-            ))
+                if self.sync_processor:
+                    self.sync_processor.process_push(
+                        device=self.device_id,
+                        commands=batch_payload["commands"],
+                        client_schema_hash=schema_hash
+                    )
 
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] payload подготовлен. {datetime.datetime.now()}')
+                for cmd in batch:
+                    self.queue.mark_as_done(cmd["id"])
+                if self.logger:
+                    self.logger.log_info(f"Batch of {len(batch)} commands marked as done.")
 
-        try:
-            if self.logger:
-                self.logger.log_info(f"Sending {len(pending)} pending commands to {self.endpoint}")
-            # отправляем на реальный сервер
-            response = self.transport.send_push(self.endpoint, payload)
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] pending команды отправлены успешно. {datetime.datetime.now()}')
-
-            # в dev-режиме прогоняем через SyncProcessor (эмуляция)
-            if self.sync_processor:
-                self.sync_processor.process_push(
-                    device=self.device_id,
-                    commands=payload["commands"],
-                    client_schema_hash=schema_hash
-                )
-
-            # отмечаем pending команды как успешные
-            for cmd in pending:
-                self.queue.mark_as_done(cmd["id"])
-            if self.logger:
-                self.logger.log_info("All processed pending commands marked as done.")
-
-        except Exception as err:
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Не удалось отправить pending команды: {err}')
-            if self.logger:
-                self.logger.log_error(f"Failed to send pending commands: {err}")
-            # Pending команды становятся retrying для первой попытки
-            for cmd in pending:
-                self.queue.mark_as_retrying(cmd["id"])
-            raise
+            except Exception as err:
+                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Ошибка отправки батча: {err}')
+                if self.logger:
+                    self.logger.log_error(f"Failed to send batch: {err}")
+                for cmd in batch:
+                    self.queue.mark_as_retrying(cmd["id"])
+                raise
 
     def send_single_command(self, cmd: dict) -> None:
         """
