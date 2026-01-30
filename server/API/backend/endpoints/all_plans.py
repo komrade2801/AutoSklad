@@ -313,11 +313,18 @@ def create_plan(
         for idx, tool in enumerate(plan.tools):
             # tool[""]
             # tool_types_name = name['name'].split(' ')[0]
-            tool_types_id = tool['id']
+            tool_types_id = int(tool['id']) if tool.get('id') is not None else None
             tool_types_name = tool['name']
-            tool_quantity = tool['quantity']
+            tool_quantity = int(tool['quantity']) if tool.get('quantity') is not None else 1
             quantity = 0
+            if tool_types_id is None:
+                raise HTTPException(status_code=400, detail="В составе чертежа указан инструмент без id")
             tool_type = tool_types_crud.get_tool_type_by_id(tool_types_id)
+            if not tool_type:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Тип инструмента с id={tool_types_id} не найден"
+                )
             logger.debug("create_plan tool_types_name: %s, tool_quantity: %s, tool_types_id: %s", tool_types_name, tool_quantity, tool_types_id)
             # tool_types_ids = tool_types_crud.get_all_ids()
             # for index in tool_types_ids:
@@ -432,6 +439,8 @@ def create_plan(
         # created_plans.append(new_plan)
 
         return HTTPException(status_code=200, detail="Чертёж успешно создать")
+    except HTTPException:
+        raise
     except Exception as err:
         logger.exception("create_plan err: %s", err)
         __exception = True
@@ -448,7 +457,7 @@ def create_plan(
                 plans_crud.delete_plan(_plan_id_to_rollback)
                 logger.warning("[create_plan] Откат при ошибке: удалены PlanToolTypes и Plan id=%s", _plan_id_to_rollback)
 
-            raise HTTPException(status_code=301, detail=__e)
+            raise HTTPException(status_code=500, detail=str(__e))
         else:
             return PlanAddResponse(status=200, message="Чертежи успешно добавлены")
 
