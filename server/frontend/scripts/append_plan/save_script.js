@@ -1,9 +1,8 @@
-
   window.jsonPlan = {};
 
-  function save_all_plans(device_number, plan_request, saveButton){
-    const url = `../backend/create_plan/${device_number}`+"?token="+localStorage.getItem("token");
-    // Редирект только после полного ответа сервера (в .then ниже) — fetch отправляет тело запроса до получения response
+  function save_all_plans(device_number, plan_request, saveButton) {
+    const url = `../backend/create_plan/${device_number}` + "?token=" + localStorage.getItem("token");
+    // Редирект только после успешного ответа сервера (в .then ниже), не до завершения запроса
     fetch(url, {
       method: 'POST',
       headers: {
@@ -22,8 +21,8 @@
     .then(data => {
       console.log('Данные истории сохранены на сервере', data);
       const targetUrl = "./screen_7_plans.html";
-      let token = localStorage.getItem('token');
-      let full_url = targetUrl + "?token=" + token;
+      const token = localStorage.getItem('token');
+      const full_url = targetUrl + "?token=" + token;
       window.location.href = full_url;
     })
     .catch(err => {
@@ -36,59 +35,71 @@
     });
   }
 
-  document.getElementById('saveButton').addEventListener('click', function () {
-    const saveButton = document.getElementById('saveButton');
-    if (saveButton.disabled) return;
-    const enterpriseValue = document.getElementById('enterpriseInput').value;
-    //const barcodeValue = document.getElementById('barcodeInput').value;
-    const nameValue = document.getElementById('nameInput').value;
-    const descriptionValue = document.getElementById('descriptionInput').value;
-    const designationValue = document.getElementById('designationInput').value;
-    const createMassLoad = document.getElementById("createMassLoad").checked;
+  // Один обработчик на кнопку «Сохранить» — только через addEventListener, без дублирования
+  const saveButtonEl = document.getElementById('saveButton');
+  if (!saveButtonEl) {
+    console.error('save_script: кнопка #saveButton не найдена');
+  } else {
+    saveButtonEl.addEventListener('click', function (event) {
+      event.preventDefault();
+      const saveButton = document.getElementById('saveButton');
+      if (saveButton.disabled) return;
 
-    console.log("клик был");
+      // Блокируем повторное нажатие до завершения запроса или ошибки валидации
+      saveButton.disabled = true;
+      saveButton.textContent = 'Сохранение...';
 
-    if (nameValue === '') {
+      const enterpriseValue = document.getElementById('enterpriseInput').value;
+      const nameValue = document.getElementById('nameInput').value;
+      const descriptionValue = document.getElementById('descriptionInput').value;
+      const designationValue = document.getElementById('designationInput').value;
+      // Флаг «Сгенерировать массовую загрузку» — передаётся на бэкенд как create_mass_load
+      const createMassLoad = document.getElementById("createMassLoad").checked;
+
+      if (nameValue === '') {
         alert('Название чертежа не может быть пустым');
         document.getElementById('nameInput').focus();
+        saveButton.disabled = false;
+        saveButton.textContent = 'Сохранить';
         return;
-    }
+      }
 
-    if (designationValue === '') {
+      if (designationValue === '') {
         alert('Номер чертежа не может быть пустым');
         document.getElementById('designationInput').focus();
+        saveButton.disabled = false;
+        saveButton.textContent = 'Сохранить';
         return;
-    }
+      }
 
-        // Подготовим объект tools с актуальными значениями из input'ов
-    const toolsContainer = document.getElementById("selection_tools");
-    const toolDivs = toolsContainer.querySelectorAll("div");
-    const tools = [];
+      const toolsContainer = document.getElementById("selection_tools");
+      const toolDivs = toolsContainer.querySelectorAll("div");
+      const tools = [];
 
-    toolDivs.forEach(div => {
+      toolDivs.forEach(div => {
         const nameDiv = div.querySelector(".toolName") || div.firstChild;
         const input = div.querySelector(".input_amount");
 
         if (nameDiv && input) {
-            const toolId = nameDiv.getAttribute('data-tool-id');
+          const toolId = nameDiv.getAttribute('data-tool-id');
           const toolName = nameDiv.textContent.trim();
           const toolCount = parseInt(input.value, 10) || 1;
-          // tools[toolName] = toolCount.toString();
           tools.push({
             id: toolId,
             name: toolName,
             quantity: toolCount
           });
         }
-    });
+      });
 
-    // Валидация обязательных полей
-    if (tools.length === 0) {
+      if (tools.length === 0) {
         alert('Необходимо выбрать инструменты');
+        saveButton.disabled = false;
+        saveButton.textContent = 'Сохранить';
         return;
-    }
+      }
 
-    window.jsonPlan = {
+      window.jsonPlan = {
         id: 0,
         enterprise: enterpriseValue || "string",
         barcode: "",
@@ -100,15 +111,16 @@
         parent_plan_id: null,
         parent_plan: null,
         tools: tools
-    };
+      };
 
-    console.log(window.jsonPlan);
-    let device_number = 1;
-    let plan_request = {'plan': window.jsonPlan, 'create_mass_load': createMassLoad};
-    saveButton.disabled = true;
-    saveButton.textContent = 'Сохранение...';
-    save_all_plans(device_number, plan_request, saveButton);
-  });
+      const device_number = 1;
+      const plan_request = {
+        plan: window.jsonPlan,
+        create_mass_load: createMassLoad
+      };
+      save_all_plans(device_number, plan_request, saveButton);
+    });
+  }
 
 
 window.save_all_plans = save_all_plans;
