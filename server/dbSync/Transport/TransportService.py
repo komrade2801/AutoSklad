@@ -21,6 +21,11 @@ from urllib3.exceptions import MaxRetryError, NewConnectionError
 
 from dbSync.Logic_v2.JSONSchemaValidator import JSONSchemaValidator
 
+try:
+    from options import PUSH_HTTP_TIMEOUT
+except ImportError:
+    PUSH_HTTP_TIMEOUT = 120
+
 logger = logging.getLogger(__name__)
 
 
@@ -242,9 +247,9 @@ class TransportService:
         print(f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] URL для запроса: {url}. [{datetime.now()}]")  # лог итогового URL :contentReference[oaicite:12]{index=12}
 
         # ——————————————————————————————————————————————————————————————————————
-        # 5) Делаем HTTP-запрос (POST)
-        print(f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] Шаг 5: отправляем POST-запрос. [{datetime.now()}]")  # лог отправки запроса :contentReference[oaicite:13]{index=13}
-        resp = requests.post(url, data=body, headers=headers)
+        # 5) Делаем HTTP-запрос (POST) с увеличенным таймаутом для больших батчей
+        print(f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] Шаг 5: отправляем POST-запрос (timeout={PUSH_HTTP_TIMEOUT}s). [{datetime.now()}]")  # лог отправки запроса :contentReference[oaicite:13]{index=13}
+        resp = requests.post(url, data=body, headers=headers, timeout=PUSH_HTTP_TIMEOUT)
         try:
             resp.raise_for_status()
         except Exception:
