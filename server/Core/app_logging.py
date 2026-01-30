@@ -50,7 +50,7 @@ def setup_app_logging(
     root_logger.handlers.clear()
     root_logger.setLevel(level)
 
-    # 1. Handler для общих логов приложения (INFO и выше)
+    # 1. Handler для общих логов приложения (уровень задаётся параметром level)
     app_log_path = log_path / app_log_file
     app_handler = logging.handlers.RotatingFileHandler(
         str(app_log_path),
@@ -58,9 +58,9 @@ def setup_app_logging(
         backupCount=backup_count,
         encoding='utf-8'
     )
-    app_handler.setLevel(logging.INFO)
+    app_handler.setLevel(level)
     app_handler.setFormatter(logging.Formatter(detailed_format, date_format))
-    app_handler.addFilter(lambda record: record.levelno >= logging.INFO)
+    app_handler.addFilter(lambda record: record.levelno >= level)
     root_logger.addHandler(app_handler)
 
     # 2. Handler для логов синхронизации (отдельный файл)
