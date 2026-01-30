@@ -249,13 +249,14 @@ def create_plan(
     plan = plan_request.plan
     create_mass_load = plan_request.create_mass_load
 
-    devices_crud = EngineDevice()
-    plans_crud = EnginePlan()
-    plan_tool_types_crud = EnginePlanToolTypes()
-    cells_crud = EngineCell()
+    # Одна сессия db для плана и массовой загрузки — иначе план не виден в save_mass_load и plan_id уходит null
+    devices_crud = EngineDevice(session=db)
+    plans_crud = EnginePlan(session=db)
+    plan_tool_types_crud = EnginePlanToolTypes(session=db)
+    cells_crud = EngineCell(session=db)
     # tools_has_device_crud = EngineToolsHasDevice()
     # tools_crud = EngineTools()
-    tool_types_crud = EngineToolTypes()
+    tool_types_crud = EngineToolTypes(session=db)
     device = devices_crud.get_device_by_number(device_number)
     tool_ids = []
     plan_id = None
