@@ -445,29 +445,29 @@ def save_mass_load(
         raise HTTPException(
             status_code=401, detail="Неавторизованный доступ запрещён")
 
-    # 2) получаем устройство
-    e_device = EngineDevice()
+    # 2) получаем устройство (используем общую сессию db при вызове из create_plan)
+    e_device = EngineDevice(session=db)
     device = e_device.get_device_by_number(device_number)
     if not device:
         raise HTTPException(
             status_code=404, detail="Устройство не обнаружено!")
 
-    # 3) создаём остальные движки
-    e_plan = EnginePlan()
+    # 3) создаём остальные движки с той же сессией (план и массовая загрузка в одной транзакции)
+    e_plan = EnginePlan(session=db)
     # e_tools = EngineTools()
-    e_tool_types = EngineToolTypes()
-    e_group = EngineGroup()
-    e_load = EngineLoad()
-    e_load_operation = EngineLoadOperations()
-    e_operation_has_device = EngineLoadOperationsHasDevice()
-    e_history_has_device = EngineHistoryHasDevice()
-    e_mass_load = EngineMassLoad()
-    e_mass_load_has_device = EngineMassLoadHasDevice()
-    e_cells = EngineCell()
-    e_cell_has_device = EngineCellHasDevice()
-    e_stories = EngineHistory()
-    e_status = EngineStatus()
-    e_user = EngineUser()
+    e_tool_types = EngineToolTypes(session=db)
+    e_group = EngineGroup(session=db)
+    e_load = EngineLoad(session=db)
+    e_load_operation = EngineLoadOperations(session=db)
+    e_operation_has_device = EngineLoadOperationsHasDevice(session=db)
+    e_history_has_device = EngineHistoryHasDevice(session=db)
+    e_mass_load = EngineMassLoad(session=db)
+    e_mass_load_has_device = EngineMassLoadHasDevice(session=db)
+    e_cells = EngineCell(session=db)
+    e_cell_has_device = EngineCellHasDevice(session=db)
+    e_stories = EngineHistory(session=db)
+    e_status = EngineStatus(session=db)
+    e_user = EngineUser(session=db)
     # e_tools_has_device = EngineToolsHasDevice()
 
     group_name_to_id = {g.name: g.id for g in e_group.all()}

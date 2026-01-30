@@ -401,7 +401,7 @@ def create_plan(
             mass_load = MassLoadCreate(operation = operation)
 
             logger.debug("create_plan mass_load: %s", mass_load)
-            save_mass_load(request, device_number, mass_load)
+            save_mass_load(request, device_number, mass_load, db)
             logger.info("[create_plan] save_mass_load завершён успешно, массовая загрузка для чертежа создана")
 
         return PlanAddResponse(status=200, message="Чертежи успешно добавлены")
