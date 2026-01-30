@@ -26,7 +26,8 @@
       window.location.href = full_url;
     })
     .catch(err => {
-      console.error('Ошибка при сохранении истории:', err);
+      console.error('Ошибка при сохранении чертежа/массовой загрузки:', err);
+      alert('Ошибка при сохранении: ' + (err.message || err));
     });
   }
 
@@ -97,10 +98,8 @@
     console.log(window.jsonPlan);
     let device_number = 1;
     let plan_request = {'plan': window.jsonPlan, 'create_mass_load': createMassLoad};
-    save_all_plans(device_number, plan_request)
-
-    //Перенаправление на другую страницу:
-    window.location.href='../screen_7_plans.html?token=' + localStorage.getItem('token');
+    save_all_plans(device_number, plan_request);
+    // Редирект только после успешного ответа сервера (внутри save_all_plans), иначе запрос может прерваться и массовая загрузка не попадёт в очередь
   });
 
 

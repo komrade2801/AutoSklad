@@ -280,6 +280,7 @@ def create_plan(
     plans_crud.device_id = _queue_key
     plan_tool_types_crud.device_id = _queue_key
 
+    plan_id = None  # для отката в finally при любой ошибке
     try:
 
         active_plan = plans_crud.get_plan_by_designation(plan.designation)
@@ -331,7 +332,7 @@ def create_plan(
             empty_cells = cells_crud.get_all_empty_cells()
             total_tools = 0
 
-            print(f"create_plan empty_cells: {empty_cells}")
+            print(f"[create_plan] create_mass_load=True: empty_cells count={len(empty_cells) if empty_cells else 0}")
 
             for tool in plan.tools:
                 total_tools += tool['quantity']
@@ -363,8 +364,10 @@ def create_plan(
             
             # Проверяем, достаточно ли ячеек с учетом заблокированных
             if cells_needed > len(empty_cells):
+                print(f"[create_plan][WARNING] Не хватает свободных ячеек: cells_needed={cells_needed}, len(empty_cells)={len(empty_cells)}")
                 raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
 
+            print(f"[create_plan] Достаточно ячеек: cells_needed={cells_needed}, приступаем к save_mass_load")
             operation = {}
             number = 1
             cell_checked = 0
@@ -389,6 +392,7 @@ def create_plan(
 
             print(f"create_plan mass_load: {mass_load}")
             save_mass_load(request, device_number, mass_load)
+            print(f"[create_plan] save_mass_load завершён успешно, массовая загрузка для чертежа создана")
 
         return PlanAddResponse(status=200, message="Чертежи успешно добавлены")
 
@@ -433,13 +437,14 @@ def create_plan(
     finally:
         print(f"__exception: {__exception}")
         if __exception:
-
-            plan_tool_types = plan_tool_types_crud.get_plan_tool_types_by_plan_id(plan.id)
-
-            for plan_tool_type in plan_tool_types:
-                plan_tool_types_crud.delete_plan_tool_types(plan_tool_type.id)
-
-            plans_crud.delete_plan(plan.id)
+            # Используем plan_id (фактический id созданного чертежа), а не plan.id из тела запроса (может быть 0)
+            _plan_id_to_rollback = plan_id
+            if _plan_id_to_rollback is not None:
+                plan_tool_types = plan_tool_types_crud.get_plan_tool_types_by_plan_id(_plan_id_to_rollback)
+                for plan_tool_type in plan_tool_types:
+                    plan_tool_types_crud.delete_plan_tool_types(plan_tool_type.id)
+                plans_crud.delete_plan(_plan_id_to_rollback)
+                print(f"[create_plan] Откат при ошибке: удалены PlanToolTypes и Plan id={_plan_id_to_rollback}")
 
             raise HTTPException(status_code=301, detail=__e)
         else:
