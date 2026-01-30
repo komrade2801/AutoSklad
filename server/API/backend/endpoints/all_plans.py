@@ -344,12 +344,16 @@ def create_plan(
             logger.warning("[create_plan] массовая загрузка не создаётся: create_mass_load=False в запросе")
         if create_mass_load:
             empty_cells = cells_crud.get_all_empty_cells()
-            total_tools = 0
+            total_tools = sum(int(t.get('quantity', 0) or 0) for t in plan.tools)
 
-            logger.debug("[create_plan] create_mass_load=True: empty_cells count=%s", len(empty_cells) if empty_cells else 0)
+            logger.debug("[create_plan] create_mass_load=True: empty_cells count=%s, total_tools=%s",
+                         len(empty_cells) if empty_cells else 0, total_tools)
 
-            for tool in plan.tools:
-                total_tools += tool['quantity']
+            if total_tools <= 0:
+                raise HTTPException(status_code=400, detail="В чертеже не указаны инструменты или количество равно 0")
+            if not empty_cells or len(empty_cells) == 0:
+                logger.warning("[create_plan] Не хватает свободных ячеек: empty_cells=0, total_tools=%s", total_tools)
+                raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
 
             # БЛОКИРОВАННЫЕ ЯЧЕЙКИ: первый столбец каждой строки (1, 36, 71, 106, 141, 176)
             BLOCKED_CELL_NUMBERS = {1, 36, 71, 106, 141, 176}
