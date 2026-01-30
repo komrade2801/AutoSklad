@@ -1,6 +1,9 @@
+from Core.app_logging import get_logger
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_11_tool_issued import Ui_screen_11_tool_issued
 from PyQt5.QtCore import QEvent, QTimer
+
+logger = get_logger(__name__)
 
 
 class screen_11_tool_issued(BaseScreen, Ui_screen_11_tool_issued):
@@ -31,16 +34,16 @@ class screen_11_tool_issued(BaseScreen, Ui_screen_11_tool_issued):
         self.timeout_back = self.__timeout_back
 
     def hideEvent(self, event):
-        print(f"screen_11_tool_issued hideEvent. event: {event}")
+        logger.debug("screen_11_tool_issued hideEvent. event: %s", event)
         """Событие, которое срабатывает, когда виджет скрывается."""
         super().hideEvent(event)
         self.visibility_timer.stop()
         self.timeout_back = self.__timeout_back
     def set_data(self, *args, **kwargs):
-        print(f"screen_11_tool_issued set_data. args: {args}, kwargs: {kwargs}")
+        logger.debug("screen_11_tool_issued set_data. args: %s, kwargs: %s", args, kwargs)
         """Устанавливает текст. Реализуется в каждом экране."""
         pass
 
     def get_data(self):
-        print(f"screen_11_tool_issued get_data")
+        logger.debug("screen_11_tool_issued get_data")
         pass

@@ -1,7 +1,10 @@
 import traceback
 
+from Core.app_logging import get_logger
 from PyQt5 import QtGui, QtCore, QtWidgets
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_6_user import Ui_screen_6_user
 from GUI.ico.ico_avatar import Avatar
 
@@ -27,7 +30,7 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         self._barcode_timer.setInterval(1500)  # 1500 мс - увеличенный таймаут как fallback
         self._barcode_timer.setSingleShot(True)
         self._barcode_timer.timeout.connect(self._process_barcode)
-        self.event_enter_barcode = lambda barcode: print("Получен штрих-код:", barcode)
+        self.event_enter_barcode = lambda barcode: logger.debug("Получен штрих-код: %s", barcode)
 
     def check_visibility(self):
         if self.timeout_back > 1:
@@ -64,7 +67,7 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
             if self._barcode_buffer:
                 self._barcode_timer.stop()  # Останавливаем таймер
-                print(f"[QR] Enter нажат, обработка буфера: {repr(self._barcode_buffer)}")
+                logger.debug("[QR] Enter нажат, обработка буфера: %s", repr(self._barcode_buffer))
                 self._process_barcode()  # Немедленно обрабатываем
             event.accept()  # Явно принимаем событие
             return
@@ -73,7 +76,7 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         if event.key() == QtCore.Qt.Key_Tab:
             # Добавляем табуляцию в буфер
             self._barcode_buffer += '\t'
-            print(f"[QR] Добавлен Tab, буфер: {repr(self._barcode_buffer)}")
+            logger.debug("[QR] Добавлен Tab, буфер: %s", repr(self._barcode_buffer))
             # Перезапускаем таймер как fallback
             self._barcode_timer.start()
             event.accept()  # Явно принимаем событие, чтобы предотвратить стандартную обработку Tab
@@ -83,7 +86,7 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         if event.key() == QtCore.Qt.Key_Space:
             # Добавляем пробел в буфер
             self._barcode_buffer += ' '
-            print(f"[QR] Добавлен пробел, буфер: {repr(self._barcode_buffer)}")
+            logger.debug("[QR] Добавлен пробел, буфер: %s", repr(self._barcode_buffer))
             # Перезапускаем таймер как fallback
             self._barcode_timer.start()
             event.accept()  # Явно принимаем событие, чтобы предотвратить активацию кнопок
@@ -94,21 +97,21 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
             self._barcode_buffer += event.text()
             # Перезапускаем таймер как fallback
             self._barcode_timer.start()
-            print(f"[QR] Добавлен символ: {repr(event.text())}, буфер: {repr(self._barcode_buffer)}")
+            logger.debug("[QR] Добавлен символ: %s, буфер: %s", repr(event.text()), repr(self._barcode_buffer))
             event.accept()  # Явно принимаем событие
 
     def _process_barcode(self):
-        print(f"[QR] _process_barcode. buffer: {repr(self._barcode_buffer)}")
+        logger.debug("[QR] _process_barcode buffer: %s", repr(self._barcode_buffer))
         if self._barcode_buffer:
             # Очищаем буфер от завершающих символов (\n, \r)
             cleaned_buffer = self._barcode_buffer.strip()
             if cleaned_buffer:
                 barcode = {'barcode': cleaned_buffer}
-                print(f"[QR] Отправка штрих-кода: {repr(cleaned_buffer)}")
+                logger.debug("[QR] Отправка штрих-кода: %s", repr(cleaned_buffer))
                 self._barcode_buffer = ""
                 self.event_enter_barcode(barcode)
             else:
-                print(f"[QR] Буфер пуст после очистки, пропуск")
+                logger.debug("[QR] Буфер пуст после очистки, пропуск")
                 self._barcode_buffer = ""
 
     def update_icon(self):
@@ -126,15 +129,15 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
                     continue
                 if isinstance(arg, tuple):
                     user = arg[0]
-                    print(f"user: {user}")
+                    logger.debug("user: %s", user)
                     self.lbl_name.setText(f"{user.first_name} {user.second_name}")
                     self.lbl_name_2.setText(f"{user.family}")
                     continue
 
-            except:
-                print(traceback.format_exc())
+            except Exception:
+                logger.exception("screen_6_user set_data")
 
     def get_data(self):
-        print(f"get_data. Before clear: {self._barcode_buffer}")
+        logger.debug("get_data Before clear: %s", self._barcode_buffer)
         self._barcode_buffer = ""
         pass

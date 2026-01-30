@@ -1,6 +1,9 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
+from Core.app_logging import get_logger
 from ..BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_widget_8_9_tool import Ui_widget_8_9_tool
 
 
@@ -14,14 +17,10 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
         self.name = ""
         self.tool_description = ""
         self.status = -1
-        self.event_select_tool = lambda *args, **kwargs: print(*args, **kwargs)
+        self.event_select_tool = lambda *args, **kwargs: logger.debug("event_select_tool %s %s", args, kwargs)
 
     def set_data(self, tool):
-        print("WidgetSelectTool set_data")
-        print(tool)
-        print(tool['group'])
-        print(tool['tool'])
-        print(tool['cell'])
+        logger.debug("WidgetSelectTool set_data tool=%s group=%s cell=%s", tool, tool.get('group'), tool.get('cell'))
         """Устанавливает текст. Реализуется в каждом экране."""
         self.lbl_number_tool.setText(tool['tool'].name)
         self.tool_description = tool['tool'].description

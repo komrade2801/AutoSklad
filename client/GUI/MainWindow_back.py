@@ -2,8 +2,12 @@
 import sys
 import traceback
 from typing import Any, Dict
+
+from Core.app_logging import get_logger
 from PyQt5 import QtWidgets, QtCore
 from EventsSystem.events import Hendlers
+
+logger = get_logger(__name__)
 from GUI.BaseScreen import BaseScreen
 from StateMachine.NavigationManager import NavigationManager
 from StateMachine.screens import screen
@@ -14,10 +18,7 @@ from ui import *
 
 # Настройка перехвата исключений
 def exception_hook(exctype, value, tb):
-    print(f"Тип исключения: {exctype}")
-    print(f"Значение исключения: {value}")
-    print("Трассировка:")
-    print(traceback.format_exc())
+    logger.exception("Необработанное исключение: %s %s", exctype, value)
     sys.__excepthook__(exctype, value, tb)
 
 
@@ -29,7 +30,7 @@ class MainWindow(QtWidgets.QWidget):
         super().__init__()
         self.handler = handler or Hendlers()
         self.lump = maps or Maps("screen_1_welcome")
-        print(f"Initial state: {self.lump.state()}")
+        logger.debug("Initial state: %s", self.lump.state())
         self.current_screen = ""
         self.current_value = {}
         self.value = {}  # Дополнительное хранилище данных для передачи в экраны
@@ -123,7 +124,7 @@ class MainWindow(QtWidgets.QWidget):
             button.clicked.connect(lambda checked, btn_name=button.objectName(): self.button_clicked(btn_name, dest))
         else:
             # Если кнопка не найдена, можно логировать информацию или игнорировать
-            print(f"Кнопка с именем '{trigger}' не найдена на экране '{source}'.")
+            logger.warning("Кнопка с именем '%s' не найдена на экране '%s'.", trigger, source)
 
     def button_clicked(self, button_name: str, dest: str = None, value: Any = 0):
         """
@@ -135,13 +136,12 @@ class MainWindow(QtWidgets.QWidget):
             return
 
         self.back_state = self.lump.state()
-        print(f"button_clicked: {button_name}, текущая state: {self.lump.state()}, value: {value}")
+        logger.debug("button_clicked: %s, state: %s, value: %s", button_name, self.lump.state(), value)
         try:
             self.lump.trigger(button_name)
         except (MachineError, TypeError, AttributeError) as e:
             self._handle_button_click_error(e)
-            print("Стек вызовов:")
-            print(traceback.format_exc())
+            logger.exception("button_clicked error")
             return
 
         new_state = self.lump.state()
@@ -152,7 +152,7 @@ class MainWindow(QtWidgets.QWidget):
                 self.open_widget(new_state, value)
 
     def open_back_widget(self, value: Any = None):
-        print("open_back_widget value ", value)
+        logger.debug("open_back_widget value: %s", value)
         """
         Возвращает к предыдущему экрану, используя навигационный стек.
         """
@@ -160,10 +160,10 @@ class MainWindow(QtWidgets.QWidget):
         if prev:
             self.open_widget(prev['screen'], prev['value'])
         else:
-            print("История пуста. Нельзя вернуться назад.")
+            logger.warning("История пуста. Нельзя вернуться назад.")
 
     def open_widget(self, widget_name: str, value: Any = None):
-        print("widget_name widget_name", widget_name, " value", value)
+        logger.debug("open_widget: %s, value: %s", widget_name, value)
         """
         Открывает виджет с указанным именем, скрывая остальные.
         При смене экрана сохраняет текущее состояние в навигационном стеке.
@@ -194,7 +194,7 @@ class MainWindow(QtWidgets.QWidget):
             self._handle_cmd(widget_name, value)
 
     def _handle_widget_not_found(self, widget_name: str, value: Any):
-        print("_handle_widget_not_found widget_name", widget_name, " value", value)
+        logger.debug("_handle_widget_not_found widget_name=%s value=%s", widget_name, value)
         """
         Обрабатывает случай, когда запрошенный виджет не найден.
         Вызывает action_callback, если он определен.
@@ -213,10 +213,10 @@ class MainWindow(QtWidgets.QWidget):
                 if transition:
                     self.open_widget(transition, value=value)
         else:
-            print(f"Виджет '{widget_name}' не найден.")
+            logger.warning("Виджет '%s' не найден.", widget_name)
 
     def _handle_cmd(self, widget_name: str, value: Any):
-        print("_handle_cmd widget_name", widget_name, " value", value)
+        logger.debug("_handle_cmd widget_name=%s value=%s", widget_name, value)
         """
         Обрабатывает команды (виджеты с "cmd" в имени) через action_callback.
         """
@@ -227,4 +227,4 @@ class MainWindow(QtWidgets.QWidget):
 
     def _handle_button_click_error(self, error: Exception):
         """Обрабатывает ошибки, возникающие при нажатии кнопки."""
-        print(f"Ошибка при обработке кнопки: {error}")
+        logger.exception("Ошибка при обработке кнопки: %s", error)

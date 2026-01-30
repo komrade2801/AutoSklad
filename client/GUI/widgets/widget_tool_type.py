@@ -1,6 +1,9 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
+from Core.app_logging import get_logger
 from ..BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_widget_tool_type import Ui_widget_tool_type
 
 
@@ -13,11 +16,10 @@ class WidgetToolType(BaseScreen, Ui_widget_tool_type):
         self.setupUi(self)
         self.name = ""
         self.tool_type_id = -1
-        self.event_select_tool = lambda *args, **kwargs: print(*args, **kwargs)
+        self.event_select_tool = lambda *args, **kwargs: logger.debug("event_select_tool %s %s", args, kwargs)
 
     def set_data(self, tool_data):
-        print("WidgetToolType set_data")
-        print(tool_data)
+        logger.debug("WidgetToolType set_data tool_data=%s", tool_data)
 
         tool_type = tool_data["tool"]
 

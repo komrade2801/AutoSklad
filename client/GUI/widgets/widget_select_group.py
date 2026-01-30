@@ -1,6 +1,9 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
+from Core.app_logging import get_logger
 from ..BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_widget_select_group import Ui_widget_select_group
 
 
@@ -13,8 +16,8 @@ class WidgetSelectGroup(BaseScreen, Ui_widget_select_group):
         self.setupUi(self)
         self.value_name = ""
         self.value_id = -1
-        self.event_select_group = lambda *args, **kwargs: print(*args, **kwargs)
-        self.event_management_group = lambda *args, **kwargs: print(*args, **kwargs)
+        self.event_select_group = lambda *args, **kwargs: logger.debug("event_select_group %s %s", args, kwargs)
+        self.event_management_group = lambda *args, **kwargs: logger.debug("event_management_group %s %s", args, kwargs)
         self.trigger_name = trigger
         # self.setStyleSheet("border: 2px solid #0078D7; border-radius: 10px; background-color: #f0f0f0;")
     def emit_key(self, key):
@@ -22,7 +25,7 @@ class WidgetSelectGroup(BaseScreen, Ui_widget_select_group):
         self.key_pressed.emit(key)
 
     def set_data(self, group, count):
-        print(f"WidgetSelectGroup set_data group: {group}, count: {count}")
+        logger.debug("WidgetSelectGroup set_data group=%s count=%s", group, count)
         """Устанавливает текстовые данные для отображения."""
         try:
             self.name.setText(group.name)
@@ -32,7 +35,7 @@ class WidgetSelectGroup(BaseScreen, Ui_widget_select_group):
             # Устанавливаем размер кнопки для автоматической подстройки
             self.name.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         except Exception as e:
-            print(e)
+            logger.exception("WidgetSelectGroup set_data: %s", e)
 
 
         # Обработка клика

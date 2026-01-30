@@ -14,6 +14,9 @@ import psutil
 from PyQt5 import QtWidgets, QtCore
 
 from Core import platforms
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
 from EventsSystem.events import Hendlers
 from GUI.BaseScreen import BaseScreen
 from StateMachine.NavigationManager import NavigationManager
@@ -30,11 +33,9 @@ class MainWindowEvent(QtCore.QObject):
 
 
 # Настройка перехвата исключений
-def exception_hook(exctype, value, traceback):
-    print(f"Тип исключения: {exctype}")
-    print(f"Значение исключения: {value}")
-    print(f"Трассировка: {traceback}")
-    sys.__excepthook__(exctype, value, traceback)
+def exception_hook(exctype, value, tb):
+    logger.exception("Необработанное исключение: %s %s", exctype, value)
+    sys.__excepthook__(exctype, value, tb)
 
 
 sys.excepthook = exception_hook
@@ -47,7 +48,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.handler = handler or Hendlers()
         self.lump = maps or Maps("screen_1_welcome")
-        print(self.lump.state())
+        logger.debug("Initial state: %s", self.lump.state())
         self.current_screen = ""
 
         self.setWindowTitle("Main Window")
@@ -152,15 +153,13 @@ class MainWindow(QtWidgets.QWidget):
 
     def handle_controller_serial_response(self, response):
         """Обрабатываем полученный ответ"""
-        print(f"MainWindow controller_serial получен: {response}")
-        print(f"MainWindow value: {self.last_widget_value}")
+        logger.debug("MainWindow controller_serial получен: %s value=%s", response, self.last_widget_value)
         self.button_clicked(response, None)
 
 
     def handle_barcode_manager_response(self, response):
         """Обрабатываем полученный ответ"""
-        print(f"MainWindow barcode_manager получен: {response}")
-        print(f"MainWindow value: {self.last_widget_value}")
+        logger.debug("MainWindow barcode_manager получен: %s value=%s", response, self.last_widget_value)
         self.value['barcode'] = response
         self.button_clicked('barcode', None)
 
@@ -200,8 +199,7 @@ class MainWindow(QtWidgets.QWidget):
         self.back_state = self.lump.state()
         self.lump.trigger(button_name)
         state = self.lump.state()
-        print("button_clicked", button_name, "state", state, 'button_name: ', button_name)
-        print(f"MainWindow value: {self.last_widget_value}")
+        logger.debug("button_clicked button_name=%s state=%s value=%s", button_name, state, self.last_widget_value)
         if state != self.back_state:
             # if 'btn_back' in button_name and self.lump.state() != self.lump.machine.initial:
             #     self.open_back_widget()
@@ -209,12 +207,9 @@ class MainWindow(QtWidgets.QWidget):
             self.open_widget(state, button_name, value)
         # except (MachineError, TypeError, AttributeError) as e:
         #     self._handle_button_click_error(e)
-        #     print("Стек вызовов:")
-        #     print(traceback.format_exc())
 
     def open_back_widget(self, value: Any = None):
-        print("open_back_widget value", value)
-        print(f"MainWindow value: {self.last_widget_value}")
+        logger.debug("open_back_widget value=%s last_widget_value=%s", value, self.last_widget_value)
         """
         Возвращает к предыдущему экрану, используя навигационный стек.
         :param value: (Опционально) данные для передачи при возврате.
@@ -223,13 +218,12 @@ class MainWindow(QtWidgets.QWidget):
         if prev_state:
             self.open_widget(prev_state['screen'], None, prev_state['value'])
         else:
-            print("История пуста. Нельзя вернуться назад.")
+            logger.warning("История пуста. Нельзя вернуться назад.")
 
 
     def open_widget(self, widget_name: str, source: str = None, value: Any = None):
-        print("open_widget", widget_name, 'source: ', source)
+        logger.debug("open_widget widget_name=%s source=%s", widget_name, source)
         self.last_widget_value = value
-        print(f"MainWindow value: {self.last_widget_value}")
         """
         Открывает виджет с указанным именем, скрывая остальные.
 
@@ -276,8 +270,7 @@ class MainWindow(QtWidgets.QWidget):
         :param value: Данные для передачи.
         :param source: Имя источника перехода на виджет (кнопка).
         """
-        print(f"_handle_widget_data. Widget: {widget}. source: {source}")
-        print(f"MainWindow value: {self.last_widget_value}")
+        logger.debug("_handle_widget_data widget=%s source=%s value=%s", widget, source, self.last_widget_value)
 
         # write = widget.is_write()
         # read  = widget.is_read()
@@ -289,8 +282,7 @@ class MainWindow(QtWidgets.QWidget):
         return data
 
     def _handle_cmd(self, widget_name: str, source: str = None, value: Any = None):
-        print("_handle_cmd widget_name", widget_name)
-        print(f"MainWindow value: {self.last_widget_value}")
+        logger.debug("_handle_cmd widget_name=%s value=%s", widget_name, self.last_widget_value)
         """
         Обрабатывает случай, когда виджет не найден.
 
@@ -303,8 +295,7 @@ class MainWindow(QtWidgets.QWidget):
                 self.open_widget(transition, source, value=value)
 
     def _handle_widget_not_found(self, widget_name: str, source: str = None, value: Any = None):
-        print(f"_handle_widget_not_found. widget_name: {widget_name}, source: {source}, action_callback: {self.action_callback}, trigger: {self.lump.trigger}")
-        print(f"MainWindow value: {self.last_widget_value}")
+        logger.debug("_handle_widget_not_found widget_name=%s source=%s value=%s", widget_name, source, self.last_widget_value)
         """
         Обрабатывает случай, когда виджет не найден.
 
@@ -329,7 +320,7 @@ class MainWindow(QtWidgets.QWidget):
                 if transition:
                     self.open_widget(transition, source, value=value)
         else:
-            print(f"Виджет '{widget_name}' не найден.")
+            logger.warning("Виджет '%s' не найден.", widget_name)
 
     def _handle_button_click_error(self, error: Exception):
         """
@@ -337,7 +328,7 @@ class MainWindow(QtWidgets.QWidget):
 
         :param error: Исключение, вызвавшее ошибку.
         """
-        print(f"Ошибка при обработке кнопки: {error}")
+        logger.exception("Ошибка при обработке кнопки: %s", error)
 
     def kill_proc_tree(self, pid, including_parent=True):
         parent = psutil.Process(pid)
@@ -347,6 +338,6 @@ class MainWindow(QtWidgets.QWidget):
             parent.kill()
 
     def closeEvent(self, event):
-        print(f"closeEvent: {event}")
+        logger.debug("closeEvent: %s", event)
         event.accept()
         self.kill_proc_tree(os.getpid())

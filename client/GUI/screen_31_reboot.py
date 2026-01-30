@@ -1,5 +1,9 @@
 import traceback
+
+from Core.app_logging import get_logger
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_31_reboot import Ui_screen_31_reboot
 from PyQt5.QtCore import QEvent, QTimer
 
@@ -57,11 +61,10 @@ class screen_31_reboot(BaseScreen, Ui_screen_31_reboot):
         """Выполнение команды перезагрузки"""
         try:
             # Команда будет выполнена через state machine -> cmd_reboot
-            print("Выполняется перезагрузка системы...")
+            logger.info("Выполняется перезагрузка системы...")
             return {'trigger': 'btn_ok'}
         except Exception as e:
-            print(f"Ошибка при перезагрузке: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка при перезагрузке: %s", e)
             return {'trigger': 'error'}
 
     def showEvent(self, event):

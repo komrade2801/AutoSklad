@@ -1,7 +1,10 @@
 import traceback
 
+from Core.app_logging import get_logger
 from PyQt5 import QtCore
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_14_stockman import Ui_screen_14_stockman
 try:
     import RPi.GPIO as GPIO
@@ -21,18 +24,18 @@ GPIO.output(relay_pin, GPIO.LOW)
 def control_rely(command):
     try:
         if command == "1":
-            print("Включаю реле на 15 секунд")
+            logger.info("Включаю реле на 15 секунд")
             GPIO.output(relay_pin, GPIO.HIGH)
             time.sleep(15)
-            print("Выключаю реле")
+            logger.info("Выключаю реле")
             GPIO.output(relay_pin, GPIO.LOW)
         elif command == "2":
-            print("Выключаю реле")
+            logger.info("Выключаю реле")
             GPIO.output(relay_pin, GPIO.LOW)
         else:
-            print("Неверная команда. Используйте 1 - Включить, 2 - Выключить")
+            logger.warning("Неверная команда. Используйте 1 - Включить, 2 - Выключить")
     except Exception as e:
-        print(e)
+        logger.exception("control_rely: %s", e)
 
 
 class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
@@ -56,8 +59,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         self._barcode_timer.setInterval(1500)  # 1500 мс - увеличенный таймаут как fallback
         self._barcode_timer.setSingleShot(True)
         self._barcode_timer.timeout.connect(self._process_barcode)
-        self.event_enter_barcode = lambda barcode: print(
-            "Получен штрих-код:", barcode)
+        self.event_enter_barcode = lambda barcode: logger.debug("Получен штрих-код: %s", barcode)
         # :contentReference[oaicite:0]{index=0}
         self.btn_open_door.clicked.connect(self.on_open_door)
         # :contentReference[oaicite:0]{index=0}
@@ -69,12 +71,8 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         при каждом клике по btn_open_door.
         Здесь реализуйте логику открытия двери.
         """
-        print(
-            # :contentReference[oaicite:1]{index=1}
-            "Кнопка «Открыть дверь» нажата!")
+        logger.debug("Кнопка «Открыть дверь» нажата!")
         # TODO Перенести в основную логику программы
-        # Настройка режима нумерации пинов (BCM)
-
         control_rely("1")
 
     def close_door(self):
@@ -83,9 +81,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         при каждом клике по btn_open_door.
         Здесь реализуйте логику открытия двери.
         """
-        print(
-            # :contentReference[oaicite:1]{index=1}
-            "Кнопка «Открыть дверь» нажата!")
+        logger.debug("Кнопка «Закрыть дверь» нажата")
         # TODO Перенести в основную логику программыц
         # Настройка режима нумерации пинов (BCM)
 
@@ -93,15 +89,15 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
 
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""
-        print(f"set_data. Input args: {args}")
+        logger.debug("set_data Input args: %s", args)
         for arg in args:
             try:
-                print(f"set_data. arg: {arg}")
+                logger.debug("set_data arg: %s", arg)
                 if not arg:
                     continue
                 if isinstance(arg, tuple):
                     user = arg[0]
-                    print(f"user as tuple: {user}")
+                    logger.debug("user as tuple: %s", user)
                     self.lbl_name.setText(f"{user.first_name} {user.second_name}")
                     self.lbl_name_2.setText(f"{user.family}")
                 elif isinstance(arg, str) and arg.strip():
@@ -112,8 +108,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
                         self.lbl_name_2.setText(f"{full[2]}")
 
             except Exception as e:
-                print(f"Ошибка в set_data stockman: {e}")
-                print(traceback.format_exc())
+                logger.exception("Ошибка в set_data stockman: %s", e)
 
     def get_data(self):
         pass
@@ -154,7 +149,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
             if self._barcode_buffer:
                 self._barcode_timer.stop()  # Останавливаем таймер
-                print(f"[QR] Enter нажат, обработка буфера: {repr(self._barcode_buffer)}")
+                logger.debug("[QR] Enter нажат, обработка буфера: %s", repr(self._barcode_buffer))
                 self._process_barcode()  # Немедленно обрабатываем
             event.accept()  # Явно принимаем событие
             return
@@ -163,7 +158,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         if event.key() == QtCore.Qt.Key_Tab:
             # Добавляем табуляцию в буфер
             self._barcode_buffer += '\t'
-            print(f"[QR] Добавлен Tab, буфер: {repr(self._barcode_buffer)}")
+            logger.debug("[QR] Добавлен Tab, буфер: %s", repr(self._barcode_buffer))
             # Перезапускаем таймер как fallback
             self._barcode_timer.start()
             event.accept()  # Явно принимаем событие, чтобы предотвратить стандартную обработку Tab
@@ -173,7 +168,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         if event.key() == QtCore.Qt.Key_Space:
             # Добавляем пробел в буфер
             self._barcode_buffer += ' '
-            print(f"[QR] Добавлен пробел, буфер: {repr(self._barcode_buffer)}")
+            logger.debug("[QR] Добавлен пробел, буфер: %s", repr(self._barcode_buffer))
             # Перезапускаем таймер как fallback
             self._barcode_timer.start()
             event.accept()  # Явно принимаем событие, чтобы предотвратить активацию кнопок
@@ -188,14 +183,14 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
             event.accept()  # Явно принимаем событие
 
     def _process_barcode(self):
-        print(f"[QR] _process_barcode. buffer: {repr(self._barcode_buffer)}")
+        logger.debug("[QR] _process_barcode buffer: %s", repr(self._barcode_buffer))
         if self._barcode_buffer:
             # Очищаем буфер от завершающих символов (\n, \r)
             cleaned_buffer = self._barcode_buffer.strip()
             if cleaned_buffer:
-                print(f"[QR] Отправка штрих-кода: {repr(cleaned_buffer)}")
+                logger.debug("[QR] Отправка штрих-кода: %s", repr(cleaned_buffer))
                 self.event_enter_barcode({'barcode': cleaned_buffer})
                 self._barcode_buffer = ""
             else:
-                print(f"[QR] Буфер пуст после очистки, пропуск")
+                logger.debug("[QR] Буфер пуст после очистки, пропуск")
                 self._barcode_buffer = ""

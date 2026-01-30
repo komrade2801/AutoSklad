@@ -1,5 +1,9 @@
 import traceback
+
+from Core.app_logging import get_logger
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_30_shutdown import Ui_screen_30_shutdown
 from PyQt5.QtCore import QEvent, QTimer
 
@@ -57,11 +61,10 @@ class screen_30_shutdown(BaseScreen, Ui_screen_30_shutdown):
         """Выполнение команды выключения"""
         try:
             # Команда будет выполнена через state machine -> cmd_stop
-            print("Выполняется выключение системы...")
+            logger.info("Выполняется выключение системы...")
             return {'trigger': 'btn_ok'}
         except Exception as e:
-            print(f"Ошибка при выключении: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка при выключении: %s", e)
             return {'trigger': 'error'}
 
     def showEvent(self, event):

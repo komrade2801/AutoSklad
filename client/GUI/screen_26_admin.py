@@ -1,9 +1,11 @@
 import traceback
-
+from Core.app_logging import get_logger
 from PyQt5.QtCore import QTimer
 from PyQt5.QtCore import QEvent
 
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_26_admin import Ui_screen_26_admin
 
 
@@ -42,21 +44,21 @@ class screen_26_admin(BaseScreen, Ui_screen_26_admin):
 
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""
-        print(f"set_data. Input args: {args}")
+        logger.debug("set_data. Input args: %s", args)
         for arg in args:
             try:
-                print(f"set_data. arg: {arg}")
+                logger.debug("set_data. arg: %s", arg)
                 if not arg:
                     continue
                 if isinstance(arg, tuple):
                     user = arg[0]
-                    print(f"user: {user}")
+                    logger.debug("user: %s", user)
                     self.lbl_name.setText(f"{user.first_name} {user.second_name}")
                     self.lbl_name_2.setText(f"{user.family}")
                     continue
 
-            except:
-                print(traceback.format_exc())
+            except Exception:
+                logger.exception("screen_26_admin set_data")
 
 
     def get_data(self):

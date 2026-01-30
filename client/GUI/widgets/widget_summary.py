@@ -1,8 +1,10 @@
 import datetime
-
+from Core.app_logging import get_logger
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from ..BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_widget_27_summary import Ui_widget_27_summary as Ui
 
 
@@ -40,9 +42,9 @@ class WidgetSummary(BaseScreen, Ui):
                 if hasattr(widget, 'setText') and callable(widget.setText):
                     widget.setText(str(value))  # Устанавливаем текстовое значение
                 else:
-                    print(f"Предупреждение: атрибут '{key}' не поддерживает setText")
+                    logger.warning("Предупреждение: атрибут '%s' не поддерживает setText", key)
             else:
-                print(f"Предупреждение: атрибут '{key}' не найден в {self.__class__.__name__}")
+                logger.warning("Предупреждение: атрибут '%s' не найден в %s", key, self.__class__.__name__)
 
     def get_data(self):
         pass

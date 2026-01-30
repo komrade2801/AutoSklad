@@ -1,7 +1,11 @@
 from PyQt5 import QtGui, QtCore, QtWidgets
+from Core.app_logging import get_logger
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_1_welcome import Ui_screen_1_welcome
 from GUI.ico.ico_logo import Logo
+
+logger = get_logger(__name__)
+
 
 class screen_1_welcome(BaseScreen, Ui_screen_1_welcome):
     def __init__(self):
@@ -9,7 +13,7 @@ class screen_1_welcome(BaseScreen, Ui_screen_1_welcome):
         self.setupUi(self)
 
         self.lbl_info_ico.setPixmap(QtGui.QPixmap(Logo().get_pixmap()))  # Установка пиксмапа
-        self.event_enter_barcode = lambda barcode=0: print("Получен штрих-код:", barcode)
+        self.event_enter_barcode = lambda barcode=0: logger.debug("Получен штрих-код: %s", barcode)
 
         self._barcode_buffer = ""
         self._barcode_timer = QtCore.QTimer()

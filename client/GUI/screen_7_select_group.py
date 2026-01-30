@@ -1,8 +1,11 @@
 import traceback
 
+from Core.app_logging import get_logger
 from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_7_select_group import Ui_screen_7_select_group
 
 from PyQt5.QtCore import QEvent
@@ -15,7 +18,7 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.event_select_group = lambda *args, **kwargs: print("screen_7_select_group", *args, **kwargs)
+        self.event_select_group = lambda *args, **kwargs: logger.debug("screen_7_select_group %s %s", args, kwargs)
         self.trigger_name = "btn_select_group_names"
         self.value = None
         self.trigger = None
@@ -31,12 +34,10 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
             self.listWidget.setItemWidget(list_item, widget)
 
     def on_group_selected(self, group_id):
-        print(f"Группа с ID {group_id} выбрана.")
+        logger.debug("Группа с ID %s выбрана.", group_id)
 
     def set_data(self, *args, **kwargs):
-        print("screen_7_select_group set_data")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_7_select_group set_data args=%s kwargs=%s", args, kwargs)
         """Устанавливает текст. Реализуется в каждом экране."""
         """
         Отображает данные в listWidget.
@@ -45,11 +46,11 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         [{'id': 1, 'name': 'Group Name', 'description': 'Description', 'status': 0}, ...]
         """
         groups = args[0]
-        print(args[0])
+        logger.debug("args[0]=%s", args[0])
         self.listWidget.clear()  # Всегда очищаем список (в т.ч. когда групп с инструментом 0 — чтобы не показывать устаревшие)
         if not groups:
             return
-        print(groups)
+        logger.debug("groups=%s", groups)
         if not isinstance(groups, dict):
             return
         # print(groups[0])
@@ -60,7 +61,7 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
 
         try:
             for group, count in groups.items():
-                print(group)
+                logger.debug("group=%s", group)
 
                 if group.paren_group_id != 0:
                     continue
@@ -68,17 +69,15 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
                 widget = WidgetSelectGroup(self.trigger_name)
                 widget.set_data(group, count)  # Передаём данные в кастомный виджет
                 widget.event_select_group = self.handle_select_group
-                print(widget)
-                # widget.setSizeHint(QtCore.QSize(440, 80))  # Ширина и высота виджета
+                logger.debug("widget=%s", widget)
                 list_item = QListWidgetItem(self.listWidget)
                 list_item.setSizeHint(widget.sizeHint())  # Используем размер из виджета
-                print(list_item)
+                logger.debug("list_item=%s", list_item)
 
                 self.listWidget.addItem(list_item)
                 self.listWidget.setItemWidget(list_item, widget)
         except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            logger.exception("screen_7_select_group set_data: %s", e)
         pass
 
     def handle_select_group(self, *args, **kwargs):
@@ -89,6 +88,6 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         try:
             if self.value:
                 return {"group_id": self.value[0], "group_name": self.value[1]}
-        except:
-            print(traceback.format_exc())
+        except Exception:
+            logger.exception("screen_7_select_group get_data")
 

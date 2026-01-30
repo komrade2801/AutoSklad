@@ -3,7 +3,10 @@ from PyQt5.QtCore import pyqtSignal
 import traceback
 from PyQt5.QtWidgets import QListWidgetItem
 
+from Core.app_logging import get_logger
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_15_mass_load import Ui_screen_15_mass_load
 
 from .widgets.widget_mass_load_tool import WidgetMassLoadTool
@@ -20,9 +23,7 @@ class screen_15_mass_load(BaseScreen, Ui_screen_15_mass_load):
 
 
     def set_data(self, *args, **kwargs):
-        print("screen_15_mass_load set_data")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_15_mass_load set_data args=%s kwargs=%s", args, kwargs)
         try:
             cell_list = args[0] if len(args) > 0 and args[0] is not None else []
             self.lbl_group_count.setText(f"Ячеек: {len(cell_list)}")
@@ -47,15 +48,14 @@ class screen_15_mass_load(BaseScreen, Ui_screen_15_mass_load):
                     self.listWidget.addItem(list_item)
                     self.listWidget.setItemWidget(list_item, widget)
             except Exception as e:
-                print(e)
-                print(traceback.format_exc())
+                logger.exception("screen_15_mass_load set_data: %s", e)
             pass
-        except:
-            print(traceback.format_exc())
+        except Exception:
+            logger.exception("screen_15_mass_load set_data")
 
 
     def get_data(self):
-        print("screen_15_mass_load get_data")
+        logger.debug("screen_15_mass_load get_data")
         pass
 
     def mass_load_sort_by_cell_func(self, e):

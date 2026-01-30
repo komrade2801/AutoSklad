@@ -1,4 +1,7 @@
 import os
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_files_in_current_folder():
@@ -19,4 +22,4 @@ def get_files_in_current_folder():
 
 if __name__ == "__main__":
     files = get_files_in_current_folder()
-    print("Files in the current folder:", files)
+    logger.info("Files in the current folder: %s", files)

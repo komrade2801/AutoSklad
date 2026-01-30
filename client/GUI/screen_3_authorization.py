@@ -1,6 +1,8 @@
 import traceback
-
+from Core.app_logging import get_logger
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_3_authorization import Ui_screen_3_authorization
 from .helper.MyLineEdit import MyLineEdit
 from .widgets.widget_keyboard import WidgetKeyboard
@@ -63,9 +65,9 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         self.event_input_name_code = lambda text, *args, **kwargs: print(text)
 
     def on_login_changed(self, text):
-        print(f"on_login_changed. Input text: {text}")
+        logger.debug("on_login_changed. Input text: %s", text)
         if len(text)==0:
-            print(f"clear login text: {text}")
+            logger.debug("clear login text: %s", text)
             self.login = ''
             return
         if ((len(text) >= self.trigger_length_login) and
@@ -79,11 +81,11 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
 
 
     def on_password_changed(self, text):
-        print(f"on_password_changed. Input text: {text}")
+        logger.debug("on_password_changed. Input text: %s", text)
         # Обновляем переменную
         try:
             if len(text)==0:
-                print(f"clear password text: {text}")
+                logger.debug("clear password text: %s", text)
                 self.psw = ''
                 return
             elif len(text)==1 and text != "*":
@@ -93,9 +95,8 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
                 if char != "*":
                     self.psw = self.psw + char
             self.edit_psw.setText("*"*len(text))
-        except:
-            print(len(text))
-            print(traceback.format_exc())
+        except Exception:
+            logger.exception("on_password_changed len(text)=%s", len(text))
 
         if ((len(text) >= self.trigger_length_psw) and
                 (len(text) < self.trigger_max_length_psw)):
@@ -213,11 +214,11 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             name = f"{full[0][0]}. {full[1][0]}. {full[2]}"
             self.edit_login.setText(name)
             self.edit_psw.setFocus()
-        except:
-            print(traceback.format_exc())
+        except Exception:
+            logger.exception("screen_3_authorization set_data")
 
     def get_data(self):
-        print(f"Before clearing: login={self.login}, password={self.psw}")
+        logger.debug("Before clearing: login=%s, password=***", self.login)
 
         # if self.psw == '':
         #     return
@@ -229,36 +230,22 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         return arr
 
     def handle_callback_executor(self, *args, **kwargs):
-        print(f"handle_callback_executor. Input args: {args}")
-
-        print(f"args[0]: {args[0]}")
-        print(f"args[1]: {args[1]}")
-        # print(f"args[2]: {args[2]}")
-
+        logger.debug("handle_callback_executor. Input args: %s", args)
         self.psw = ""
         self.login = ""
 
         # Проверим, что первый аргумент существует и является списком
         triggers = args[0] if len(args) > 0 and isinstance(args[0], list) else []
-
-        print(f"len(args): {len(args)}")
-        print(f"isinstance(args[1], tuple): {isinstance(args[1], tuple)}")
         # Проверим, что второй аргумент существует и является кортежем
         user_and_role = args[1] if len(args) > 1 and isinstance(args[1], tuple) else ()
-        print(f"user_and_role: {user_and_role}")
 
         # Извлечем пользователя и роль, если они есть
         user = user_and_role[0] if len(user_and_role) > 0 else None
         role = user_and_role[1] if len(user_and_role) > 1 else None
 
-        print(f"user: {user}")
-        print(f"role: {role}")
+        logger.debug("user=%s role=%s triggers=%s", user, role, triggers)
         if not user or not role:
             return 'err_authorization'
-        # Вывод данных
-        print("Triggers:", triggers)
-        print("User:", user)
-        print("Role:", role)
         role_name = role.name.lower()
         # Маппинг ролей к триггерам для корректного выбора destination
         role_to_trigger = {
@@ -271,8 +258,8 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         }
         if role_name in role_to_trigger:
             trigger_name = role_to_trigger[role_name]
-            print(f'trigger: {trigger_name}')
+            logger.debug("trigger: %s", trigger_name)
             return trigger_name
         else:
-            print(f'No matching trigger for role: {role_name}')
+            logger.warning("No matching trigger for role: %s", role_name)
             return 'err_authorization'

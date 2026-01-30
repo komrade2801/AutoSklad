@@ -1,8 +1,10 @@
 import traceback
-
+from Core.app_logging import get_logger
 from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_33_select_plan import Ui_screen_33_select_plan
 from PyQt5.QtCore import QEvent, QTimer
 
@@ -13,7 +15,7 @@ class screen_33_select_plan(BaseScreen, Ui_screen_33_select_plan):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.event_select_plan = lambda *args, **kwargs: print("screen_33_select_plan", *args, **kwargs)
+        self.event_select_plan = lambda *args, **kwargs: logger.debug("screen_33_select_plan %s %s", args, kwargs)
 
         self.value = None
         self.trigger = None
@@ -46,9 +48,7 @@ class screen_33_select_plan(BaseScreen, Ui_screen_33_select_plan):
         self.timeout_back = self.__timeout_back
 
     def set_data(self, *args, **kwargs):
-        print("screen_33_select_plan set_data")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_33_select_plan set_data args=%s kwargs=%s", args, kwargs)
         """
         Устанавливает текстовые данные для виджетов WidgetSummary.
 
@@ -67,7 +67,7 @@ class screen_33_select_plan(BaseScreen, Ui_screen_33_select_plan):
 
             for data in data_list:
                 if not isinstance(data, dict):
-                    print(f"Ошибка: Ожидается словарь, получено: {type(data)}")
+                    logger.warning("Ошибка: Ожидается словарь, получено: %s", type(data))
                     continue
 
                 # Создаем виджет WidgetPlan и передаем данные
@@ -84,20 +84,17 @@ class screen_33_select_plan(BaseScreen, Ui_screen_33_select_plan):
                 self.listWidget.setItemWidget(list_item, widget_plan)
 
         except Exception as e:
-            print(traceback.format_exc())
-            print(f"Ошибка в set_data: {e}")
+            logger.exception("Ошибка в set_data: %s", e)
 
     def get_data(self):
-        print(f"screen_33_select_plan get_data")
+        logger.debug("screen_33_select_plan get_data")
         try:
             if self.value:
                 return {"plan_id": self.value[0], "plan_designation": self.value[1], "plan_name": self.value[2]}
-        except:
-            print(traceback.format_exc())
+        except Exception:
+            logger.exception("screen_33_select_plan get_data")
 
     def handle_select_plan(self, *args, **kwargs):
-        print("screen_33_select_plan handle_select_plan")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_33_select_plan handle_select_plan args=%s kwargs=%s", args, kwargs)
         self.value, self.trigger = args
         self.event_select_plan(self.value[0], self.trigger)

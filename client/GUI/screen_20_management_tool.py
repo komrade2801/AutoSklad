@@ -1,8 +1,10 @@
 import traceback
-
+from Core.app_logging import get_logger
 from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_20_management_tool import Ui_screen_20_management_tool
 from PyQt5.QtCore import QEvent
 
@@ -14,14 +16,13 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.event_select_management_group = lambda *args, **kwargs: print("screen_19_management_group", *args, **kwargs)
+        self.event_select_management_group = lambda *args, **kwargs: logger.debug("screen_19_management_group %s %s", args, kwargs)
 
         self.value = None
         self.trigger = None
 
     def populate_list(self):
-        print("screen_20_management_tool populate_list")
-        print(self.groups)
+        logger.debug("screen_20_management_tool populate_list groups=%s", self.groups)
         for group in self.groups:
             widget = WidgetCountTool()
             widget.set_data(group, 0)
@@ -54,7 +55,7 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
 
         self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:
-            print(tools)
+            logger.debug("tools=%s", tools)
             for tool in tools:
                 # Создаём кастомный виджет
                 widget = WidgetSelectTool()
@@ -66,8 +67,7 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
                 self.listWidget.addItem(list_item)
                 self.listWidget.setItemWidget(list_item, widget)
         except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            logger.exception("screen_20_management_tool set_data: %s", e)
         pass
 
 
@@ -76,9 +76,9 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
         self.event_select_management_group(self.value[0], self.trigger)
 
     def get_data(self):
-        print(f"screen_20_management_tool get_data. value {self.value}")
+        logger.debug("screen_20_management_tool get_data value=%s", self.value)
         try:
             if self.value:
                 return {"group_id": self.value[0], "group_name": self.value[1]}
-        except:
-            print(traceback.format_exc())
+        except Exception:
+            logger.exception("screen_20_management_tool get_data")

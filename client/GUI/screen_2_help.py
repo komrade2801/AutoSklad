@@ -1,5 +1,8 @@
+from Core.app_logging import get_logger
 from DB.Models.Help import Help
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_2_help import Ui_screen_2_help
 from PyQt5.QtCore import QEvent
 
@@ -16,7 +19,7 @@ class screen_2_help(BaseScreen, Ui_screen_2_help):
         return self.index
 
     def set_data(self, data, source):
-        print(f"set_data. Input data: {data}, source: {source}")
+        logger.debug("set_data Input data: %s, source: %s", data, source)
         if isinstance(data, Help):
             self.text_window.setText(data.text)
 

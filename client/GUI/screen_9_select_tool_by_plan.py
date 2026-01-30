@@ -1,9 +1,12 @@
 import traceback
 
+from Core.app_logging import get_logger
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_9_select_tool_by_plan import Ui_screen_9_select_tool_by_plan
 from .widgets.widget_plan_tool import WidgetPlanTool
 
@@ -12,7 +15,7 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.event_select_tool = lambda *args, **kwargs: print("screen_9_select_tool_by_plan", *args, **kwargs)
+        self.event_select_tool = lambda *args, **kwargs: logger.debug("screen_9_select_tool_by_plan %s %s", args, kwargs)
 
         self.plan_id_val = -1
         self.value = None
@@ -20,9 +23,7 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         self.tool_list = {}
 
     def set_data(self, *args, **kwargs):
-        print("screen_9_select_tool_by_plan set_data")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_9_select_tool_by_plan set_data args=%s kwargs=%s", args, kwargs)
         """Устанавливает текст. Реализуется в каждом экране.
         Отображает данные в listWidget.
 
@@ -34,7 +35,7 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         try:
             source = args[1]
             if source == 'btn_back':
-                print('data restored')
+                logger.debug('data restored')
             else:
                 data = args[0]
 
@@ -51,7 +52,7 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
                 can_be_completed = False
 
                 for tool_data in tools:
-                    print(tool_data)
+                    logger.debug("tool_data: %s", tool_data)
 
                     has_tools = tool_data['has_tools']
 
@@ -82,7 +83,8 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
     pass
 
     def get_data(self, *args, **kwargs):
-        print(f"screen_9_select_tool_by_plan get_data {args} {kwargs} {self.value}, self.tool_list {self.tool_list}")
+        logger.debug("screen_9_select_tool_by_plan get_data args=%s kwargs=%s value=%s tool_list=%s",
+                     args, kwargs, self.value, self.tool_list)
         try:
             # if self.value:
             #     return {"tool_type_id": self.value[0], "name": self.value[1], "group_name": self.value[2], "tool_description": self.value[3]}
@@ -91,8 +93,8 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
             value = self.tool_list
             self.tool_list = {}
             return {"tool_list": value, "plan_id": self.plan_id_val}
-        except:
-            print(traceback.format_exc())
+        except Exception:
+            logger.exception("screen_9_select_tool_by_plan get_data")
 
 
     # def handle_select_tool(self, *args, **kwargs):
@@ -103,14 +105,14 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
     #     self.event_select_tool(self.value[0], self.trigger)
 
     def toolsCountUpdate(self, id: int, count: int):
-        print(f"toolsCountUpdate id {id}, count {count}")
+        logger.debug("toolsCountUpdate id %s, count %s", id, count)
 
         if count == 0 and self.tool_list.get(id):
             self.tool_list.pop(id)
         else:
             self.tool_list.update({id: count})
 
-        print(f"self.tool_list {self.tool_list}")
+        logger.debug("self.tool_list=%s", self.tool_list)
 
         if self.tool_list:
             self.setOkButtonState(True)

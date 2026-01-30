@@ -1,5 +1,8 @@
 import traceback
+from Core.app_logging import get_logger
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_28_net_options import Ui_screen_28_net_options
 from PyQt5.QtCore import QEvent, QTimer, QThread, pyqtSignal
 from PyQt5 import QtGui
@@ -264,8 +267,7 @@ class screen_28_net_options(BaseScreen, Ui_screen_28_net_options):
             else:
                 self._set_ip_fields('8.8.8.8', *self.dns_fields)
         except Exception as e:
-            print(f"Ошибка загрузки настроек: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка загрузки настроек: %s", e)
 
     def _set_ip_fields(self, ip_str, *fields):
         """Установка IP адреса в поля ввода"""
@@ -330,20 +332,19 @@ class screen_28_net_options(BaseScreen, Ui_screen_28_net_options):
         try:
             device_ip = self._get_ip_from_fields(*self.device_fields)
             if not device_ip:
-                print("Ошибка: неверный IP адрес устройства")
+                logger.warning("Ошибка: неверный IP адрес устройства")
                 return {'trigger': 'error'}
             
             server_ip = self._get_ip_from_fields(*self.server_fields)
             if not server_ip:
-                print("Ошибка: неверный IP адрес сервера")
+                logger.warning("Ошибка: неверный IP адрес сервера")
                 return {'trigger': 'error'}
             
             # Сохранение происходит через get_data() и state machine
-            print("Настройки сети будут сохранены через state machine")
+            logger.debug("Настройки сети будут сохранены через state machine")
             return {'trigger': 'ok'}
         except Exception as e:
-            print(f"Ошибка валидации настроек: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка валидации настроек: %s", e)
             return {'trigger': 'error'}
 
     def set_data(self, *args, **kwargs):
@@ -367,6 +368,5 @@ class screen_28_net_options(BaseScreen, Ui_screen_28_net_options):
             # Формат: (device_ip, server_ip, subnet_mask, gateway, dns)
             return (device_ip, server_ip, subnet_mask, gateway, dns)
         except Exception as e:
-            print(f"Ошибка получения данных: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка получения данных: %s", e)
             return None

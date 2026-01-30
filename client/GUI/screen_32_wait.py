@@ -1,8 +1,11 @@
 from PyQt5.QtCore import QTimer
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QWidget
+from Core.app_logging import get_logger
 # from BarcodeScanner.SerialWorker import SerialWorker  # Используем новый класс!
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_32_wait import Ui_screen_32_wait
 
 
@@ -27,7 +30,7 @@ class screen_32_wait(BaseScreen, Ui_screen_32_wait):
         self.event_timeout_back = lambda *args, **kwargs: self.hide()
 
         # 🔹 Обработчик данных из COM-порта
-        self.on_serial_data_received = lambda *args, **kwargs: print(*args, **kwargs)  # self.hide()
+        self.on_serial_data_received = lambda *args, **kwargs: logger.debug("serial_data %s %s", args, kwargs)
 
 
     def check_visibility(self):
@@ -58,7 +61,7 @@ class screen_32_wait(BaseScreen, Ui_screen_32_wait):
 
     def on_serial_error(self, error_msg):
         """Обрабатывает ошибки COM-порта"""
-        print(f"Ошибка последовательного порта: {error_msg}")
+        logger.error("Ошибка последовательного порта: %s", error_msg)
 
     def closeEvent(self, event):
         """Закрытие окна — останавливаем поток"""

@@ -1,6 +1,9 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
+from Core.app_logging import get_logger
 from ..BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_widget_34_plan_tool import Ui_widget_34_plan_tool
 
 
@@ -57,7 +60,7 @@ class WidgetPlanTool(BaseScreen, Ui_widget_34_plan_tool):
     #     self.event_select_tool((self.tool_type_id, self.name_val, self.groups_id_val, self.description_val), "btn_tool_name")
 
     def changeSelectCount(self, tool_id, toolsUpdateFunc, increase: bool = True):
-        print(f"changeSelectCount increase {increase}")
+        logger.debug("changeSelectCount increase %s", increase)
         if increase:
             if self.select_count_value < self.load_count_value:
                 self.select_count_value += 1

@@ -21,6 +21,10 @@
 import os
 import subprocess
 import re
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def convert_ui_to_py(ui_folder):
     for filename in os.listdir(ui_folder):
@@ -29,7 +33,7 @@ def convert_ui_to_py(ui_folder):
             new_filename = f"{re.sub(r'/d+_', '', os.path.splitext(filename)[0])}.py"
             py_file = os.path.join(ui_folder, new_filename)
             subprocess.run(["pyuic5", "-o", new_filename, filename])
-            print(f"Converted {ui_file} to {new_filename}")
+            logger.info("Converted %s to %s", ui_file, new_filename)
 
 if __name__ == "__main__":
     # Получаем путь текущей директории

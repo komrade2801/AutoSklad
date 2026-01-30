@@ -1,6 +1,9 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
+from Core.app_logging import get_logger
 from ..BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_widget_15_mass_load import Ui_widget_15_mass_load as Ui
 
 
@@ -21,8 +24,7 @@ class WidgetMassLoadTool(BaseScreen, Ui):
         return QtCore.QSize(440, 75)
 
     def set_data(self, cell_data):
-        print("WidgetMassLoadTool set_data")
-        print(cell_data)
+        logger.debug("WidgetMassLoadTool set_data cell_data=%s", cell_data)
         """Устанавливает текстовые данные для отображения."""
         for key, value in cell_data.items():
             # Проверяем, существует ли атрибут с таким именем
@@ -32,9 +34,9 @@ class WidgetMassLoadTool(BaseScreen, Ui):
                 if hasattr(widget, 'setText') and callable(widget.setText):
                     widget.setText(str(value))  # Устанавливаем текстовое значение
                 else:
-                    print(f"Предупреждение: атрибут '{key}' не поддерживает setText")
+                    logger.warning("Предупреждение: атрибут '%s' не поддерживает setText", key)
             else:
-                print(f"Предупреждение: атрибут '{key}' не найден в {self.__class__.__name__}")
+                logger.warning("Предупреждение: атрибут '%s' не найден в %s", key, self.__class__.__name__)
 
     def get_data(self):
         pass

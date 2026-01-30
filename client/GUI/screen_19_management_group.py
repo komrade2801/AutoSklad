@@ -1,8 +1,10 @@
 import traceback
-
+from Core.app_logging import get_logger
 from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_19_management_group import Ui_screen_19_management_group
 from PyQt5.QtCore import QEvent
 
@@ -12,8 +14,7 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.event_select_group = lambda *args, **kwargs: print(
-            "screen_19_management_group", *args, **kwargs)
+        self.event_select_group = lambda *args, **kwargs: logger.debug("screen_19_management_group %s %s", args, kwargs)
 
         self.value = None
         self.trigger = None
@@ -32,12 +33,10 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
             self.listWidget.setItemWidget(list_item, widget)
 
     def on_group_selected(self, group_id):
-        print(f"Группа с ID {group_id} выбрана.")
+        logger.debug("Группа с ID %s выбрана.", group_id)
 
     def set_data(self, *args, **kwargs):
-        print("screen_19_management_group set_data")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_19_management_group set_data args=%s kwargs=%s", args, kwargs)
         """Устанавливает текст. Реализуется в каждом экране.
         Отображает данные в listWidget.
 
@@ -72,8 +71,7 @@ class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
                 self.listWidget.addItem(list_item)
                 self.listWidget.setItemWidget(list_item, widget)
         except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            logger.exception("screen_19_management_group set_data: %s", e)
         pass
 
     def handle_select_group(self, *args, **kwargs):

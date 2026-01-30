@@ -1,8 +1,10 @@
 import traceback
-
+from Core.app_logging import get_logger
 from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_21_summary import Ui_screen_21_summary
 from PyQt5.QtCore import QEvent, QTimer
 
@@ -42,9 +44,7 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
         self.timeout_back = self.__timeout_back
 
     def set_data(self, *args, **kwargs):
-        print("screen_21_summary set_data")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_21_summary set_data args=%s kwargs=%s", args, kwargs)
         """
         Устанавливает текстовые данные для виджетов WidgetSummary.
 
@@ -56,7 +56,7 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
         try:
             data_list = args[0]  # Список данных, переданный первым аргументом
             if not isinstance(data_list, list):
-                print("Ошибка: Ожидается список словарей.")
+                logger.warning("Ошибка: Ожидается список словарей.")
                 return
 
             self.listWidget.clear()  # Очищаем список перед добавлением новых данных
@@ -68,7 +68,7 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
 
             for data in data_list:
                 if not isinstance(data, dict):
-                    print(f"Ошибка: Ожидается словарь, получено: {type(data)}")
+                    logger.warning("Ошибка: Ожидается словарь, получено: %s", type(data))
                     continue
 
                 # Создаем виджет WidgetSummary и передаем данные
@@ -84,8 +84,7 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
                 self.listWidget.setItemWidget(list_item, widget_summary)
 
         except Exception as e:
-            print(traceback.format_exc())
-            print(f"Ошибка в set_data: {e}")
+            logger.exception("Ошибка в set_data: %s", e)
 
 
     def get_data(self):

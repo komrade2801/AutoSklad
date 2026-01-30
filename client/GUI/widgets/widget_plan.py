@@ -1,6 +1,9 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSignal
+from Core.app_logging import get_logger
 from ..BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_widget_33_plan import Ui_widget_33_plan
 
 
@@ -12,7 +15,7 @@ class WidgetPlan(BaseScreen, Ui_widget_33_plan):
         super().__init__()
         self.setupUi(self)
         self.id = None
-        self.event_select_plan = lambda *args, **kwargs: print(*args, **kwargs)
+        self.event_select_plan = lambda *args, **kwargs: logger.debug("event_select_plan %s %s", args, kwargs)
 
     def emit_key(self, key):
         """Вызывается при нажатии на кнопку."""
@@ -41,9 +44,9 @@ class WidgetPlan(BaseScreen, Ui_widget_33_plan):
                 if hasattr(widget, 'setText') and callable(widget.setText):
                     widget.setText(str(value))  # Устанавливаем текстовое значение
                 else:
-                    print(f"Предупреждение: атрибут '{key}' не поддерживает setText")
+                    logger.warning("Предупреждение: атрибут '%s' не поддерживает setText", key)
             else:
-                print(f"Предупреждение: атрибут '{key}' не найден в {self.__class__.__name__}")
+                logger.warning("Предупреждение: атрибут '%s' не найден в %s", key, self.__class__.__name__)
 
     def get_data(self):
         pass

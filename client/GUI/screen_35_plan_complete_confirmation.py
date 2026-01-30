@@ -1,8 +1,11 @@
 import traceback
 
+from Core.app_logging import get_logger
 from PyQt5.QtWidgets import QListWidgetItem
 
 from .BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from .ui_classes.Ui_screen_35_plan_complete_confirmation import Ui_screen_35_plan_complete_confirmation
 from PyQt5.QtCore import QEvent, QTimer
 
@@ -19,9 +22,7 @@ class screen_35_plan_complete_confirmation(BaseScreen, Ui_screen_35_plan_complet
         self.tool_list = None
 
     def set_data(self, *args, **kwargs):
-        print("screen_35_plan_complete_confirmation set_data")
-        print(args)
-        print(kwargs)
+        logger.debug("screen_35_plan_complete_confirmation set_data args=%s kwargs=%s", args, kwargs)
         """
         Устанавливает текстовые данные для виджетов WidgetSummary.
 
@@ -38,7 +39,7 @@ class screen_35_plan_complete_confirmation(BaseScreen, Ui_screen_35_plan_complet
 
             tool_list = plan['tool_list']  # Список данных, переданный первым аргументом
             if not isinstance(tool_list, list):
-                print("Ошибка: Ожидается список словарей.")
+                logger.warning("Ошибка: Ожидается список словарей.")
                 return
 
             self.tool_list = plan['tool_list']
@@ -47,7 +48,7 @@ class screen_35_plan_complete_confirmation(BaseScreen, Ui_screen_35_plan_complet
 
             for tool in tool_list:
                 if not isinstance(tool, dict):
-                    print(f"Ошибка: Ожидается словарь, получено: {type(tool)}")
+                    logger.warning("Ошибка: Ожидается словарь, получено: %s", type(tool))
                     continue
 
                 if tool['load_count'] == 0:
@@ -66,11 +67,10 @@ class screen_35_plan_complete_confirmation(BaseScreen, Ui_screen_35_plan_complet
                 self.listWidget.setItemWidget(list_item, widget)
 
         except Exception as e:
-            print(traceback.format_exc())
-            print(f"Ошибка в set_data: {e}")
+            logger.exception("Ошибка в set_data: %s", e)
 
     def get_data(self):
-        print(f"screen_35_plan_complete_confirmation get_data")
+        logger.debug("screen_35_plan_complete_confirmation get_data")
         # value = {"plan_id": self.plan_id}
         value = {"plan_id": self.plan_id, "tool_list": self.tool_list}
         return value

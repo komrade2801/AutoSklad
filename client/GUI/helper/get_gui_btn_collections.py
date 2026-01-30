@@ -1,5 +1,8 @@
 import os
 import traceback
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def find_btn_objects(folder_path):
@@ -36,8 +39,7 @@ def find_btn_objects(folder_path):
                     if unique_btn_objects:
                         btn_objects[filename] = list(unique_btn_objects)
             except UnicodeDecodeError:
-                print(f"Ошибка при чтении файла {filename}. Пропускаем его.")
-                print(traceback.format_exc())
+                logger.exception("Ошибка при чтении файла %s. Пропускаем его.", filename)
                 continue
 
     return btn_objects
@@ -48,8 +50,4 @@ if __name__ == "__main__":
     folder_path = "/GUI"
 
     btn_objects_dict = find_btn_objects(folder_path)
-    print("screen = {")
-    for filename, btn_objects in btn_objects_dict.items():
-        filename = filename.split(".")[0]
-        print(f"\t'{filename}': {btn_objects},")
-    print("}")
+    logger.info("screen = %s", {fn.split(".")[0]: objs for fn, objs in btn_objects_dict.items()})

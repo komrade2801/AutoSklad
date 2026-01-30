@@ -1,5 +1,8 @@
 import traceback
+from Core.app_logging import get_logger
 from GUI.BaseScreen import BaseScreen
+
+logger = get_logger(__name__)
 from GUI.ui_classes.Ui_screen_29_serial_options import Ui_screen_29_serial_options
 from PyQt5.QtCore import QEvent, QThread, pyqtSignal
 from PyQt5 import QtGui
@@ -96,7 +99,7 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
                 if not self.edit_port_driver.text():
                     self.edit_port_driver.setText(ports[1] if len(ports) > 1 else ports[0] if ports else '')
         except Exception as e:
-            print(f"Ошибка получения списка портов: {e}")
+            logger.exception("Ошибка получения списка портов: %s", e)
     
     def _setup_insert_icon(self):
         """Установка SVG иконки для кнопки Insert"""
@@ -107,8 +110,7 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
             icon_obj.addPixmap(pixmap, QtGui.QIcon.Normal, QtGui.QIcon.Off)
             self.btn_insert.setIcon(icon_obj)
         except Exception as e:
-            print(f"Ошибка установки иконки Insert: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка установки иконки Insert: %s", e)
 
     def _setup_ui_connections(self):
         """Подключение обработчиков событий"""
@@ -144,8 +146,7 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
             self.cmb_data_bits_driver.setCurrentText('8')
             self.cmb_stop_bits_driver.setCurrentText('1')
         except Exception as e:
-            print(f"Ошибка загрузки настроек: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка загрузки настроек: %s", e)
 
     def _on_test_clicked(self):
         """Тестирование порта драйвера"""
@@ -195,12 +196,12 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
         try:
             port_driver = self.edit_port_driver.text()
             if not port_driver:
-                print("Ошибка: порт драйвера не указан")
+                logger.warning("Ошибка: порт драйвера не указан")
                 return {'trigger': 'error'}
             
             port_reader = self.edit_port_reader.text()
             if not port_reader:
-                print("Ошибка: порт считывателя не указан")
+                logger.warning("Ошибка: порт считывателя не указан")
                 return {'trigger': 'error'}
             
             # Проверка корректности baudrate
@@ -208,14 +209,13 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
             int(self.cmb_speed_reader.currentText())
             
             # Сохранение происходит через get_data() и state machine
-            print("Настройки COM портов будут сохранены через state machine")
+            logger.debug("Настройки COM портов будут сохранены через state machine")
             return {'trigger': 'ok'}
         except ValueError as e:
-            print(f"Ошибка: неверные параметры - {e}")
+            logger.warning("Ошибка: неверные параметры - %s", e)
             return {'trigger': 'error'}
         except Exception as e:
-            print(f"Ошибка валидации настроек: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка валидации настроек: %s", e)
             return {'trigger': 'error'}
 
     def _on_insert_clicked(self):
@@ -238,7 +238,7 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
         try:
             port_driver = self.edit_port_driver.text()
             if not port_driver:
-                print("Ошибка: порт драйвера не указан")
+                logger.warning("Ошибка: порт драйвера не указан")
                 return None
             
             baudrate_driver = int(self.cmb_speed_driver.currentText())
@@ -248,7 +248,7 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
             cnf = CnfActions()
             port_reader = self.edit_port_reader.text()
             if not port_reader:
-                print("Ошибка: порт считывателя не указан")
+                logger.warning("Ошибка: порт считывателя не указан")
                 return None
             
             baudrate_reader = int(self.cmb_speed_reader.currentText())
@@ -257,10 +257,8 @@ class screen_29_serial_options(BaseScreen, Ui_screen_29_serial_options):
             # Возвращаем кортеж для распаковки в write_cnf_serial(*args)
             return (port_driver, baudrate_driver)
         except ValueError as e:
-            print(f"Ошибка: неверные параметры - {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка: неверные параметры - %s", e)
             return None
         except Exception as e:
-            print(f"Ошибка получения данных: {e}")
-            traceback.print_exc()
+            logger.exception("Ошибка получения данных: %s", e)
             return None
