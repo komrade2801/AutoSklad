@@ -1,8 +1,9 @@
 
   window.jsonPlan = {};
 
-  function save_all_plans(device_number, plan_request){
+  function save_all_plans(device_number, plan_request, saveButton){
     const url = `../backend/create_plan/${device_number}`+"?token="+localStorage.getItem("token");
+    // Редирект только после полного ответа сервера (в .then ниже) — fetch отправляет тело запроса до получения response
     fetch(url, {
       method: 'POST',
       headers: {
@@ -28,10 +29,16 @@
     .catch(err => {
       console.error('Ошибка при сохранении чертежа/массовой загрузки:', err);
       alert('Ошибка при сохранении: ' + (err.message || err));
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Сохранить';
+      }
     });
   }
 
   document.getElementById('saveButton').addEventListener('click', function () {
+    const saveButton = document.getElementById('saveButton');
+    if (saveButton.disabled) return;
     const enterpriseValue = document.getElementById('enterpriseInput').value;
     //const barcodeValue = document.getElementById('barcodeInput').value;
     const nameValue = document.getElementById('nameInput').value;
@@ -98,8 +105,9 @@
     console.log(window.jsonPlan);
     let device_number = 1;
     let plan_request = {'plan': window.jsonPlan, 'create_mass_load': createMassLoad};
-    save_all_plans(device_number, plan_request);
-    // Редирект только после успешного ответа сервера (внутри save_all_plans), иначе запрос может прерваться и массовая загрузка не попадёт в очередь
+    saveButton.disabled = true;
+    saveButton.textContent = 'Сохранение...';
+    save_all_plans(device_number, plan_request, saveButton);
   });
 
 

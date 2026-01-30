@@ -548,13 +548,20 @@ def save_mass_load(
                 request_cell = story.cell
                 request_tool = story.tool
                 request_plan = story.plan
+                logger.debug("[save_mass_load][%s/%s] story.plan (сырое)=%s", processed_count, total_operations, request_plan)
 
                 if not request_plan or request_plan == "":
                     request_plan = None
+                    logger.debug("[save_mass_load][%s/%s] plan_id сброшен: пустое значение", processed_count, total_operations)
                 else:
                     plan = e_plan.get_plan_by_id(request_plan)
                     if not plan:
+                        logger.warning("[save_mass_load][%s/%s] Plan id=%s не найден в БД, plan_id будет null для History/Load",
+                                       processed_count, total_operations, request_plan)
                         request_plan = None
+                    else:
+                        logger.debug("[save_mass_load][%s/%s] Plan id=%s найден, plan_id передаётся в History и Load",
+                                     processed_count, total_operations, request_plan)
 
                 # print(f"request_cell: {request_cell}, request_tool: {request_tool}, request_plan: {request_plan}")
 
@@ -591,6 +598,7 @@ def save_mass_load(
                     raise HTTPException(status_code=402, detail=error_msg)
                 logger.debug("[save_mass_load][%s/%s] Пользователь найден: id=%s, barcode=%s", processed_count, total_operations, user.id, validation.user_barcode)
                 # print(f"add_history: {story_id}")
+                logger.debug("[save_mass_load][%s/%s] add_history с plan_id=%s", processed_count, total_operations, request_plan)
                 e_stories.add_history(
                     history_id=story_id,
                     user_id=user.id,
@@ -652,7 +660,7 @@ def save_mass_load(
                 logger.debug("[save_mass_load][%s/%s] update_cell выполнен успешно для cell_id=%s", processed_count, total_operations, cell.id)
 
                 load_id = max(e_load.get_all_ids(), default=0) + 1
-                logger.debug("[save_mass_load][%s/%s] Создание Load: load_id=%s", processed_count, total_operations, load_id)
+                logger.debug("[save_mass_load][%s/%s] Создание Load: load_id=%s, plan_id=%s", processed_count, total_operations, load_id, request_plan)
                 # создаём Load
                 e_load.add_load(
                     load_id=load_id,

@@ -256,7 +256,7 @@ class ActionMapper:
         - перед чтением: read_db_groups, read_db_tool_names, read_db_group_collection, read_db_tools_collection, read_db_get_more_cells;
         - после записи: write_db_tool_consumption, write_db_load_tool_groups, write_db_drop_tool_groups,
           write_db_mass_load_tools_by_*, write_db_mass_drop_tools_by_*.
-        Подсчёт доступных ведётся только по ячейкам Cell с нужным статусом (3, 7), без привязки к Consumption.
+        Подсчёт доступных ведётся по ячейкам Cell с нужным статусом (3, 7) и отсутствию записи выдачи (Consumption без plan_id для свободных инструментов).
         """
         self.e_cell._cache.clear()
         self.e_load._cache.clear()
@@ -310,13 +310,19 @@ class ActionMapper:
                 if cell.status_id in [3, 7]:
                     loads = self.e_load.find_by_cell_id(cell.id)
                     load = max(loads, key=lambda rec: rec.id) if loads else None
+                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
                     if self.select_plan:
                         if load and load.plan_id == self.select_plan.id:
-                            selected_cell = cell
+                            cell_already_consumed = any(c for c in consumptions if c.plan_id == self.select_plan.id)
+                            if not cell_already_consumed:
+                                selected_cell = cell
+                                break
                     else:
                         if load and not load.plan_id:
-                            selected_cell = cell
-
+                            cell_already_consumed = any(c for c in consumptions if c.plan_id is None)
+                            if not cell_already_consumed:
+                                selected_cell = cell
+                                break
 
         # Если результат пустой, возвращаем None
         if not cells:
@@ -1573,8 +1579,8 @@ class ActionMapper:
     def read_db_groups(self):
         """
         Получает список всех групп из базы данных с количеством доступных инструментов по каждой группе.
-        Доступное количество считается только по ячейкам Cell с статусом 3 или 7 и свободной нагрузке (Load.plan_id is None),
-        без привязки к операциям выдачи (Consumption).
+        Доступное количество считается по ячейкам Cell с статусом 3 или 7, свободной нагрузке (Load.plan_id is None)
+        и отсутствию записи выдачи для свободного инструмента (Consumption с plan_id is None).
 
         :return: Словарь {Group: count} для корневых групп.
         """
@@ -1620,7 +1626,11 @@ class ActionMapper:
                                 loads = self.e_load.find_by_cell_id(cell.id)
                                 load = max(loads, key=lambda rec: rec.id) if loads else None
                                 if load and not load.plan_id:
-                                    count += 1
+                                    # Не считаем доступной ячейку, уже выданную как свободный инструмент (есть Consumption без plan_id)
+                                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                                    cell_already_consumed = any(c for c in consumptions if c.plan_id is None)
+                                    if not cell_already_consumed:
+                                        count += 1
 
                 logger.debug(f"group: {group}, count: {count}")
 

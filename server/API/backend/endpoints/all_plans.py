@@ -401,6 +401,11 @@ def create_plan(
                     number += 1
             mass_load = MassLoadCreate(operation = operation)
 
+            first_op = next(iter(operation.values()), None)
+            logger.info("[create_plan] plan_id=%s передаётся в save_mass_load, первая операция plan=%s",
+                        plan_id, getattr(first_op, 'plan', first_op.get('plan') if isinstance(first_op, dict) else None))
+            # Flush сессии, чтобы только что созданный Plan был виден в save_mass_load (get_plan_by_id в той же сессии)
+            db.flush()
             logger.debug("create_plan mass_load: %s", mass_load)
             save_mass_load(request, device_number, mass_load, db)
             logger.info("[create_plan] save_mass_load завершён успешно, массовая загрузка для чертежа создана")

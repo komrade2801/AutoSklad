@@ -37,6 +37,30 @@ class screen_8_select_tool(BaseScreen, Ui_screen_8_select_tool):
             self.lbl_name_group.setText(name)
 
             tools = args[0][0]
+            # Логирование: группа, список инструментов, список по номенклатуре
+            logger.info(
+                "screen_8_select_tool: группа: %s",
+                name,
+            )
+            tools_list = [
+                {
+                    "id": t["tool"].id,
+                    "name": t["tool"].name,
+                    "count": t["count"],
+                }
+                for t in (tools or [])
+            ]
+            logger.info(
+                "screen_8_select_tool: полученный список инструментов группы (%d): %s",
+                len(tools_list),
+                tools_list,
+            )
+            nomenclature_list = [t["tool"].name for t in (tools or [])]
+            logger.info(
+                "screen_8_select_tool: список инструментов по номенклатуре: %s",
+                nomenclature_list,
+            )
+
             self.listWidget.clear()  # Всегда очищаем список (в т.ч. когда инструментов 0 — чтобы не показывать устаревший список)
             if not tools:
                 return

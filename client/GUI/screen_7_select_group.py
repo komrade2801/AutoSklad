@@ -53,6 +53,31 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
         logger.debug("groups=%s", groups)
         if not isinstance(groups, dict):
             return
+
+        # Логирование: список групп, количество инструментов по группам
+        groups_list = [
+            {"id": g.id, "name": g.name, "count": c}
+            for g, c in groups.items()
+        ]
+        root_groups_list = [
+            {"id": g.id, "name": g.name, "count": c}
+            for g, c in groups.items()
+            if g.paren_group_id == 0
+        ]
+        logger.info(
+            "screen_7_select_group: полученный список групп (всего %d): %s",
+            len(groups_list),
+            groups_list,
+        )
+        logger.info(
+            "screen_7_select_group: корневые группы для отображения (%d): %s",
+            len(root_groups_list),
+            root_groups_list,
+        )
+        logger.info(
+            "screen_7_select_group: список инструментов по номенклатуре (количество по группам): %s",
+            {g.name: c for g, c in groups.items()},
+        )
         # print(groups[0])
         # print(isinstance(groups[0], Group))
         # print(type(Group))
