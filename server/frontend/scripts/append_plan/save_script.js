@@ -53,8 +53,9 @@
       const nameValue = document.getElementById('nameInput').value;
       const descriptionValue = document.getElementById('descriptionInput').value;
       const designationValue = document.getElementById('designationInput').value;
-      // Флаг «Сгенерировать массовую загрузку» — передаётся на бэкенд как create_mass_load
-      const createMassLoad = document.getElementById("createMassLoad").checked;
+      // Флаг «Сгенерировать массовую загрузку» — передаётся на бэкенд как create_mass_load (обязательно boolean)
+      const createMassLoadCheckbox = document.getElementById("createMassLoad");
+      const createMassLoad = createMassLoadCheckbox ? Boolean(createMassLoadCheckbox.checked) : true;
 
       if (nameValue === '') {
         alert('Название чертежа не может быть пустым');

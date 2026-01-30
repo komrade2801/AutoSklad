@@ -568,7 +568,7 @@ class PlanCreate(BaseModel):
 
 class PlanCreateRequest(BaseModel):
     plan: PlanCreate
-    create_mass_load: bool
+    create_mass_load: bool = True  # по умолчанию создаём массовую загрузку
 
 # class PlanCreate(BaseModel):
 #     enterprise: str

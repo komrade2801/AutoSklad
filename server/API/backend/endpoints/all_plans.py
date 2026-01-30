@@ -247,7 +247,8 @@ def create_plan(
     """
     logger.debug("create_plan. request: %s, Device number: %s, plan_request: %s", request, device_number, plan_request)
     plan = plan_request.plan
-    create_mass_load = plan_request.create_mass_load
+    create_mass_load = getattr(plan_request, "create_mass_load", True)
+    logger.debug("[create_plan] входящий create_mass_load=%s", create_mass_load)
 
     # Одна сессия db для плана и массовой загрузки — иначе план не виден в save_mass_load и plan_id уходит null
     devices_crud = EngineDevice(session=db)
@@ -339,6 +340,8 @@ def create_plan(
             plan_tool_types_crud.create_plan_tool_types(plan_tool_types_crud_id, tool_type.id, tool_quantity, plan_id)
 
         logger.debug("create_plan create_mass_load: %s", create_mass_load)
+        if not create_mass_load:
+            logger.warning("[create_plan] массовая загрузка не создаётся: create_mass_load=False в запросе")
         if create_mass_load:
             empty_cells = cells_crud.get_all_empty_cells()
             total_tools = 0
