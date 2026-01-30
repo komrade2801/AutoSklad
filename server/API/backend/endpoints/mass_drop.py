@@ -1,7 +1,10 @@
 import datetime
 import traceback
 
+from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException, Request
+
+logger = get_logger(__name__)
 # status,
 from pydantic import BaseModel
 # from sqlalchemy.exc import SQLAlchemyError
@@ -61,8 +64,7 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
         raise HTTPException(status_code=402, detail="Неавторизованный доступ запрещён")
     else:
         e_device = EngineDevice()
-        print(device_number)
-        print(mass_drop)
+        logger.debug("device_number: %s, mass_drop: %s", device_number, mass_drop)
         device = e_device.get_device_by_number(device_number)
         if not device:
             raise HTTPException(status_code=404, detail="Устройство не обнаружено!")
@@ -101,25 +103,25 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
             )
 
             new_mass_drop = e_mass_drop.get_task(task_id=mass_drop_id)
-            print(f"stories {stories}")
+            logger.debug("stories: %s", stories)
             for story, key in enumerate(stories):
-                print(f"story {story}, key {key}")
+                logger.debug("story: %s, key: %s", story, key)
                 request_cell = stories[key].cell
                 request_tool = stories[key].tool
                 # request_plan = stories[key].plan
                 tool_names = request_tool.split(" ")
-                print(f"request_cell {request_cell}")
+                logger.debug("request_cell: %s", request_cell)
                 cell = e_cells.get_cell_by_id(int(request_cell))
-                print(f"cell {cell}")
+                logger.debug("cell: %s", cell)
                 tool_type = e_tool_types.get_tool_type_by_id(cell.tools_id)
-                print(f"tool_type {tool_type}")
+                logger.debug("tool_type: %s", tool_type)
 
                 loads = e_load.find_by_cell_id(cell.id)
-                print(f"loads {loads}")
+                logger.debug("loads: %s", loads)
 
                 if loads:
                     load = max(loads, key=lambda rec: rec.id)
-                    print(f"load {load}")
+                    logger.debug("load: %s", load)
 
                     plan = e_plan.get_plan_by_id(load.plan_id)
 
@@ -224,7 +226,7 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
                         plan_id=plan_id,
                         history_id=history_id
                     )
-                    print(f"history_id {history_id}, result {result}")
+                    logger.debug("history_id: %s, result: %s", history_id, result)
 
                     e_drop.add_drop(
                         history_id=history_id,
@@ -279,8 +281,7 @@ def save_mass_drop(request: Request, device_number: int, mass_drop: MassDropCrea
             return {"status": "ok", "message": new_mass_drop.description}
         except Exception as e:
             # TODO реализовать откат данных, если что-то пошло не так
-            print(e)
-            print(traceback.format_exc())
+            logger.exception("save_mass_drop: %s", e)
             raise HTTPException(status_code=404, detail=f"Всё плохо{e}")
         finally:
             pass

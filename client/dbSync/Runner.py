@@ -13,6 +13,9 @@ from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES
 from .Model.base import sync_base
 from .setup import *
 import os
+import datetime
+import threading
+import traceback
 
 # from queue import Queue, Empty
 
@@ -59,7 +62,7 @@ def create_db_session():
     db_file = os.path.join(base_dir, "Model", "sync.db")
     os.makedirs(os.path.dirname(db_file), exist_ok=True)
 
-    print(f"[ПОТОК][{threading.current_thread().name}][runner][create_db_session]→ Opening SQLite DB at: {db_file}, время: {datetime.datetime.now()} ")
+    logger.info("[runner][create_db_session] Opening SQLite DB at: %s", db_file)
 
     database_url = f"sqlite:///{db_file}"
     engine = create_engine(
@@ -76,10 +79,10 @@ def create_db_session():
     inspector = inspect(engine)
     existing_tables = inspector.get_table_names()
     if "Command" not in existing_tables:
-        print("[runner] Таблицы отсутствуют. Создаём структуру...")
+        logger.info("[runner] Таблицы отсутствуют. Создаём структуру...")
         sync_base.metadata.create_all(engine)
     else:
-        print("[runner] Таблицы найдены, структура в порядке.")
+        logger.debug("[runner] Таблицы найдены, структура в порядке.")
 
     return sessionmaker(bind=engine)()
 
@@ -156,8 +159,7 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
         # 4) Основной loop, обрабатывающий сообщения из INBOUND_QUEUES[device_id]
         time_start = datetime.datetime.now()
         iteration_step = 0
-        print(
-            f'[ПОТОК][{threading.current_thread().name}][runner] Запуск синхронизации в {time_start}')
+        logger.info("[runner] Запуск синхронизации в %s", time_start)
 
         from queue import Empty
         queue_in_thread = INBOUND_QUEUES[device_id]
@@ -167,8 +169,7 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
                 try:
                     msg = queue_in_thread.get(timeout=10)
                 except Empty:
-                    print(
-                        f'[ПОТОК][{threading.current_thread().name}][runner] Очередь пуста, итерация {iteration_step}')
+                    logger.debug("[runner] Очередь пуста, итерация %s", iteration_step)
                     continue
 
                 msg_type = msg.get("type")
@@ -178,34 +179,28 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
                 if msg_type == "handshake":
                     schema = msg["payload"]
                     hash_ = msg["hash"]
-                    print(f"[ПОТОК][{threading.current_thread().name}][runner] " +
-                          ', '.join(f"{k}: {v}" for k, v in msg.items()))
+                    logger.debug("[runner] handshake msg: %s", {k: v for k, v in msg.items() if k != "payload"})
 
                     try:
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации попытка запустить процессор')
+                        logger.debug("[runner] процесс синхронизации попытка запустить процессор")
                         result = processor.process_schema(
                             src_schema=schema,
                             client_schema_hash=hash_
                         )
                     except Exception as err:
                         result = {"error": str(err)}
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации ошибка в {time_start} причина: {err} подробности: {traceback.format_exc()}')
+                        logger.exception("[runner] процесс синхронизации ошибка handshake: %s", err)
                     # Отправляем результат обратно в HTTP-обработчик
-                    print(
-                        f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации отправляем результат обратно в HTTP-обработчик')
+                    logger.debug("[runner] процесс синхронизации отправляем результат обратно в HTTP-обработчик")
                     if reply_queue:
                         reply_queue.put(result)
 
                 elif msg_type == "push":  # толкать задвинуть проталкивать
                     # 1) вызываем процессор — он вернёт список статусов
-                    print(
-                        f'[ПОТОК][{threading.current_thread().name}][runner] Вызываем процессор')
+                    logger.debug("[runner] Вызываем процессор push")
                     try:
                         data = msg.get("hash", "")
-                        print(f"[ПОТОК][{threading.current_thread().name}][runner][push] " + ', '.join(
-                            f"{k}: {v}" for k, v in msg.items()))
+                        logger.debug("[runner][push] hash=%s, device=%s", data, msg.get("device"))
                         dbSync.init_db = True
                         statuses = processor.process_push(
                             device=device_id,
@@ -213,76 +208,62 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
                             client_schema_hash=data
                         )
                         dbSync.init_db = False
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] statuses: {statuses}')
+                        logger.debug("[runner] statuses: %s", statuses)
                     except Exception as e:
                         # если упало — возвращаем ошибку в reply_queue
                         statuses = [
                             {"id": None, "status": "FAILED", "error": str(e)}]
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации ошибка в {time_start} причина: {e} подробности: {traceback.format_exc()}')
+                        logger.exception("[runner] процесс синхронизации ошибка push: %s", e)
                     # 2) отправляем результат в reply_queue
-                    print(
-                        f'[ПОТОК][{threading.current_thread().name}][runner] отправляем результат в reply_queue')
+                    logger.debug("[runner] отправляем результат в reply_queue")
                     if reply_queue:
                         reply_queue.put(statuses)
 
                 elif msg_type == "pull":  # тянуть потянуть
-                    print(f"[ПОТОК][{threading.current_thread().name}][runner] " +
-                          ', '.join(f"{k}: {v}" for k, v in msg.items()))
+                    logger.debug("[runner] pull msg: device=%s, since=%s", msg.get("device"), msg.get("since"))
                     logging.getLogger("sync.runner").info(
                         f"[runner] handling pull: since={msg['since']!r}, hash={msg.get('hash')!r}")
                     try:
                         data = msg.get("hash", "")
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] Вызываем prepare_pull')
+                        logger.debug("[runner] Вызываем prepare_pull")
                         result = processor.prepare_pull(
                             device=msg["device"],
                             since=msg["since"],
                             client_schema_hash=msg.get("hash", "")
                         )
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] prepare_pull отработал')
+                        logger.debug("[runner] prepare_pull отработал")
                         logging.getLogger("sync.runner").info(
                             f"[runner] pull → result: {result!r}")
                     except Exception as ex:
                         logging.getLogger("sync.runner").exception(
                             "Error in prepare_pull")
                         result = {"error": str(ex)}
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации ошибка в {time_start} причина: {ex} подробности: {traceback.format_exc()}')
+                        logger.exception("[runner] процесс синхронизации ошибка prepare_pull: %s", ex)
                     # обязательно кладём ответ обратно
-                    print(
-                        f'[ПОТОК][{threading.current_thread().name}][runner] кладём ответ обратно в reply_queue')
+                    logger.debug("[runner] кладём ответ обратно в reply_queue")
                     if msg.get("reply_queue"):
                         msg["reply_queue"].put(result)
                         logging.getLogger("sync.runner").info(
                             "[runner] reply_queue.put() done")
                 elif msg_type == "local":
-                    # print(f'[ПОТОК][{threading.current_thread().name}][runner] msg_type: {msg_type}, msg: {json.dumps(msg, ensure_ascii=False)}')
                     cmd = msg  # содержит table, operation, data
                     try:
-                        # Здесь SyncProcessor должен иметь метод enqueue_local_command
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации попытка запустить процессор')
+                        logger.debug("[runner] процесс синхронизации попытка enqueue_local_command")
                         processor.enqueue_local_command(cmd)
                     except Exception as ex:
                         diagnostic_logger.info(
-                            f"Error enqueuing local command: {ex}")
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации ошибка в {time_start} причина: {ex} подробности: {traceback.format_exc()}')
+                            "Error enqueuing local command: %s", ex)
+                        logger.exception("[runner] процесс синхронизации ошибка enqueue_local_command: %s", ex)
                 # Если будут ошибки, они будут залогированы ниже в блоке except
 
             except Exception as e:
                 logging.getLogger("sync.runner").exception(
                     "Unexpected error in runner loop, exiting")
-                print(
-                    f'[ПОТОК][{threading.current_thread().name}][runner] UNEXPECTED ERROR at {time_start}: {e} — {traceback.format_exc()}')
+                logger.exception("[runner] UNEXPECTED ERROR: %s", e)
                 break
 
         # Cleanup (остановка и удаление scheduler из реестра)
-        print(
-            f'[ПОТОК][{threading.current_thread().name}][runner] STOP at {datetime.datetime.now()}, total iterations: {iteration_step}')
+        logger.info("[runner] STOP at %s, total iterations: %s", datetime.datetime.now(), iteration_step)
         INBOUND_QUEUES.pop(device_id, None)
         _active_schedulers.pop(device_id, None)
         logging.getLogger("sync.startup").info(
@@ -297,8 +278,7 @@ def stop_sync(device_id: int):
     """
     Останавливает планировщик синхронизации для конкретного device_id.
     """
-    print(
-        f'[ПОТОК][{threading.current_thread().name}][stop_sync] device_id: {device_id}')
+    logger.info("[stop_sync] device_id: %s", device_id)
     sched = _active_schedulers.get(device_id)
     if not sched:
         logging.getLogger("sync.startup").warning(
@@ -386,16 +366,14 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port="", pu
         proc=processor,
         queue=queue
     )
-    print(
-        f'[ПОТОК][{threading.current_thread().name}][runner] init_sender - Успешно.')
+    logger.debug("[runner] init_sender - Успешно.")
 
     receiver = init_receiver(
         device_id=device_id,
         proc=None,
         transport=transport_service,
     )
-    print(
-        f'[ПОТОК][{threading.current_thread().name}][runner] init_receiver - Успешно.')
+    logger.debug("[runner] init_receiver - Успешно.")
 
     # sender и receiver берут на себя отправку/приём
     sender.sync_processor = processor
@@ -408,9 +386,7 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port="", pu
     processor.sender = sender
     retry_manager.sender = sender
     sender.retry_manager = retry_manager
-    print(f">>> DEBUG: sender.sync_processor is {sender.sync_processor!r}")
-    print(
-        f">>> DEBUG: sender.data_mapper      is {sender.sync_processor.data_mapper!r}")
+    logger.debug("sender.sync_processor=%s, data_mapper=%s", sender.sync_processor, getattr(sender.sync_processor, "data_mapper", None))
     return (queue, schema_cache, schema_analyzer, mapping_config, data_mapper, data_transformer, sync_monitor, json_validator, diagnostic_logger, sync_manager,
             cmd_crud, transport_service, batch_processor, conflict_manager, sender, receiver, retry_manager, scheduler, processor)
 

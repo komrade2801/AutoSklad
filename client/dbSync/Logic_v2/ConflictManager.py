@@ -216,26 +216,6 @@ class ConflictManager:
                         is_active_operation = True
                     
                     if is_active_operation:
-                        # ИСКЛЮЧЕНИЕ: Если удаленный статус - это результат команды выдачи инструмента
-                        # (start_system после consumption), то принимаем удаленные данные
-                        # Это означает, что клиент отправил команду обновления ячейки, и сервер подтвердил её
-                        if remote_status_stype == "start_system" and remote_status_id == 1:
-                            # Удаленные данные - это результат команды выдачи инструмента от клиента
-                            # Принимаем их, даже если локальные данные имеют статус активной операции
-                            merged = dict(local_data)
-                            merged.update(remote_norm)
-                            if self.logger:
-                                self.logger.log_info(
-                                    "LWW: accepting remote (client command result - tool consumption)",
-                                    {
-                                        "local_status_stype": local_status_stype or f"status_id={local_status_id}",
-                                        "local_status_id": local_status_id,
-                                        "remote_status_id": remote_status_id,
-                                        "remote_status_stype": remote_status_stype
-                                    },
-                                )
-                            return merged
-                        
                         # Исключение: массовые операции с сервера уже обработаны выше
                         # Здесь защищаем от других операций
                         if self.logger:
@@ -287,12 +267,28 @@ class ConflictManager:
                 return merged
             if "status_id" in local_data and "status_id" in remote_norm:
                 if local_data["status_id"] != remote_norm["status_id"]:
-                    if self.logger:
-                        self.logger.log_info(
-                            "LWW: keeping local data (status_id differs)",
-                            {"local_status_id": local_data["status_id"], "remote_status_id": remote_norm["status_id"]},
-                        )
-                    return local_data
+                    # Если это НЕ таблица Cell, мы позволяем серверу обновлять статус (например, Load закрывается)
+                    # Если таблица Cell, то логика выше уже обработала это (возвратом local_data или merged)
+                    # Но если Cell попала сюда (например, remote не mass_load и local не active),
+                    # то мы должны решить: защищать ли локальный статус 1 (свободно) от удаленного 7 (занято)?
+                    # Выше мы уже защитили active (7/3).
+                    # Если здесь local=1, remote=7 -> Differs -> Keep Local. (Защищает от "замерзания" в занятом состоянии)
+                    
+                    if table == "Cell":
+                        if self.logger:
+                            self.logger.log_info(
+                                "LWW: keeping local data (status_id differs for Cell)",
+                                {
+                                    "local_status_id": local_data["status_id"], 
+                                    "remote_status_id": remote_norm["status_id"]
+                                },
+                            )
+                        return local_data
+                    
+                    # Для остальных таблиц (Load, History и т.д.) мы разрешаем обновление статуса от сервера (LWW)
+                    # Чтобы сервер мог закрывать операции.
+                    pass
+
             merged = dict(local_data)
             merged.update(remote_norm)
             if self.logger:

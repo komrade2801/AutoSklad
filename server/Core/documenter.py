@@ -1,5 +1,8 @@
+import logging
 from DB.Models.Cell import Cell
 from DB.Models.CellHasDevice import CellHasDevice as Cell_has_Device
+
+logger = logging.getLogger(__name__)
 from DB.Models.Command import Command
 from DB.Models.Consumption import Consumption
 from DB.Models.Device import Device
@@ -220,7 +223,7 @@ if __name__ == "__main__":
     for documenter in documenters:
         for documents in documenter:
             help_docstrings = get_docstrings(cls=documents, _total=0)
-            print(help_docstrings["docstrings"])
+            logger.debug("%s", help_docstrings["docstrings"])
             total += help_docstrings["total"]
 
-    print("total lines: ", total)
+    logger.info("total lines: %s", total)

@@ -118,7 +118,7 @@ class TransportService:
         Возвращает:
             bytes: Расшифрованные данные.
         """
-        print(f'[ПОТОК][{threading.current_thread().name}][TransportService][_decrypt] секретный ключ: {self.aes_key}[{datetime.now()}]')
+        logger.debug("[TransportService][_decrypt] Вызов дешифрования (ключ не логируется).")
         if not self.aes_key:
             raise ValueError("AES key is not set.")
         iv = ciphertext[:16]
@@ -151,11 +151,10 @@ class TransportService:
         try:
             resp = requests.post(url, data=body, headers=headers)
             resp.raise_for_status()
-            print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_schema] Отправка схемы. [{datetime.now()}]')
+            logger.info("[TransportService][send_schema] Отправка схемы.")
 
         except requests.RequestException as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_schema] Ошибка при отправке схемы. [{datetime.now()}]')
-            print(f"Ошибка при отправке схемы: {e}")
+            logger.exception("[TransportService][send_schema] Ошибка при отправке схемы: %s", e)
             raise
 
         data = resp.content
@@ -166,7 +165,7 @@ class TransportService:
 
         # 2) Проверяем ответ по новой схеме handshake_response
         self.validator.validate(result, 'handshake_response')
-        print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_schema] Проверка схемы. [{datetime.now()}]')
+        logger.debug("[TransportService][send_schema] Проверка схемы.")
         return result
 
     def send_push(self, endpoint: str, payload: dict[str, any]) -> dict[str, any]:
@@ -184,125 +183,70 @@ class TransportService:
         #    - если self.device_id не None, берём его
         #    - иначе пытаемся взять из payload["device"]
         #
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Шаг 1: проверяем device_id. [{datetime.now()}]"
-        )  # лог текущего этапа и потока :contentReference[oaicite:2]{index=2}
+        logger.debug("[TransportService][send_push] Шаг 1: проверяем device_id.")
         device_id = self.device_id
         if device_id is None:
-            # Попробуем подпхватить его из тела
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-                f"device_id равен None, пытаемся взять из payload. [{datetime.now()}]"
-            )  # лог попытки получить device_id из payload :contentReference[oaicite:3]{index=3}
+            logger.debug("[TransportService][send_push] device_id равен None, берём из payload.")
             if "device" not in payload:
                 raise ValueError("Neither self.device_id nor payload['device'] is set")
             device_id = payload["device"]
             if device_id is None:
                 raise ValueError("payload['device'] is None")
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Используем device_id = {device_id}. [{datetime.now()}]"
-        )  # лог окончательного выбора device_id :contentReference[oaicite:4]{index=4}
+        logger.debug("[TransportService][send_push] Используем device_id = %s.", device_id)
 
         # ——————————————————————————————————————————————————————————————————————
         # 2) Сериализуем и шифруем тело
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Шаг 2: сериализуем payload. [{datetime.now()}]"
-        )  # начало сериализации :contentReference[oaicite:5]{index=5}
+        logger.debug("[TransportService][send_push] Шаг 2: сериализуем payload.")
         body = json.dumps(payload, default=str).encode("utf-8")
         if self.aes_key:
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-                f"Шифруем тело AES. [{datetime.now()}]"
-            )  # лог выполнения AES-шифрования :contentReference[oaicite:6]{index=6}
+            logger.debug("[TransportService][send_push] Шифруем тело AES.")
             body = self._encrypt(body)
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Тело готово к отправке (после шифрования, если применимо). [{datetime.now()}]"
-        )  # тело после шифрования :contentReference[oaicite:7]{index=7}
+        logger.debug("[TransportService][send_push] Тело готово к отправке.")
 
         # ——————————————————————————————————————————————————————————————————————
         # 3) Готовим заголовки, HMAC-подпись, если нужно
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Шаг 3: формируем заголовки. [{datetime.now()}]"
-        )  # начало формирования заголовков :contentReference[oaicite:8]{index=8}
+        logger.debug("[TransportService][send_push] Шаг 3: формируем заголовки.")
         headers = self._get_headers()
         if self.hmac_secret:
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-                f"Добавляем HMAC-подпись. [{datetime.now()}]"
-            )  # лог добавления подписи :contentReference[oaicite:9]{index=9}
+            logger.debug("[TransportService][send_push] Добавляем HMAC-подпись.")
             headers["X-Signature"] = self._sign_hmac(body)
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Заголовки сформированы: {headers}. [{datetime.now()}]"
-        )  # лог итоговых заголовков :contentReference[oaicite:10]{index=10}
+        logger.debug("[TransportService][send_push] Заголовки сформированы.")
 
         # ——————————————————————————————————————————————————————————————————————
-        # 4) Формируем полный URL с query-параметром device=<число>
-        #    endpoint уже должен начинаться с "/", например "/sync/push"
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Шаг 4: формируем URL. [{datetime.now()}]"
-        )  # лог начала формирования URL :contentReference[oaicite:11]{index=11}
+        # 4) Формируем полный URL
+        logger.debug("[TransportService][send_push] Шаг 4: формируем URL.")
         url = f"{self.base_url}:{self.port}{endpoint}?device={device_id}"
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"URL для запроса: {url}. [{datetime.now()}]"
-        )  # лог итогового URL :contentReference[oaicite:12]{index=12}
+        logger.debug("[TransportService][send_push] URL: %s", url)
 
         # ——————————————————————————————————————————————————————————————————————
-        # 5) Делаем HTTP-запрос (POST) с таймаутом для больших батчей
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Шаг 5: отправляем POST-запрос (timeout={self.push_http_timeout}s). [{datetime.now()}]"
-        )  # лог отправки запроса :contentReference[oaicite:13]{index=13}
+        # 5) Делаем HTTP-запрос (POST)
+        logger.debug("[TransportService][send_push] Шаг 5: POST (timeout=%ss).", self.push_http_timeout)
         resp = requests.post(url, data=body, headers=headers, timeout=self.push_http_timeout)
         try:
             resp.raise_for_status()
         except Exception:
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-                f"Ошибка HTTP: {resp.status_code} / {resp.text}. [{datetime.now()}]"
-            )  # лог HTTP-ошибки и тело ответа :contentReference[oaicite:14]{index=14}
+            logger.error("[TransportService][send_push] Ошибка HTTP: %s / %s", resp.status_code, resp.text[:200] if resp.text else "")
             raise
 
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Ответ получен с кодом {resp.status_code}. [{datetime.now()}]"
-        )  # лог успешного ответа :contentReference[oaicite:15]{index=15}
+        logger.info("[TransportService][send_push] Ответ получен с кодом %s.", resp.status_code)
 
         # ——————————————————————————————————————————————————————————————————————
         # 6) Получаем ответ, расшифровываем (если нужно) и валидируем JSON
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Шаг 6: получаем и обрабатываем тело ответа. [{datetime.now()}]"
-        )  # лог начала обработки ответа :contentReference[oaicite:16]{index=16}
+        logger.debug("[TransportService][send_push] Шаг 6: обрабатываем тело ответа.")
         content = resp.content
         if self.aes_key:
-            print(f'[…] Дешифруем ответ AES. [{datetime.now()}]')
+            logger.debug("[TransportService][send_push] Дешифруем ответ AES.")
             try:
                 content = self._decrypt(content)
             except ValueError:
-                # Если первые 16 байт — не IV, значит это просто JSON
-                print(f'[…] Не получилось дешифровать, считаем, что это чистый JSON. [{datetime.now()}]')
-                # content остаётся как есть
+                logger.debug("[TransportService][send_push] Не удалось дешифровать, считаем чистый JSON.")
+                pass
 
         result = json.loads(content)
-        # Проверяем схему ответа (например, "push_response")
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Выполняем валидацию ответа. [{datetime.now()}]"
-        )  # лог валидации JSON :contentReference[oaicite:18]{index=18}
+        logger.debug("[TransportService][send_push] Валидация ответа.")
         self.validator.validate(result, "push_response")
 
-        print(
-            f"[ПОТОК][{threading.current_thread().name}][TransportService][send_push] "
-            f"Успешно завершили send_push. [{datetime.now()}]"
-        )  # завершающий лог метода :contentReference[oaicite:19]{index=19}
+        logger.info("[TransportService][send_push] Успешно завершили send_push.")
         return result
 
     def send_pull(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -323,25 +267,24 @@ class TransportService:
         try:
             resp = requests.get(url, params=params, headers=headers)
             resp.raise_for_status()
-            print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_pull] Запрос команд. [{datetime.now()}]')
+            logger.info("[TransportService][send_pull] Запрос команд.")
         except requests.RequestException as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_pull] Ошибка при получении данных. [{datetime.now()}]')
-            print(f"Ошибка при получении данных: {e}, подробнее: {traceback.format_exc()}")
+            logger.exception("[TransportService][send_pull] Ошибка при получении данных: %s", e)
             raise
 
         content = resp.content
         if self.aes_key:
             try:
                 content = self._decrypt(content)
-                print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_pull] Декодирование. [{datetime.now()}]')
+                logger.debug("[TransportService][send_pull] Декодирование.")
             except ValueError:  # или более узкий Crypto.Util.Padding.PaddingError
-                print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_pull] Декодирование. [{datetime.now()}]')
+                logger.debug("[TransportService][send_pull] Декодирование.")
                 # значит пришёл просто JSON, оставляем content как есть
                 pass
 
         data = json.loads(content)
         self.validator.validate(data, 'pull_response')
-        print(f'[ПОТОК][{threading.current_thread().name}][TransportService][send_pull] Получение команд {data}. [{datetime.now()}]')
+        logger.debug("[TransportService][send_pull] Получение команд (data keys: %s).", list(data.keys()) if isinstance(data, dict) else type(data).__name__)
         return data
 
 #  Список изменений в обновлённой версии класса

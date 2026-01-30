@@ -33,9 +33,7 @@ def sync_aware(func):
         if dbSync.init_db:
             table_name  = getattr(self.model, "__tablename__", self.model.__name__)
             method_name = func.__name__
-            print(f"[{threading.current_thread().name}][decorators][wraps] "
-                  f"обработали БЕЗ синхронизации. func: {method_name}, table: {table_name}, "
-                  f"args: {args}, kwargs: {kwargs}")
+            logger.debug("[decorators][wraps] обработали БЕЗ синхронизации. func: %s, table: %s, args: %s, kwargs: %s", method_name, table_name, args, kwargs)
             return func(self, *args, **kwargs)
         # -----------------------------------------------------
         
@@ -44,9 +42,7 @@ def sync_aware(func):
         if sync_context:
             table_name  = getattr(self.model, "__tablename__", self.model.__name__)
             method_name = func.__name__
-            print(f"[{threading.current_thread().name}][decorators][wraps] "
-                  f"обработали БЕЗ синхронизации (sync_context). func: {method_name}, table: {table_name}, "
-                  f"args: {args}, kwargs: {kwargs}")
+            logger.debug("[decorators][wraps] обработали БЕЗ синхронизации (sync_context). func: %s, table: %s", method_name, table_name)
             return func(self, *args, **kwargs)
         # -----------------------------------------------------
 
@@ -97,14 +93,10 @@ def sync_aware(func):
 
         # Вызываем CRUD-метод
         try:
-            print(f"[{threading.current_thread().name}][decorators][wraps] "
-                  f"Запустили синхронизацию. func: {method_name}, table: {table_name}, "
-                  f"args: {args}, kwargs: {kwargs}")
+            logger.debug("[decorators][wraps] Запустили синхронизацию. func: %s, table: %s", method_name, table_name)
             result = func(self, *args, **kwargs)
         except Exception as e:
-            print(f"[{threading.current_thread().name}][decorators][wraps] "
-                  f"Ошибка вызова func: {e}. func: {method_name}, table: {table_name}, "
-                  f"args: {args}, kwargs: {kwargs}")
+            logger.exception("[decorators][wraps] Ошибка вызова func: %s. func: %s, table: %s", e, method_name, table_name)
             raise
 
         # Кладём «локальную» команду в очередь на отправку серверу

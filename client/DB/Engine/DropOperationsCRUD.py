@@ -1,6 +1,9 @@
 import traceback
 
+from Core.app_logging import get_logger
 from sqlalchemy.orm import Session
+
+logger = get_logger(__name__)
 from sqlalchemy.exc import NoResultFound, IntegrityError
 from typing import List, Optional
 from contextlib import contextmanager
@@ -131,8 +134,7 @@ class EngineDropOperations(BaseCRUD):
             result = self.session.execute(query).scalars().all()
             return result
         except Exception as e:
-            print(f"Ошибка при извлечении операций с history_id={history_id}: {e}")
-            print(traceback.format_exc())
+            logger.exception("DropOperationsCRUD get_operations_by_history_id history_id=%s: %s", history_id, e)
             return []
 
     def get_operations_by_tool(self, tool_id):

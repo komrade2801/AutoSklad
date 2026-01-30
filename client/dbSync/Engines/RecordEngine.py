@@ -54,14 +54,14 @@ class RecordCRUD(BaseCRUD):
             True
         """
         try:
-            print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][add_record][INFO] - command_id: {command_id}, data: {data}. [{datetime.now()}]")
+            logger.debug("[RecordEngine][add_record] command_id: %s, data: %s", command_id, data)
             return self.add(
                 command_id=command_id,
                 data_json=json.dumps(data, ensure_ascii=False),
                 last_modified=datetime.utcnow()
             )
         except (IntegrityError, TypeError, ValueError) as e:
-            print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][add_record][ERROR][IntegrityError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+            logger.exception("[RecordEngine][add_record] IntegrityError: %s", e)
             self.session.rollback()
             error_msg = f"Ошибка добавления записи: {str(e)}"
             raise ValueError(error_msg) from e
@@ -79,14 +79,14 @@ class RecordCRUD(BaseCRUD):
             True
         """
         try:
-            print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][update_data][INFO] - record_id: {record_id}, new_data: {new_data}. [{datetime.now()}]")
+            logger.debug("[RecordEngine][update_data] record_id: %s, new_data: %s", record_id, new_data)
             return self.update(
                 record_id,
                 data_json=json.dumps(new_data, ensure_ascii=False),
                 last_modified=datetime.utcnow()
             )
         except (IntegrityError, TypeError, ValueError) as e:
-            print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][update_data][ERROR][IntegrityError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+            logger.exception("[RecordEngine][update_data] IntegrityError: %s", e)
             self.session.rollback()
             error_msg = f"Ошибка обновления записи: {str(e)}"
             raise ValueError(error_msg) from e
@@ -106,10 +106,10 @@ class RecordCRUD(BaseCRUD):
         record = self.get(record_id)
         if record and record.data_json:
             try:
-                print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_json_data][INFO] - record_id: {record_id}. [{datetime.now()}]")
+                logger.debug("[RecordEngine][get_json_data] record_id: %s", record_id)
                 return json.loads(record.data_json)
             except json.JSONDecodeError as e:
-                print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_json_data][ERROR][JSONDecodeError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+                logger.exception("[RecordEngine][get_json_data] JSONDecodeError: %s", e)
                 return None
         return None
 
@@ -125,7 +125,7 @@ class RecordCRUD(BaseCRUD):
             [r.id for r in records]
             [5, 6, 7]
         """
-        print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_by_command][INFO] - command_id: {command_id}. [{datetime.now()}]")
+        logger.debug("[RecordEngine][get_by_command] command_id: %s", command_id)
         return self.filter_by(command_id=command_id).order_by(Record.last_modified).all()
 
     def get_last_for_command(self, command_id: int) -> Optional[Record]:
@@ -140,7 +140,7 @@ class RecordCRUD(BaseCRUD):
             logger.(record.last_modified)
             2023-01-01 12:00:00
         """
-        print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_last_for_command][INFO] - command_id: {command_id}. [{datetime.now()}]")
+        logger.debug("[RecordEngine][get_last_for_command] command_id: %s", command_id)
         return (
             self.filter_by(command_id=command_id)
             .order_by(desc(Record.last_modified))
@@ -159,7 +159,7 @@ class RecordCRUD(BaseCRUD):
             crud.validate_json(5)
             True
         """
-        print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][validate_json][INFO] - record_id: {record_id}. [{datetime.now()}]")
+        logger.debug("[RecordEngine][validate_json] record_id: %s", record_id)
         record = self.get(record_id)
         if not record or not record.data_json:
             return False
@@ -168,7 +168,7 @@ class RecordCRUD(BaseCRUD):
             json.loads(record.data_json)
             return True
         except json.JSONDecodeError as e:
-            print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][validate_json][ERROR][JSONDecodeError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+            logger.exception("[RecordEngine][validate_json] JSONDecodeError: %s", e)
             return False
 
     def get_bulk_records(self, command_ids: List[int]) -> Dict[int, Dict[str, Any]]:
@@ -178,7 +178,7 @@ class RecordCRUD(BaseCRUD):
         :param command_ids: список идентификаторов команд
         :return: словарь {command_id: распарсенные данные}
         """
-        print(f"[ПОТОК][{threading.current_thread().name}][RecordEngine][get_bulk_records][INFO] - command_ids: {command_ids}. [{datetime.now()}]")
+        logger.debug("[RecordEngine][get_bulk_records] command_ids: %s", command_ids)
 
         result = {}
         if not command_ids:
@@ -199,11 +199,11 @@ class RecordCRUD(BaseCRUD):
                     try:
                         result[record.command_id] = json.loads(record.data_json or "{}")
                     except json.JSONDecodeError:
-                        print(f"[RecordEngine][get_bulk_records][ERROR] Ошибка JSON в записи id={record.id}")
+                        logger.warning("[RecordEngine][get_bulk_records] Ошибка JSON в записи id=%s", record.id)
                         result[record.command_id] = {}
 
             return result
 
         except Exception as e:
-            print(f"[RecordEngine][get_bulk_records][ERROR] - {e}, подробности: - {traceback.format_exc()}")
+            logger.exception("[RecordEngine][get_bulk_records] %s", e)
             raise

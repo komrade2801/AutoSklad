@@ -41,8 +41,11 @@ from DB.Models.DeviceDefaults import DeviceDefaults  #--------------------------
 from sqlalchemy import create_engine
 from DB.Data.base import Base
 import os
+import logging
 
 from options import db_path
+
+logger = logging.getLogger(__name__)
 
 
 # from config import db_path
@@ -75,11 +78,11 @@ def rebuild_db():
     if os.path.exists(db_filename):
         try:
             os.remove(db_filename)
-            print(f"Файл '{db_filename}' был успешно удален.")
+            logger.info("Файл '%s' был успешно удален.", db_filename)
         except Exception as e:
-            print(f"Ошибка при удалении файла: {e}")
+            logger.exception("Ошибка при удалении файла: %s", e)
     else:
-         print(f"Файл '{db_filename}' не найден.")
+        logger.debug("Файл '%s' не найден.", db_filename)
 
     # Включение логирования SQLAlchemy
     # logging.basicConfig()
@@ -94,13 +97,13 @@ def rebuild_db():
         with open(db_filename, 'w') as file:
             # Вы можете записывать строки в файл, используя метод write(), echo=True
             file.write('')
-        print(f"Файл '{db_filename}' был успешно создан.")
+        logger.info("Файл '%s' был успешно создан.", db_filename)
     except Exception as e:
-        print(f"Ошибка при создании файла: {e}")
+        logger.exception("Ошибка при создании файла: %s", e)
         return
     # Создание базы данных и таблиц
     engine = create_engine(f'sqlite:///{db_filename}')
-    print(Base.metadata.tables.keys())
+    logger.debug("Base.metadata.tables: %s", list(Base.metadata.tables.keys()))
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)  # Создает все таблицы, описанные в Base
 

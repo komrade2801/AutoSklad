@@ -1,7 +1,10 @@
 # dbSync/Logic_v2/utils.py
+import logging
 import pkgutil
 import importlib
 from sqlalchemy import MetaData
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.orm import Session
 
 from DB.Data.base import Base
@@ -48,9 +51,9 @@ def init_sync_config_table(session: Session) -> None:
         if current_status is None:
             # Записи нет — создаём с enabled=True
             success = sync_crud.enable_sync(table_name)
-            print(f"[init_sync_config_table] Добавлена запись: {table_name=} enabled=True → {success=}")
+            logger.debug("[init_sync_config_table] Добавлена запись: table_name=%s enabled=True → success=%s", table_name, success)
         else:
-            print(f"[init_sync_config_table] Пропущена: {table_name=} (уже есть запись)")
+            logger.debug("[init_sync_config_table] Пропущена: table_name=%s (уже есть запись)", table_name)
 
 # Сам SERVER_SCHEMA
 SERVER_SCHEMA = _build_server_schema()

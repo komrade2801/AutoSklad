@@ -108,7 +108,9 @@ class NavigationService:
         return [p for p in self.list_pages() if not self.is_nested(p)]
 
 if __name__ == '__main__':
+    import logging
+    _log = logging.getLogger(__name__)
     svc = NavigationService('../frontend/page')
-    print('Корневые страницы:', svc.get_root_pages())
+    _log.info('Корневые страницы: %s', svc.get_root_pages())
     for page in svc.get_root_pages():
-         print(page, '->', svc.get_title(page))
+        _log.info('%s -> %s', page, svc.get_title(page))

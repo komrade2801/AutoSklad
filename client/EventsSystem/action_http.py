@@ -1,7 +1,11 @@
 import json
+import logging
 import traceback
 
 import requests
+
+logger = logging.getLogger(__name__)
+
 
 class ActionMapper:
     def __init__(self, executor):
@@ -16,29 +20,29 @@ class ActionMapper:
             'http_wait_post_answer': lambda *args, **kwargs: self.http_wait_post_answer(*args, **kwargs),
         }
         self.__request__ = {
-            'read_cnf': lambda *args, **kwargs: print("read_cnf", *args, **kwargs),  # read_db
-            'read_history':lambda *args, **kwargs: print("read_history", *args, **kwargs),  # read_db
-            'read_err':lambda *args, **kwargs: print("read_err", *args, **kwargs),  # read_db
-            'read_users':lambda *args, **kwargs: print("read_users", *args, **kwargs),  # read_db
-            'read_plans':lambda *args, **kwargs: print("read_plans", *args, **kwargs),  # read_db
-            'read_rights_by_user_id':lambda *args, **kwargs: print("read_rights_by_user_id", *args, **kwargs),  # read_db
-            'read_tools_by_plans_id':lambda *args, **kwargs: print("read_tools_by_plans_id", *args, **kwargs),  # read_db
-            'read_mass_load_tools_by_plan':lambda *args, **kwargs: print("read_mass_load_tools_by_plan", *args, **kwargs),  # read_db
-            'read_tools_by_group_id':lambda *args, **kwargs: print("read_tools_by_group_id", *args, **kwargs),  # read_db
-            'read_groups':lambda *args, **kwargs: print("read_groups", *args, **kwargs),  # read_db
-            'read_help':lambda *args, **kwargs: print("read_help", *args, **kwargs),  # read_db
-            'read_operations':lambda *args, **kwargs: print("read_operations", *args, **kwargs),  # read_db
-            'read_mass_drop_tools_by_plan':lambda *args, **kwargs: print("read_mass_drop_tools_by_plan", *args, **kwargs),  # read_db
-            'read_mass_load_tools_by_free':lambda *args, **kwargs: print("read_mass_load_tools_by_free", *args, **kwargs),  # read_db
-            'read_mass_drop_tools_by_free':lambda *args, **kwargs: print("read_mass_drop_tools_by_free", *args, **kwargs),  # read_db
-            'write_help':lambda *args, **kwargs: print("write_help", *args, **kwargs),  # write_db
-            'write_users':lambda *args, **kwargs: print("write_users", *args, **kwargs),  # write_db
-            'write_plans':lambda *args, **kwargs: print("write_plans", *args, **kwargs),  # write_db
-            'write_rights_by_user_id':lambda *args, **kwargs: print("write_rights_by_user_id", *args, **kwargs),  # write_db
-            'write_mass_drop_tools_by_free':lambda *args, **kwargs: print("write_mass_drop_tools_by_free", *args, **kwargs),  # write_db
-            'write_mass_load_tools_by_free':lambda *args, **kwargs: print("write_mass_load_tools_by_free", *args, **kwargs),  # write_db
-            'write_mass_drop_tools_by_plan':lambda *args, **kwargs: print("write_mass_drop_tools_by_plan", *args, **kwargs),  # write_db
-            'write_mass_load_tools_by_plan':lambda *args, **kwargs: print("write_mass_load_tools_by_plan", *args, **kwargs),  # write_db
+            'read_cnf': lambda *args, **kwargs: logger.debug("read_cnf %s %s", args, kwargs),  # read_db
+            'read_history': lambda *args, **kwargs: logger.debug("read_history %s %s", args, kwargs),  # read_db
+            'read_err': lambda *args, **kwargs: logger.debug("read_err %s %s", args, kwargs),  # read_db
+            'read_users': lambda *args, **kwargs: logger.debug("read_users %s %s", args, kwargs),  # read_db
+            'read_plans': lambda *args, **kwargs: logger.debug("read_plans %s %s", args, kwargs),  # read_db
+            'read_rights_by_user_id': lambda *args, **kwargs: logger.debug("read_rights_by_user_id %s %s", args, kwargs),  # read_db
+            'read_tools_by_plans_id': lambda *args, **kwargs: logger.debug("read_tools_by_plans_id %s %s", args, kwargs),  # read_db
+            'read_mass_load_tools_by_plan': lambda *args, **kwargs: logger.debug("read_mass_load_tools_by_plan %s %s", args, kwargs),  # read_db
+            'read_tools_by_group_id': lambda *args, **kwargs: logger.debug("read_tools_by_group_id %s %s", args, kwargs),  # read_db
+            'read_groups': lambda *args, **kwargs: logger.debug("read_groups %s %s", args, kwargs),  # read_db
+            'read_help': lambda *args, **kwargs: logger.debug("read_help %s %s", args, kwargs),  # read_db
+            'read_operations': lambda *args, **kwargs: logger.debug("read_operations %s %s", args, kwargs),  # read_db
+            'read_mass_drop_tools_by_plan': lambda *args, **kwargs: logger.debug("read_mass_drop_tools_by_plan %s %s", args, kwargs),  # read_db
+            'read_mass_load_tools_by_free': lambda *args, **kwargs: logger.debug("read_mass_load_tools_by_free %s %s", args, kwargs),  # read_db
+            'read_mass_drop_tools_by_free': lambda *args, **kwargs: logger.debug("read_mass_drop_tools_by_free %s %s", args, kwargs),  # read_db
+            'write_help': lambda *args, **kwargs: logger.debug("write_help %s %s", args, kwargs),  # write_db
+            'write_users': lambda *args, **kwargs: logger.debug("write_users %s %s", args, kwargs),  # write_db
+            'write_plans': lambda *args, **kwargs: logger.debug("write_plans %s %s", args, kwargs),  # write_db
+            'write_rights_by_user_id': lambda *args, **kwargs: logger.debug("write_rights_by_user_id %s %s", args, kwargs),  # write_db
+            'write_mass_drop_tools_by_free': lambda *args, **kwargs: logger.debug("write_mass_drop_tools_by_free %s %s", args, kwargs),  # write_db
+            'write_mass_load_tools_by_free': lambda *args, **kwargs: logger.debug("write_mass_load_tools_by_free %s %s", args, kwargs),  # write_db
+            'write_mass_drop_tools_by_plan': lambda *args, **kwargs: logger.debug("write_mass_drop_tools_by_plan %s %s", args, kwargs),  # write_db
+            'write_mass_load_tools_by_plan': lambda *args, **kwargs: logger.debug("write_mass_load_tools_by_plan %s %s", args, kwargs),  # write_db
         }
 
 
@@ -48,8 +52,7 @@ class ActionMapper:
             with open("config.json", "r") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"Ошибка загрузки конфигурации: {e}")
-            print(traceback.format_exc())
+            logger.exception("Ошибка загрузки конфигурации: %s", e)
             return {"serial_number": "unknown", "server_url": "http://localhost"}
 
 
@@ -61,8 +64,7 @@ class ActionMapper:
             try:
                 return self.__actions[action](*args, **kwargs)
             except Exception as e:
-                print(f"Ошибка при выполнении {action}: {e}")
-                print(traceback.format_exc())
+                logger.exception("Ошибка при выполнении %s: %s", action, e)
         else:
             raise ValueError(f"Команда '{action}' не найдена.")
 
@@ -89,16 +91,14 @@ class ActionMapper:
             if "command" in command_data:
                 return {"trigger": "send_request_get", "command": command_data["command"]}
             else:
-                print("Ошибка: команда не найдена в ответе сервера")
+                logger.warning("Ошибка: команда не найдена в ответе сервера")
                 return {"trigger": "cmd_empty"}
 
         except requests.exceptions.RequestException as e:
-            print(f"Ошибка при выполнении GET-запроса: {e}")
-            print(traceback.format_exc())
+            logger.exception("Ошибка при выполнении GET-запроса: %s", e)
             return {"trigger": "cmd_empty"}
         except Exception as e:
-            print(f"Неизвестная ошибка: {e}")
-            print(traceback.format_exc())
+            logger.exception("Неизвестная ошибка: %s", e)
             return {"trigger": "cmd_empty"}
 
         # return {'trigger':'send_request_get'}

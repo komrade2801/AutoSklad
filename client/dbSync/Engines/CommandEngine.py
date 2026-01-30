@@ -88,7 +88,7 @@ class CommandCRUD(BaseCRUD):
                 logger.(f"Ошибка создания команды: {str(e)}")
         """
         try:
-            print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][INFO] - начало создание команды. [{datetime.now()}]")
+            logger.debug("[CommandEngine][add_command] начало создание команды")
             with self.transaction() as db:
                 # Создаем основную команду
                 cmd = self.model(
@@ -110,26 +110,24 @@ class CommandCRUD(BaseCRUD):
                     command_id=cmd.id,
                     status="PENDING"
                 )
-                print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][INFO] - команда создана. [{datetime.now()}]")
+                logger.debug("[CommandEngine][add_command] команда создана, id=%s", cmd.id)
                 return cmd.id
 
         except IntegrityError as e:
             self.session.rollback()
             error_msg = f"Ошибка целостности данных: {str(e)}"
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][ERROR][IntegrityError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+            logger.exception("[CommandEngine][add_command] IntegrityError: %s", e)
 
             raise ValueError(error_msg) from e
 
         except SQLAlchemyError as e:
             self.session.rollback()
             error_msg = f"Ошибка базы данных: {str(e)}"
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][ERROR][SQLAlchemyError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+            logger.exception("[CommandEngine][add_command] SQLAlchemyError: %s", e)
             raise RuntimeError(error_msg) from e
 
         finally:
-            print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][INFO] - очистка кеша. [{datetime.now()}]")
+            logger.debug("[CommandEngine][add_command] очистка кеша")
             self._cache.clear()
 
     def update_command(self, cmd_id: int, **kwargs) -> bool:
@@ -146,7 +144,7 @@ class CommandCRUD(BaseCRUD):
         """
         result = super().update(cmd_id, **kwargs)
         self._cache.clear()
-        print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][update_command][INFO] - команда обновлена. [{datetime.now()}]")
+        logger.debug("[CommandEngine][update_command] команда обновлена")
         return result
 
     def delete_command(self, cmd_id: int) -> bool:
@@ -162,7 +160,7 @@ class CommandCRUD(BaseCRUD):
         """
         result = super().delete(cmd_id)
         self._cache.clear()
-        print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][delete_command][INFO] - команда удалена. [{datetime.now()}]")
+        logger.debug("[CommandEngine][delete_command] команда удалена")
         return result
 
     def acknowledge(self, cmd_id: int, new_status: str = "COMPLETED") -> bool:
@@ -196,17 +194,15 @@ class CommandCRUD(BaseCRUD):
                 status=new_status,
                 updated_at=datetime.utcnow()
             )
-            print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][acknowledge][INFO] - статус обновлен. [{datetime.now()}]")
+            logger.debug("[CommandEngine][acknowledge] статус обновлен")
             return True
 
         except IntegrityError as e:
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][CommandEngine][acknowledge][ERROR][IntegrityError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+            logger.exception("[CommandEngine][acknowledge] IntegrityError: %s", e)
             raise ValueError(f"Неверный ID команды: {cmd_id}") from e
 
         except SQLAlchemyError as e:
-            print(
-                f"[ПОТОК][{threading.current_thread().name}][CommandEngine][add_command][ERROR][SQLAlchemyError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]")
+            logger.exception("[CommandEngine][acknowledge] SQLAlchemyError: %s", e)
             raise RuntimeError(f"Ошибка базы данных: {str(e)}") from e
 
     def get_pending_for_device(self, device_number: int):
@@ -268,12 +264,12 @@ class CommandCRUD(BaseCRUD):
         with self.transaction() as db:
             command = db.query(Command).get(cmd_id)
             if not command:
-                print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][get_command_details][INFO] - команда не найдена. [{datetime.now()}]")
+                logger.debug("[CommandEngine][get_command_details] команда не найдена: cmd_id=%s", cmd_id)
                 return None
 
             record = db.query(Record).filter_by(command_id=cmd_id).first()
             statuses = db.query(CommandStatus).filter_by(command_id=cmd_id).all()
-            print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][get_command_details][INFO] - команда получена. [{datetime.now()}]")
+            logger.debug("[CommandEngine][get_command_details] команда получена: cmd_id=%s", cmd_id)
 
             return {
                 "command": command,

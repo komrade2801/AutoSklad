@@ -1,6 +1,9 @@
 import traceback
 
+from Core.app_logging import get_logger
 from DB.Models.Help import Help  # ----------------------------------- 1
+
+logger = get_logger(__name__)
 from DB.Models.Error import Error  # --------------------------------- 2
 from DB.Models.Role import Role  # ----------------------------------- 3
 from DB.Models.Plan import Plan  # ----------------------------------- 4
@@ -106,7 +109,7 @@ def get_docstrings(cls, _total=0):
 
     except Exception as e:
         docstrings.append(f"Error processing file: {e}\n")
-        print(traceback.format_exc())
+        logger.exception("documenter get_docstrings: %s", e)
 
     return {"docstrings": "\n".join(docstrings), "total": _total}
 
@@ -177,7 +180,7 @@ if __name__ == "__main__":
     for documenter in documenters:
         for documents in documenter:
             help_docstrings = get_docstrings(cls=documents, _total=0)
-            print(help_docstrings["docstrings"])
+            logger.debug("%s", help_docstrings["docstrings"])
             total += help_docstrings["total"]
 
-    print("total lines: ", total)
+    logger.info("total lines: %s", total)

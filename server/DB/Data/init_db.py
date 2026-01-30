@@ -4,8 +4,11 @@ import os
 import sys
 import subprocess
 
+from Core.app_logging import get_logger
 from Core.default import rebuild_db, execute
 from options import db_path
+
+logger = get_logger(__name__)
 
 def get_db_filepath() -> str:
     """
@@ -18,7 +21,7 @@ def restart_program():
     """
     Перезапускает текущее приложение: запускает новый процесс с теми же argv и завершает старый.
     """
-    print("Перезапуск приложения...")
+    logger.info("Перезапуск приложения...")
     python = sys.executable
     # sys.argv содержит ['python', 'main.py', ...]
     subprocess.Popen([python] + sys.argv)
@@ -34,17 +37,17 @@ def initialize_database_if_needed():
     db_file = get_db_filepath()
 
     if not os.path.exists(db_file):
-        print(f"[WARN] SQLite file not found at {db_file}")
+        logger.warning("SQLite file not found at %s", db_file)
         try:
             # 1) пересоздаём схему (удаляем старый файл и создаём таблицы)
             rebuild_db()
             # 2) заполняем начальные данные
             execute()
         except Exception as e:
-            print(f"[ERROR] Failed to rebuild or execute initial load: {e}")
+            logger.exception("Failed to rebuild or execute initial load: %s", e)
             raise
 
         # 3) перезапускаем приложение (новый процесс)
         restart_program()
     else:
-        print(f"[INFO] Using SQLite file at {db_file}")
+        logger.info("Using SQLite file at %s", db_file)

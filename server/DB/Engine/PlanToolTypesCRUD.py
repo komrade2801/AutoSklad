@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 
+from Core.app_logging import get_logger
 # from DB.Data.db import SessionLocal
 from ..Engine.CRUD import BaseCRUD
+
+logger = get_logger(__name__)
 from ..Models.PlanToolTypes import PlanToolTypes
 
 
@@ -127,7 +130,8 @@ class EnginePlanToolTypes(BaseCRUD):
                     tool_types_count: int = None,
                     plan_id: int = None,
                     ) -> Optional[PlanToolTypes]:
-        print(f"create_plan_tool_types tool_types_id: {tool_types_id}, tool_types_count: {tool_types_count}, plan_id: {plan_id}")
+        logger.debug("create_plan_tool_types tool_types_id=%s, tool_types_count=%s, plan_id=%s",
+                      tool_types_id, tool_types_count, plan_id)
         """
         Создает новый чертеж с заданным именем.
         Для остальных полей используются значения по умолчанию:

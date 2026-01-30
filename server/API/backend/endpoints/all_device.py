@@ -2,6 +2,10 @@
 import traceback
 from typing import Optional # List,
 
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
+
 # from sqlalchemy.orm import Session
 from fastapi import APIRouter, status  # Depends, Request, HTTPException,
 # from pydantic import BaseModel
@@ -239,7 +243,7 @@ def create_device(device: DeviceCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Code already exists")
     except Exception: # as e
         # любые другие ошибки
-        print(traceback.format_exc())
+        logger.exception("create_device")
         raise HTTPException(status_code=500, detail="Unexpected server error")
 
 

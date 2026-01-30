@@ -203,8 +203,7 @@ class SyncProcessor:
         self.retry_delay = retry_delay
         self.emulate_server = emulate_server
 
-        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Инициализирова'
-              f'н. [{datetime.now()}]')
+        logger.info("[SyncProcessor] Инициализирован.")
 
     def update_schema(self,
                       field_mappings: Dict[str, Dict[str, str]],
@@ -222,9 +221,9 @@ class SyncProcessor:
                 table: {dst: src for src, dst in tbl_map.items()}
                 for table, tbl_map in field_mappings.items()
             }
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Обновлены маппинги. [{datetime.now()}]')
-        except:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Список пуст. [{datetime.now()}]')
+            logger.info("[SyncProcessor] Обновлены маппинги.")
+        except Exception:
+            logger.debug("[SyncProcessor] Список пуст.")
 
     def process_schema(
             self,
@@ -264,11 +263,11 @@ class SyncProcessor:
 
             self.sync_monitor.record_success(time.time() - start)
             self.diagnostic_logger.log_info("Handshake completed", {"tables": list(mapping.keys())})
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Handshake completed. [{datetime.now()}]')
+            logger.info("[SyncProcessor] Handshake completed.")
             return response
 
         except Exception as ex:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Handshake failed. [{datetime.now()}]')
+            logger.warning("[SyncProcessor] Handshake failed.")
             self.diagnostic_logger.log_error("Handshake failed", {
                 "error": str(ex),
                 "traceback": traceback.format_exc()
@@ -326,11 +325,11 @@ class SyncProcessor:
             self.json_validator.validate(return_data, "pull_response")
             self.sync_monitor.record_success(time.time() - start)
             self.diagnostic_logger.log_info("Pull completed", {"count": len(commands)})
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Pull completed at {datetime.now()}')
+            logger.info("[SyncProcessor] Pull completed.")
             return return_data
 
         except Exception as ex:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Pull failed at {datetime.now()}')
+            logger.warning("[SyncProcessor] Pull failed.")
             self.diagnostic_logger.log_error("Pull failed", {
                 "error": str(ex),
                 "traceback": traceback.format_exc()
@@ -374,36 +373,30 @@ class SyncProcessor:
         start = time.time()
         try:
             # 1. Начало и лог
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                  f'Начало push-этапа. Устройство: {device}, Команд: {len(commands)}. [{datetime.now()}]')
+            logger.info("[SyncProcessor] Начало push-этапа. Устройство: %s, Команд: %s", device, len(commands))
             self.diagnostic_logger.log_info("Push start", {"device": device, "count": len(commands)})
 
             # 2. Валидация JSON
             self.json_validator.validate({"commands": commands}, "push_commands")
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                  f'Валидация JSON завершена. [{datetime.now()}]')
+            logger.debug("[SyncProcessor] Валидация JSON завершена.")
 
             # 3. Основная транзакция по командам
             with self._schema_lock, self.cmd_crud.transaction(), self.status_crud.transaction():
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Транзакция начата. Устройство: {device}. [{datetime.now()}]')
+                logger.debug("[SyncProcessor] Транзакция начата. Устройство: %s", device)
                 mapping = self._get_mapping(client_schema_hash)
                 ops, failed, skipped_results = [], [], []
 
                 # 5. Подготовка операций
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Начало обработки {len(commands)} команд. [{datetime.now()}]')
+                logger.debug("[SyncProcessor] Начало обработки %s команд.", len(commands))
                 for cmd in commands:
                     if not self.sync_config_crud.get_status(cmd["table"]):
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                              f'Таблица {cmd["table"]} отключена - пропуск. [{datetime.now()}]')
+                        logger.debug("[SyncProcessor] Таблица %s отключена - пропуск.", cmd["table"])
                         continue
 
                     # 5a-b. Препроцессинг и валидация
                     cleaned = self.data_transformer.preprocess(cmd["table"], cmd.get("data", {}))
                     if not self.data_transformer.validate(cmd["table"], cleaned):
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                              f'Ошибка валидации в таблице {cmd["table"]}. [{datetime.now()}]')
+                        logger.warning("[SyncProcessor] Ошибка валидации в таблице %s.", cmd["table"])
                         failed.append(cmd)
                         continue
 
@@ -412,33 +405,27 @@ class SyncProcessor:
                     if op_result.get("skipped"):
                         skipped_results.append(op_result)
                     elif not op_result["success"]:
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                              f'Конфликт/ошибка в команде {cmd.get("id")}. [{datetime.now()}]')
+                        logger.warning("[SyncProcessor] Конфликт/ошибка в команде %s.", cmd.get("id"))
                         failed.append(op_result)
                     else:
                         ops.append(op_result)
 
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Подготовлено операций: {len(ops)}, пропущено: {len(skipped_results)}, неудач: {len(failed)}. [{datetime.now()}]')
+                logger.debug("[SyncProcessor] Подготовлено операций: %s, пропущено: %s, неудач: %s.", len(ops), len(skipped_results), len(failed))
 
                 # 6. Пакетное выполнение
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Запуск пакетной обработки. [{datetime.now()}]')
+                logger.debug("[SyncProcessor] Запуск пакетной обработки.")
                 results = self.batch_processor.execute_batch(ops)
                 # Пропущенные считаем успешно принятыми (COMPLETED), чтобы сервер не пересылал
                 results = results + [{"command_id": r["command_id"], "success": True} for r in skipped_results]
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Пакетная обработка завершена. Результатов: {len(results)}. [{datetime.now()}]')
+                logger.debug("[SyncProcessor] Пакетная обработка завершена. Результатов: %s.", len(results))
 
                 # 7. Обновление статусов
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Обновление статусов команд. [{datetime.now()}]')
+                logger.debug("[SyncProcessor] Обновление статусов команд.")
                 statuses = self._update_command_statuses(results)
 
                 # 8. Планирование повторов
                 if failed:
-                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                          f'Планирование {len(failed)} повторов. [{datetime.now()}]')
+                    logger.info("[SyncProcessor] Планирование %s повторов.", len(failed))
                     for cmd in failed:
                         retry_cmd: RetryCommand = {
                             "id": cmd["id"],
@@ -452,20 +439,17 @@ class SyncProcessor:
                         self.retry_manager.schedule_retry(retry_cmd, self.retry_delay)
 
                 # 9. Фиксация транзакции
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Фиксация изменений. Устройство: {device}. [{datetime.now()}]')
+                logger.debug("[SyncProcessor] Фиксация изменений. Устройство: %s.", device)
 
             # 10. Успешный лог и возврат
             self.sync_monitor.record_success(time.time() - start)
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                  f'Push завершен успешно. Время: {time.time() - start:.2f}с. [{datetime.now()}]')
+            logger.info("[SyncProcessor] Push завершен успешно. Время: %.2fс.", time.time() - start)
             self.diagnostic_logger.log_info("Push completed", {"statuses": statuses})
             return statuses
 
         except Exception as ex:
             # общий обработчик ошибок
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                  f'ОШИБКА PUSH: {str(ex)}. [{datetime.now()}]')
+            logger.exception("[SyncProcessor] ОШИБКА PUSH: %s", ex)
             self.diagnostic_logger.log_error("Push failed", {
                 "error": str(ex),
                 "traceback": traceback.format_exc()
@@ -487,7 +471,7 @@ class SyncProcessor:
             self.diagnostic_logger.log_info("Mapping miss, generating new", {"hash": client_schema_hash})
             mapping = self.schema_analyzer.generate_mapping(self.server_schema, self.server_schema)
             self.schema_cache.set(client_schema_hash, mapping)
-        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Mapping loaded. [{datetime.now()}]')
+        logger.info("[SyncProcessor] Mapping loaded.")
         return mapping
 
     def _process_single(self, cmd: Dict[str, Any], mapping: Dict[str, Dict[str, str]]) -> Dict[str, Any]:
@@ -507,8 +491,8 @@ class SyncProcessor:
             rec_id = raw.get("id") or raw.get("index")
 
             # DIAGNOSTIC LOGGING: Record ID extraction and source
-            print(f'[DIAGNOSTIC][CLIENT] Command ID extraction: raw.id={raw.get("id")}, raw.index={raw.get("index")}, rec_id={rec_id}')
-            print(f'[DIAGNOSTIC][CLIENT] Raw data keys: {list(raw.keys())}')
+            logger.debug("[DIAGNOSTIC][CLIENT] Command ID extraction: raw.id=%s, raw.index=%s, rec_id=%s", raw.get("id"), raw.get("index"), rec_id)
+            logger.debug("[DIAGNOSTIC][CLIENT] Raw data keys: %s", list(raw.keys()))
 
             if rec_id is None:
                 self.diagnostic_logger.log_warning("IGNORED REMOTE UPDATE: No record id in command", {"table": table, "command_id": cmd.get("id")})
@@ -568,11 +552,11 @@ class SyncProcessor:
             index = local.get("id") or local.get("index") or rec_id
 
             # DIAGNOSTIC LOGGING: Existing data lookup
-            print(f'[DIAGNOSTIC][CLIENT] Processed data keys: {list(local.keys())}, chosen index={index}')
-            print(f'[DIAGNOSTIC][CLIENT] About to lookup existing data for table={table}, rec_id={index}')
+            logger.debug("[DIAGNOSTIC][CLIENT] Processed data keys: %s, chosen index=%s", list(local.keys()), index)
+            logger.debug("[DIAGNOSTIC][CLIENT] About to lookup existing data for table=%s, rec_id=%s", table, index)
 
             existing = self.sync_manager.get_current_data(table=table, work_session=SessionLocal(), rec_id=index)
-            print(f'[DIAGNOSTIC][CLIENT] Existing data lookup result: {existing}')
+            logger.debug("[DIAGNOSTIC][CLIENT] Existing data lookup result: %s", existing)
 
             # Защита "Time Travel": если локальная запись новее серверной — не перезаписываем
             remote_ts_str = cmd.get("last_modified")
@@ -604,7 +588,7 @@ class SyncProcessor:
                         pass
 
             if existing and self.conflict_manager.detect_data_conflict(existing, local):
-                print('[DIAGNOSTIC][CLIENT] Data conflict detected, applying strategy')
+                logger.debug("[DIAGNOSTIC][CLIENT] Data conflict detected, applying strategy")
                 remote_stype = None
                 if getattr(self.sync_manager, "get_status_stype", None) and local.get("status_id") is not None:
                     remote_stype = self.sync_manager.get_status_stype(local.get("status_id"))
@@ -621,10 +605,10 @@ class SyncProcessor:
                     local_status_stype=local_stype  # Передаем локальный stype для защиты активных операций
                 )
             else:
-                print('[DIAGNOSTIC][CLIENT] No data conflict or no existing record')
+                logger.debug("[DIAGNOSTIC][CLIENT] No data conflict or no existing record")
 
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Command processed. [{datetime.now()}]')
-            print(f'[DIAGNOSTIC][CLIENT] Final result: success=True, rec_id={index}')
+            logger.debug("[SyncProcessor] Command processed.")
+            logger.debug("[DIAGNOSTIC][CLIENT] Final result: success=True, rec_id=%s", index)
 
             return {
                 "command_id": cmd.get("id"),
@@ -635,7 +619,7 @@ class SyncProcessor:
                 "success": True,
             }
         except Exception as ex:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Одиночная команда не удалась. Подробности: {traceback.format_exc()} [{datetime.now()}]')
+            logger.exception("[SyncProcessor] Одиночная команда не удалась.")
             self.diagnostic_logger.log_error("Одиночная команда не удалась", {
                 "command": cmd, "error": str(ex), "traceback": traceback.format_exc()
             })
@@ -663,7 +647,7 @@ class SyncProcessor:
             entry = {"id": cmd_id, "status": status}
             if not ok: entry["error"] = r.get("error")
             statuses.append(entry)
-        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Statuses updated. [{datetime.now()}]')
+        logger.debug("[SyncProcessor] Statuses updated.")
         return statuses
 
     def _get_last_modified(
@@ -688,10 +672,7 @@ class SyncProcessor:
             # если что-то пошло не так, возвращаем None
             timestamp = None
 
-        print(
-            f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-            f'Last modified fetched for cmd={command_id}: {timestamp} at {datetime.now()}'
-        )
+        logger.debug("[SyncProcessor] Last modified fetched for cmd=%s: %s", command_id, timestamp)
         return timestamp
 
     def emulate_server_push(self, commands: List[Dict[str, Any]], client_schema_hash: str) -> List[Dict[str, Any]]:
@@ -700,10 +681,10 @@ class SyncProcessor:
         """
         try:
             self.diagnostic_logger.log_info("Emulate server push", {"count": len(commands)})
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Emulate server push. [{datetime.now()}]')
+            logger.info("[SyncProcessor] Emulate server push.")
             return self.process_push(device=0, commands=commands, client_schema_hash=client_schema_hash)
         except Exception:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Emulate push failed. [{datetime.now()}]')
+            logger.exception("[SyncProcessor] Emulate push failed.")
             self.diagnostic_logger.log_error("Emulate push failed", {"traceback": traceback.format_exc()})
             raise
 
@@ -723,10 +704,9 @@ class SyncProcessor:
                 "Local command enqueued",
                 {"table": cmd["table"], "operation": cmd["operation"]}
             )
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Команда поставлена в очередь. data: {cmd["data"]}'
-                  f'table: {cmd["table"]}, operation: {cmd["operation"]} [{datetime.now()}]')
+            logger.info("[SyncProcessor] Команда поставлена в очередь. table: %s, operation: %s", cmd["table"], cmd["operation"])
         except Exception as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] Не удалось поставить локальную команду в очередь. [{datetime.now()}]')
+            logger.exception("[SyncProcessor] Не удалось поставить локальную команду в очередь: %s", e)
             self.diagnostic_logger.log_error(
                 "Не удалось поставить локальную команду в очередь.",
                 {"error": str(e), "traceback": traceback.format_exc()}

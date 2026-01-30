@@ -1,8 +1,11 @@
 # dbSync/sync_db.py
 
+import logging
 import os
 import threading
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
@@ -27,7 +30,7 @@ def _resolve_sync_db_path() -> str:
     os.makedirs(model_dir, exist_ok=True)
     # .../dbSync/Model/sync.db
     out_name = os.path.join(model_dir, SYNC_DB_FILENAME)
-    print(f"[ПОТОК][{threading.current_thread().name}][sync_db.py][_resolve_sync_db_path] расположение синхронизационной базы: {out_name} [{datetime.now()}]")
+    logger.debug("[sync_db][_resolve_sync_db_path] расположение синхронизационной базы: %s", out_name)
     return out_name
 
 
@@ -89,4 +92,4 @@ def get_sync_session():
 if __name__ == "__main__":
     # Если запускаем напрямую — пересоздаём базу «с нуля»
     init_sync_db(force_recreate=True)
-    print("Sync DB initialized at", _resolve_sync_db_path())
+    logger.info("Sync DB initialized at %s", _resolve_sync_db_path())

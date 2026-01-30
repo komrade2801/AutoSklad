@@ -1,7 +1,10 @@
 import datetime
 import traceback
 
+from Core.app_logging import get_logger
 from sqlalchemy.orm import Session
+
+logger = get_logger(__name__)
 from sqlalchemy.exc import NoResultFound, IntegrityError, SQLAlchemyError
 from typing import List, Optional
 from sqlalchemy import create_engine
@@ -48,7 +51,7 @@ class EngineStatus(BaseCRUD):
         try:
             return super().add(id=index, stype=stype, description=description, created_at=created_at)
         except Exception as e:
-            print(traceback.format_exc())
+            logger.exception("StatusCRUD.add: %s", e)
             return False
 
 

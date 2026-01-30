@@ -1,6 +1,9 @@
 # import traceback
+import logging
 import threading
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 from typing import Any, Dict, List, Optional, Protocol  # , Union
 
 # from sqlalchemy.exc import IntegrityError
@@ -206,19 +209,19 @@ class SyncManager:
         :param rec_id: Record ID if provided
         :param sync_context: True if called during sync, False for normal operations
         """
-        print(f'[COUNT_FIX] _handle_insert called for table {table}, rec_id={rec_id}, sync_context={sync_context}')
-        print(f'[COUNT_FIX] data keys: {list(data.keys())}, count value: {data.get("count")}')
+        logger.debug("[COUNT_FIX] _handle_insert called for table %s, rec_id=%s, sync_context=%s", table, rec_id, sync_context)
+        logger.debug("[COUNT_FIX] data keys: %s, count value: %s", list(data.keys()), data.get("count"))
 
         # 1) Спец‑случай с инкрементом - только for non-sync operations (normal tool usage)
         if table in ("Tools", "Consumption") and "count" in data and rec_id is not None and not sync_context:
             existing = crud.get(rec_id)
             if existing:
-                print(f'[COUNT_FIX] Incrementing count for existing tool {rec_id}: {existing.count} + {data["count"]} = {existing.count + data["count"]}')
+                logger.debug("[COUNT_FIX] Incrementing count for existing tool %s: %s + %s = %s", rec_id, existing.count, data["count"], existing.count + data["count"])
                 return self._increment_count(crud, rec_id, data["count"])
 
         # For sync operations, bypass count increment logic
         if table in ("Tools", "Consumption") and sync_context:
-            print(f'[COUNT_FIX] Sync context - setting exact count value instead of incrementing')
+            logger.debug("[COUNT_FIX] Sync context - setting exact count value instead of incrementing")
 
         # 2) Если запись уже есть — делать UPSERT‑логику
         if rec_id is not None and crud.get(rec_id):
@@ -234,7 +237,7 @@ class SyncManager:
         if "id" not in data.items() and rec_id:
             fields["id"] = rec_id
 
-        print(f'[COUNT_FIX] Inserting new record with final rec_id={rec_id}, fields={fields}')
+        logger.debug("[COUNT_FIX] Inserting new record with final rec_id=%s, fields=%s", rec_id, fields)
         try:
             crud.add(rec_id, sync_context=sync_context, **fields)
         except (RuntimeError, Exception) as e:
@@ -242,12 +245,12 @@ class SyncManager:
             # проверяем, не появилась ли запись между проверкой и вставкой
             error_str = str(e).lower()
             if "integrity" in error_str or "unique" in error_str or "constraint" in error_str:
-                print(f'[INTEGRITY_FIX] IntegrityError при вставке {rec_id}, проверяем существование записи. Ошибка: {e}')
+                logger.warning("[INTEGRITY_FIX] IntegrityError при вставке %s, проверяем существование записи: %s", rec_id, e)
                 existing = crud.get(rec_id)
                 if existing:
                     # Запись появилась между проверкой и вставкой (race condition)
                     # Делаем upsert вместо insert
-                    print(f'[INTEGRITY_FIX] Запись {rec_id} найдена после IntegrityError, выполняем upsert')
+                    logger.debug("[INTEGRITY_FIX] Запись %s найдена после IntegrityError, выполняем upsert", rec_id)
                     return self._upsert_update(crud, rec_id, data, sync_context=sync_context)
             # Если это не IntegrityError или запись не найдена, пробрасываем ошибку дальше
             raise
@@ -259,17 +262,17 @@ class SyncManager:
     def _increment_count(self, crud, rec_id, delta):
         existing = crud.get(rec_id)
         new_count = existing.count + delta
-        print(f'_increment_count rec_id={rec_id}, crud={crud}, delta={delta}')
+        logger.debug("_increment_count rec_id=%s, crud=%s, delta=%s", rec_id, crud, delta)
         crud.update(index=rec_id, sync_context=False, count=new_count)
         return self._serialize(crud.get(rec_id))
 
     def _upsert_update(self, crud, rec_id, data, sync_context=False):
         """Если запись есть — сравниваем и либо возвращаем, либо обновляем."""
-        print(f'_upsert_update rec_id={rec_id}, crud={crud}, data={data}, sync_context={sync_context}')
+        logger.debug("_upsert_update rec_id=%s, crud=%s, sync_context=%s", rec_id, crud, sync_context)
         existing_obj = crud.get(rec_id)
         if existing_obj is None:
             # Если не нашли запись, логируем и создаём новую
-            print(f'[DUPLICATION_CHECK] Record {rec_id} not found in {crud.model.__tablename__}, creating new (sync_context={sync_context})')
+            logger.debug("[DUPLICATION_CHECK] Record %s not found in %s, creating new (sync_context=%s)", rec_id, crud.model.__tablename__, sync_context)
             new_id = crud.add(rec_id, sync_context=sync_context, **{k: v for k, v in data.items() if k not in ("id", "index")})
             new_obj = crud.get(new_id or rec_id)
             return new_obj.to_dict() if new_obj else None
@@ -287,10 +290,10 @@ class SyncManager:
         # For normal operations, check for changes first
         if not sync_context:
             if incoming == {k: current[k] for k in incoming}:
-                print(f'[DUPLICATION_CHECK] Record {rec_id} in {crud.model.__tablename__} identical to existing, skipping update')
+                logger.debug("[DUPLICATION_CHECK] Record %s in %s identical to existing, skipping update", rec_id, crud.model.__tablename__)
                 return self._serialize(existing_obj)
 
-        print(f'[DUPLICATION_CHECK] Record {rec_id} in {crud.model.__tablename__} updating (sync_context={sync_context})')
+        logger.debug("[DUPLICATION_CHECK] Record %s in %s updating (sync_context=%s)", rec_id, crud.model.__tablename__, sync_context)
         crud.update(index=rec_id, sync_context=sync_context, **incoming)
         return self._serialize(crud.get(rec_id))
 
@@ -309,7 +312,7 @@ class SyncManager:
         existing_record = crud.get(rec_id)
         if existing_record is None:
             # Если запись не существует, выполняем upsert (insert или update)
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] Record {rec_id} not found, performing upsert')
+            logger.debug("[SyncManager][_handle_update] Record %s not found, performing upsert", rec_id)
             return self._upsert_update(crud, rec_id, data, sync_context=True)
         
         # Удаляем служебные поля, которые не должны обновляться
@@ -320,7 +323,7 @@ class SyncManager:
         
         # Если нет данных для обновления, просто возвращаем существующую запись
         if not update_data:
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] No data to update for record {rec_id}, returning existing record')
+            logger.debug("[SyncManager][_handle_update] No data to update for record %s, returning existing record", rec_id)
             return self._serialize(existing_record)
         
         # Вызываем update с явным указанием index
@@ -328,11 +331,11 @@ class SyncManager:
             success = crud.update(index=rec_id, sync_context=True, **update_data)
             if not success:
                 # Если обновление не удалось, возможно из-за IntegrityError, пробуем upsert
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] Update returned False for record {rec_id}, trying upsert')
+                logger.debug("[SyncManager][_handle_update] Update returned False for record %s, trying upsert", rec_id)
                 return self._upsert_update(crud, rec_id, data, sync_context=True)
         except Exception as e:
             # Если произошла ошибка при обновлении, пробуем upsert
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncManager][_handle_update] Error during update for record {rec_id}: {e}, trying upsert')
+            logger.warning("[SyncManager][_handle_update] Error during update for record %s: %s, trying upsert", rec_id, e)
             return self._upsert_update(crud, rec_id, data, sync_context=True)
         
         updated_record = crud.get(rec_id)
@@ -372,9 +375,9 @@ class SyncManager:
         try:
             self._session.commit()
             self._session.expire_all()
-            print(f"[SyncManager][get_current_data] Session expired before getting {table} id={rec_id} - fresh data will be loaded from DB")
+            logger.debug("[SyncManager][get_current_data] Session expired before getting %s id=%s - fresh data will be loaded from DB", table, rec_id)
         except Exception as e:
-            print(f"[SyncManager][get_current_data] Warning: Failed to expire session before getting {table} id={rec_id}: {e}")
+            logger.warning("[SyncManager][get_current_data] Failed to expire session before getting %s id=%s: %s", table, rec_id, e)
 
         # тут мы **вызываем** конструктор EngineX()
         crud = crud_cls(self._session)

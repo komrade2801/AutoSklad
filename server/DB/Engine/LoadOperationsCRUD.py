@@ -2,7 +2,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional, List
+
+from Core.app_logging import get_logger
 from .CRUD import BaseCRUD  # Предполагается, что BaseCRUD уже реализован
+
+logger = get_logger(__name__)
 from ..Models.LoadOperations import LoadOperations  # Импорт модели LoadOperations
 
 
@@ -95,7 +99,7 @@ class EngineLoadOperations(BaseCRUD):
             result = self.session.execute(query).scalars().all()
             return result
         except Exception as e:
-            print(f"Ошибка при извлечении операций с history_id={history_id}: {e}")
+            logger.exception("LoadOperationsCRUD get_operations_by_history_id history_id=%s: %s", history_id, e)
             return []
 
     def get_operations_by_tool(self, tool_id: int):
@@ -110,7 +114,7 @@ class EngineLoadOperations(BaseCRUD):
             result = self.session.execute(query).scalars().all()
             return result
         except Exception as e:
-            print(f"Ошибка при извлечении операций с tool_id={tool_id}: {e}")
+            logger.exception("LoadOperationsCRUD get_operations_by_tool tool_id=%s: %s", tool_id, e)
             return []
 
     def get_loads_by_tool_ids(self, tool_ids: List[int]):

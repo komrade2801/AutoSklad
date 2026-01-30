@@ -89,7 +89,7 @@ class DataMapper:
         """
         Обновляет маппинг полей, на который опирается метод map_incoming/map_outgoing.
         """
-        print(f'[ПОТОК][{threading.current_thread().name}][DataMapper] обновить сопоставления полей. Текущее время: {datetime.datetime.now()}')
+        logger.debug("[DataMapper] обновить сопоставления полей.")
         self.field_mappings = new_mappings or {}
 
     def map_incoming(
@@ -126,7 +126,7 @@ class DataMapper:
         converters = self.custom_converters.get(table, {}).get("incoming", {})
         type_map = self.type_mappings.get(table, {})
 
-        print(f"[DataMapper][map_incoming] table={table}, record={record}, base_map={base_map}")
+        logger.debug("[DataMapper][map_incoming] table=%s, base_map=%s", table, base_map)
 
         # Если таблицы нет в маппинге, используем pass-through (прямая передача полей)
         use_pass_through = not base_map
@@ -161,7 +161,7 @@ class DataMapper:
 
             result[local_field] = value
 
-        print(f"[DataMapper][map_incoming] result={result}")
+        logger.debug("[DataMapper][map_incoming] result=%s", result)
         return result
 
     def map_outgoing(
@@ -184,7 +184,7 @@ class DataMapper:
         type_map = self.type_mappings.get(table, {})
         result: Dict[str, Any] = {}
 
-        print(f"[DataMapper][map_outgoing] table={table}, record={record}, base_map={base_map}")
+        logger.debug("[DataMapper][map_outgoing] table=%s, base_map=%s", table, base_map)
 
         # 1) Сохраняем защищённые поля
         for local_field in self.PROTECTED_FIELDS:
@@ -214,7 +214,7 @@ class DataMapper:
 
             result[remote_field] = value
 
-        print(f"[DataMapper][map_outgoing] result={result}")
+        logger.debug("[DataMapper][map_outgoing] result=%s", result)
         return result
 
     # def map_incoming(
@@ -276,7 +276,7 @@ class DataMapper:
     #
     #         result[local_field] = value
     #
-    #         print(f"[DataMapper][map_incoming] result={result}")
+    #         logger.debug("[DataMapper][map_incoming] result=%s", result)
     #         return result
     #
     # # def map_incoming(self, table: str, record: Dict[str, Any], mapping: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
@@ -433,8 +433,7 @@ class DataMapper:
         type_map = self.type_mappings.get(table, {})
         conv = self.converters.get(table, {}).get('incoming', {})
         result: Dict[str, Any] = {}
-        print(
-            f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_incoming_json_to_local] - table: {table}, record: {record}, mapping: {mapping}, type_map: {type_map}, conv: {conv}. Текущее время: {datetime.datetime.now()}')
+        logger.debug("[DataMapper][map_incoming_json_to_local] table=%s", table)
         for remote, value in record.items():
             local = mapping.get(remote)
             if not local:
@@ -449,12 +448,11 @@ class DataMapper:
                 else:
                     result[local] = value
             except Exception as e:
-                print(
-                    f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_incoming_json_to_local][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+                logger.exception("[DataMapper][map_incoming_json_to_local] error for %s: %s", local, e)
                 if self.logger:
                     self.logger.log_error(f"Incoming converter error for '{local}': {e}")
                 result[local] = value
-        print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_incoming_json_to_local] - result: {result}. Текущее время: {datetime.datetime.now()}')
+        logger.debug("[DataMapper][map_incoming_json_to_local] result: %s", result)
         return result
 
     def map_outgoing_local_to_json(self, table: str, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -474,8 +472,7 @@ class DataMapper:
         type_map = self.type_mappings.get(table, {})
         conv = self.converters.get(table, {}).get('outgoing', {})
         result: Dict[str, Any] = {}
-        print(
-            f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - table: {table}, record: {record}, rev: {rev}, type_map: {type_map}, conv: {conv}. Текущее время: {datetime.datetime.now()}')
+        logger.debug("[DataMapper][map_outgoing_local_to_json] table=%s", table)
         for local, value in record.items():
             remote = rev.get(local)
             if not remote:
@@ -490,12 +487,11 @@ class DataMapper:
                 else:
                     result[remote] = value
             except Exception as e:
-                print(
-                    f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json][ERROR] - error: {e}, Ошибка исходящего конвертера для {local}: подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+                logger.exception("[DataMapper][map_outgoing_local_to_json] error for %s: %s", local, e)
                 if self.logger:
                     self.logger.log_error(f"Outgoing converter error for {local}: {e}")
                 result[remote] = value
-        print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - result: {result}. Текущее время: {datetime.datetime.now()}')
+        logger.debug("[DataMapper][map_outgoing_local_to_json] result: %s", result)
         return result
 
     def _to_local_type(self, value: Any, type_name: str) -> Any:
@@ -504,7 +500,7 @@ class DataMapper:
         Поддерживается datetime, int, float, bool.
         """
         try:
-            print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+            logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
             if type_name == 'datetime':
                 return datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
             if type_name == 'int':
@@ -514,8 +510,7 @@ class DataMapper:
             if type_name == 'bool':
                 return bool(value)
         except Exception as e:
-            print(
-                f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json][ERROR] - error: {e}, Не удалось преобразовать тип для {value} в {type_name}: подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+            logger.exception("[DataMapper] _to_local_type failed for value=%s type_name=%s: %s", value, type_name, e)
             if self.logger:
                 self.logger.log_error(f"Type conversion failed for '{value} to {type_name}: {e}")
         return value
@@ -526,11 +521,10 @@ class DataMapper:
         """
         try:
             if type_name == 'datetime' and isinstance(value, datetime.datetime):
-                print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+                logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
                 return value.isoformat() + 'Z'
         except Exception as e:
-            print(
-                f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json][ERROR] - error: {e}, Ошибка форматирования JSON для {value} подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+            logger.exception("[DataMapper] _to_json_type failed for value=%s: %s", value, e)
             if self.logger:
                 self.logger.log_error(f"JSON formatting failed for '{value}': {e}")
         return value
@@ -702,7 +696,7 @@ class DataMapper:
 #         converters = self.custom_converters.get(table, {}).get("incoming", {})
 #         type_map = self.type_mappings.get(table, {})
 #
-#         print(f"[DataMapper][map_incoming] table={table}, record={record}, base_map={base_map}")
+#         logger.debug("[DataMapper][map_incoming] table=%s, base_map=%s", table, base_map)
 #
 #         # 4) Основной цикл по полям
 #         for remote_field, value in record.items():
@@ -729,7 +723,7 @@ class DataMapper:
 #
 #             result[local_field] = value
 #
-#         print(f"[DataMapper][map_incoming] result={result}")
+#         logger.debug("[DataMapper][map_incoming] result=%s", result)
 #         return result
 #
 #     def map_outgoing(
@@ -752,7 +746,7 @@ class DataMapper:
 #         type_map = self.type_mappings.get(table, {})
 #         result: Dict[str, Any] = {}
 #
-#         print(f"[DataMapper][map_outgoing] table={table}, record={record}, base_map={base_map}")
+#         logger.debug("[DataMapper][map_outgoing] table=%s, base_map=%s", table, base_map)
 #
 #         # 1) Сохраняем защищённые поля
 #         for local_field in self.PROTECTED_FIELDS:
@@ -782,7 +776,7 @@ class DataMapper:
 #
 #             result[remote_field] = value
 #
-#         print(f"[DataMapper][map_outgoing] result={result}")
+#         logger.debug("[DataMapper][map_outgoing] result=%s", result)
 #         return result
 #
 #     # def map_incoming(
@@ -844,7 +838,7 @@ class DataMapper:
 #     #
 #     #         result[local_field] = value
 #     #
-#     #         print(f"[DataMapper][map_incoming] result={result}")
+#     #         logger.debug("[DataMapper][map_incoming] result=%s", result)
 #     #         return result
 #     #
 #     # # def map_incoming(self, table: str, record: Dict[str, Any], mapping: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
@@ -1022,7 +1016,7 @@ class DataMapper:
 #                 if self.logger:
 #                     self.logger.log_error(f"Incoming converter error for '{local}': {e}")
 #                 result[local] = value
-#         print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_incoming_json_to_local] - result: {result}. Текущее время: {datetime.datetime.now()}')
+#         logger.debug("[DataMapper][map_incoming_json_to_local] result: %s", result)
 #         return result
 #
 #     def map_outgoing_local_to_json(self, table: str, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -1063,7 +1057,7 @@ class DataMapper:
 #                 if self.logger:
 #                     self.logger.log_error(f"Outgoing converter error for {local}: {e}")
 #                 result[remote] = value
-#         print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - result: {result}. Текущее время: {datetime.datetime.now()}')
+#         logger.debug("[DataMapper][map_outgoing_local_to_json] result: %s", result)
 #         return result
 #
 #     def _to_local_type(self, value: Any, type_name: str) -> Any:
@@ -1072,7 +1066,7 @@ class DataMapper:
 #         Поддерживается datetime, int, float, bool.
 #         """
 #         try:
-#             print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+#             logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
 #             if type_name == 'datetime':
 #                 return datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
 #             if type_name == 'int':
@@ -1094,7 +1088,7 @@ class DataMapper:
 #         """
 #         try:
 #             if type_name == 'datetime' and isinstance(value, datetime.datetime):
-#                 print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+#                 logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
 #                 return value.isoformat() + 'Z'
 #         except Exception as e:
 #             print(
@@ -1191,7 +1185,7 @@ class DataMapper:
 # #         converters = self.custom_converters.get(table, {}).get("incoming", {})
 # #         type_map = self.type_mappings.get(table, {})
 # #
-# #         print(f"[DataMapper][map_incoming] table={table}, record={record}, base_map={base_map}")
+# #         logger.debug("[DataMapper][map_incoming] table=%s, base_map=%s", table, base_map)
 # #
 # #         # 4) Основной цикл по полям из record
 # #         for remote_field, value in record.items():
@@ -1220,7 +1214,7 @@ class DataMapper:
 # #
 # #             result[local_field] = value
 # #
-# #             print(f"[DataMapper][map_incoming] result={result}")
+# #             logger.debug("[DataMapper][map_incoming] result=%s", result)
 # #             return result
 # #
 # #     # def map_incoming(self, table: str, record: Dict[str, Any], mapping: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
@@ -1324,7 +1318,7 @@ class DataMapper:
 # #         type_map = self.type_mappings.get(table, {})
 # #         result: Dict[str, Any] = {}
 # #
-# #         print(f"[DataMapper][map_outgoing] table={table}, record={record}, base_map={base_map}")
+# #         logger.debug("[DataMapper][map_outgoing] table=%s, base_map=%s", table, base_map)
 # #
 # #         # 1) Сразу сохраняем защищённые поля
 # #         for local_field in self.PROTECTED_FIELDS:
@@ -1359,7 +1353,7 @@ class DataMapper:
 # #
 # #             result[remote_field] = value
 # #
-# #         print(f"[DataMapper][map_outgoing] result={result}")
+# #         logger.debug("[DataMapper][map_outgoing] result=%s", result)
 # #         return result
 # #
 # #     def map_incoming_json_to_local(self, table: str, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -1400,7 +1394,7 @@ class DataMapper:
 # #                 if self.logger:
 # #                     self.logger.log_error(f"Incoming converter error for '{local}': {e}")
 # #                 result[local] = value
-# #         print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_incoming_json_to_local] - result: {result}. Текущее время: {datetime.datetime.now()}')
+# #         logger.debug("[DataMapper][map_incoming_json_to_local] result: %s", result)
 # #         return result
 # #
 # #     def map_outgoing_local_to_json(self, table: str, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -1441,7 +1435,7 @@ class DataMapper:
 # #                 if self.logger:
 # #                     self.logger.log_error(f"Outgoing converter error for {local}: {e}")
 # #                 result[remote] = value
-# #         print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - result: {result}. Текущее время: {datetime.datetime.now()}')
+# #         logger.debug("[DataMapper][map_outgoing_local_to_json] result: %s", result)
 # #         return result
 # #
 # #     def _to_local_type(self, value: Any, type_name: str) -> Any:
@@ -1450,7 +1444,7 @@ class DataMapper:
 # #         Поддерживается datetime, int, float, bool.
 # #         """
 # #         try:
-# #             print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+# #             logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
 # #             if type_name == 'datetime':
 # #                 return datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
 # #             if type_name == 'int':
@@ -1472,7 +1466,7 @@ class DataMapper:
 # #         """
 # #         try:
 # #             if type_name == 'datetime' and isinstance(value, datetime.datetime):
-# #                 print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+# #                 logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
 # #                 return value.isoformat() + 'Z'
 # #         except Exception as e:
 # #             print(
@@ -1649,7 +1643,7 @@ class DataMapper:
 # #                 if self.logger:
 # #                     self.logger.log_error(f"Incoming converter error for '{local}': {e}")
 # #                 result[local] = value
-# #         print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_incoming_json_to_local] - result: {result}. Текущее время: {datetime.datetime.now()}')
+# #         logger.debug("[DataMapper][map_incoming_json_to_local] result: %s", result)
 # #         return result
 # #
 # #     def map_outgoing_local_to_json(self, table: str, record: Dict[str, Any]) -> Dict[str, Any]:
@@ -1688,7 +1682,7 @@ class DataMapper:
 # #                 if self.logger:
 # #                     self.logger.log_error(f"Outgoing converter error for {local}: {e}")
 # #                 result[remote] = value
-# #         print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - result: {result}. Текущее время: {datetime.datetime.now()}')
+# #         logger.debug("[DataMapper][map_outgoing_local_to_json] result: %s", result)
 # #         return result
 # #
 # #     def _to_local_type(self, value: Any, type_name: str) -> Any:
@@ -1697,7 +1691,7 @@ class DataMapper:
 # #         Поддерживается datetime, int, float, bool.
 # #         """
 # #         try:
-# #             print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+# #             logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
 # #             if type_name == 'datetime':
 # #                 return datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
 # #             if type_name == 'int':
@@ -1718,7 +1712,7 @@ class DataMapper:
 # #         """
 # #         try:
 # #             if type_name == 'datetime' and isinstance(value, datetime.datetime):
-# #                 print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json] - value: {value}, type_name: {type_name}. Текущее время: {datetime.datetime.now()}')
+# #                 logger.debug("[DataMapper] _to_local_type value=%s, type_name=%s", value, type_name)
 # #                 return value.isoformat() + 'Z'
 # #         except Exception as e:
 # #             print(f'[ПОТОК][{threading.current_thread().name}][DataMapper][map_outgoing_local_to_json][ERROR] - error: {e}, Ошибка форматирования JSON для {value} подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')

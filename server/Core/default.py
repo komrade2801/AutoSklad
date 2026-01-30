@@ -84,8 +84,9 @@ def rebuild_db():
                 if files:
                     for f in files:
                         if "web_vending.db" in f.path:
-                            print(
-                                f"Process {proc.info['name']} PID {proc.info['pid']} держит файл {f.path}")
+                            logger.warning(
+                                "Process %s PID %s держит файл %s",
+                                proc.info['name'], proc.info['pid'], f.path)
                             # Частота 1000 Гц, длительность 500 мс
                             winsound.Beep(400, 300)
                             # Частота 1000 Гц, длительность 500 мс
@@ -118,11 +119,11 @@ def rebuild_db():
             try:
 
                 os.remove(db_filename)
-                print(f"Файл '{db_filename}' был успешно удален.")
+                logger.info("Файл '%s' был успешно удален.", db_filename)
             except Exception as e:
-                print(f"Ошибка при удалении файла: {e}")
+                logger.exception("Ошибка при удалении файла: %s", e)
         else:
-            print(f"Файл '{db_filename}' не найден.")
+            logger.debug("Файл '%s' не найден.", db_filename)
         # Включение логирования SQLAlchemy
         # logging.basicConfig()
         # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
@@ -134,9 +135,9 @@ def rebuild_db():
             with open(db_filename, 'w') as file:
                 # Вы можете записывать строки в файл, используя метод write(), echo=True
                 file.write('')
-            print(f"Файл '{db_filename}' был успешно создан.")
+            logger.info("Файл '%s' был успешно создан.", db_filename)
         except Exception as e:
-            print(f"Ошибка при создании файла: {e}")
+            logger.exception("Ошибка при создании файла: %s", e)
         # Создание базы данных и таблиц
 
         # modules = [Help, Error, Role, Plan, Group, Rights, MassDrop, MassLoad, Status, User, Identification, Tools, Cell,
@@ -226,7 +227,7 @@ def rebuild_db():
         ]
 
         engine = create_engine(f'sqlite:///{db_filename}')
-        print(Base.metadata.tables.keys())
+        logger.debug("Base.metadata.tables: %s", list(Base.metadata.tables.keys()))
         Base.metadata.drop_all(engine)
         # Создает все таблицы, описанные в Base
         Base.metadata.create_all(engine)
@@ -384,7 +385,7 @@ def execute():
                     e_page.add_page(index=index, name=file_name,
                                     description=description)
 
-        print("Страницы добавлены")
+        logger.info("Страницы добавлены")
         update_progress("Страницы добавлены!", "complete", 11)
 
         date_str = '2025-02-18'
@@ -447,7 +448,7 @@ def execute():
             details=details_json,
             create=date_obj,
         )
-        print("Устройство добавлено")
+        logger.info("Устройство добавлено")
         update_progress("Устройство добавлено!", "complete", 12)
         status_names = [
             "start_system",

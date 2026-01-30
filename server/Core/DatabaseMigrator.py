@@ -1,5 +1,8 @@
+import logging
 from DB.Data.base import Base
 from DB.Models.Cell import Cell #------------------------------------------------------------------------1
+
+logger = logging.getLogger(__name__)
 from DB.Models.CellHasDevice import CellHasDevice #------------------------------------------------------2
 from DB.Models.Command import Command #------------------------------------------------------------------3
 from DB.Models.Consumption import Consumption #----------------------------------------------------------4
@@ -105,9 +108,9 @@ class DatabaseMigrator:
         try:
             with self.transaction() as conn:
                 self._apply_schema_changes(conn)
-            print("Миграция успешно завершена")
+            logger.info("Миграция успешно завершена")
         except Exception as e:
-            print(f"Ошибка миграции: {e}. Восстанавливаем backup...")
+            logger.exception("Ошибка миграции: %s. Восстанавливаем backup...", e)
             self.restore_backup(backup_file)
             raise
 
@@ -190,5 +193,5 @@ def rebuild_db():
     try:
         migrator.safe_rebuild()
     except Exception as e:
-        print(f"Критическая ошибка: {e}")
+        logger.exception("Критическая ошибка: %s", e)
         # Дополнительные действия при ошибке

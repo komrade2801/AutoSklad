@@ -1,7 +1,10 @@
 import datetime
 import traceback
 
+from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+
+logger = get_logger(__name__)
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -261,8 +264,7 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                     block=block
                 )
             except Exception as e:
-                print(e)
-                print(traceback.format_exc())
+                logger.exception("mass_load cell/row error: %s", e)
 
         result_rows[str(r)] = RowResponse(cells=cells_in_row)
 
@@ -415,8 +417,7 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
         return {"tools": tool_type_list}
 
     except Exception as e:
-        print(traceback.format_exc())
-
+        logger.exception("export_tools error")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка при формировании Plans JSON: {str(e)}"
@@ -430,8 +431,7 @@ def save_mass_load(
     mass_load: MassLoadCreate,
     db: Session = Depends(get_db),
 ):
-    print(f"save_mass_load request: {request}, device_number: {device_number}, mass_load: {mass_load}")
-    # print(request)
+    logger.debug("save_mass_load request: %s, device_number: %s, mass_load: %s", request, device_number, mass_load)
     # 1) авторизация
     validation = auth_service.validation_user(request)
     if isinstance(validation, RedirectResponse) or ("status" in getattr(validation, "data", {})):
@@ -441,7 +441,7 @@ def save_mass_load(
     try:
         validation.user_barcode
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("save_mass_load auth")
         raise HTTPException(
             status_code=401, detail="Неавторизованный доступ запрещён")
 
@@ -487,12 +487,10 @@ def save_mass_load(
     # Проверка наличия очереди синхронизации для устройства (очередь зарегистрирована по device_number)
     from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES
     queue_in = INBOUND_QUEUES.get(queue_device_id)
-    print(f"[save_mass_load] device_id={device_id}, device_number={device_number}, queue_device_id={queue_device_id}, "
-          f"queue_in={'EXISTS' if queue_in else 'NOT FOUND'}, "
-          f"available_devices={list(INBOUND_QUEUES.keys())}")
+    logger.debug("[save_mass_load] device_id=%s, device_number=%s, queue_device_id=%s, queue_in=%s, available_devices=%s",
+                 device_id, device_number, queue_device_id, 'EXISTS' if queue_in else 'NOT FOUND', list(INBOUND_QUEUES.keys()))
     if not queue_in:
-        print(f"[save_mass_load][WARNING] Очередь синхронизации не найдена для queue_device_id={queue_device_id}! "
-              f"Команды синхронизации НЕ будут созданы.")
+        logger.warning("[save_mass_load] Очередь синхронизации не найдена для queue_device_id=%s! Команды синхронизации НЕ будут созданы.", queue_device_id)
 
     # Устанавливаем device_id для CRUD так, чтобы декоратор @sync_aware клал команды в правильную очередь (по device_number)
     e_cells.device_id = queue_device_id
@@ -501,8 +499,7 @@ def save_mass_load(
     e_load_operation.device_id = queue_device_id
     e_mass_load.device_id = queue_device_id
     e_mass_load_has_device.device_id = queue_device_id
-    print(f"[save_mass_load] Установлен device_id={queue_device_id} для CRUD-объектов (ключ очереди): "
-          f"e_cells, e_stories, e_load, e_load_operation, e_mass_load, e_mass_load_has_device")
+    logger.debug("[save_mass_load] Установлен device_id=%s для CRUD-объектов (ключ очереди)", queue_device_id)
 
     try:
         # 5) создаём запись MassLoad
@@ -526,25 +523,25 @@ def save_mass_load(
         status_load = e_status.find_by_name("mass_load_init")
 
         # Создаём связь MassLoad с Device для синхронизации и отображения в клиенте
-        print(f"[save_mass_load] Создание связи MassLoadHasDevice: mass_load_id={mass_load_id}, device_id={device_id}")
+        logger.debug("[save_mass_load] Создание связи MassLoadHasDevice: mass_load_id=%s, device_id=%s", mass_load_id, device_id)
         e_mass_load_has_device.add_link(mass_load_id=mass_load_id, device_id=device_id)
-        print(f"[save_mass_load] ✅ Связь MassLoadHasDevice создана успешно")
+        logger.info("[save_mass_load] Связь MassLoadHasDevice создана успешно")
 
         # 6) обрабатываем каждую операцию
         total_operations = len(stories)
         processed_count = 0
         failed_operations = []
         
-        print(f"[save_mass_load] Начало обработки массовой загрузки. Всего операций: {total_operations}, "
-              f"device_id={device_id}, mass_load_id={mass_load_id}")
+        logger.debug("[save_mass_load] Начало обработки массовой загрузки. Всего операций: %s, device_id=%s, mass_load_id=%s",
+                     total_operations, device_id, mass_load_id)
         
         for key, story in stories.items():
             processed_count += 1
             operation_start_time = datetime.datetime.now()
             
             try:
-                print(f"[save_mass_load] Обработка операции {processed_count}/{total_operations} (key={key}): "
-                      f"cell={story.cell}, tool={story.tool}, plan={story.plan}")
+                logger.debug("[save_mass_load] Обработка операции %s/%s (key=%s): cell=%s, tool=%s, plan=%s",
+                             processed_count, total_operations, key, story.cell, story.tool, story.plan)
                 
                 # разбираем вход
                 # print(f"save_mass_load story: {story}")
@@ -574,25 +571,25 @@ def save_mass_load(
                 # else:
 
                 # tool_types = e_tool_types.find_by_name(request_tool)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Получение tool_type для tool_id={request_tool}")
+                logger.debug("[save_mass_load][%s/%s] Получение tool_type для tool_id=%s", processed_count, total_operations, request_tool)
                 tool_type = e_tool_types.get_tool_type_by_id(request_tool)
                 if not tool_type:
                     error_msg = f"Подходящий инструмент '{request_tool}' не найден для операции {processed_count}/{total_operations}"
-                    print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] {error_msg}")
+                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=404, detail=error_msg)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Tool_type найден: id={tool_type.id}, name={tool_type.name}")
+                logger.debug("[save_mass_load][%s/%s] Tool_type найден: id=%s, name=%s", processed_count, total_operations, tool_type.id, tool_type.name)
                 # tool_type = tool_types[0]
 
                 # создаём History
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Создание History записи")
+                logger.debug("[save_mass_load][%s/%s] Создание History записи", processed_count, total_operations)
                 story_id = max(e_stories.get_all_ids(), default=0) + 1
                 story_ids.append(story_id)
                 user = e_user.get_user_by_barcode(validation.user_barcode)
                 if not user:
                     error_msg = f"Пользователь не найден для операции {processed_count}/{total_operations}"
-                    print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] {error_msg}")
+                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=402, detail=error_msg)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Пользователь найден: id={user.id}, barcode={validation.user_barcode}")
+                logger.debug("[save_mass_load][%s/%s] Пользователь найден: id=%s, barcode=%s", processed_count, total_operations, user.id, validation.user_barcode)
                 # print(f"add_history: {story_id}")
                 e_stories.add_history(
                     history_id=story_id,
@@ -607,9 +604,9 @@ def save_mass_load(
                 new_history = e_stories.get_history_by_id(story_id)
                 if not new_history:
                     error_msg = f"Не удалось получить History после добавления для операции {processed_count}/{total_operations}, story_id={story_id}"
-                    print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] {error_msg}")
+                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=500, detail=error_msg)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] History создана: id={new_history.id}")
+                logger.debug("[save_mass_load][%s/%s] History создана: id=%s", processed_count, total_operations, new_history.id)
                 e_history_has_device.add_link(
                     history_id=new_history.id, device_id=device.id)
 
@@ -623,13 +620,13 @@ def save_mass_load(
 
                 # получаем и обновляем cell
                 # cell = e_cells.get_cell_by_number(int(request_cell))
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Получение ячейки cell_id={request_cell}")
+                logger.debug("[save_mass_load][%s/%s] Получение ячейки cell_id=%s", processed_count, total_operations, request_cell)
                 cell = e_cells.get_cell_by_id(int(request_cell))
                 if not cell:
                     error_msg = f"Ячейка не найдена для операции {processed_count}/{total_operations}, cell_id={request_cell}"
-                    print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] {error_msg}")
+                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=404, detail=error_msg)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Ячейка найдена: id={cell.id}, number={cell.number}")
+                logger.debug("[save_mass_load][%s/%s] Ячейка найдена: id=%s, number=%s", processed_count, total_operations, cell.id, cell.number)
 
                 # # привязываем инструмент к устройству
                 # e_tools_has_device.add_link(
@@ -642,9 +639,8 @@ def save_mass_load(
 
                 # backup и обновление ячейки
                 cell_backs.append(e_cells.get_cell_by_id(cell.id))
-                print(f"[save_mass_load][{processed_count}/{total_operations}] ⚠️ КРИТИЧЕСКИЙ МОМЕНТ: Вызов update_cell для cell_id={cell.id}, "
-                      f"number={cell.number}, tools_id={tool_type.id}, groups_id={tool_type.groups_id}")
-                print(f"[save_mass_load][{processed_count}/{total_operations}] e_cells.device_id={getattr(e_cells, 'device_id', 'NOT SET')}")
+                logger.debug("[save_mass_load][%s/%s] update_cell: cell_id=%s, number=%s, tools_id=%s, groups_id=%s, e_cells.device_id=%s",
+                             processed_count, total_operations, cell.id, cell.number, tool_type.id, tool_type.groups_id, getattr(e_cells, 'device_id', 'NOT SET'))
                 e_cells.update_cell(
                     cell_id=cell.id,
                     number=cell.number,
@@ -653,10 +649,10 @@ def save_mass_load(
                     tools_id=tool_type.id,
                     status_id=mass_load_status.id,
                 )
-                print(f"[save_mass_load][{processed_count}/{total_operations}] ✅ update_cell выполнен успешно для cell_id={cell.id}")
+                logger.debug("[save_mass_load][%s/%s] update_cell выполнен успешно для cell_id=%s", processed_count, total_operations, cell.id)
 
                 load_id = max(e_load.get_all_ids(), default=0) + 1
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Создание Load: load_id={load_id}")
+                logger.debug("[save_mass_load][%s/%s] Создание Load: load_id=%s", processed_count, total_operations, load_id)
                 # создаём Load
                 e_load.add_load(
                     load_id=load_id,
@@ -671,9 +667,9 @@ def save_mass_load(
                 load = e_load.get_load_by_id(load_id)
                 if not load:
                     error_msg = f"Не удалось получить Load после создания для операции {processed_count}/{total_operations}, load_id={load_id}"
-                    print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] {error_msg}")
+                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=500, detail=error_msg)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Load создан: id={load.id}")
+                logger.debug("[save_mass_load][%s/%s] Load создан: id=%s", processed_count, total_operations, load.id)
                 loads.append(load)
 
                 # привязываем cell к устройству
@@ -704,7 +700,7 @@ def save_mass_load(
                 # создаём LoadOperation и привязываем к устройству
                 operation_id = max(e_load_operation.get_all_ids(), default=0) + 1
                 operation_ids.append(operation_id)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] Создание LoadOperation: operation_id={operation_id}")
+                logger.debug("[save_mass_load][%s/%s] Создание LoadOperation: operation_id=%s", processed_count, total_operations, operation_id)
                 e_load_operation.add_operation(
                     operation_id=operation_id,
                     date=datetime.datetime.now(),
@@ -717,14 +713,14 @@ def save_mass_load(
                 operation = e_load_operation.get_load_by_id(operation_id)
                 if not operation:
                     error_msg = f"Не удалось получить Operation после добавления для операции {processed_count}/{total_operations}, operation_id={operation_id}"
-                    print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] {error_msg}")
+                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=500, detail=error_msg)
-                print(f"[save_mass_load][{processed_count}/{total_operations}] LoadOperation создан: id={operation.id}")
+                logger.debug("[save_mass_load][%s/%s] LoadOperation создан: id=%s", processed_count, total_operations, operation.id)
                 e_operation_has_device.add_link(
                     load_operations_id=operation_id, device_id=device.id)
                 
                 operation_duration = (datetime.datetime.now() - operation_start_time).total_seconds()
-                print(f"[save_mass_load][{processed_count}/{total_operations}] ✅ Операция завершена успешно за {operation_duration:.3f} сек")
+                logger.debug("[save_mass_load][%s/%s] Операция завершена успешно за %s сек", processed_count, total_operations, f"{operation_duration:.3f}")
             
             except Exception as op_error:
                 failed_operations.append({
@@ -737,19 +733,18 @@ def save_mass_load(
                     f"ОШИБКА при обработке операции {processed_count}/{total_operations} (key={key}): {op_error}. "
                     f"cell={getattr(story, 'cell', 'N/A')}, tool={getattr(story, 'tool', 'N/A')}"
                 )
-                print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] {error_msg}")
-                print(f"[save_mass_load][{processed_count}/{total_operations}][ERROR] Traceback:\n{traceback.format_exc()}")
+                logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
+                logger.exception("[save_mass_load] Traceback для операции %s/%s", processed_count, total_operations)
                 # Продолжаем обработку следующих операций, но запоминаем ошибку
                 continue
 
         # Итоговая статистика
         successful_count = processed_count - len(failed_operations)
-        print(f"[save_mass_load] ИТОГИ обработки массовой загрузки: "
-              f"всего={total_operations}, успешно={successful_count}, ошибок={len(failed_operations)}")
+        logger.info("[save_mass_load] ИТОГИ: всего=%s, успешно=%s, ошибок=%s", total_operations, successful_count, len(failed_operations))
         if failed_operations:
-            print(f"[save_mass_load][WARNING] Список неудачных операций:")
+            logger.warning("[save_mass_load] Список неудачных операций: %s", failed_operations)
             for failed in failed_operations:
-                print(f"[save_mass_load][WARNING]   - Операция {failed['operation']} (key={failed['key']}): {failed['error']}")
+                logger.warning("[save_mass_load] Операция %s (key=%s): %s", failed['operation'], failed['key'], failed['error'])
             # Если были ошибки, но не все операции провалились, возвращаем частичный успех
             if successful_count > 0:
                 return {
@@ -763,8 +758,7 @@ def save_mass_load(
         return {"status": "ok", "message": new_mass_load.description}
 
     except Exception as e:
-        print(f"DELETE EVERYTHING")
-        print(traceback.format_exc())
+        logger.exception("save_mass_load rollback: %s", e)
         # откат в обратном порядке
         try:
             for op_id in operation_ids:
@@ -795,7 +789,7 @@ def save_mass_load(
                 e_mass_load_has_device.delete_link(mass_load_id=mass_load_id, device_id=device_id)
                 e_mass_load.delete(mass_load_id)
         except Exception:
-            print(traceback.format_exc())
+            logger.exception("save_mass_load rollback inner")
             pass
 
         raise HTTPException(

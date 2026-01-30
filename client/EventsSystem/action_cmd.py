@@ -9,6 +9,9 @@ import logging
 from Core.platforms import detect
 # from BarcodeScanner.SerialWorker import SerialWorker  # Используем потоковый класс!
 
+logger = logging.getLogger(__name__)
+
+
 class ActionMapper:
     def __init__(self, executor):
         self.__executor = executor
@@ -17,8 +20,8 @@ class ActionMapper:
         self.response_command_ok = False
         self.platform = detect()
         self.__actions = {
-            'cmd_start': lambda *args, **kwargs: print("cmd_start", *args, **kwargs),
-            'cmd_test_self': lambda *args, **kwargs: print("cmd_test_self", *args, **kwargs),
+            'cmd_start': lambda *args, **kwargs: logger.debug("cmd_start %s %s", args, kwargs),
+            'cmd_test_self': lambda *args, **kwargs: logger.debug("cmd_test_self %s %s", args, kwargs),
             'cmd_empty': lambda *args, **kwargs: lambda *args, **kwargs: self.cmd_empty(*args, **kwargs),
             'cmd_run_timeout_wait_back': lambda *args, **kwargs: self.cmd_run_timeout_wait_back(*args, **kwargs),
             'cmd_run_timeout_get_back': lambda *args, **kwargs: self.cmd_run_timeout_get_back(*args, **kwargs),
@@ -28,8 +31,8 @@ class ActionMapper:
             'cmd_ping': lambda *args, **kwargs: self.cmd_ping(*args, **kwargs),
             'cmd_stop': lambda *args, **kwargs: self.cmd_stop(*args, **kwargs),
             'cmd_send': lambda *args, **kwargs: self.cmd_send(*args, **kwargs),
-            'cmd_run_timer_event': lambda *args, **kwargs: print("cmd_run_timer_event", *args, **kwargs),
-            'cmd_keyboard_toggle': lambda index: print("cmd_keyboard_toggle",index),
+            'cmd_run_timer_event': lambda *args, **kwargs: logger.debug("cmd_run_timer_event %s %s", args, kwargs),
+            'cmd_keyboard_toggle': lambda index: logger.debug("cmd_keyboard_toggle %s", index),
         }
 
 
@@ -38,7 +41,7 @@ class ActionMapper:
         if number:
             self.__executor.controller_serial_manager.send_data(number)
         else:
-            print(f"cmd_send number: {number} is None, tool_name: {tool_name}")
+            logger.warning("cmd_send number: %s is None, tool_name: %s", number, tool_name)
 
 
     def execute(self, action, *args, **kwargs):

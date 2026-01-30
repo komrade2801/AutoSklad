@@ -110,9 +110,9 @@ class BatchProcessor:
                             "success": True,
                             "new_id": new_id
                         })
-                        print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][execute_batch][INFO] - command_id: {op["command_id"]}. [{datetime.now()}]')
+                        logger.debug("[BatchProcessor][execute_batch] command_id: %s", op["command_id"])
                     except Exception as e:
-                        print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][execute_batch][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+                        logger.exception("[BatchProcessor][execute_batch] error for command_id %s: %s", op["command_id"], e)
                         # Логируем подробности ошибки
                         if self.logger:
                             self.logger.log_error(
@@ -127,7 +127,7 @@ class BatchProcessor:
                         # Останавливаем пакет — откат всей транзакции
                         raise
         except SQLAlchemyError as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][execute_batch][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+            logger.exception("[BatchProcessor][execute_batch] error: %s", e)
             # Транзакция откатилась — возвращаем накопленные результаты
             return results
 
@@ -154,7 +154,7 @@ class BatchProcessor:
         result = self.sync_manager.process_sync_command(payload, sync_context=True)
 
         # Ожидаем, что process_sync_command вернёт new_id для insert
-        print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][_apply_single][INFO] - command_id: {op["command_id"]}. [{datetime.now()}]')
+        logger.debug("[BatchProcessor][_apply_single] command_id: %s", op["command_id"])
         return result or {}
 
 # Список изменений в обновлённой версии класса:

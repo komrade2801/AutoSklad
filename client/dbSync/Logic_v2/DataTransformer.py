@@ -80,7 +80,7 @@ class DataTransformer:
         :param stage: 'Incoming', 'outgoing' или 'validate'.
         :param fn:    Функция обработки.
         """
-        print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][register_rule] - table: {table}, stage: {stage}, fn: {fn}. [{datetime.now()}]')
+        logger.debug("[DataTransformer][register_rule] table=%s, stage=%s", table, stage)
         if table not in self.rules:
             self.rules[table] = {}
         if stage == 'validate':
@@ -97,18 +97,18 @@ class DataTransformer:
         """
         rules = self.rules.get(table, {})
         data = raw.copy()
-        print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][preprocess] начали обработку - table: {table}, data: {data}. [{datetime.now()}]')
+        logger.debug("[DataTransformer][preprocess] начали обработку table=%s", table)
 
         for fn in rules.get('incoming', []):
             try:
                 data = fn(data)
             except Exception as e:
-                print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][preprocess][ERROR] закончили обработку - error: {e}, Ошибка предварительной обработки {table} подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+                logger.exception("[DataTransformer][preprocess] Ошибка предварительной обработки %s: %s", table, e)
                 if self.logger:
                     self.logger.log_error(f"Preprocess error {table}: {e}")
                 if self.strict:
                     raise
-        print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][preprocess] - table: {table}, data: {data}. [{datetime.now()}]')
+        logger.debug("[DataTransformer][preprocess] table=%s", table)
         return data
 
     def validate(self, table: str, data: Dict[str, Any]) -> bool:
@@ -121,7 +121,7 @@ class DataTransformer:
         try:
             valid = fn(data)
         except Exception as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][validate][ERROR] - error: {e}, Ошибка проверки {table} подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+            logger.exception("[DataTransformer][validate] Ошибка проверки %s: %s", table, e)
 
             if self.logger:
                 self.logger.log_error(f"Validation error {table}: {e}")
@@ -130,7 +130,7 @@ class DataTransformer:
             return False
         if not valid and self.logger:
             self.logger.log_warning(f"Validation failed for {table}: {data}")
-        print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][validate] - table: {table}, valid: {valid}. [{datetime.now()}]')
+        logger.debug("[DataTransformer][validate] table=%s, valid=%s", table, valid)
         return valid
 
     def postprocess(self, table: str, mapped: Dict[str, Any]) -> Dict[str, Any]:
@@ -143,12 +143,12 @@ class DataTransformer:
             try:
                 data = fn(data)
             except Exception as e:
-                print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][postprocess][ERROR] - error: {e}, Ошибка постобработки {table} подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+                logger.exception("[DataTransformer][postprocess] Ошибка постобработки %s: %s", table, e)
                 if self.logger:
                     self.logger.log_error(f"Postprocess error {table}: {e}")
                 if self.strict:
                     raise
-        print(f'[ПОТОК][{threading.current_thread().name}][DataTransformer][postprocess] - table: {table}, data: {data}. [{datetime.now()}]')
+        logger.debug("[DataTransformer][postprocess] table=%s", table)
         return data
 
 

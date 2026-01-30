@@ -126,7 +126,7 @@ class CommandReceiver:
         self.sync_processor.data_mapper.update_field_mappings(mapping)
         self._schema_hash = schema_hash
         self._handshaken = True
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][_ensure_handshake] [{datetime.now()}]')
+        logger.debug("[CommandReceiver][_ensure_handshake]")
 
     def _load_last_synced(self) -> str:
         """
@@ -135,18 +135,16 @@ class CommandReceiver:
         """
         path = self.last_synced_path
         thread_name = threading.current_thread().name
-        print(f'[ПОТОК][{thread_name}][CommandReceiver][_load_last_synced] Проверка файла: {path} @ {datetime.now()}')
+        logger.debug("[CommandReceiver][_load_last_synced] Проверка файла: %s", path)
 
         if not os.path.exists(path):
             # Штатная ситуация: файл ещё не создан (например, при первом запуске)
-            print(
-                f'[ПОТОК][{thread_name}][CommandReceiver][_load_last_synced] Файл не найден (первый запуск?) → создаём пустой. @ {datetime.now()}')
+            logger.debug("[CommandReceiver][_load_last_synced] Файл не найден (первый запуск?) → создаём пустой.")
             try:
                 with open(path, "w", encoding="utf-8") as f:
                     f.write("")  # создаём пустой файл
             except Exception as e:
-                print(
-                    f'[ПОТОК][{thread_name}][CommandReceiver][_load_last_synced][ERROR] Не удалось создать файл: {e} @ {datetime.now()}')
+                logger.exception("[CommandReceiver][_load_last_synced] Не удалось создать файл: %s", e)
             return ""
 
         try:
@@ -155,12 +153,10 @@ class CommandReceiver:
             datetime.fromisoformat(ts)  # проверка формата
             return ts
         except ValueError:
-            print(
-                f'[ПОТОК][{thread_name}][CommandReceiver][_load_last_synced][WARN] Неверный формат даты в файле → сбрасываем. @ {datetime.now()}')
+            logger.warning("[CommandReceiver][_load_last_synced] Неверный формат даты в файле → сбрасываем.")
             return ""
         except Exception as e:
-            print(
-                f'[ПОТОК][{thread_name}][CommandReceiver][_load_last_synced][ERROR] Неожиданная ошибка чтения: {e} @ {datetime.now()}')
+            logger.exception("[CommandReceiver][_load_last_synced] Неожиданная ошибка чтения: %s", e)
             return ""
 
     def _save_last_synced(self, timestamp: str) -> None:
@@ -172,9 +168,9 @@ class CommandReceiver:
         try:
             with open(self.last_synced_path, "w", encoding="utf-8") as f:
                 f.write(timestamp)
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][_save_last_synced] [{datetime.now()}]')
+            logger.debug("[CommandReceiver][_save_last_synced]")
         except Exception as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][_save_last_synced][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+            logger.exception("[CommandReceiver][_save_last_synced] error: %s", e)
             if self.logger:
                 self.logger.log_error(f"Failed to save last_synced: {e}")
 
@@ -199,26 +195,26 @@ class CommandReceiver:
             #  - дешифрует AES-CBC
             #  - проверяет HMAC
             #  - парсит JSON → возвращает Python dict
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply] Запрос команд. [{datetime.now()}]')
+            logger.debug("[CommandReceiver][fetch_and_apply] Запрос команд.")
             response: PullResponse = self.transport.send_pull(self.endpoint, params)
             
         except Exception as e:
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+            logger.exception("[CommandReceiver][fetch_and_apply] error: %s", e)
             if self.logger:
                 self.logger.log_error(f"Pull request failed: {e}")
             return
 
         # 4) Обновляем schema_hash, если сервер прислал новый
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply] Обновляем schema_hash. [{datetime.now()}]')
+        logger.debug("[CommandReceiver][fetch_and_apply] Обновляем schema_hash.")
         new_schema_hash = response.get("schema_hash", "")
         if new_schema_hash:
             self._schema_hash = new_schema_hash
 
         # 5) Применяем каждую команду и собираем новую границу
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply] Применяем команды. [{datetime.now()}]')
+        logger.debug("[CommandReceiver][fetch_and_apply] Применяем команды.")
         commands = response.get("commands", [])
         new_last = self.last_synced
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply] Применяем {len(commands)} команд. [{datetime.now()}]')
+        logger.debug("[CommandReceiver][fetch_and_apply] Применяем %s команд.", len(commands))
         for cmd in commands:
             try:
                 self.sync_processor.process_push(
@@ -230,20 +226,20 @@ class CommandReceiver:
                 if lm and lm > new_last:
                     new_last = lm
             except Exception as ex:
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply][ERROR] - error: {ex}, подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+                logger.exception("[CommandReceiver][fetch_and_apply] error applying command: %s", ex)
                 if self.logger:
                     self.logger.log_error(
                         message=f"Failed to apply command {cmd.get('id')}: {ex}",
                         context=cmd
                     )
                 continue
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply] Команды применены. [{datetime.now()}]')
+        logger.debug("[CommandReceiver][fetch_and_apply] Команды применены.")
         # 6) Сохраняем новую метку, если она изменилась
         if new_last and new_last != self.last_synced:
             self._save_last_synced(new_last)
             self.last_synced = new_last
 
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandReceiver][fetch_and_apply] Команды обработаны. [{datetime.now()}]')
+        logger.info("[CommandReceiver][fetch_and_apply] Команды обработаны.")
 
 #  Список изменений в обновлённой версии CommandReceiver
 # TypedDict для входных структур

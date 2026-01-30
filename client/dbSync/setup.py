@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 #     record_crud = RecordCRUD(SessionLocal(engine()))
 #     status_crud = CommandStatusCRUD(SessionLocal(engine()))
 #     sync_cfg = SyncConfigCRUD(SessionLocal(engine()))
-#     print('[setup]init_crud')
+#     logger.info("[setup] init_crud")
 #     return cmd_crud, record_crud, status_crud, sync_cfg
 
 def init_crud():
@@ -38,7 +38,7 @@ def init_crud():
     record_crud = RecordCRUD(sync_session)
     status_crud = CommandStatusCRUD(sync_session)
     sync_cfg = SyncConfigCRUD(sync_session)
-    print('[setup]init_crud')
+    logger.info("[setup] init_crud")
     return cmd_crud, record_crud, status_crud, sync_cfg
 
 
@@ -52,7 +52,7 @@ def init_retry_manager(scheduler, queue, sender, diagnostic_logger):
         base_delay=30.0,  # Фиксированный интервал 30 секунд
         max_retries=4320  # 36 часов = 129600 сек / 30 сек = 4320 попыток
     )
-    print('[setup]init_retry_manager')
+    logger.info("[setup] init_retry_manager")
     return retry_manager
 
 
@@ -68,7 +68,7 @@ def init_transport_service(host, token="<YOUR_JWT_TOKEN>", secret=b"supersecret"
         port=Port,
         push_http_timeout=push_http_timeout
     )
-    print('[setup]init_transport_service')
+    logger.info("[setup] init_transport_service")
     return transport
 
 
@@ -84,7 +84,7 @@ def init_scheduler() -> BackgroundScheduler:
     # Передаём его в APScheduler. Ключ 'default' совпадает с именем по умолчанию,
     # поэтому APScheduler не будет вызывать _create_default_executor().
     scheduler = BackgroundScheduler(executors={'default': executor})
-    print('[setup] init_scheduler (custom executor)')
+    logger.info("[setup] init_scheduler (custom executor)")
     return scheduler
 
 
@@ -92,30 +92,30 @@ def init_schema_cache():
     try:
         from .Logic_v2.SchemaCache import SchemaCache
         schema_cache = SchemaCache()
-        print('[setup]init_schema_cache')
+        logger.info("[setup] init_schema_cache")
         return schema_cache
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_schema_cache][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_schema_cache] error: %s", e)
 
 
 def init_schema_analyzer():
     try:
         from .Logic_v2.SchemaAnalyzer import SchemaAnalyzer
         schema_analyzer = SchemaAnalyzer()
-        print('[setup]init_schema_analyzer')
+        logger.info("[setup] init_schema_analyzer")
         return schema_analyzer
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_schema_analyzer][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_schema_analyzer] error: %s", e)
 
 
 def init_mapping_config():
     try:
         from .Logic_v2.MappingConfigurator import MappingConfigurator
         mapping_config = MappingConfigurator()
-        print('[setup]init_mapping_config')
+        logger.info("[setup] init_mapping_config")
         return mapping_config
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_mapping_config][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_mapping_config] error: %s", e)
 
 
 def init_data_mapper():
@@ -127,17 +127,17 @@ def init_data_mapper():
         base = os.path.dirname(__file__)
         path = os.path.join(base, "Logic_v2", "cache", "fields", "sync_fields.json")
         if not os.path.exists(path):
-             print(f"[setup][init_data_mapper] WARNING: mapping file not found at {path}, using empty mappings")
+             logger.warning("[setup][init_data_mapper] mapping file not found at %s, using empty mappings", path)
              field_mappings = {}
         else:
              field_mappings = json.load(open(path, encoding="utf-8"))
 
         mapper = DataMapper(field_mappings=field_mappings)
-        print(f'[setup]init_data_mapper (loaded fields from {path})')
+        logger.info("[setup] init_data_mapper (loaded fields from %s)", path)
 
         return mapper
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_data_mapper][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_data_mapper] error: %s", e)
         raise
 
 
@@ -167,31 +167,31 @@ def init_data_transformer():
             return record
         
         data_transformer.register_rule("History", "incoming", extract_status_from_history)
-        print('[setup]init_data_transformer')
+        logger.info("[setup] init_data_transformer")
         return data_transformer
 
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_data_transformer][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_data_transformer] error: %s", e)
 
 
 def init_sync_monitor():
     try:
         from .Logic_v2.SyncMonitor import SyncMonitor
         sync_monitor = SyncMonitor()
-        print('[setup]init_sync_monitor')
+        logger.info("[setup] init_sync_monitor")
         return sync_monitor
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_sync_monitor][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_sync_monitor] error: %s", e)
 
 
 def init_json_validator():
     try:
         from .Logic_v2.JSONSchemaValidator import JSONSchemaValidator
         json_validator = JSONSchemaValidator()
-        print('[setup]init_json_validator')
+        logger.info("[setup] init_json_validator")
         return json_validator
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_json_validator][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_json_validator] error: %s", e)
 
 
 def init_diagnostic_logger(device_id):
@@ -200,10 +200,10 @@ def init_diagnostic_logger(device_id):
         diagnostic_logger = DiagnosticLogger(
             logger_name=f"sync.{device_id}"
         )
-        print('[setup]init_diagnostic_logger')
+        logger.info("[setup] init_diagnostic_logger")
         return diagnostic_logger
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_diagnostic_logger][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_diagnostic_logger] error: %s", e)
 
 
 def init_queue():
@@ -211,10 +211,10 @@ def init_queue():
         # очередь локальных команд
         from .Logic_v2.CommandQueue import CommandQueue
         queue = CommandQueue()
-        print('[setup]init_queue')
+        logger.info("[setup] init_queue")
         return queue
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_queue][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_queue] error: %s", e)
 
 
 def init_batch_processor(diagnostic, manager, dbsession):
@@ -225,10 +225,10 @@ def init_batch_processor(diagnostic, manager, dbsession):
             _logger=diagnostic,
             session=dbsession,
         )
-        print('[setup]init_batch_processor')
+        logger.info("[setup] init_batch_processor")
         return _batch_processor
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_batch_processor][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_batch_processor] error: %s", e)
 
 
 def init_conflict_manager(config, _logger):
@@ -238,10 +238,10 @@ def init_conflict_manager(config, _logger):
             mapping_config=config,
             logger=_logger
         )
-        print('[setup]init_conflict_manager')
+        logger.info("[setup] init_conflict_manager")
         return _conflict_manager
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_conflict_manager][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_conflict_manager] error: %s", e)
 
 
 def init_processor(queue, sender, db_session, retry_manager, cmd_crud, record_crud, status_crud, sync_cfg, schema_cache, schema_analyzer,
@@ -278,10 +278,10 @@ def init_processor(queue, sender, db_session, retry_manager, cmd_crud, record_cr
             emulate_server=False,
             work_session=SessionLocal()
         )
-        print('[setup]init_processor')
+        logger.info("[setup] init_processor")
         return processor
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_processor][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_processor] error: %s", e)
     return None
 
 
@@ -293,10 +293,10 @@ def init_receiver(device_id, proc, transport, ):
             transport=transport,
             sync_processor=proc,
         )
-        print('[setup]init_receiver')
+        logger.info("[setup] init_receiver")
         return receive
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_receiver][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_receiver] error: %s", e)
     return None
 
 
@@ -309,8 +309,8 @@ def init_sender(device_id, proc, queue, transport):
             sync_processor=proc,
             device_id=device_id
         )
-        print('[setup]init_sender')
+        logger.info("[setup] init_sender")
         return send
     except Exception as e:
-        print(f'[ПОТОК][{threading.current_thread().name}][setup][init_sender][ERROR] - error: {e}, подробности: - {traceback.format_exc()}. Текущее время: {datetime.datetime.now()}')
+        logger.exception("[setup][init_sender] error: %s", e)
     return None

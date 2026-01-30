@@ -52,6 +52,8 @@ from sphinx.cmd.quickstart import valid_dir
 from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
 
+logger = logging.getLogger(__name__)
+
 
 class MassDropToolPlanIDNoneError(Exception):
     def __init__(self, message):
@@ -235,16 +237,16 @@ class ActionMapper:
             # mass_load execute
             'read_db_mass_load_tools': lambda index: self.read_db_mass_load_tools(index),
             # "": None,
-            'write_db_err_get_tools_by_plan_id': lambda *args, **kwargs: print(),
-            'write_db_err_barcode_user': lambda *args, **kwargs: print(),
-            'write_db_err_barcode_plan': lambda *args, **kwargs: print(),
-            'write_db_err_request': lambda *args, **kwargs: print(),
-            'write_db_err_devices': lambda tool_id, tool_name: print(tool_id, tool_name),
-            'write_db_err_timeout': lambda *args, **kwargs: print(),
+            'write_db_err_get_tools_by_plan_id': lambda *args, **kwargs: logger.debug("write_db_err_get_tools_by_plan_id"),
+            'write_db_err_barcode_user': lambda *args, **kwargs: logger.debug("write_db_err_barcode_user"),
+            'write_db_err_barcode_plan': lambda *args, **kwargs: logger.debug("write_db_err_barcode_plan"),
+            'write_db_err_request': lambda *args, **kwargs: logger.debug("write_db_err_request"),
+            'write_db_err_devices': lambda tool_id, tool_name: logger.debug("write_db_err_devices %s %s", tool_id, tool_name),
+            'write_db_err_timeout': lambda *args, **kwargs: logger.debug("write_db_err_timeout"),
             'write_db_err_rights': lambda *args, **kwargs: self.write_db_err_rights(*args, **kwargs),
-            'write_db_err_login': lambda *args, **kwargs: print(),
+            'write_db_err_login': lambda *args, **kwargs: logger.debug("write_db_err_login"),
             'read_db_err_history': lambda *args, **kwargs: self.read_db_err_history(),
-            'read_db_err': lambda *args, **kwargs: print(),
+            'read_db_err': lambda *args, **kwargs: logger.debug("read_db_err"),
         }
 
     def _invalidate_availability_caches(self, log_prefix: str = ""):
@@ -264,9 +266,9 @@ class ActionMapper:
             self.session_local.commit()
             self.session_local.expire_all()
             if log_prefix:
-                print(f"[{log_prefix}] Availability caches invalidated, fresh data will be loaded from DB")
+                logger.debug("[%s] Availability caches invalidated, fresh data will be loaded from DB", log_prefix)
         except Exception as e:
-            print(f"[_invalidate_availability_caches] Warning: {e}")
+            logger.warning("[_invalidate_availability_caches] %s", e)
 
     def write_db_err_rights(self, *args, **kwargs):
         # Преобразуем позиционные аргументы в строку
@@ -275,8 +277,7 @@ class ActionMapper:
         kwargs_str = ' '.join(f'{k}={v}' for k, v in kwargs.items())
         # Объединяем все аргументы в одну строку с разделением
         output = ' '.join(filter(None, [args_str, kwargs_str]))
-        # Выводим результат
-        print(output)
+        logger.debug("write_db_err_rights: %s", output)
 
     def read_db_err_history(self):
         """
@@ -293,7 +294,7 @@ class ActionMapper:
         return err_error
 
     def read_db_get_cell(self, tool_id, tool_name=None):
-        print(f"read_db_get_cell {tool_id} {tool_name}")
+        logger.debug("read_db_get_cell %s %s", tool_id, tool_name)
         """
         Читает номер ячейки (cell.number) по ID инструмента.
 
@@ -329,7 +330,7 @@ class ActionMapper:
         return {"trigger": "send_number", "number": selected_cell.number, "tool_name": tool_name} if selected_cell else None
 
     def read_db_get_cells(self, tool_list):
-        print(f"read_db_get_cells {tool_list}")
+        logger.debug("read_db_get_cells %s", tool_list)
         """
         Читает номер ячеек (cell.number) по ID чертежа.
 
@@ -385,8 +386,8 @@ class ActionMapper:
                                 break
 
         # Если результат пустой, возвращаем None
-        print(f"needed by plan: {needed_tools}, found: {len(cells_list)}")
-        print(f"cells_list: {cells_list}")
+        logger.debug("needed by plan: %s, found: %s", needed_tools, len(cells_list))
+        logger.debug("cells_list: %s", cells_list)
         if not cells_list or needed_tools > len(cells_list):
             return {"trigger": "err_data"}
 
@@ -396,8 +397,8 @@ class ActionMapper:
         return {"cells_list": cells_list} if cells_list else None
 
     def read_db_get_more_cells(self, cells_list):
-        print(f"read_db_get_more_cells {cells_list}")
-        print(f"self.plan_cell_list {self.plan_cell_list}")
+        logger.debug("read_db_get_more_cells %s", cells_list)
+        logger.debug("self.plan_cell_list %s", self.plan_cell_list)
         """
         Читает номер первой ячейки (cell.number) из списка, удаляет из списка, если выдано.
 
@@ -420,7 +421,7 @@ class ActionMapper:
             # Проверяем, не была ли ячейка уже выдана
             # 1. Проверяем статус ячейки (должен быть 3 или 7)
             if cell.status_id not in [3, 7]:
-                print(f"[read_db_get_more_cells] Cell {cell.id} уже выдана (status_id={cell.status_id}), пропускаем")
+                logger.debug("[read_db_get_more_cells] Cell %s уже выдана (status_id=%s), пропускаем", cell.id, cell.status_id)
                 self.plan_cell_list.pop(0)
                 continue
             
@@ -431,7 +432,7 @@ class ActionMapper:
                 for consumption in consumptions:
                     if consumption.plan_id == self.select_plan.id:
                         cell_already_consumed = True
-                        print(f"[read_db_get_more_cells] Cell {cell.id} уже использована для плана {self.select_plan.id}, пропускаем")
+                        logger.debug("[read_db_get_more_cells] Cell %s уже использована для плана %s, пропускаем", cell.id, self.select_plan.id)
                         break
             
             if cell_already_consumed:
@@ -446,8 +447,7 @@ class ActionMapper:
         return {"trigger": "view_ok"}
 
     def read_db_rights_tool(self, tool_type_id, name, group_name, tool_description):
-        print(
-            f"read_db_rights_tool tool_type_id {tool_type_id}, name {name}, group_name {group_name}, tool_description {tool_description}")
+        logger.debug("read_db_rights_tool tool_type_id %s, name %s, group_name %s, tool_description %s", tool_type_id, name, group_name, tool_description)
 
         # tools = self.e_tools.get_tools_by_tool_type_id(tool_type_id)
         # print(f"tools {tools}")
@@ -469,7 +469,7 @@ class ActionMapper:
                             for consumption in consumptions:
                                 if consumption.plan_id == self.select_plan.id:
                                     cell_already_consumed = True
-                                    print(f"[read_db_rights_tool] Cell {cell.id} уже использована для плана {self.select_plan.id}, пропускаем")
+                                    logger.debug("[read_db_rights_tool] Cell %s уже использована для плана %s, пропускаем", cell.id, self.select_plan.id)
                                     break
                             
                             # Возвращаем инструмент только если он еще не был выдан
@@ -482,17 +482,17 @@ class ActionMapper:
                             for consumption in consumptions:
                                 if not consumption.plan_id:
                                     cell_already_consumed = True
-                                    print(f"[read_db_rights_tool] Cell {cell.id} уже использована (свободный инструмент), пропускаем")
+                                    logger.debug("[read_db_rights_tool] Cell %s уже использована (свободный инструмент), пропускаем", cell.id)
                                     break
                             
                             # Возвращаем инструмент только если он еще не был выдан
                             if not cell_already_consumed:
                                 self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
                                 return self.select_tool.id, name, group_name, tool_description
-            print(f"Свободные инструменты \"{name}\" не найдены.")
+            logger.warning("Свободные инструменты \"%s\" не найдены.", name)
             return {'trigger': 'err_rights'}
         else:
-            print(f"Ячейки, содержащие \"{name}\" не найдены.")
+            logger.warning("Ячейки, содержащие \"%s\" не найдены.", name)
             return {'trigger': 'err_rights'}
 
         # else:
@@ -500,14 +500,14 @@ class ActionMapper:
         #     return {'trigger': 'err_rights'}
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
-        print(f"write_db_tool_consumption {index}, {args}, {kwargs}, {self.select_tool}, {self.select_cell}, {self.select_plan}")
+        logger.debug("write_db_tool_consumption %s, %s, %s, %s, %s, %s", index, args, kwargs, self.select_tool, self.select_cell, self.select_plan)
         """
         Записывает факт расхода инструмента в базу данных.
         Перед выдачей инвалидирует кэши и заново читает ячейку из БД, чтобы исключить двойную выдачу
         при медленном обновлении UI/кэша (повторное нажатие или параллельный запрос).
         """
         if not self.select_cell:
-            print("[write_db_tool_consumption] select_cell не задана.")
+            logger.debug("[write_db_tool_consumption] select_cell не задана.")
             return {'trigger': 'view_err'}
 
         # Инвалидация кэшей и сессии до чтения ячейки — гарантирует актуальное состояние из БД,
@@ -516,21 +516,21 @@ class ActionMapper:
 
         cell = self.e_cell.get_cell_by_id(self.select_cell.id)
         if not cell:
-            print(f"[write_db_tool_consumption] Ячейка {self.select_cell.id} не найдена.")
+            logger.warning("[write_db_tool_consumption] Ячейка %s не найдена.", self.select_cell.id)
             return {'trigger': 'view_err'}
         # Проверка по актуальным данным из БД: ячейка должна быть в статусе «готово к выдаче» (3 или 7) и содержать инструмент
         if cell.status_id not in (3, 7):
-            print(f"[write_db_tool_consumption] Ячейка {cell.id} уже выдана или недоступна (status_id={cell.status_id}).")
+            logger.warning("[write_db_tool_consumption] Ячейка %s уже выдана или недоступна (status_id=%s).", cell.id, cell.status_id)
             return {'trigger': 'view_err'}
         if not cell.tools_id:
-            print(f"[write_db_tool_consumption] В ячейке {self.select_cell.number} не найдено инструментов.")
+            logger.warning("[write_db_tool_consumption] В ячейке %s не найдено инструментов.", self.select_cell.number)
             return {'trigger': 'view_err'}
 
         self.select_tool = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
 
         status = self.e_status.find_by_name("consumption")
         if not status:
-            print("Статус «расход» не найден.")
+            logger.warning("Статус «расход» не найден.")
             idx = max(self.e_status.get_all_ids(), default=0) + 1
             self.e_status.add(
                 index=idx,
@@ -550,11 +550,10 @@ class ActionMapper:
                 status_id=1,
             )
         if not cleared:
-            print(
-                f"Failed to clear tool {self.select_tool.id} from cell {cell.id}.")
+            logger.warning("Failed to clear tool %s from cell %s.", self.select_tool.id, cell.id)
             return {'trigger': 'view_err'}
 
-        print(f"cleared {cleared}")
+        logger.debug("cleared %s", cleared)
 
         # loads = self.e_load.find_by_cell_id(cell.id)
         # load = max(loads, key=lambda rec: rec.id) if loads else None
@@ -576,7 +575,7 @@ class ActionMapper:
             description=f"Инструмент {self.select_tool.id} выдано пользователю {self.current_user.id}.",
         )
         if not history_id:
-            print("Не удалось записать запись в историю.")
+            logger.error("Не удалось записать запись в историю.")
             return {'trigger': 'view_err'}
 
         # Добавить запись в таблицу Consumption
@@ -590,7 +589,7 @@ class ActionMapper:
             status_id=status.id,
         )
         if not consumption_id:
-            print("Не удалось записать расход инструмента.")
+            logger.error("Не удалось записать расход инструмента.")
             return {'trigger': 'view_err'}
 
         operation_id = max(
@@ -607,22 +606,22 @@ class ActionMapper:
 
         if not operation_id:
             self.select_plan = None
-            print("Не удалось записать потребление операции.")
+            logger.error("Не удалось записать потребление операции.")
             return {'trigger': 'view_err'}
 
         self._invalidate_availability_caches("write_db_tool_consumption")
         self.e_consumption._cache.clear()
 
         if not self.plan_cell_list:
-            print("write_db_tool_consumption trigger")
+            logger.debug("write_db_tool_consumption trigger")
             self.select_plan = None
             return {'trigger': 'view_ok'}
         else:
-            print("write_db_tool_consumption cell_list")
+            logger.debug("write_db_tool_consumption cell_list")
             return {'trigger': 'get_more_cells', 'cells_list': self.plan_cell_list}
 
     def read_db_tools_collection(self, group_id: int, group_name) -> tuple[list[Any], Any] | Any:
-        print(f"action_db read_db_tools_collection, {group_id}, {group_name}")
+        logger.debug("action_db read_db_tools_collection, %s, %s", group_id, group_name)
         """
         Возвращает коллекцию валидных инструментов, связанных с указанной группой,
         включая количество похожих инструментов и их характеристики.
@@ -659,7 +658,7 @@ class ActionMapper:
                 else:
                     add_all_parent_groups(
                     group_list, group.paren_group_id, group, group_id)
-            print(f"group_list: {group_list}")
+            logger.debug("group_list: %s", group_list)
 
             tools = []
 
@@ -670,7 +669,7 @@ class ActionMapper:
 
             # Filter tools to only those with cells having status_id in {3,7}
             valid_tools = []
-            print(f"tools: {tools}")
+            logger.debug(f"tools: {tools}")
             for tool_type in tools:
                 cells = self.e_cell.get_cells_by_tool(tool_type.id)
                 for cell in cells:
@@ -679,9 +678,7 @@ class ActionMapper:
 
             return valid_tools, group_name
         except Exception as e:
-            print(
-                f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
-            print(traceback.format_exc())
+            logger.exception("Ошибка при извлечении коллекции инструментов для группы %s: %s", group_id, e)
             return [], group_name
 
     def read_db_tools_by_group_id(self, group_id: int) -> list[ToolTypes]:
@@ -698,13 +695,11 @@ class ActionMapper:
             return tool_types
 
         except Exception as e:
-            print(
-                f"Ошибка при извлечении инструментов для группы с ID {group_id}: {e}")
-            print(traceback.format_exc())
+            logger.exception("Ошибка при извлечении инструментов для группы с ID %s: %s", group_id, e)
             return []
 
     def read_db_tools_by_plans_id(self, plan_id: int):
-        print(f"read_db_tools_by_plans_id. plan_id: {plan_id}")
+        logger.debug("read_db_tools_by_plans_id. plan_id: %s", plan_id)
         """
         Извлекает список инструментов, связанных с указанным планом (plan_id), из таблицы Tools.
 
@@ -792,16 +787,17 @@ class ActionMapper:
             return result
 
         except Exception as e:
-            print(
+            logger.debug(
                 f"Ошибка при извлечении инструментов для плана с ID {plan_id}: {e}")
-            print(traceback.format_exc())
+            logger.exception("")
             return []
 
     def read_db_tool_names(self, group_id, group_name):
         """
         Возвращает список инструментов, готовых к выдаче, связанных с указанной группой.
-        Доступное количество считается только по ячейкам Cell с статусом 3 или 7 и свободной нагрузке (Load.plan_id is None),
-        без привязки к операциям выдачи (Consumption). При выдаче ячейка обнуляется (status_id=1), поэтому счёт остаётся корректным.
+        Доступное количество считается по ячейкам Cell (статус 3 или 7), свободной нагрузке (Load.plan_id is None)
+        и отсутствию Consumption без plan_id — так же, как в read_db_rights_tool, чтобы выданные инструменты
+        не отображались в списке.
 
         :param group_id: ID группы, для которой извлекаются инструменты.
         :return: Список объектов Tools, готовых к выдаче, с полем count.
@@ -842,7 +838,7 @@ class ActionMapper:
                 else:
                     add_all_parent_groups(
                     group_list, group.paren_group_id, group, group_id)
-            print(f"group_list: {group_list}")
+            logger.debug("group_list: %s", group_list)
 
             # tools = []
             tool_types = []
@@ -852,9 +848,9 @@ class ActionMapper:
                 # tools.extend(self.e_tools.get_tools_by_group(group.id))
                 tool_types.extend(self.e_tool_types.get_tool_types_by_group(group.id))
         except Exception as e:
-            print(
+            logger.debug(
                 f"Ошибка при извлечении коллекции инструментов для группы {group_id}: {e}")
-            print(traceback.format_exc())
+            logger.exception("")
             # tools = []
             tool_types = []
 
@@ -913,16 +909,20 @@ class ActionMapper:
 
                         loads = self.e_load.find_by_cell_id(cell.id)
                         load = max(loads, key=lambda rec: rec.id) if loads else None
-                        # Доступность только по ячейкам Cell с нужным статусом (3, 7) и свободной нагрузке; без привязки к Consumption
+                        # Доступность по ячейкам Cell (статус 3/7), свободной нагрузке (Load.plan_id is None)
+                        # и отсутствию Consumption без plan_id — чтобы список совпадал с read_db_rights_tool
                         if load and not load.plan_id:
-                            valid_tools_count += 1
+                            consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                            cell_already_consumed = any(c for c in consumptions if c.plan_id is None)
+                            if not cell_already_consumed:
+                                valid_tools_count += 1
 
-            print(f"tool_type: {tool_type}, valid_tools_count: {valid_tools_count}")
+            logger.debug(f"tool_type: {tool_type}, valid_tools_count: {valid_tools_count}")
 
             if valid_tools_count > 0:
                 valid_tool_types.append(create_tool_types_dict(tool_type, valid_tools_count))
 
-            print(f"valid_tool_types: {valid_tool_types}")
+            logger.debug(f"valid_tool_types: {valid_tool_types}")
         return valid_tool_types, group_name
 
     def read_db_plan_operations(self, plans_id: int) -> list[dict]:
@@ -1001,12 +1001,12 @@ class ActionMapper:
             return operations
 
         except Exception as e:
-            print(f"Ошибка при извлечении операций для чертежа: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при извлечении операций для чертежа: {e}")
+            logger.exception("")
             return []
 
     def read_db_history(self, index) -> list[dict]:
-        print(f"actions_db read_db_history({index})")
+        logger.debug("actions_db read_db_history(%s)", index)
         """
         Возвращает все операции пользователей из таблиц History, LoadOperations, DropOperations и OperationsConsumption.
 
@@ -1101,8 +1101,8 @@ class ActionMapper:
                                       for op in consumption_operations])
             return operations
         except Exception as e:
-            print(f"Ошибка при извлечении всех операций: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при извлечении всех операций: {e}")
+            logger.exception("")
             return []
 
     def read_db_user_operations(self, user_id: int) -> list[dict]:
@@ -1157,12 +1157,12 @@ class ActionMapper:
             return operations
 
         except Exception as e:
-            print(f"Ошибка при извлечении операций пользователя: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при извлечении операций пользователя: {e}")
+            logger.exception("")
             return []
 
     def read_db_mass_drop_tools(self, index) -> List[dict]:
-        print(f"read_db_mass_drop_tools. index: {index} ")
+        logger.debug("read_db_mass_drop_tools. index: %s", index)
         """
         Возвращает список ячеек по всем ещё не обработанным массовым выгрузкам (все concurrent mass_drop).
         Объединяет инструменты из клиентской и серверной массовых выгрузок в одном меню.
@@ -1187,7 +1187,7 @@ class ActionMapper:
             # Все Drop со статусом mass_drop_init из любых MassDrop (клиент, сервер) — одно общее меню
             drops = self.e_drop.all()
             drops_pending = [d for d in drops if d.status_id == status_init_id]
-            print(f"drops pending (all mass_drops): {len(drops_pending)}")
+            logger.debug(f"drops pending (all mass_drops): {len(drops_pending)}")
 
             cells_ids = set()
             cell_list = []
@@ -1198,12 +1198,12 @@ class ActionMapper:
                     tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id) if cell.tools_id else None
                     cell_list.append(create_cell_dict(cell, tool_type))
 
-            print(f"cell_list: {len(cell_list)}")
+            logger.debug(f"cell_list: {len(cell_list)}")
             return cell_list
 
         except Exception as e:
-            print(f"Ошибка при выполнении запроса: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при выполнении запроса: {e}")
+            logger.exception("")
             return []
 
     def read_db_mass_drop_tools_by_plan(self, plan_id: int) -> List[ToolTypes]:
@@ -1306,7 +1306,7 @@ class ActionMapper:
 
         :return: True, если операция выполнена успешно, иначе False.
         """
-        print(f"write_db_drop_tool_groups {_}")
+        logger.debug("write_db_drop_tool_groups %s", _)
         result = True
         user_id = self.current_user.id
 
@@ -1319,7 +1319,7 @@ class ActionMapper:
             # Получить статус "расход"
             status_ready = self.e_status.find_by_name("mass_drop_ready")
             if not status_ready:
-                print("Статус «Инструмент извлечён из аппарата» не найден.")
+                logger.debug("Статус «Инструмент извлечён из аппарата» не найден.")
                 index = max(self.e_status.get_all_ids(), default=0) + 1
                 self.e_status.add(
                     index=index,
@@ -1335,7 +1335,7 @@ class ActionMapper:
             target_drops = []  # только обработанные (все concurrent mass_drop с ячейкой в mass_drop_init)
 
             drops = self.e_drop.all()
-            print(f"drops (all): {len(drops)}")
+            logger.debug(f"drops (all): {len(drops)}")
             for drop in drops:
                 cell = self.e_cell.get_cell_by_id(drop.cell_id)
                 if cell and cell.status_id == status_init:
@@ -1395,8 +1395,8 @@ class ActionMapper:
             return result
 
         except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            logger.debug(e)
+            logger.exception("")
             return False
 
     def write_db_load_tool_groups(self, _) -> bool:
@@ -1424,7 +1424,7 @@ class ActionMapper:
             target_tools = []
 
             loads = self.e_load.all()
-            print(f"loads: {loads}")
+            logger.debug(f"loads: {loads}")
             for load in loads:
                 cell = self.e_cell.get_cell_by_id(load.cell_id)
                 if cell and cell.status_id == status_init:
@@ -1566,8 +1566,8 @@ class ActionMapper:
 
             return result
         except Exception as e:
-            print(e)
-            print(traceback.format_exc())
+            logger.debug(e)
+            logger.exception("")
             return False
 
     def read_db_groups(self):
@@ -1601,12 +1601,12 @@ class ActionMapper:
             groups = self.e_group.get_all_groups()
             for group in groups:
                 tool_types = self.e_tool_types.get_tool_types_by_group(group.id)
-                print(f"group: {group}")
+                logger.debug(f"group: {group}")
 
                 count = 0
 
                 for tool_type in tool_types:
-                    print(f"tool_type: {tool_type}")
+                    logger.debug(f"tool_type: {tool_type}")
 
                     # tools = self.e_tools.get_tools_by_tool_type_id(tool_type.id)
                     # print(f"tools {tools}")
@@ -1615,24 +1615,24 @@ class ActionMapper:
                     cells = self.e_cell.get_cells_by_tool(tool_type.id)
                     if cells:
                         for cell in cells:
-                            print(f"cell: {cell}")
+                            logger.debug(f"cell: {cell}")
                             if cell.status_id in [3, 7]:
                                 loads = self.e_load.find_by_cell_id(cell.id)
                                 load = max(loads, key=lambda rec: rec.id) if loads else None
                                 if load and not load.plan_id:
                                     count += 1
 
-                print(f"group: {group}, count: {count}")
+                logger.debug(f"group: {group}, count: {count}")
 
                 sum_parent_count(group_count_dict, group, count)
 
-            print(f"group_count_dict: {group_count_dict}")
+            logger.debug(f"group_count_dict: {group_count_dict}")
 
             return group_count_dict
 
         except Exception as e:
-            print(f"Ошибка при получении списка групп: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при получении списка групп: {e}")
+            logger.exception("")
             return []
 
     def read_db_group_collection(self, index):
@@ -1680,12 +1680,12 @@ class ActionMapper:
             return group_collection
 
         except Exception as e:
-            print(f"Ошибка при получении коллекции групп: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при получении коллекции групп: {e}")
+            logger.exception("")
             return {}
 
     def read_db_users(self, index) -> List[User]:
-        print("read_db_users")
+        logger.debug("read_db_users")
         """
         Получает список всех пользователей из базы данных.
 
@@ -1694,15 +1694,15 @@ class ActionMapper:
         try:
             # Получение всех пользователей
             users = self.e_user.get_all_users()
-            print(users)
+            logger.debug(users)
             return users if users else []
         except Exception as e:
-            print(f"Ошибка при получении списка пользователей: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при получении списка пользователей: {e}")
+            logger.exception("")
             return []
 
     def read_db_username(self, code: int) -> Optional[str]:
-        print(f"read_db_username. Input code: {code}")
+        logger.debug("read_db_username. Input code: %s", code)
         """
         Получает имя пользователя (username) по коду.
 
@@ -1717,12 +1717,12 @@ class ActionMapper:
 
             # Формирование имени пользователя (username)
             username = f"{user.first_name} {user.second_name} {user.family}".strip()
-            print(f"read_db_username. Found username: {username}")
+            logger.debug(f"read_db_username. Found username: {username}")
             return username if username else None  # Возвращает None, если username пустой
 
         except Exception as e:
-            print(f"Ошибка при получении имени пользователя: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при получении имени пользователя: {e}")
+            logger.exception("")
             return None
 
     def read_db_user_from_barcode(self, barcode: int):
@@ -1752,8 +1752,8 @@ class ActionMapper:
             return user, role
 
         except Exception as e:
-            print(f"Ошибка при получении пользователя по штрих-коду: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при получении пользователя по штрих-коду: {e}")
+            logger.exception("")
             return None, None
 
     def read_db_authorization(self, login: int, password: int):
@@ -1764,7 +1764,7 @@ class ActionMapper:
         :param password: Пароль пользователя.
         :return: Кортеж (пользователь, роль), если найдено, иначе (None, None).
         """
-        print(f"read_db_authorization. login: {login}, password: {password}")
+        logger.debug("read_db_authorization. login: %s, password: %s", login, password)
         if login == '' and password == '':
             # Пользователь не найден или неверный пароль
             return {'trigger': 'err_authorization'}
@@ -1786,7 +1786,7 @@ class ActionMapper:
             role = self.e_role.get_role_by_id(user.role_id)
             self.current_user = user
             self.current_role = role
-            print(
+            logger.debug(
                 f"read_db_authorization. current_user: {user}, current_role: {role}")
             # # Возвращаем явный триггер для роутера по имени роли
             # user_name = (getattr(user, 'first_name', '') or '')
@@ -1802,8 +1802,8 @@ class ActionMapper:
             #     return {"trigger": "test_user"}
 
         except Exception as e:
-            print(f"Ошибка при авторизации пользователя: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при авторизации пользователя: {e}")
+            logger.exception("")
             # Пользователь не найден или неверный пароль
             return {'trigger': 'err_authorization'}
 
@@ -1890,8 +1890,8 @@ class ActionMapper:
             return True
 
         except Exception as e:
-            print(f"Ошибка при записи данных пользователя: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при записи данных пользователя: {e}")
+            logger.exception("")
             return False
 
     def write_db_rights_by_user_id(self, user_id: int, rights_data: list) -> bool:
@@ -1946,9 +1946,9 @@ class ActionMapper:
             return True
 
         except Exception as e:
-            print(
+            logger.debug(
                 f"Ошибка при записи прав для пользователя с ID {user_id}: {e}")
-            print(traceback.format_exc())
+            logger.exception("")
             return False
 
     def read_db_rights_by_user_id(self, user_id: int) -> list:
@@ -1977,19 +1977,19 @@ class ActionMapper:
             # Получение прав доступа, связанных с ролью
             rights = self.e_rights.get_rights_by_role_id(role_id)
             if not rights:
-                print(f"Для роли с ID {role_id} не найдены права доступа.")
+                logger.debug(f"Для роли с ID {role_id} не найдены права доступа.")
                 return []
 
             return rights
 
         except Exception as e:
-            print(
+            logger.debug(
                 f"Ошибка при получении прав для пользователя с ID {user_id}: {e}")
-            print(traceback.format_exc())
+            logger.exception("")
             return []
 
     def read_db_get_plan_tools(self, plan_id, plan_designation, plan_name):
-        print(f"read_db_get_plan_tools plan_designation {plan_designation}, plan_name {plan_name}")
+        logger.debug("read_db_get_plan_tools plan_designation %s, plan_name %s", plan_designation, plan_name)
 
         plan = self.e_plan.get_plan_by_id(plan_id)
         self.select_plan = plan
@@ -2041,7 +2041,7 @@ class ActionMapper:
         return plan_tool_list, plan_designation, plan_name, plan_id
 
     def read_db_plan_complete(self, plan_id):
-        print(f"read_db_plan_complete plan_id {plan_id}")
+        logger.debug("read_db_plan_complete plan_id %s", plan_id)
 
         plan = self.e_plan.get_plan_by_id(plan_id)
         # self.select_plan = plan
@@ -2090,12 +2090,12 @@ class ActionMapper:
 
             plan_tool_list.append(tool_object)
 
-        print(f"read_db_plan_complete call view_plan_complete':{plan_id}: plan_id, 'designation': {plan.designation}, 'tool_list': {plan_tool_list}")
+        logger.debug("read_db_plan_complete call view_plan_complete plan_id=%s, designation=%s, tool_list=%s", plan_id, plan.designation, plan_tool_list)
         return {'plan_id': plan_id, 'designation': plan.designation, 'tool_list': plan_tool_list}
 
 
     def write_db_plan_complete(self, plan_id):
-        print(f"write_db_plan_complete plan_id {plan_id}")
+        logger.debug("write_db_plan_complete plan_id %s", plan_id)
 
         result = True
         user_id = self.current_user.id
@@ -2156,13 +2156,13 @@ class ActionMapper:
             raise ValueError("Не удалось создать запись в таблице MassDrop.")
 
         for drop in drops:
-            print(f"drop {drop}")
+            logger.debug(f"drop {drop}")
             cell = drop["cell"]
             load = drop["load"]
             history = drop["history"]
 
             tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
-            print(f"tool_type {tool_type}")
+            logger.debug(f"tool_type {tool_type}")
 
             result = result and self.e_cell.update_cell(
                 cell_id=cell.id,
@@ -2220,7 +2220,7 @@ class ActionMapper:
                 description="Создана операция массового удаления",
             )
 
-            print(f"operation_added {operation_added}")
+            logger.debug(f"operation_added {operation_added}")
 
             if not operation_added:
                 raise ValueError(
@@ -2235,7 +2235,7 @@ class ActionMapper:
         return {"trigger": "plan_completed"}
 
     def read_db_plans(self, index):
-        print(f"read_db_plans index {index}")
+        logger.debug("read_db_plans index %s", index)
         """
         Читает данные о всех чертежах из таблицы Plan.
 
@@ -2246,7 +2246,7 @@ class ActionMapper:
         try:
             # Получаем список всех чертежей
             plans = self.e_plan.get_all_plans()
-            print(f"plans {plans}")
+            logger.debug(f"plans {plans}")
 
             # Формируем список словарей с данными о чертежах
             plans_data = []
@@ -2262,17 +2262,17 @@ class ActionMapper:
                     'list_count': plan.list_count,
                     'parent_plan_id': plan.parent_plan_id
                 })
-            print(f"plans_data {plans_data}")
+            logger.debug(f"plans_data {plans_data}")
 
             return plans_data
 
         except Exception as e:
-            print(f"Ошибка при чтении данных чертежей: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при чтении данных чертежей: {e}")
+            logger.exception("")
             return []
 
     def read_db_plan_id(self, barcode):
-        print(f"read_db_plan_id. barcode: {barcode}")
+        logger.debug("read_db_plan_id. barcode: %s", barcode)
         """
         Получает идентификатор чертежа по штрих-коду из базы данных.
         Парсит строку QR-кода, извлекая designation из первого блока и добавляя блок 4 через дефис.
@@ -2288,10 +2288,10 @@ class ActionMapper:
                 barcode_str = str(barcode)
             
             if not barcode_str:
-                print(f"read_db_plan_id: пустой штрих-код")
+                logger.debug(f"read_db_plan_id: пустой штрих-код")
                 return None
             
-            print(f"read_db_plan_id: парсинг строки: {repr(barcode_str)}")
+            logger.debug(f"read_db_plan_id: парсинг строки: {repr(barcode_str)}")
             
             # Парсим строку: разбиваем по табуляциям или пробелам
             # Примеры:
@@ -2303,9 +2303,9 @@ class ActionMapper:
             # Вариант 1: Если есть табуляции, разбиваем по ним
             if '\t' in barcode_str:
                 parts = barcode_str.split('\t')
-                print(f"read_db_plan_id: разбито по табуляциям, блоков: {len(parts)}")
+                logger.debug(f"read_db_plan_id: разбито по табуляциям, блоков: {len(parts)}")
                 for i, part in enumerate(parts):
-                    print(f"  Блок [{i}]: {repr(part)}")
+                    logger.debug(f"  Блок [{i}]: {repr(part)}")
                 
                 # Блок 0 (первый) → designation
                 if len(parts) > 0:
@@ -2318,14 +2318,14 @@ class ActionMapper:
                         designation = f"{designation}-{block_4}"
                     else:
                         designation = block_4
-                    print(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
+                    logger.debug(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
             else:
                 # Вариант 2: Разбиваем по пробелам (множественным)
                 # Используем split() без аргументов для разбиения по любым пробелам
                 parts = barcode_str.split()
-                print(f"read_db_plan_id: разбито по пробелам, блоков: {len(parts)}")
+                logger.debug(f"read_db_plan_id: разбито по пробелам, блоков: {len(parts)}")
                 for i, part in enumerate(parts):
-                    print(f"  Блок [{i}]: {repr(part)}")
+                    logger.debug(f"  Блок [{i}]: {repr(part)}")
                 
                 # Блок 0 (первый) → designation
                 if len(parts) > 0:
@@ -2338,28 +2338,28 @@ class ActionMapper:
                         designation = f"{designation}-{block_4}"
                     else:
                         designation = block_4
-                    print(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
+                    logger.debug(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
             
             if not designation:
-                print(f"read_db_plan_id: не удалось извлечь designation из строки")
+                logger.debug(f"read_db_plan_id: не удалось извлечь designation из строки")
                 return None
             
-            print(f"read_db_plan_id: итоговый designation: {repr(designation)}")
+            logger.debug(f"read_db_plan_id: итоговый designation: {repr(designation)}")
             
             # Ищем чертеж по designation
             plan = self.e_plan.get_plan_by_designation(designation)
 
             if plan:
-                print(f"read_db_plan_id: найден чертеж с ID: {plan.id}")
+                logger.debug(f"read_db_plan_id: найден чертеж с ID: {plan.id}")
                 return {'plan_id': plan.id}  # Возвращаем идентификатор чертежа
             else:
-                print(f"read_db_plan_id: чертеж с designation {repr(designation)} не найден.")
+                logger.debug(f"read_db_plan_id: чертеж с designation {repr(designation)} не найден.")
                 return None
 
         except Exception as e:
-            print(f"read_db_plan_id: ошибка при обработке штрих-кода: {e}")
+            logger.debug(f"read_db_plan_id: ошибка при обработке штрих-кода: {e}")
             import traceback
-            print(traceback.format_exc())
+            logger.exception("")
             return None
 
             # TODO: временная заглушка на поиск инструмента вместо чертежа
@@ -2369,7 +2369,7 @@ class ActionMapper:
             3. Выбирается первая ячейка
             """
             tools = self.e_tools.get_tools_by_barcode(barcode)
-            print(f"tools: {tools}")
+            logger.debug(f"tools: {tools}")
 
             valid_cells = []
             valid_tool_name = ""
@@ -2377,7 +2377,7 @@ class ActionMapper:
 
             for tool in tools:
                 cells = self.e_cell.get_cells_by_tool(tool.id)
-                print(f"cells: {cells}")
+                logger.debug(f"cells: {cells}")
                 for cell in cells:
                     if cell.status_id == 3:
                         valid_cells.append(cell)
@@ -2389,7 +2389,7 @@ class ActionMapper:
             valid_tool_name = valid_tool.name
             self.select_tool = valid_tool
 
-            print(f"valid_cells: {valid_cells}")
+            logger.debug(f"valid_cells: {valid_cells}")
 
             if len(valid_cells) == 0:
                 return None
@@ -2404,8 +2404,8 @@ class ActionMapper:
                 return {"trigger": "send_number", "number": cell_number, "tool_name": valid_tool_name} if cell_number else None
 
         except Exception as e:
-            print(f"Ошибка при чтении идентификатора чертежа: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при чтении идентификатора чертежа: {e}")
+            logger.exception("")
             return None
 
     def write_db_plans(self, plans_data):
@@ -2460,8 +2460,8 @@ class ActionMapper:
             return True
 
         except Exception as e:
-            print(f"Ошибка при записи данных чертежей: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при записи данных чертежей: {e}")
+            logger.exception("")
             return False
 
     def write_db_mass_drop_tools_by_free(self, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
@@ -2472,7 +2472,7 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
-        print(f"write_db_mass_drop_tools_by_free. tools_data: {tools_data}, cells_data: {cells_data}")
+        logger.debug("write_db_mass_drop_tools_by_free. tools_data: %s, cells_data: %s", tools_data, cells_data)
         # # Проверка данных
         # for tool in tools_data:
         #     if tool.plan_id is not None:
@@ -2561,7 +2561,7 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
-        print(f"write_db_mass_drop_tools_by_plan. tools_data: {tools_data}, cells_data: {cells_data}")
+        logger.debug("write_db_mass_drop_tools_by_plan. tools_data: %s, cells_data: %s", tools_data, cells_data)
         # # Проверка данных
         # for tool in tools_data:
         #     if not tool.plan_id:
@@ -2656,7 +2656,7 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
-        print(f"write_db_mass_load_tools_by_plan. tools_data: {tools_data}, cells_data: {cells_data}")
+        logger.debug("write_db_mass_load_tools_by_plan. tools_data: %s, cells_data: %s", tools_data, cells_data)
         # try:
         # 1. Найти или создать статус "mass_load_init"
         for tool in tools_data:
@@ -2747,7 +2747,7 @@ class ActionMapper:
         return True
 
     def read_db_mass_load_tools(self, *args, **kwargs) -> List[dict]:
-        print(f"read_db_mass_load_tools. args: {args}, kwargs: {kwargs} ")
+        logger.debug("read_db_mass_load_tools. args: %s, kwargs: %s", args, kwargs)
         """
         Извлекает номера ячеек, связанных с последними операциями массовой загрузки инструментов.
         :return: Список номеров ячеек.
@@ -2769,13 +2769,13 @@ class ActionMapper:
             status = self.e_status.all()
             status_init_id = next(
                 (s.id for s in status if s.stype == "mass_load_init"), None)
-            print(f"status_id: {status_init_id}")
+            logger.debug(f"status_id: {status_init_id}")
 
             if not status_init_id:
                 raise ValueError("Статус 'mass_load_init' не найден.")
 
             if self.e_mass_load.count() == 0:
-                print(f"Данные о массовой загрузке отсутствуют")
+                logger.debug(f"Данные о массовой загрузке отсутствуют")
                 return []
 
             cells_ids = set()
@@ -2783,7 +2783,7 @@ class ActionMapper:
             # mass_loads = self.e_mass_load.all()
             loads = self.e_load.find_by_status_id(status_init_id)
             loads.sort(key=lambda rec: rec.id, reverse=True)
-            print(f"loads: {loads}")
+            logger.debug(f"loads: {loads}")
             for load in loads:
                 cell = self.e_cell.get_cell_by_id(load.cell_id)
                 # print(f"cell: {cell}")
@@ -2814,12 +2814,12 @@ class ActionMapper:
             #
             #     cell_list.append(create_cell_dict(cell, tool_type))
 
-            print(f"cell_list: {cell_list}")
+            logger.debug(f"cell_list: {cell_list}")
             return cell_list
 
         except Exception as e:
-            print(f"Ошибка при выполнении запроса: {e}")
-            print(traceback.format_exc())
+            logger.debug(f"Ошибка при выполнении запроса: {e}")
+            logger.exception("")
             return []
 
     def write_db_mass_load_tools_by_free(self, tools_data: List[ToolTypes], cells_data: List[Cell]) -> bool:
@@ -2830,7 +2830,7 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
-        print(f"write_db_mass_load_tools_by_free. tools_data: {tools_data}, cells_data: {cells_data}")
+        logger.debug("write_db_mass_load_tools_by_free. tools_data: %s, cells_data: %s", tools_data, cells_data)
         # try:
         # 1. Найти или создать статус "mass_load_init"
         for tool in tools_data:
@@ -2923,7 +2923,7 @@ class ActionMapper:
         :param plan_id: Уникальный идентификатор плана.
         :return: Список инструментов, связанных с указанным планом.
         """
-        print(f"read_db_mass_load_tools_by_plan. plan_id: {plan_id}")
+        logger.debug("read_db_mass_load_tools_by_plan. plan_id: %s", plan_id)
         try:
             # Проверяем существование плана
             plan = self.e_plan.get_plan_by_id(plan_id)
@@ -2951,18 +2951,18 @@ class ActionMapper:
             return tools
         except Exception as e:
             # Обработка ошибок
-            print(
+            logger.debug(
                 f"Ошибка при чтении инструментов для плана {plan_id}: {str(e)}")
-            print(traceback.format_exc())
+            logger.exception("")
             return []
 
     def execute(self, act, *args, **kwargs):
         try:
-            print("action_db", "execute", act, args, kwargs)
+            logger.debug("action_db", "execute", act, args, kwargs)
             return self.__actions[act](*args, **kwargs)
         except Exception as e:
-            print("action_db", "execute", act, "exception", e)
-            print(traceback.format_exc())
+            logger.debug("action_db", "execute", act, "exception", e)
+            logger.exception("")
             try:
                 return self.__actions_bad[act]
             except:

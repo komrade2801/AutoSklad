@@ -1,6 +1,9 @@
 import traceback
 
+from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = get_logger(__name__)
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 
@@ -125,10 +128,10 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
 
         # Если передан tool_type_id, обновляем существующий инструмент
         if data.tool_type_id and data.tool_type_id > 0:
-            print(f"[create_tools] Режим обновления инструмента с ID: {data.tool_type_id}")
+            logger.debug("[create_tools] Режим обновления инструмента с ID: %s", data.tool_type_id)
             existing_tool = tool_type_crud.get_tool_type_by_id(data.tool_type_id)
             if not existing_tool:
-                print(f"[create_tools] ОШИБКА: Инструмент для обновления с ID {data.tool_type_id} не найден")
+                logger.error("[create_tools] Инструмент для обновления с ID %s не найден", data.tool_type_id)
                 raise HTTPException(
                     status_code=404, detail="Инструмент для обновления не найден")
             
@@ -142,11 +145,12 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
             )
             
             if not has_changes:
-                print(f"[create_tools] Данные не изменились, пропускаем UPDATE (избегаем лишней синхронизации)")
+                logger.debug("[create_tools] Данные не изменились, пропускаем UPDATE")
                 return ToolsAddResponse(status=200, message="Инструмент не изменился")
             
             # Обновляем инструмент (декоратор @sync_aware создаст команду синхронизации)
-            print(f"[create_tools] Обновление инструмента: name={data.tool_name}, description={data.description}, count={data.count}, groups_id={data.group_id}")
+            logger.debug("[create_tools] Обновление инструмента: name=%s, description=%s, count=%s, groups_id=%s",
+                         data.tool_name, data.description, data.count, data.group_id)
             success = tool_type_crud.update_tool_type(
                 id=data.tool_type_id,
                 name=data.tool_name,
@@ -156,22 +160,22 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
                 groups_id=data.group_id,
             )
             if not success:
-                print(f"[create_tools] ОШИБКА: Не удалось обновить инструмент с ID {data.tool_type_id}")
+                logger.error("[create_tools] Не удалось обновить инструмент с ID %s", data.tool_type_id)
                 raise HTTPException(
                     status_code=400, detail="Не удалось обновить инструмент")
             
             # Очищаем кеш ПОСЛЕ успешного обновления
             tool_type_crud._cache.clear()
-            print(f"[create_tools] Инструмент успешно обновлен")
+            logger.info("[create_tools] Инструмент успешно обновлен")
             return ToolsAddResponse(status=200, message="Инструмент успешно обновлен")
         else:
             # Создаём новый инструмент
             existing_tool = tool_type_crud.find_tool_types_by_name(name=data.tool_name)
-            print(f"[create_tools] Поиск существующего инструмента с именем '{data.tool_name}': {existing_tool}")
+            logger.debug("[create_tools] Поиск существующего инструмента с именем '%s': %s", data.tool_name, existing_tool)
             if not existing_tool:
                 # Создать новый тип инструмента (декоратор @sync_aware создаст команду синхронизации)
                 new_tt_id = max(tool_type_crud.get_all_ids(), default=0) + 1
-                print(f"[create_tools] Создание нового инструмента с ID {new_tt_id}")
+                logger.debug("[create_tools] Создание нового инструмента с ID %s", new_tt_id)
                 tool_type_crud.add_tool_type(
                     tool_type_id=new_tt_id,
                     name=data.tool_name,
@@ -180,11 +184,12 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
                     img=data.img,
                     groups_id=data.group_id,
                 )
-                print(f"[create_tools] Инструмент {new_tt_id} успешно создан")
+                logger.info("[create_tools] Инструмент %s успешно создан", new_tt_id)
             else:
                 # Инструмент существует - увеличиваем count (декоратор @sync_aware создаст команду UPDATE)
                 tool_type = existing_tool[0]
-                print(f"[create_tools] Инструмент существует (ID {tool_type.id}), увеличиваем count: {tool_type.count} + {data.count}")
+                logger.debug("[create_tools] Инструмент существует (ID %s), увеличиваем count: %s + %s",
+                             tool_type.id, tool_type.count, data.count)
                 tool_type_crud.update_tool_type(
                     id=tool_type.id,
                     name=tool_type.name,
@@ -193,7 +198,7 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
                     img=tool_type.img,
                     groups_id=tool_type.groups_id,
                 )
-                print(f"[create_tools] Count обновлен для инструмента {tool_type.id}")
+                logger.debug("[create_tools] Count обновлен для инструмента %s", tool_type.id)
             
             # Очищаем кеш ПОСЛЕ успешной операции
             tool_type_crud._cache.clear()
@@ -219,7 +224,7 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
         # Пробрасываем HTTP ошибки дальше
         raise
     except Exception as error:
-        print(error, traceback.format_exc())
+        logger.exception("create_tools: %s", error)
         # Общая ошибка — возвращаем 400 с сообщением
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -233,7 +238,7 @@ def create_tools(data: ToolsCreate, db: Session = Depends(get_db)):
     responses={400: {"description": "Ошибка формирования JSON"}}
 )
 def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
-    print("get_groups_from_db")
+    logger.debug("get_groups_from_db")
     try:
         # devices_crud = EngineDevice()
         # tools_has_device_crud = EngineToolsHasDevice()
@@ -251,7 +256,7 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         group_set = set()
         idx = 0
         for tool in all_tool_types:
-            print(tool)
+            logger.debug("tool: %s", tool)
             count = tool.count
             # Вычитаем занятые инструменты (зарезервированные в massload, загруженные в vending, или потребленные)
             # Логика соответствует mass_load.py: export_tools
@@ -338,7 +343,7 @@ def get_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         return {"tools": tool_list, "groups": group_list}
 
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка формирования JSON: {e}"
@@ -375,7 +380,7 @@ def get_tool_types_from_db(device_number: int, db: Session = Depends(get_db)):
         return result
 
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка формирования JSON: {e}"
@@ -477,7 +482,7 @@ def get_tool_type_by_id(tool_type_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка получения инструмента: {e}"
@@ -526,7 +531,7 @@ def check_tool_busy(tool_type_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка проверки инструмента: {e}"
@@ -582,11 +587,11 @@ def delete_tool_type(tool_type_id: int, db: Session = Depends(get_db)):
         
         # Выполняем удаление
         # Декоратор @sync_aware автоматически создаст команду синхронизации DELETE
-        print(f"[delete_tool_type] Удаление инструмента {tool_type_id}...")
+        logger.debug("[delete_tool_type] Удаление инструмента %s...", tool_type_id)
         success = tool_type_crud.delete_tool_type(tool_type_id)
         
         if success:
-            print(f"[delete_tool_type] Инструмент {tool_type_id} успешно удален из БД")
+            logger.info("[delete_tool_type] Инструмент %s успешно удален из БД", tool_type_id)
             
             # Очищаем кеш ПОСЛЕ успешного удаления (чтобы синхронизация успела отработать)
             tool_type_crud._cache.clear()
@@ -594,11 +599,11 @@ def delete_tool_type(tool_type_id: int, db: Session = Depends(get_db)):
             # Проверка удаления (для диагностики)
             tool_type_after = tool_type_crud.get_tool_type_by_id(tool_type_id)
             if tool_type_after:
-                print(f"[delete_tool_type] ВНИМАНИЕ: Инструмент {tool_type_id} все еще существует после удаления!")
+                logger.warning("[delete_tool_type] Инструмент %s все еще существует после удаления!", tool_type_id)
             else:
-                print(f"[delete_tool_type] Подтверждено: инструмент {tool_type_id} удален из БД")
+                logger.debug("[delete_tool_type] Подтверждено: инструмент %s удален из БД", tool_type_id)
         else:
-            print(f"[delete_tool_type] ОШИБКА: delete_tool_type вернул False для {tool_type_id}")
+            logger.error("[delete_tool_type] delete_tool_type вернул False для %s", tool_type_id)
             raise HTTPException(
                 status_code=400,
                 detail="Не удалось удалить инструмент"
@@ -611,7 +616,7 @@ def delete_tool_type(tool_type_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка удаления инструмента: {e}"

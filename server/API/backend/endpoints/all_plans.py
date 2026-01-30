@@ -2,7 +2,10 @@
 import random
 import traceback
 
+from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = get_logger(__name__)
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -43,7 +46,7 @@ all_plans_router = APIRouter(tags=["All Plans"])
 
 @all_plans_router.get("/get_all_plans/{device_number}", response_model=PlanResponse)
 def get_all_plans(device_number: int, db: Session = Depends(get_db)):
-    print(f"get_all_plans Device number: {device_number}")
+    logger.debug("get_all_plans Device number: %s", device_number)
     """
     Получает чертежи для устройства по серийному номеру.
     Связь реализуется через таблицу Tools: выбираем инструменты устройства и собираем уникальные plan_id.
@@ -75,7 +78,7 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
     # plans = plans_crud.get_plans_by_ids(plan_ids)
 
     plans = plans_crud.get_all_plans()
-    print(f"plans: {plans}")
+    logger.debug("plans: %s", plans)
     if not plans:
         raise HTTPException(status_code=404, detail="Чертёжы не найдены")
     plan_dicts = {}
@@ -96,10 +99,10 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
         plan_dicts["parent_plan"] = plan.parent_plan
         # tools = tools_crud.get_tools_by_plan(plan.id)
         plan_tool_types = plan_tool_types_crud.get_plan_tool_types_by_plan_id(plan.id)
-        print(f"plan: {plan}, plan_tool_types: {plan_tool_types}")
+        logger.debug("plan: %s, plan_tool_types: %s", plan, plan_tool_types)
         for plan_tool_type in plan_tool_types:
             tool_type = tool_types_crud.get_tool_type_by_id(tool_type_id=plan_tool_type.tool_types_id)
-            print(f"tool_type: {tool_type}")
+            logger.debug("tool_type: %s", tool_type)
 
             tool_by_plan["id"] = tool_type.id
             # tool_by_plan["barcode"] = tool_type.barcode
@@ -242,7 +245,7 @@ def create_plan(
     создание Чертёжа осуществляется независимо, а привязка к устройству может быть реализована
     на уровне инструмента (через поле plan_id в Tools).
     """
-    print(f"create_plan. request: {request}, Device number: {device_number}, plan_request: {plan_request}")
+    logger.debug("create_plan. request: %s, Device number: %s, plan_request: %s", request, device_number, plan_request)
     plan = plan_request.plan
     create_mass_load = plan_request.create_mass_load
 
@@ -268,7 +271,7 @@ def create_plan(
     try:
         validation.user_barcode
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("")
         raise HTTPException(
             status_code=401, detail="Неавторизованный доступ запрещён")
 
@@ -315,24 +318,24 @@ def create_plan(
             tool_quantity = tool['quantity']
             quantity = 0
             tool_type = tool_types_crud.get_tool_type_by_id(tool_types_id)
-            print(f"create_plan tool_types_name: {tool_types_name}, tool_quantity: {tool_quantity}, tool_types_id: {tool_types_id}")
+            logger.debug("create_plan tool_types_name: %s, tool_quantity: %s, tool_types_id: %s", tool_types_name, tool_quantity, tool_types_id)
             # tool_types_ids = tool_types_crud.get_all_ids()
             # for index in tool_types_ids:
             #     tool_types = tool_types_crud.get_tool_type_by_id(tool_type_id=index)
             #     if tool_types.name in tool_types_name:
 
-            print(f"create_plan tool_type: {tool_type}")
+            logger.debug("create_plan tool_type: %s", tool_type)
 
             plan_tool_types_crud_id = max(plan_tool_types_crud.get_all_ids(), default=0) + 1
 
             plan_tool_types_crud.create_plan_tool_types(plan_tool_types_crud_id, tool_type.id, tool_quantity, plan_id)
 
-        print(f"create_plan create_mass_load: {create_mass_load}")
+        logger.debug("create_plan create_mass_load: %s", create_mass_load)
         if create_mass_load:
             empty_cells = cells_crud.get_all_empty_cells()
             total_tools = 0
 
-            print(f"[create_plan] create_mass_load=True: empty_cells count={len(empty_cells) if empty_cells else 0}")
+            logger.debug("[create_plan] create_mass_load=True: empty_cells count=%s", len(empty_cells) if empty_cells else 0)
 
             for tool in plan.tools:
                 total_tools += tool['quantity']
@@ -364,24 +367,24 @@ def create_plan(
             
             # Проверяем, достаточно ли ячеек с учетом заблокированных
             if cells_needed > len(empty_cells):
-                print(f"[create_plan][WARNING] Не хватает свободных ячеек: cells_needed={cells_needed}, len(empty_cells)={len(empty_cells)}")
+                logger.warning("[create_plan] Не хватает свободных ячеек: cells_needed=%s, len(empty_cells)=%s", cells_needed, len(empty_cells))
                 raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
 
-            print(f"[create_plan] Достаточно ячеек: cells_needed={cells_needed}, приступаем к save_mass_load")
+            logger.debug("[create_plan] Достаточно ячеек: cells_needed=%s, приступаем к save_mass_load", cells_needed)
             operation = {}
             number = 1
             cell_checked = 0
             cell_used = 0
             for tool in plan.tools:
                 for count in range(tool['quantity']):
-                    print(f"create_plan tool: {tool}, cell_used: {cell_checked}")
+                    logger.debug("create_plan tool: %s, cell_used: %s", tool, cell_checked)
                     cell = empty_cells[cell_checked]
                     cell_checked += 1
                     if cell.number in BLOCKED_CELL_NUMBERS:
                         cell = empty_cells[cell_checked]
                         cell_checked += 1
                     cell_used += 1
-                    print(f"create_plan cell: {cell}")
+                    logger.debug("create_plan cell: %s", cell)
                     load_operation = History(cell=cell.id, tool=tool['id'], plan=plan_id)
                     # load_operation['toolId'] = tool['id']
 
@@ -390,9 +393,9 @@ def create_plan(
                     number += 1
             mass_load = MassLoadCreate(operation = operation)
 
-            print(f"create_plan mass_load: {mass_load}")
+            logger.debug("create_plan mass_load: %s", mass_load)
             save_mass_load(request, device_number, mass_load)
-            print(f"[create_plan] save_mass_load завершён успешно, массовая загрузка для чертежа создана")
+            logger.info("[create_plan] save_mass_load завершён успешно, массовая загрузка для чертежа создана")
 
         return PlanAddResponse(status=200, message="Чертежи успешно добавлены")
 
@@ -430,12 +433,11 @@ def create_plan(
 
         return HTTPException(status_code=200, detail="Чертёж успешно создать")
     except Exception as err:
-        print(f"err: {err}")
+        logger.exception("create_plan err: %s", err)
         __exception = True
         __e = err
-        print(traceback.format_exc())
     finally:
-        print(f"__exception: {__exception}")
+        logger.debug("__exception: %s", __exception)
         if __exception:
             # Используем plan_id (фактический id созданного чертежа), а не plan.id из тела запроса (может быть 0)
             _plan_id_to_rollback = plan_id
@@ -444,7 +446,7 @@ def create_plan(
                 for plan_tool_type in plan_tool_types:
                     plan_tool_types_crud.delete_plan_tool_types(plan_tool_type.id)
                 plans_crud.delete_plan(_plan_id_to_rollback)
-                print(f"[create_plan] Откат при ошибке: удалены PlanToolTypes и Plan id={_plan_id_to_rollback}")
+                logger.warning("[create_plan] Откат при ошибке: удалены PlanToolTypes и Plan id=%s", _plan_id_to_rollback)
 
             raise HTTPException(status_code=301, detail=__e)
         else:

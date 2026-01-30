@@ -1,8 +1,11 @@
 import os
 import pickle
+import logging
 from pathlib import Path
 
 from sqlalchemy import create_engine, MetaData, Table
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.orm import sessionmaker
 
 from DB.Data.base import Base  # ваш Base, где прописаны модели
@@ -98,7 +101,7 @@ def rebuild_db():
     # Вызываем процедуру с бэкапом
     rebuild_with_backup(db_url, Base.metadata, backup_folder=str(current_dir / "backup"))
 
-    print("Database rebuild complete with data restored.")
+    logger.info("Database rebuild complete with data restored.")
 
 
 if __name__ == "__main__":

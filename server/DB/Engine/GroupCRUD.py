@@ -1,7 +1,11 @@
 import traceback
 from sqlalchemy.orm import Session
 from typing import Optional, List
+
+from Core.app_logging import get_logger
 from DB.Engine.CRUD import BaseCRUD  # Импортируем BaseCRUD
+
+logger = get_logger(__name__)
 from ..Models.Group import Group  # Импортируем модель Error
 
 
@@ -33,7 +37,8 @@ class EngineGroup(BaseCRUD):
         :param paren_group_id: Статус группы (например, активна/не активна).
         :return: True если группа успешно добавлена, иначе False.
         """
-        print(f"[EngineGroup.add_group] Параметры: index={index}, name={name}, description={description}, paren_group_id={paren_group_id}")
+        logger.debug("[EngineGroup.add_group] index=%s, name=%s, description=%s, paren_group_id=%s",
+                     index, name, description, paren_group_id)
         try:
             result = self.add(
                 index=index,
@@ -41,11 +46,10 @@ class EngineGroup(BaseCRUD):
                 description=description,
                 paren_group_id=paren_group_id
             )
-            print(f"[EngineGroup.add_group] Результат add: {result}")
+            logger.debug("[EngineGroup.add_group] Результат add: %s", result)
             return result
         except Exception as e:
-            print(f"[EngineGroup.add_group] ОШИБКА при добавлении группы: {e}")
-            print(traceback.format_exc())
+            logger.exception("[EngineGroup.add_group] ОШИБКА при добавлении группы: %s", e)
             return False
 
     def get_group_by_id(self, group_id: int) -> Optional[Group]:
@@ -156,11 +160,12 @@ class EngineGroup(BaseCRUD):
         :param paren_group_id: Статус группы (по умолчанию 1, т.е. активна).
         :return: Объект созданной группы или None, если создание не удалось.
         """
-        print(f"[EngineGroup.create_group] Начало создания группы: name={name}, description={description}, paren_group_id={paren_group_id}")
+        logger.debug("[EngineGroup.create_group] name=%s, description=%s, paren_group_id=%s",
+                     name, description, paren_group_id)
         
         # Получаем все существующие ID для проверки
         all_ids = self.get_all_ids()
-        print(f"[EngineGroup.create_group] Существующие ID в БД: {all_ids}")
+        logger.debug("[EngineGroup.create_group] Существующие ID в БД: %s", all_ids)
         
         # Генерируем следующий свободный ID
         if all_ids:
@@ -173,54 +178,53 @@ class EngineGroup(BaseCRUD):
         else:
             new_id = 1
         
-        print(f"[EngineGroup.create_group] Сгенерирован новый ID: {new_id} (максимальный ID в БД: {max(all_ids) if all_ids else 'нет'})")
+        logger.debug("[EngineGroup.create_group] Сгенерирован новый ID: %s", new_id)
         
         # Дополнительная проверка, не существует ли уже группа с таким ID
         existing_with_id = self.get_group_by_id(new_id)
         if existing_with_id:
-            print(f"[EngineGroup.create_group] ВНИМАНИЕ: Группа с ID {new_id} уже существует: {existing_with_id}")
+            logger.warning("[EngineGroup.create_group] Группа с ID %s уже существует", new_id)
             # Ищем следующий свободный ID
             all_ids_set = set(all_ids)
             candidate_id = new_id + 1
             while candidate_id in all_ids_set:
                 candidate_id += 1
             new_id = candidate_id
-            print(f"[EngineGroup.create_group] Используем следующий свободный ID: {new_id}")
+            logger.debug("[EngineGroup.create_group] Используем следующий свободный ID: %s", new_id)
         
         try:
             add_result = self.add_group(index=new_id, name=name, description=description, paren_group_id=paren_group_id)
-            print(f"[EngineGroup.create_group] Результат add_group: {add_result}")
+            logger.debug("[EngineGroup.create_group] Результат add_group: %s", add_result)
             
             if add_result:
                 # Принудительно очищаем кеш и сбрасываем состояние сессии
                 self._cache.clear()
                 self.session.expire_all()  # Сбрасываем кеш сессии, чтобы перечитать из БД
-                print(f"[EngineGroup.create_group] Кеш и сессия очищены, пытаемся получить группу с ID {new_id}")
+                logger.debug("[EngineGroup.create_group] Кеш и сессия очищены, ID=%s", new_id)
                 
                 # Пробуем получить через прямую сессию для отладки
                 try:
                     direct_query = self.session.query(self.model).filter_by(id=new_id).first()
-                    print(f"[EngineGroup.create_group] Прямой запрос к БД для ID {new_id}: {direct_query}")
+                    logger.debug("[EngineGroup.create_group] Прямой запрос к БД для ID %s: %s", new_id, direct_query)
                 except Exception as e:
-                    print(f"[EngineGroup.create_group] Ошибка при прямом запросе: {e}")
+                    logger.exception("[EngineGroup.create_group] Ошибка при прямом запросе: %s", e)
                 
                 created_group = self.get_group_by_id(new_id)
-                print(f"[EngineGroup.create_group] Получена созданная группа через get_group_by_id: {created_group}")
+                logger.debug("[EngineGroup.create_group] Получена созданная группа: %s", created_group)
                 
                 if not created_group:
                     # Пробуем найти по имени
                     groups_by_name = self.find_groups_by_name(name)
-                    print(f"[EngineGroup.create_group] Поиск группы по имени '{name}': найдено {len(groups_by_name)} групп")
+                    logger.debug("[EngineGroup.create_group] По имени '%s' найдено групп: %s", name, len(groups_by_name))
                     if groups_by_name:
-                        print(f"[EngineGroup.create_group] Найденные группы: {[g.id for g in groups_by_name]}")
+                        logger.debug("[EngineGroup.create_group] Найденные группы: %s", [g.id for g in groups_by_name])
                 
                 return created_group
         except Exception as e:
-            print(f"[EngineGroup.create_group] ОШИБКА при создании группы: {e}")
-            print(traceback.format_exc())
+            logger.exception("[EngineGroup.create_group] ОШИБКА при создании группы: %s", e)
             return None
         
-        print(f"[EngineGroup.create_group] ОШИБКА: add_group вернул False, группа не создана")
+        logger.error("[EngineGroup.create_group] add_group вернул False, группа не создана")
         return None
 
     def find(self, name, description) -> Optional[Group]:

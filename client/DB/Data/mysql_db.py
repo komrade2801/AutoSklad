@@ -1,6 +1,10 @@
 import os
+
+from Core.app_logging import get_logger
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+logger = get_logger(__name__)
 
 
 # Конфигурация базы данных
@@ -39,6 +43,6 @@ if __name__ == "__main__":
     try:
         test_engine = engine()
         with test_engine.connect() as connection:
-            print("Успешное подключение к базе данных MySQL.")
+            logger.info("Успешное подключение к базе данных MySQL.")
     except Exception as e:
-        print(f"Ошибка подключения к базе данных: {e}")
+        logger.exception("Ошибка подключения к базе данных: %s", e)

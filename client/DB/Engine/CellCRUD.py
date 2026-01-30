@@ -1,6 +1,10 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Type
+
+from Core.app_logging import get_logger
 from DB.Engine.BaseCRUD import BaseCRUD  # Импортируем BaseCRUD
+
+logger = get_logger(__name__)
 from DB.Models.Cell import Cell  # Импортируем модель Cell
 from DB.Models.Tools import Tools  # Импортируем модель Tools
 from DB.Models.Group import Group  # Импортируем модель Group
@@ -131,7 +135,7 @@ class EngineCell(BaseCRUD):
             :param index: Уникальный идентификатор ячейки.
             :return: True, если запись успешно обновлена, иначе False.
         """
-        print(f"update_cell {cell_id}, {number}, {description}, {groups_id}, {tools_id}, {status_id}")
+        logger.debug("update_cell %s, %s, %s, %s, %s, %s", cell_id, number, description, groups_id, tools_id, status_id)
 
         # 1) Загружаем из БД текущее состояние
         instance = self.session.query(self.model).get(cell_id)
@@ -155,7 +159,7 @@ class EngineCell(BaseCRUD):
         if not updates:
             return True
 
-        print(f"updates {cell_id}, {updates}")
+        logger.debug("updates %s, %s", cell_id, updates)
         # 4) Иначе передаём только изменившиеся поля
         return self.update(index=cell_id, **updates)
 

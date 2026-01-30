@@ -153,7 +153,7 @@ class CommandSender:
 
         :raises TransportError: при сбое сети или не-2xx ответе.
         """
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] send_pending. Текущее время: {datetime.datetime.now()}')
+        logger.debug("[CommandSender] send_pending.")
         self._ensure_handshake()
 
         # 1. Сначала обрабатываем все retrying команды
@@ -178,7 +178,7 @@ class CommandSender:
             # Проверяем retrying команды
             for cmd in retrying:
                 if cmd["timestamp"] < oldest_pending_ts:
-                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Есть retrying команда старше pending, не отправляем pending. Текущее время: {datetime.datetime.now()}')
+                    logger.debug("[CommandSender] Есть retrying команда старше pending, не отправляем pending.")
                     if self.logger:
                         self.logger.log_debug("Retrying commands older than pending, skipping pending send")
                     return
@@ -186,12 +186,12 @@ class CommandSender:
             # Проверяем failed команды
             for cmd in failed:
                 if cmd["timestamp"] < oldest_pending_ts:
-                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Есть failed команда старше pending, не отправляем pending. Текущее время: {datetime.datetime.now()}')
+                    logger.debug("[CommandSender] Есть failed команда старше pending, не отправляем pending.")
                     if self.logger:
                         self.logger.log_debug("Failed commands older than pending, skipping pending send")
                     return
 
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] {len(pending)} pending команд для отправки (старше retrying). Текущее время: {datetime.datetime.now()}')
+        logger.info("[CommandSender] %s pending команд для отправки (старше retrying).", len(pending))
 
         schema_hash = self._schema_hash or ""
 
@@ -206,13 +206,13 @@ class CommandSender:
                     for cmd in batch
                 ]
             }
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Отправка батча {batch_start // PUSH_BATCH_SIZE + 1} ({len(batch)} команд). Текущее время: {datetime.datetime.now()}')
+            logger.info("[CommandSender] Отправка батча %s (%s команд).", batch_start // PUSH_BATCH_SIZE + 1, len(batch))
 
             try:
                 if self.logger:
                     self.logger.log_info(f"Sending batch of {len(batch)} commands to {self.endpoint}")
                 response = self.transport.send_push(self.endpoint, payload)
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Батч отправлен успешно. Текущее время: {datetime.datetime.now()}')
+                logger.info("[CommandSender] Батч отправлен успешно.")
 
                 if self.sync_processor:
                     self.sync_processor.process_push(
@@ -232,23 +232,23 @@ class CommandSender:
                         status = server_status.get("status", "").upper()
                         if status == "COMPLETED":
                             self.queue.mark_as_done(cmd_id)
-                            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (сервер вернул COMPLETED)')
+                            logger.debug("[CommandSender] Команда %s помечена как done (сервер вернул COMPLETED)", cmd_id)
                         elif status in ("FAILED", "ERROR"):
                             self.queue.mark_as_failed(cmd_id)
                             error_msg = server_status.get("error", "Unknown error")
-                            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как failed (сервер вернул {status}): {error_msg}')
+                            logger.warning("[CommandSender] Команда %s помечена как failed (сервер вернул %s): %s", cmd_id, status, error_msg)
                         else:
                             self.queue.mark_as_retrying(cmd_id)
-                            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как retrying (неизвестный статус: {status})')
+                            logger.warning("[CommandSender] Команда %s помечена как retrying (неизвестный статус: %s)", cmd_id, status)
                     else:
                         self.queue.mark_as_done(cmd_id)
-                        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (статус не найден в ответе сервера, считаем успешной)')
+                        logger.debug("[CommandSender] Команда %s помечена как done (статус не найден в ответе сервера)", cmd_id)
 
                 if self.logger:
                     self.logger.log_info(f"Processed batch of {len(batch)} commands based on server response.")
 
             except Exception as err:
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Ошибка отправки батча: {err} Текущее время: {datetime.datetime.now()}')
+                logger.exception("[CommandSender] Ошибка отправки батча: %s", err)
                 if self.logger:
                     self.logger.log_error(f"Failed to send batch: {err}")
                 for cmd in batch:
@@ -261,7 +261,7 @@ class CommandSender:
 
         :param cmd: Словарь команды с полями id, table, operation, data, retry_count
         """
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] send_single_command: {cmd.get("id")} retry_count={cmd.get("retry_count", 0)}')
+        logger.debug("[CommandSender] send_single_command: %s retry_count=%s", cmd.get("id"), cmd.get("retry_count", 0))
         self._ensure_handshake()
 
         schema_hash = self._schema_hash or ""
@@ -281,7 +281,7 @@ class CommandSender:
                 self.logger.log_info(f"Sending single retrying command {cmd['id']} to {self.endpoint}")
 
             response = self.transport.send_push(self.endpoint, payload)
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] single команда отправлена успешно: {cmd["id"]}')
+            logger.info("[CommandSender] single команда отправлена успешно: %s", cmd["id"])
 
             # dev-mode
             if self.sync_processor:
@@ -307,32 +307,32 @@ class CommandSender:
                 status = server_status.get("status", "").upper()
                 if status == "COMPLETED":
                     self.queue.mark_as_done(cmd_id)
-                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (сервер вернул COMPLETED)')
+                    logger.debug("[CommandSender] Команда %s помечена как done (сервер вернул COMPLETED)", cmd_id)
                     if self.logger:
                         self.logger.log_info(f"Single command {cmd_id} completed successfully.")
                 elif status in ("FAILED", "ERROR"):
                     # Если команда упала на сервере, помечаем как failed
                     self.queue.mark_as_failed(cmd_id)
                     error_msg = server_status.get("error", "Unknown error")
-                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как failed (сервер вернул {status}): {error_msg}')
+                    logger.warning("[CommandSender] Команда %s помечена как failed (сервер вернул %s): %s", cmd_id, status, error_msg)
                     if self.logger:
                         self.logger.log_error(f"Single command {cmd_id} failed on server: {error_msg}")
                     raise Exception(f"Server returned {status} for command {cmd_id}: {error_msg}")
                 else:
                     # Неизвестный статус - оставляем как retrying
                     self.queue.mark_as_retrying(cmd_id)
-                    print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как retrying (неизвестный статус: {status})')
+                    logger.warning("[CommandSender] Команда %s помечена как retrying (неизвестный статус: %s)", cmd_id, status)
                     if self.logger:
                         self.logger.log_warning(f"Single command {cmd_id} has unknown status: {status}")
             else:
                 # Если сервер не вернул статус для этой команды, считаем успешной (для обратной совместимости)
                 self.queue.mark_as_done(cmd_id)
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Команда {cmd_id} помечена как done (статус не найден в ответе сервера, считаем успешной)')
+                logger.debug("[CommandSender] Команда %s помечена как done (статус не найден в ответе сервера)", cmd_id)
                 if self.logger:
                     self.logger.log_info(f"Single command {cmd_id} completed (no status in response, assuming success).")
 
         except Exception as err:
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Не удалось отправить single команду {cmd["id"]}: {err}')
+            logger.exception("[CommandSender] Не удалось отправить single команду %s: %s", cmd["id"], err)
             if self.logger:
                 self.logger.log_error(f"Failed to send single command {cmd['id']}: {err}")
             raise
@@ -345,7 +345,7 @@ class CommandSender:
         if not retrying:
             return
 
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandSender] Processing {len(retrying)} retrying commands')
+        logger.info("[CommandSender] Processing %s retrying commands", len(retrying))
 
         for cmd in retrying:
             retry_count = self.queue.get_retry_count(cmd["id"])
@@ -360,7 +360,7 @@ class CommandSender:
             if retry_manager:
                 retry_manager.schedule_retry(cmd_copy, delay=0)  # Начать retry немедленно
             else:
-                print(f'[WARNING] No retry_manager provided for retrying command {cmd["id"]}')
+                logger.warning("No retry_manager provided for retrying command %s", cmd["id"])
 # -----------------------------------------------------------------------------
 # Изменения в CommandSender:
 # 1. TypedDict: PendingCommand, ServerCommand, PushPayload для строгой валидации.

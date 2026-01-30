@@ -1,6 +1,7 @@
-
-
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 folder_path = Path("../DB/Engine")
 
@@ -9,7 +10,7 @@ files = [file.name for file in folder_path.iterdir() if file.is_file()]
 
 # Рекурсивный поиск всех файлов
 all_files = [str(file) for file in folder_path.rglob("*") if file.is_file()]
-print(all_files)
+logger.debug("all_files: %s", all_files)
 
 
 # Cell

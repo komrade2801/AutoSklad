@@ -1,5 +1,8 @@
 import time
 from dbSync.Runner import start_sync, stop_sync
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
 
 if __name__ == "__main__":
     # import argparse
@@ -14,4 +17,4 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         stop_sync(1)#args.device_id
-        print("Выход.")
+        logger.info("Выход.")

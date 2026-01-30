@@ -1,4 +1,8 @@
+import logging
+
 from Helpers.Singleton import singleton
+
+logger = logging.getLogger(__name__)
 
 
 @singleton
@@ -72,11 +76,11 @@ if __name__ == "__main__":
 
     # Определяем несколько функций-обработчиков
     def on_event_a(data):
-        print(f"Событие A вызвано с данными: {data}")
+        logger.debug("Событие A вызвано с данными: %s", data)
 
 
     def on_event_b(data):
-        print(f"Событие B вызвано с данными: {data}")
+        logger.debug("Событие B вызвано с данными: %s", data)
 
 
     # Регистрируем обработчики событий
@@ -88,7 +92,7 @@ if __name__ == "__main__":
     handlers_instance.dispatch('event_b', [1, 2, 3])
 
     # Проверяем наличие события
-    print(handlers_instance.has_event('event_a'))  # True
+    logger.debug("has_event('event_a'): %s", handlers_instance.has_event('event_a'))
 
     # Удаляем обработчик события
     handlers_instance.remove_handler('event_a', on_event_a)
@@ -97,4 +101,4 @@ if __name__ == "__main__":
     try:
         handlers_instance.dispatch('event_a', {'ключ': 'значение'})
     except ValueError as e:
-        print(e)  # Выводит: Неизвестное событие 'event_a'.
+        logger.warning("Неизвестное событие: %s", e)

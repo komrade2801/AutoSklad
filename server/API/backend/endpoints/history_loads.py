@@ -1,6 +1,9 @@
 import traceback
 
 from fastapi import APIRouter, Depends, HTTPException
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 from datetime import datetime
@@ -219,7 +222,7 @@ def get_history_loads(db: Session = Depends(get_db)):
             # 4) Берём самую свежую операцию, если есть
             latest_op = max(ops, key=lambda o: o.id) if ops else None
 
-            print(f"latest_op = {latest_op}")
+            logger.debug("latest_op = %s", latest_op)
 
             # 6) Пользователь: из связанной истории
             history = hist_crud.get(latest_op.history_id) if latest_op and latest_op.history_id else None
@@ -234,7 +237,7 @@ def get_history_loads(db: Session = Depends(get_db)):
             date_str = mass.created_at.strftime("%H:%M:%S %d.%m.%Y")
             op_id_str = f"{status_desc} №{mass.id}"
 
-            print(f"cells: {cells}")
+            logger.debug("cells: %s", cells)
 
             result_ops[str(idx)] = {
                 "ID_load": op_id_str,
@@ -247,9 +250,7 @@ def get_history_loads(db: Session = Depends(get_db)):
             }
 
         except Exception as e:
-            print(traceback.format_exc())
-            print(e.args)
-
+            logger.exception("history_loads error: %s", e)
             raise HTTPException(status_code=500, detail="Что то пошло не так:")
 
     return {"operation": result_ops}

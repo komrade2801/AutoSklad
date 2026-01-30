@@ -100,7 +100,7 @@ class RetryManager:
                         {"id": cmd_id, "retry_count": count}
                     )
                 self.queue.mark_as_failed(cmd_id)
-                print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][schedule_retry] Max retries exceeded for {cmd_id}, marked as failed')
+                logger.warning("[RetryManager][schedule_retry] Max retries exceeded for %s, marked as failed", cmd_id)
                 return
 
             # Команда остается в статусе retrying
@@ -109,7 +109,7 @@ class RetryManager:
                     "Retry count updated",
                     {"id": cmd_id, "retry_count": count}
                 )
-            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][schedule_retry] Retry count updated for {cmd_id}, count: {count}')
+            logger.debug("[RetryManager][schedule_retry] Retry count updated for %s, count: %s", cmd_id, count)
 
     def _retry_one(self, cmd: RetryCommand) -> bool:
         """
@@ -129,10 +129,10 @@ class RetryManager:
             self.queue.mark_as_done(cmd_id)
             if self.logger:
                 self.logger.log_info("Command retry succeeded", {"id": cmd_id})
-            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][_retry_one] Command {cmd_id} retry succeeded')
+            logger.debug("[RetryManager][_retry_one] Command %s retry succeeded", cmd_id)
             return True
         except Exception as ex:
-            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][_retry_one][ERROR] - error: {ex} Не удалось повторить команду, подробности: - {traceback.format_exc()}')
+            logger.exception("[RetryManager][_retry_one] Не удалось повторить команду %s: %s", cmd_id, ex)
             if self.logger:
                 self.logger.log_error(
                     "Retry attempt failed",
@@ -154,7 +154,7 @@ class RetryManager:
             # Повторяем только те, что помечены 'failed'
             if cmd["status"] == "failed":
                 self._retry_one(cmd)
-        print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][retry_failed] - count: {len(self.queue.get_pending_commands() + self.queue.get_failed_commands())}')
+        logger.debug("[RetryManager][retry_failed] count: %s", len(self.queue.get_pending_commands() + self.queue.get_failed_commands()))
 
 
     def retry_failed_all(self) -> None:
@@ -169,7 +169,7 @@ class RetryManager:
             # Преобразуем к RetryCommand
             rc: RetryCommand = {**cmd, "retry_count": cmd.get("retry_count", 0)}
             self.schedule_retry(rc, delay=0)
-        print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][retry_failed_all] - count: {len(failed)}')
+        logger.info("[RetryManager][retry_failed_all] count: %s", len(failed))
 
     def retry_all_retrying(self) -> int:
         """
@@ -188,7 +188,7 @@ class RetryManager:
 
             if self.logger:
                 self.logger.log_info("Processing retrying commands", {"count": len(retrying)})
-            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][retry_all_retrying] Processing {len(retrying)} retrying commands')
+            logger.info("[RetryManager][retry_all_retrying] Processing %s retrying commands", len(retrying))
 
             now = datetime.utcnow()
             success_count = 0
@@ -245,7 +245,7 @@ class RetryManager:
                 if self._retry_one(rc):
                     success_count += 1
 
-            print(f'[ПОТОК][{threading.current_thread().name}][RetryManager][retry_all_retrying] Processed {processed_count} commands, {success_count} succeeded')
+            logger.info("[RetryManager][retry_all_retrying] Processed %s commands, %s succeeded", processed_count, success_count)
             if self.logger:
                 self.logger.log_info(
                     "Retry all retrying completed",

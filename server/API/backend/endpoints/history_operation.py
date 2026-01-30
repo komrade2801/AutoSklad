@@ -1,7 +1,10 @@
 # API/backend/endpoints/history_operation.py
 import traceback
 
+from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = get_logger(__name__)
 from sqlalchemy.orm import Session
 from typing import Dict
 
@@ -38,7 +41,7 @@ def get_history_operation(device_number: int):
          - device: имя устройства (например, "Аппарат 1")
       4. Возвращаем итоговый объект, где ключ "operation" содержит словарь с пронумерованными записями.
     """
-    print(f"get_history_operation")
+    logger.debug("get_history_operation")
     devices_crud = EngineDevice()
     history_op_crud = EngineHistoryOperation()
 
@@ -51,11 +54,11 @@ def get_history_operation(device_number: int):
     try:
         operations_list = history_op_crud.get_operations_by_device_id(
             device.id)
-    except:
-        print(traceback.format_exc())
+    except Exception:
+        logger.exception("get_operations_by_device_id")
         operations_list = []
 
-    print(f"operations_list: {operations_list}")
+    logger.debug("operations_list: %s", operations_list)
 
     # operations: Dict[str, dict] = {}
     # if operations_list:

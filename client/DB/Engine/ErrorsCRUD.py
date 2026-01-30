@@ -1,6 +1,9 @@
 import traceback
 
+from Core.app_logging import get_logger
 from sqlalchemy.orm import Session
+
+logger = get_logger(__name__)
 from typing import Optional, List
 from DB.Engine.BaseCRUD import BaseCRUD  # Импортируем BaseCRUD
 from DB.Models.Error import Error  # Импортируем модель Error
@@ -40,7 +43,7 @@ class EngineError(BaseCRUD):
             self.session.commit()
         except Exception:
             self.session.rollback()
-            print(traceback.format_exc())
+            logger.exception("ErrorsCRUD add_error")
             raise
         return True
         # try:except Exception as e:
@@ -67,8 +70,7 @@ class EngineError(BaseCRUD):
         try:
             return self.session.query(self.model).filter_by(error_type=error_type).all()
         except Exception as e:
-            print(f"Error retrieving errors by type: {e}")
-            print(traceback.format_exc())
+            logger.exception("ErrorsCRUD get_errors_by_type: %s", e)
             return []
 
     def get_recent_errors(self, limit: int = 10) -> List[Error]:
@@ -81,8 +83,7 @@ class EngineError(BaseCRUD):
         try:
             return self.session.query(self.model).order_by(Error.timestamp.desc()).limit(limit).all()
         except Exception as e:
-            print(f"Error retrieving recent errors: {e}")
-            print(traceback.format_exc())
+            logger.exception("ErrorsCRUD get_recent_errors: %s", e)
             return []
 
     def delete_error(self, error_id: int) -> bool:

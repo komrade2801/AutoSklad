@@ -1,6 +1,9 @@
+import logging
 import traceback
 
 from BarcodeScanner.serial_manager import SerialManager
+
+logger = logging.getLogger(__name__)
 from Cnf.Models import SignatureConfig
 from DB.Models.Plan import Plan
 from EventsSystem.action_selector import ActionSelector
@@ -14,10 +17,10 @@ class Executor:
         self.selector = ActionSelector(self)
         self.router = StateRouter(self.selector.mappers)
         self.controller_serial_manager = None
-        self.handle_barcode_manager = lambda response: print(f"Ответ получен: {response}")
-        self.barcode_manager = lambda response: print(f"Ответ получен: {response}")
-        self.handle_serial_controller = lambda response: print(f"Ответ получен: {response}")
-        self.handle_serial_barcode_reader = lambda response: print(f"Ответ получен: {response}")
+        self.handle_barcode_manager = lambda response: logger.debug("Ответ получен: %s", response)
+        self.barcode_manager = lambda response: logger.debug("Ответ получен: %s", response)
+        self.handle_serial_controller = lambda response: logger.debug("Ответ получен: %s", response)
+        self.handle_serial_barcode_reader = lambda response: logger.debug("Ответ получен: %s", response)
 
     def handle_widget_executor(self, start, current, map, value, handle_callback_executor):
 
@@ -49,7 +52,7 @@ class Executor:
             else:
                 return result, map.state()
         except Exception as e:
-            print(e, traceback.extract_stack())
+            logger.exception("Executor exception: %s", e)
         back_state = map.state()
         key = None
         if isinstance(result, dict):
@@ -83,17 +86,17 @@ class Executor:
         self.handle_serial_controller(response)
 
         if response == "Ok":
-            print("`Ok` - переключаем на экран ожидания")
+            logger.debug("`Ok` - переключаем на экран ожидания")
         elif response == "command_ok":
-            print("`command_ok` - процесс завершён")
+            logger.debug("`command_ok` - процесс завершён")
 
     def cmd_send(self, number, tool_name):
         """Отправка команды в очередь SerialManager"""
         if self.controller_serial_manager:
-            print(f"Отправка: {number} | Инструмент: {tool_name}")
+            logger.debug("Отправка: %s | Инструмент: %s", number, tool_name)
             self.controller_serial_manager.command_queue.put(f"send:{number}")
         else:
-            print("SerialManager не запущен!")
+            logger.warning("SerialManager не запущен!")
 
     def attach_barcode_manager(self, barcode_manager):
         """Подключаем уже запущенный SerialManager"""
@@ -103,4 +106,4 @@ class Executor:
     def handle_barcode_response(self, response):
         """Обрабатываем полученный ответ"""
         self.handle_barcode_manager(response)
-        print(f"barcode: {response}")
+        logger.debug("barcode: %s", response)

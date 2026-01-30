@@ -1,7 +1,10 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 
+from Core.app_logging import get_logger
 from API.backend.request_models import CellUpdate
+
+logger = get_logger(__name__)
 # , Type
 from DB.Engine.CRUD import BaseCRUD
 from DB.Models.Cell import Cell
@@ -97,7 +100,7 @@ class EngineCell(BaseCRUD):
             :param cell_id: Уникальный идентификатор ячейки.
             :return: True, если запись успешно обновлена, иначе False.
         """
-        print(f"update_cell {cell_id}, {number}, {description}, {groups_id}, {tools_id}, {status_id}")
+        logger.debug("update_cell %s, %s, %s, %s, %s, %s", cell_id, number, description, groups_id, tools_id, status_id)
 
         # 1) Загружаем из БД текущее состояние
         instance = self.session.query(self.model).get(cell_id)
@@ -127,10 +130,10 @@ class EngineCell(BaseCRUD):
 
         # 4) Всегда вызываем update для создания команды синхронизации
         # @sync_aware декоратор гарантирует создание команды, даже если значения не изменились
-        print(f"[update_cell] Вызов self.update для cell_id={cell_id}, "
-              f"updates={updates}, device_id={getattr(self, 'device_id', 'NOT SET')}")
+        logger.debug("[update_cell] cell_id=%s, updates=%s, device_id=%s",
+                     cell_id, updates, getattr(self, 'device_id', 'NOT SET'))
         result = self.update(index=cell_id, **updates)
-        print(f"[update_cell] Результат self.update: {result}")
+        logger.debug("[update_cell] Результат self.update: %s", result)
         return result
 
     def delete_cell(self, cell_id: int) -> bool:

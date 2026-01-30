@@ -2,6 +2,10 @@
 import traceback
 from typing import List
 
+from Core.app_logging import get_logger
+
+logger = get_logger(__name__)
+
 # from sqlalchemy.orm import Session
 from fastapi import APIRouter, Request, status  # Depends, HTTPException,
 from sqlalchemy.exc import IntegrityError
@@ -255,7 +259,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Code already exists or duplicate data")
     except Exception as e:
         # любые другие ошибки
-        print(traceback.format_exc())
+        logger.exception("create_user")
         raise HTTPException(status_code=500, detail="Unexpected server error")
 
 

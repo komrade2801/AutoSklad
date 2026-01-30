@@ -1,6 +1,9 @@
 import traceback
 
+from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = get_logger(__name__)
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List, Tuple
 
@@ -104,36 +107,37 @@ def create_groups(data: GroupsCreate, db: Session = Depends(get_db)):
       3. Добавляем записи в таблицу Groups с правильным paren_group_id.
     """
     try:
-        print(f"[create_groups] Начало создания группы. Данные: group_name={data.group_name}, parent_group={data.parent_group}, group_id={data.group_id}, description={data.description}")
+        logger.debug("[create_groups] Начало создания группы. Данные: group_name=%s, parent_group=%s, group_id=%s, description=%s",
+                     data.group_name, data.parent_group, data.group_id, data.description)
         group_crud = EngineGroup()
 
         group_parent_id = 0
 
         if data.parent_group and data.parent_group > 0:
             group_parent_id = data.parent_group
-            print(f"[create_groups] Установлен parent_group_id: {group_parent_id}")
+            logger.debug("[create_groups] Установлен parent_group_id: %s", group_parent_id)
 
             # Проверка существования родительской группы
             parent_group = group_crud.get_group_by_id(group_parent_id)
-            print(f"[create_groups] Родительская группа найдена: {parent_group}")
+            logger.debug("[create_groups] Родительская группа найдена: %s", parent_group)
 
             if not parent_group:
-                print(f"[create_groups] ОШИБКА: Родительская группа с ID {group_parent_id} не найдена")
+                logger.error("[create_groups] Родительская группа с ID %s не найдена", group_parent_id)
                 raise HTTPException(
                     status_code=400, detail="Не удалось создать или найти группу")
 
         else:
             group_parent_id = 0
-            print(f"[create_groups] Родительская группа не указана, устанавливаем 0")
+            logger.debug("[create_groups] Родительская группа не указана, устанавливаем 0")
 
 
         if data.group_name:
             # Если передан group_id, обновляем существующую группу
             if data.group_id and data.group_id > 0:
-                print(f"[create_groups] Режим обновления группы с ID: {data.group_id}")
+                logger.debug("[create_groups] Режим обновления группы с ID: %s", data.group_id)
                 existing_group = group_crud.get_group_by_id(data.group_id)
                 if not existing_group:
-                    print(f"[create_groups] ОШИБКА: Группа для обновления с ID {data.group_id} не найдена")
+                    logger.error("[create_groups] Группа для обновления с ID %s не найдена", data.group_id)
                     raise HTTPException(
                         status_code=404, detail="Группа для обновления не найдена")
                 
@@ -145,11 +149,12 @@ def create_groups(data: GroupsCreate, db: Session = Depends(get_db)):
                 )
                 
                 if not has_changes:
-                    print(f"[create_groups] Данные не изменились, пропускаем UPDATE (избегаем лишней синхронизации)")
+                    logger.debug("[create_groups] Данные не изменились, пропускаем UPDATE")
                     return GroupsAddResponse(status=200, message="Группа не изменилась")
                 
                 # Обновляем группу (декоратор @sync_aware создаст команду синхронизации)
-                print(f"[create_groups] Обновление группы: name={data.group_name}, description={data.description}, paren_group_id={group_parent_id}")
+                logger.debug("[create_groups] Обновление группы: name=%s, description=%s, paren_group_id=%s",
+                             data.group_name, data.description, group_parent_id)
                 success = group_crud.update_group(
                     group_id=data.group_id,
                     name=data.group_name,
@@ -157,50 +162,51 @@ def create_groups(data: GroupsCreate, db: Session = Depends(get_db)):
                     paren_group_id=group_parent_id
                 )
                 if not success:
-                    print(f"[create_groups] ОШИБКА: Не удалось обновить группу с ID {data.group_id}")
+                    logger.error("[create_groups] Не удалось обновить группу с ID %s", data.group_id)
                     raise HTTPException(
                         status_code=400, detail="Не удалось обновить группу")
                 
                 # Очищаем кеш ПОСЛЕ успешного обновления
                 group_crud._cache.clear()
-                print(f"[create_groups] Группа успешно обновлена")
+                logger.info("[create_groups] Группа успешно обновлена")
                 return GroupsAddResponse(status=200, message="Группа успешно обновлена")
             else:
                 # Создаём новую группу
-                print(f"[create_groups] Режим создания новой группы")
+                logger.debug("[create_groups] Режим создания новой группы")
                 existing_groups = group_crud.find_groups_by_name(name=data.group_name)
-                print(f"[create_groups] Поиск существующих групп с именем '{data.group_name}': найдено {len(existing_groups)} групп")
+                logger.debug("[create_groups] Поиск существующих групп с именем '%s': найдено %s групп", data.group_name, len(existing_groups))
                 
                 if len(existing_groups) == 0:
-                    print(f"[create_groups] Группа с именем '{data.group_name}' не найдена, создаём новую")
-                    print(f"[create_groups] Параметры создания: name={data.group_name}, description={data.description}, paren_group_id={group_parent_id}")
+                    logger.debug("[create_groups] Группа с именем '%s' не найдена, создаём новую", data.group_name)
+                    logger.debug("[create_groups] Параметры создания: name=%s, description=%s, paren_group_id=%s",
+                                 data.group_name, data.description, group_parent_id)
                     # Декоратор @sync_aware автоматически создаст команду синхронизации ADD
                     group = group_crud.create_group(
                         name=data.group_name,
                         description=data.description,
                         paren_group_id=group_parent_id
                     )
-                    print(f"[create_groups] Результат create_group: {group}")
+                    logger.debug("[create_groups] Результат create_group: %s", group)
                     if not group:
-                        print(f"[create_groups] ОШИБКА: create_group вернул None. Возможные причины: ошибка при добавлении в БД или генерации ID")
+                        logger.error("[create_groups] create_group вернул None")
                         raise HTTPException(
                             status_code=400, detail="Не удалось создать группу")
                     
                     # Очищаем кеш ПОСЛЕ успешного создания
                     group_crud._cache.clear()
-                    print(f"[create_groups] Группа успешно создана с ID: {group.id}")
+                    logger.info("[create_groups] Группа успешно создана с ID: %s", group.id)
                 else:
-                    print(f"[create_groups] Группа с именем '{data.group_name}' уже существует (ID: {[g.id for g in existing_groups]})")
+                    logger.debug("[create_groups] Группа с именем '%s' уже существует (ID: %s)", data.group_name, [g.id for g in existing_groups])
                     return GroupsAddResponse(status=204, message="Группа уже существует")
 
-        print(f"[create_groups] Успешное завершение")
+        logger.debug("[create_groups] Успешное завершение")
         return GroupsAddResponse(status=201, message="Группа успешно добавлена")
 
     except HTTPException:
         # Пробрасываем HTTP ошибки дальше
         raise
     except Exception as error:
-        print(error, traceback.format_exc())
+        logger.exception("create_groups: %s", error)
         # Общая ошибка — возвращаем 400 с сообщением
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -243,7 +249,7 @@ def get_all_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         result = {"groups": {}}
         for i, group in enumerate(all_groups):
 
-            print(f"group {i}: {group}")
+            logger.debug("group %s: %s", i, group)
 
             result["groups"][str(i)] = {
                 "id": group.id,
@@ -254,7 +260,7 @@ def get_all_groups_from_db(device_number: int, db: Session = Depends(get_db)):
         return result
 
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("get_all_groups_from_db")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка формирования JSON: {e}"
@@ -289,7 +295,7 @@ def get_group_by_id(group_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("get_group_by_id")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка получения группы: {e}"
@@ -331,7 +337,7 @@ def check_group_busy(group_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("check_group_busy")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка проверки группы: {e}"
@@ -405,21 +411,21 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
             deleted_tool_types_count = 0
             
             all_group_ids = get_all_nested_groups(group_id)
-            print(f"[delete_group] Группы для удаления (рекурсивно): {all_group_ids}")
+            logger.debug("[delete_group] Группы для удаления (рекурсивно): %s", all_group_ids)
             
             # Удаляем ToolTypes для всех групп (в обратном порядке)
             for gid in reversed(all_group_ids):
                 tool_types = tool_type_crud.get_by_group(gid)
-                print(f"[delete_group] Удаление номенклатур для группы {gid}: найдено {len(tool_types)}")
+                logger.debug("[delete_group] Удаление номенклатур для группы %s: найдено %s", gid, len(tool_types))
                 for tool_type in tool_types:
                     # Декоратор @sync_aware автоматически создаст команду синхронизации DELETE
-                    print(f"[delete_group] Удаление номенклатуры {tool_type.id} ({tool_type.name})")
+                    logger.debug("[delete_group] Удаление номенклатуры %s (%s)", tool_type.id, tool_type.name)
                     success = tool_type_crud.delete_tool_type(tool_type.id)
                     if success:
                         deleted_tool_types_count += 1
-                        print(f"[delete_group] Номенклатура {tool_type.id} успешно удалена")
+                        logger.debug("[delete_group] Номенклатура %s успешно удалена", tool_type.id)
                     else:
-                        print(f"[delete_group] ОШИБКА: Не удалось удалить номенклатуру {tool_type.id}")
+                        logger.error("[delete_group] Не удалось удалить номенклатуру %s", tool_type.id)
                 
                 # Очищаем кеш после удаления всех номенклатур группы
                 if tool_types:
@@ -430,22 +436,22 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
                 group_before = group_crud.get_group_by_id(gid)
                 group_name = group_before.name if group_before else f"ID {gid}"
                 
-                print(f"[delete_group] Попытка удаления группы {gid} ({group_name})")
+                logger.debug("[delete_group] Попытка удаления группы %s (%s)", gid, group_name)
                 # Декоратор @sync_aware автоматически создаст команду синхронизации DELETE
                 success = group_crud.delete_group(gid)
                 
                 if success:
                     deleted_groups_count += 1
-                    print(f"[delete_group] Группа {gid} ({group_name}) успешно удалена из БД")
+                    logger.info("[delete_group] Группа %s (%s) успешно удалена из БД", gid, group_name)
                     
                     # Проверка удаления (для диагностики)
                     group_after = group_crud.get_group_by_id(gid)
                     if group_after:
-                        print(f"[delete_group] ВНИМАНИЕ: Группа {gid} все еще существует после удаления!")
+                        logger.warning("[delete_group] Группа %s все еще существует после удаления!", gid)
                     else:
-                        print(f"[delete_group] Подтверждено: группа {gid} удалена из БД")
+                        logger.debug("[delete_group] Подтверждено: группа %s удалена из БД", gid)
                 else:
-                    print(f"[delete_group] ОШИБКА: delete_group вернул False для {gid} ({group_name})")
+                    logger.error("[delete_group] delete_group вернул False для %s (%s)", gid, group_name)
             
             # Очищаем кеш после удаления всех групп
             if deleted_groups_count > 0:
@@ -472,9 +478,9 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
         # Выполняем рекурсивное удаление
         # Декоратор @sync_aware автоматически создаст команды синхронизации для каждой операции
         # ВАЖНО: Каждая операция DELETE создаст отдельную команду в CommandQueue
-        print(f"[delete_group] Начало рекурсивного удаления группы {group_id}...")
+        logger.debug("[delete_group] Начало рекурсивного удаления группы %s...", group_id)
         deleted_groups_count, deleted_tool_types_count = delete_group_recursive(group_id)
-        print(f"[delete_group] Удаление завершено: групп={deleted_groups_count}, номенклатур={deleted_tool_types_count}")
+        logger.info("[delete_group] Удаление завершено: групп=%s, номенклатур=%s", deleted_groups_count, deleted_tool_types_count)
         
         # Финальная очистка кеша (если еще не очищен)
         group_crud._cache.clear()
@@ -487,7 +493,7 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        print(traceback.format_exc())
+        logger.exception("delete_group")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Ошибка удаления группы: {e}"

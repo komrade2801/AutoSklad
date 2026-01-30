@@ -18,7 +18,11 @@ from sqlalchemy.orm import Session, Query
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError, IntegrityError
 from typing import Type, TypeVar, List, Optional, Generator
 from contextlib import contextmanager
+
+from Core.app_logging import get_logger
 from cachetools import TTLCache
+
+logger = get_logger(__name__)
 
 
 
@@ -268,27 +272,25 @@ class CoreEngine:
         valid_keys = set(c.name for c in self.model.__table__.columns)
         clean = {k: v for k, v in kwargs.items() if k in valid_keys}
         
-        print(f"[CoreEngine.add] Параметры для создания: {clean}")
+        logger.debug("[CoreEngine.add] Параметры для создания: %s", clean)
         try:
             with self.transaction() as db:
                 instance = self.model(**clean)
-                print(f"[CoreEngine.add] Создан экземпляр модели: {instance}")
+                logger.debug("[CoreEngine.add] Создан экземпляр модели: %s", instance)
                 db.add(instance)
-                print(f"[CoreEngine.add] Экземпляр добавлен в сессию")
+                logger.debug("[CoreEngine.add] Экземпляр добавлен в сессию")
                 # Делаем flush, чтобы получить ID и проверить на ошибки
                 db.flush()
-                print(f"[CoreEngine.add] Flush выполнен, ID объекта: {getattr(instance, 'id', 'не установлен')}")
-            print(f"[CoreEngine.add] Транзакция закоммичена успешно")
+                logger.debug("[CoreEngine.add] Flush выполнен, ID объекта: %s", getattr(instance, 'id', 'не установлен'))
+            logger.debug("[CoreEngine.add] Транзакция закоммичена успешно")
             self._cache.clear()
             return True
         except IntegrityError as e:
-            print(f"[CoreEngine.add] ОШИБКА IntegrityError: {e}")
-            print(traceback.format_exc())
+            logger.exception("[CoreEngine.add] IntegrityError: %s", e)
             self.session.rollback()
             raise RuntimeError(f"Integrity error: {e}") from e
         except Exception as e:
-            print(f"[CoreEngine.add] ОШИБКА при добавлении: {e}")
-            print(traceback.format_exc())
+            logger.exception("[CoreEngine.add] ОШИБКА при добавлении: %s", e)
             self.session.rollback()
             raise
 

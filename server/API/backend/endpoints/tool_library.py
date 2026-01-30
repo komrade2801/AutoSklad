@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from io import BytesIO
 # from fastapi.responses import JSONResponse
+from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File  # , Body, Form
+
+logger = get_logger(__name__)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -83,7 +86,7 @@ async def upload_xlsx(
                 record["Название группы"] = sheet_name
                 records.append(record)
 
-        print(f"records: {records}")
+        logger.debug("records: %s", records)
         # records = df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(422, f"Cannot parse Excel: {e}")
@@ -100,14 +103,14 @@ async def upload_xlsx(
     tool_type_counts = {}
 
     last_seen = {k: None for k in field_map.keys()}
-    print(f"last_seen {last_seen}")
+    logger.debug("last_seen: %s", last_seen)
     # 4) Обрабатываем построчно
     for idx, rec in enumerate(records, start=1):
-        print(f"{idx} / {len(records)}")
+        logger.debug("%s / %s", idx, len(records))
         try:
             norm, last_seen = normalize_record(
                 rec, REQUIRED, field_map, last_seen)
-            print(f"norm {norm}")
+            logger.debug("norm: %s", norm)
             # inv = norm["tool_inventory_number"]
 
             # if inv and inv in seen_inv:
@@ -129,7 +132,7 @@ async def upload_xlsx(
                 name=norm["tool_types_name"],
                 # groups_id=grp_id
             )
-            print(f"tt {tt}")
+            logger.debug("tt: %s", tt)
             tool_type = None
             if not tt:
                 tool_type_id = max(e_tool_types.get_all_ids(), default=0) + 1
@@ -192,13 +195,13 @@ async def upload_xlsx(
             db.rollback()
             errors.append({"row": idx, "error": str(e)})
 
-            print(e)
+            logger.warning("upload_xlsx row %s: %s", idx, e)
 
-    print(f"found tool type counts {tool_type_counts}")
+    logger.debug("found tool type counts: %s", tool_type_counts)
     if tool_type_counts:
         for id, count in tool_type_counts.items():
             tool_type = e_tool_types.get_tool_type_by_id(id)
-            print(f"tool_type {tool_type}")
+            logger.debug("tool_type: %s", tool_type)
 
             e_tool_types.update_tool_type(
                 id=tool_type.id,

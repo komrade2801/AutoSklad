@@ -78,19 +78,19 @@ class CommandQueue:
             try:
                 with open(self.filepath, "r", encoding="utf-8") as f:
                     self.queue = json.load(f)
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][_load_queue] Очередь загружена из кэша. [{datetime.now()}]')
+                logger.info("[CommandQueue][_load_queue] Очередь загружена из кэша.")
             except (json.JSONDecodeError, IOError) as e:
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][_load_queue][ERROR][JSONDecodeError] - error: {e}, подробности: - {traceback.format_exc()}. [{datetime.now()}]')
+                logger.error("[CommandQueue][_load_queue] JSONDecodeError: %s\n%s", e, traceback.format_exc())
                 self.queue = []
         else:
             self.queue = []
-            print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][_load_queue] Очередь загружена из кэша. [{datetime.now()}]')
+            logger.debug("[CommandQueue][_load_queue] Очередь инициализирована пустой.")
 
     def _save_queue(self):
         """Сохраняет текущее состояние очереди в файл."""
         with open(self.filepath, "w", encoding="utf-8") as f:
             json.dump(self.queue, f, indent=2, ensure_ascii=False, default=str)
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][_save_queue] Очередь сохранена в кэш. [{datetime.now()}]')
+        logger.info("[CommandQueue][_save_queue] Очередь сохранена в кэш.")
 
     def add_command(self, table: str, operation: str, data: dict) -> str:
         """
@@ -112,38 +112,38 @@ class CommandQueue:
         }
         self.queue.append(command)
         self._save_queue()
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][add_command] Команда добавлена в очередь. [{datetime.now()}]')
+        logger.info("[CommandQueue][add_command] Команда добавлена в очередь.")
         return command_id
 
     def get_pending_commands(self) -> List[Dict]:
         """Возвращает список команд со статусом 'pending'."""
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][get_pending_commands] Количество команд в очереди: {len(self.queue)}. [{datetime.now()}]')
+        logger.debug("[CommandQueue][get_pending_commands] Количество команд в очереди: %s", len(self.queue))
         return [cmd for cmd in self.queue if cmd.get("status") == "pending"]
 
     def mark_as_sent(self, command_id: str):
         """Помечает команду как отправленную ('sent')."""
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][mark_as_sent] Команда помечена как отправленная. [{datetime.now()}]')
+        logger.info("[CommandQueue][mark_as_sent] Команда помечена как отправленная.")
         self._update_status(command_id, "sent")
 
     def mark_as_done(self, command_id: str):
         """Помечает команду как успешно обработанную ('done')."""
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][mark_as_done] Команда помечена как успешно обработанная. [{datetime.now()}]')
+        logger.info("[CommandQueue][mark_as_done] Команда помечена как успешно обработанная.")
         self._update_status(command_id, "done")
 
     def mark_as_failed(self, command_id: str):
         """Помечает команду как неуспешную ('failed')."""
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][mark_as_failed] Команда помечена как неуспешная. [{datetime.now()}]')
+        logger.info("[CommandQueue][mark_as_failed] Команда помечена как неуспешная.")
         self._update_status(command_id, "failed")
 
     def clear_done(self):
         """Удаляет из очереди все команды со статусом 'done'."""
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][clear_done] Команды со статусом "done" удалены из очереди. [{datetime.now()}]')
+        logger.info("[CommandQueue][clear_done] Команды со статусом done удалены из очереди.")
         self.queue = [cmd for cmd in self.queue if cmd.get("status") != "done"]
         self._save_queue()
 
     def _update_status(self, command_id: str, new_status: str):
         """Обновляет статус команды по её ID."""
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][_update_status] Статус команды обновлен. [{datetime.now()}]')
+        logger.debug("[CommandQueue][_update_status] Статус команды обновлен.")
         for cmd in self.queue:
             if cmd.get("id") == command_id:
                 cmd["status"] = new_status
@@ -152,7 +152,7 @@ class CommandQueue:
 
     def get_failed_commands(self) -> List[Dict]:
         """Возвращает список команд со статусом 'failed'."""
-        print(f'[CommandQueue][get_failed_commands] Count failed: {len(self.queue)}')
+        logger.debug("[CommandQueue][get_failed_commands] Count failed: %s", len([c for c in self.queue if c.get("status") == "failed"]))
         return [cmd for cmd in self.queue if cmd.get("status") == "failed"]
 
     def get_retrying_commands(self) -> List[Dict]:
@@ -162,7 +162,7 @@ class CommandQueue:
         retrying = [cmd for cmd in self.queue if cmd.get("status") == "retrying"]
         # Сортируем по timestamp (старые первыми)
         retrying.sort(key=lambda cmd: cmd.get("timestamp", ""))
-        print(f'[CommandQueue][get_retrying_commands] Count retrying: {len(retrying)}')
+        logger.debug("[CommandQueue][get_retrying_commands] Count retrying: %s", len(retrying))
         return retrying
 
     def has_pending_or_retrying_for_record(self, table: str, record_id: Any) -> bool:
@@ -181,13 +181,13 @@ class CommandQueue:
                     # Проверяем оба возможных поля для ID
                     cmd_record_id = data.get("id") or data.get("index")
                     if cmd_record_id == record_id:
-                        print(f'[CommandQueue][has_pending_or_retrying_for_record] Found {cmd.get("status")} command for {table} id={record_id}: {cmd.get("id")}')
+                        logger.debug("[CommandQueue][has_pending_or_retrying_for_record] Found %s command for %s id=%s: %s", cmd.get("status"), table, record_id, cmd.get("id"))
                         return True
         return False
 
     def mark_as_retrying(self, command_id: str):
         """Помечает команду как находящуюся на повторной попытке ('retrying')."""
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][mark_as_retrying] Команда помечена как повторяющаяся. [{datetime.now()}]')
+        logger.info("[CommandQueue][mark_as_retrying] Команда помечена как повторяющаяся.")
         self._update_status(command_id, "retrying")
 
     def get_pending_older_than(self, oldest_timestamp: str = None) -> List[Dict]:
@@ -205,12 +205,12 @@ class CommandQueue:
         try:
             cutoff_time = datetime.fromisoformat(oldest_timestamp.replace('Z', '+00:00'))
         except ValueError:
-            print(f'[CommandQueue][get_pending_older_than] Invalid timestamp format: {oldest_timestamp}')
+            logger.warning("[CommandQueue][get_pending_older_than] Invalid timestamp format: %s", oldest_timestamp)
             return self.get_pending_commands()
 
         pending = self.get_pending_commands()
         older = [cmd for cmd in pending if datetime.fromisoformat(cmd["timestamp"].replace('Z', '+00:00')) < cutoff_time]
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][get_pending_older_than] Pending older than {oldest_timestamp}: {len(older)} из {len(pending)}')
+        logger.debug("[CommandQueue][get_pending_older_than] Pending older than %s: %s из %s", oldest_timestamp, len(older), len(pending))
         return older
 
     def get_oldest_retrying_timestamp(self) -> str:
@@ -227,7 +227,7 @@ class CommandQueue:
         timestamps = [cmd["timestamp"] for cmd in retrying]
         timestamps.sort()
         oldest = timestamps[0]
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][get_oldest_retrying_timestamp] Oldest retrying timestamp: {oldest}')
+        logger.debug("[CommandQueue][get_oldest_retrying_timestamp] Oldest retrying timestamp: %s", oldest)
         return oldest
 
     def add_retry_count(self, command_id: str) -> int:
@@ -242,7 +242,7 @@ class CommandQueue:
                 current_count = cmd.get("retry_count", 0)
                 cmd["retry_count"] = current_count + 1
                 self._save_queue()
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][add_retry_count] Retry count for {command_id}: {current_count + 1}')
+                logger.info("[CommandQueue][add_retry_count] Retry count for %s: %s", command_id, current_count + 1)
                 return current_count + 1
         return -1
 
@@ -264,9 +264,9 @@ class CommandQueue:
             if cmd.get("id") == command_id:
                 cmd["last_retry_timestamp"] = timestamp
                 self._save_queue()
-                print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][update_last_retry_timestamp] Updated last_retry_timestamp for {command_id}: {timestamp}')
+                logger.debug("[CommandQueue][update_last_retry_timestamp] Updated last_retry_timestamp for %s: %s", command_id, timestamp)
                 return
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][update_last_retry_timestamp] Command {command_id} not found')
+        logger.warning("[CommandQueue][update_last_retry_timestamp] Command %s not found", command_id)
 
     def get_last_retry_timestamp(self, command_id: str) -> Optional[str]:
         """

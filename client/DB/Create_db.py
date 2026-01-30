@@ -2,7 +2,11 @@
 import json
 import time
 import traceback
+
+from Core.app_logging import get_logger
 import dbSync
+
+logger = get_logger(__name__)
 from DB.Data.sqlite_db import SessionLocal, engine
 from DB.Engine.CellCRUD import EngineCell
 from DB.Engine.ConsumptionCRUD import EngineConsumption
@@ -114,21 +118,18 @@ def rebuild_db():
     if os.path.exists(db_filename):
         try:
             os.remove(db_filename)
-            print(f"Database file removed: {db_filename}")
+            logger.info("Database file removed: %s", db_filename)
         except Exception as e:
-            print(f"Error removing database file: {e}")
-            print(traceback.format_exc())
+            logger.exception("Error removing database file: %s", e)
     else:
-        print(
-            f"No existing database file found; creating new one at: {db_filename}")
+        logger.debug("No existing database file found; creating new one at: %s", db_filename)
 
     # 6) Create an empty file
     try:
         open(db_filename, "w").close()
-        print(f"Database file created: {db_filename}")
+        logger.info("Database file created: %s", db_filename)
     except Exception as e:
-        print(f"Error creating database file: {e}")
-        print(traceback.format_exc())
+        logger.exception("Error creating database file: %s", e)
         return
 
     # 7) Connect to SQLite and create tables
@@ -136,10 +137,9 @@ def rebuild_db():
     try:
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
-        print("All tables have been successfully (re)created.")
+        logger.info("All tables have been successfully (re)created.")
     except Exception as e:
-        print(f"Error during (re)creation of tables: {e}")
-        print(traceback.format_exc())
+        logger.exception("Error during (re)creation of tables: %s", e)
     finally:
         engine.dispose()
 
@@ -203,7 +203,7 @@ def execute():
         # вариант 1: получить datetime.date
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
 
-        print("Устройство добавлено")
+        logger.info("Устройство добавлено")
         update_progress("Устройство добавлено!", "complete", 12)
         status_names = [
             "start_system",

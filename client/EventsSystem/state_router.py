@@ -1,5 +1,9 @@
+import logging
+
 from EventsSystem.action_db import ActionMapper
 from StateMachine.state_map import transitions
+
+logger = logging.getLogger(__name__)
 
 
 class StateRouter:
@@ -53,8 +57,7 @@ class StateRouter:
         if not next_state:
             raise ValueError(f"Не найдено допустимого перехода для триггера '{trigger}' из состояние '{self.current_state}'.")
 
-        # Лог текущего перехода
-        print(f"Переход: {self.current_state} -> {next_state} (триггер: {trigger})")
+        logger.debug("Переход: %s -> %s (триггер: %s)", self.current_state, next_state, trigger)
 
         # Обновляем текущее состояние
         self.current_state = next_state
@@ -191,9 +194,7 @@ class StateRouter:
 
 # Пример fallback-функции для обработки неоднозначных случаев
 def example_fallback(transitions):
-    print("Неоднозначность в выборе перехода:")
-    for t in transitions:
-        print(t)
+    logger.warning("Неоднозначность в выборе перехода: %s", transitions)
     return "unknown_trigger"  # Возвращаем значение по умолчанию
 
 
@@ -243,10 +244,7 @@ if __name__ == "__main__":
 
     # Пример fallback-функции
     def resolve_ambiguity(matching_transitions):
-        print("Обнаружена неоднозначность!")
-        for t in matching_transitions:
-            print(f"Триггер: {t['trigger']}, Source: {t['source']}, Dest: {t['dest']}")
-        # Возвращаем первый триггер в случае неоднозначности
+        logger.warning("Обнаружена неоднозначность: %s", matching_transitions)
         return matching_transitions[0]['trigger']
 
     # Пытаемся найти триггер
@@ -257,9 +255,8 @@ if __name__ == "__main__":
     )
 
     if trigger:
-        print(f"Найден триггер: {trigger}")
-        # Выполняем переход
+        logger.debug("Найден триггер: %s", trigger)
         result = router.route(trigger, "DB", "some_action", param="example")
-        print(f"Результат выполнения: {result}")
+        logger.debug("Результат выполнения: %s", result)
     else:
-        print("Триггер не найден. Переход невозможен.")
+        logger.warning("Триггер не найден. Переход невозможен.")
