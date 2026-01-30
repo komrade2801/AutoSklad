@@ -1,37 +1,8 @@
 import logging
 from typing import Optional, Dict, Any
 
-import os
-import logging
-
-def ensure_log_file(filepath: str) -> None:
-    """
-    Гарантирует, что файл лога и его директория существуют.
-    Если директория отсутствует — создаёт её.
-    Если файл отсутствует — создаёт пустой файл.
-    """
-    directory = os.path.dirname(filepath)
-    if directory and not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
-    if not os.path.exists(filepath):
-        # Создаём пустой файл
-        open(filepath, 'a', encoding='utf-8').close()
-
-# Пример использования перед вызовом basicConfig:
-LOG_DIR = "logs"
-LOG_FILE = os.path.join(LOG_DIR, "sync.log")
-
-ensure_log_file(LOG_FILE)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s][%(threadName)s][%(name)s][%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
+# Примечание: Логирование настраивается централизованно через Core.app_logging.setup_app_logging()
+# Этот модуль использует уже настроенную систему логирования Python
 
 
 class DiagnosticLogger:
@@ -69,21 +40,19 @@ class DiagnosticLogger:
         logger_name: str = "SyncLogger"
     ) -> None:
         """
-        :param log_to_file: если True — вывод в файл, иначе в stdout.
-        :param logfile:     путь к файлу для логирования.
-        :param level:       уровень логирования (DEBUG, INFO и т.д.).
+        :param log_to_file: игнорируется - логирование настроено централизованно
+        :param logfile: игнорируется - логирование настроено централизованно
+        :param level: уровень логирования (DEBUG, INFO и т.д.).
         :param logger_name: имя логгера.
         """
+        # Используем уже настроенную систему логирования
+        # Логирование настроено централизованно через Core.app_logging.setup_app_logging()
+        # поэтому просто получаем логгер и устанавливаем уровень
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(level)
-
-        # настроить единственный handler
-        if not self.logger.handlers:
-            handler = logging.FileHandler(logfile, encoding="utf-8") if log_to_file else logging.StreamHandler()
-            fmt = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
-            datefmt = "%Y-%m-%dT%H:%M:%S"
-            handler.setFormatter(logging.Formatter(fmt, datefmt))
-            self.logger.addHandler(handler)
+        
+        # Не добавляем собственные handlers - используем централизованную систему
+        # Это предотвращает дублирование логов
 
     def log_error(self, message: str, context: Optional[Dict[str, Any]] = None) -> None:
         """

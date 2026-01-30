@@ -12,6 +12,7 @@ import mimetypes
 import json
 import importlib
 from DB.Data.init_db import initialize_database_if_needed
+from Core.app_logging import setup_app_logging, get_logger
 import dbSync
 import faulthandler
 import os
@@ -23,32 +24,38 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-# Настройка логирования
-logging.basicConfig(
+# Настройка логирования для всего приложения
+setup_app_logging(
+    log_dir="logs",
+    app_log_file="app.log",
+    sync_log_file="sync.log",
+    error_log_file="error.log",
     level=logging.INFO,
-    format='[%(asctime)s] %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    console_output=True
 )
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # 1) Сразу убеждаемся, что БД создана (init_db сам перезапустит программу, если файла пока нет)
-faulthandler.enable(all_threads=True, file=open("crash.log", "w"))
-
+crash_log_path = os.path.join(current_dir, "crash.log")
+faulthandler.enable(all_threads=True, file=open(crash_log_path, "w"))
+logger.info(f"Faulthandler enabled, crash log: {crash_log_path}")
 
 dbSync.init_db = True
+logger.info("Initializing database...")
 initialize_database_if_needed()
 dbSync.init_db = False
+logger.info("Database initialization complete")
 
 # 2) Инициализируем кэш настроек после создания БД
 try:
     from DB.Engine.SettingsCRUD import EngineSettings
     settings_crud = EngineSettings()
     settings_crud.load_all_to_cache()
-    print("[INFO] Settings cache initialized successfully")
+    logger.info("Settings cache initialized successfully")
 except Exception as e:
     # Если таблица Settings еще не создана или произошла ошибка, продолжаем работу
-    print(f"[WARN] Failed to initialize settings cache: {e}")
-    print("[INFO] Continuing with default settings from options.py")
+    logger.warning(f"Failed to initialize settings cache: {e}")
+    logger.info("Continuing with default settings from options.py")
 
 # Import routers only AFTER DB is initialized to avoid early SQL queries
 front_router = importlib.import_module("frontend.front_router").front_router
@@ -238,7 +245,9 @@ if platform.system() != "Windows":
 # ------------------------------------------------------------
 if __name__ == "__main__":
     try:
+        logger.info("=" * 60)
         logger.info(f"Запуск сервера на {Host}:{port}")
+        logger.info("=" * 60)
         uvicorn.run(
             app, 
             host=Host, 
@@ -251,7 +260,7 @@ if __name__ == "__main__":
         logger.info("Получен KeyboardInterrupt, завершение работы...")
         signal_handler(signal.SIGINT, None)
     except Exception as e:
-        logger.error(f"Критическая ошибка при запуске сервера: {e}", exc_info=True)
+        logger.critical(f"Критическая ошибка при запуске сервера: {e}", exc_info=True)
         sys.exit(1)
 
 

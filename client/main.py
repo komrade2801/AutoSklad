@@ -6,6 +6,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import List
 import os
+import logging
 
 import uvicorn
 from PyQt5.QtWidgets import QApplication
@@ -16,6 +17,7 @@ from BarcodeScanner.serial_manager import SerialManager
 from BarcodeScanner.MockSerialManager import MockSerialManager
 from Core import platforms
 from Core.sync_config import SyncConfig
+from Core.app_logging import setup_app_logging, get_logger
 from DB.Data.sqlite_db import SessionLocal
 from EventsSystem.Executor import Executor
 from GUI.MainWindow import MainWindow
@@ -24,6 +26,17 @@ from StateMachine.converter_xml_2 import map_builder
 
 from dbSync.Runner import start_sync, stop_sync
 from dbSync.Transport.routers import sync_router
+
+# Настройка логирования для всего приложения
+setup_app_logging(
+    log_dir="logs",
+    app_log_file="app.log",
+    sync_log_file="sync.log",
+    error_log_file="error.log",
+    level=logging.INFO,
+    console_output=True
+)
+logger = get_logger(__name__)
 
 
 # ------------------------------------------------------------
@@ -34,8 +47,7 @@ from dbSync.Transport.routers import sync_router
 async def lifespan(app: FastAPI):
     cfg = SyncConfig()
 
-    # вы можете залогировать их, чтобы убедиться:
-    print("SYNC CONFIG:", cfg.__dict__)
+    logger.info(f"SYNC CONFIG: device_id={cfg.device_id}, host={cfg.ip}, port={cfg.port}")
 
     start_sync(
         device_id=cfg.device_id,
@@ -48,8 +60,11 @@ async def lifespan(app: FastAPI):
         scheduler_receiver_timeout=cfg.receiver_timeout,
         push_http_timeout=cfg.push_http_timeout
     )
+    logger.info("Synchronization started")
     yield
+    logger.info("Stopping synchronization...")
     stop_sync(cfg.device_id)
+    logger.info("Synchronization stopped")
 
 # ------------------------------------------------------------
 # 2) Инициализируем FastAPI и монтируем роутер синхронизации
@@ -87,7 +102,7 @@ class UvicornThread(QThread):
 
 def check_and_initialize_databases():
     """Ensure both vending.db and sync.db exist with proper schemas"""
-    print("Checking database initialization...")
+    logger.info("Checking database initialization...")
 
     # 1. Check vending.db
     from config import db_path
@@ -104,8 +119,7 @@ def check_and_initialize_databases():
 
     needs_setup = False
     if not os.path.exists(full_main_db_path):
-        print(
-            f"Main database not found at {main_db_path}. Running initial setup...")
+        logger.warning(f"Main database not found at {main_db_path}. Running initial setup...")
         needs_setup = True
     else:
         # Quick validity check
@@ -117,15 +131,14 @@ def check_and_initialize_databases():
             missing_tables = [
                 table for table in required_tables if table not in existing]
             if missing_tables:
-                print(
-                    f"Main database schema incomplete. Missing tables: {missing_tables}. Rebuilding...")
+                logger.warning(f"Main database schema incomplete. Missing tables: {missing_tables}. Rebuilding...")
                 engine.dispose()
                 needs_setup = True
             else:
                 engine.dispose()
-                print("Main database is valid.")
+                logger.info("Main database is valid.")
         except Exception as e:
-            print(f"Main database corrupted: {e}. Rebuilding...")
+            logger.error(f"Main database corrupted: {e}. Rebuilding...", exc_info=True)
             # Cleanup potentially locked connections
             try:
                 if 'engine' in locals():
@@ -138,13 +151,12 @@ def check_and_initialize_databases():
         try:
             run_database_setup()
         except Exception as setup_error:
-            print(f"Fatal: Database setup failed: {setup_error}")
-            print(
-                "Cannot continue without proper database. Please check permissions and try again.")
+            logger.critical(f"Fatal: Database setup failed: {setup_error}", exc_info=True)
+            logger.critical("Cannot continue without proper database. Please check permissions and try again.")
             sys.exit(1)
 
     # 2. Check sync.db (will be auto-created by sync components if needed)
-    print("Database initialization complete.")
+    logger.info("Database initialization complete.")
 
 
 def run_database_setup():
@@ -157,15 +169,15 @@ def run_database_setup():
         import dbSync
         dbSync.init_db = True
 
-        print("Rebuilding main database structure...")
+        logger.info("Rebuilding main database structure...")
         # Clean setup - this will recreate vending.db
         clear_command_queue_cache()
         rebuild_db()  # Recreates vending.db structure
-        print("Populating database with initial data...")
+        logger.info("Populating database with initial data...")
         execute()     # Populates with test data/roles/users
 
         dbSync.init_db = False
-        print("Database setup completed successfully.")
+        logger.info("Database setup completed successfully.")
 
     except Exception as e:
         # Make sure to reset flag
@@ -174,79 +186,108 @@ def run_database_setup():
             dbSync.init_db = False
         except:
             pass
+        logger.error(f"Database setup failed: {e}", exc_info=True)
         raise RuntimeError(f"Database setup failed: {e}") from e
 
 
 # 4) Точка входа для GUI-приложения
 # ------------------------------------------------------------
 def main():
-    # a) Проверяем и инициализируем базы данных ПЕРВЫМИ
-    check_and_initialize_databases()
+    logger.info("=" * 60)
+    logger.info("Запуск клиентского приложения AutoSklad...")
+    logger.info("=" * 60)
+    
+    try:
+        # a) Проверяем и инициализируем базы данных ПЕРВЫМИ
+        check_and_initialize_databases()
 
-    # b) Билдим карты — подготовка FSM
-    # e) Запускаем Uvicorn в фоне
-    #    Бери host/port из config.json, как в lifespan
-    cfg = json.loads(
-        (Path(__file__).parent / "config.json").read_text(encoding="utf-8"))
-    map_builder()
+        # b) Билдим карты — подготовка FSM
+        # e) Запускаем Uvicorn в фоне
+        #    Бери host/port из config.json, как в lifespan
+        cfg = json.loads(
+            (Path(__file__).parent / "config.json").read_text(encoding="utf-8"))
+        logger.info("Building state machine maps...")
+        map_builder()
+        logger.info("State machine maps built successfully")
 
-    # b) Запускаем Qt-приложение
-    qt_app = QApplication(sys.argv)
+        # b) Запускаем Qt-приложение
+        logger.info("Initializing Qt application...")
+        qt_app = QApplication(sys.argv)
 
-    # c) Настраиваем SerialManager/BarcodeManager
-    use_mocks = os.getenv("AUTOSKLAD_USE_MOCKS", "0") == "1"
-    current_platform = platforms.detect()
-    if use_mocks:
-        serial_manager = MockSerialManager(port=None)
-        barcode_manager = MockSerialManager(port=None)
-    else:
-        if current_platform == platforms.Windows:
-            serial = cfg["serial"]
-            serial_manager = SerialManager(port=serial["port"])
-            barcode = cfg["barcode"]
-            barcode_manager = SerialManager(port=barcode["port"])
-        else:  # Raspberry Pi и др.
-            ports = cfg["dev"]
-            serial_manager = SerialManager(port=ports["ttyUSB"])
-            barcode_manager = SerialManager(port=ports["serial"])
+        # c) Настраиваем SerialManager/BarcodeManager
+        use_mocks = os.getenv("AUTOSKLAD_USE_MOCKS", "0") == "1"
+        current_platform = platforms.detect()
+        logger.info(f"Platform: {current_platform}, Mock mode: {use_mocks}")
+        
+        if use_mocks:
+            serial_manager = MockSerialManager(port=None)
+            barcode_manager = MockSerialManager(port=None)
+            logger.info("Using mock serial managers")
+        else:
+            if current_platform == platforms.Windows:
+                serial = cfg["serial"]
+                serial_manager = SerialManager(port=serial["port"])
+                barcode = cfg["barcode"]
+                barcode_manager = SerialManager(port=barcode["port"])
+                logger.info(f"Windows: Serial port={serial['port']}, Barcode port={barcode['port']}")
+            else:  # Raspberry Pi и др.
+                ports = cfg["dev"]
+                serial_manager = SerialManager(port=ports["ttyUSB"])
+                barcode_manager = SerialManager(port=ports["serial"])
+                logger.info(f"Linux/RPi: Serial port={ports['ttyUSB']}, Barcode port={ports['serial']}")
 
-    serial_manager.start()
-    barcode_manager.start()
+        serial_manager.start()
+        barcode_manager.start()
+        logger.info("Serial managers started")
 
-    opts = cfg["network"]
-    host_ip = opts["ip"]
-    port = int(opts["port"])
+        opts = cfg["network"]
+        host_ip = opts["ip"]
+        port = int(opts["port"])
 
-    uvicorn_thread = UvicornThread(ip=host_ip, port=port)
-    uvicorn_thread.setObjectName("UvicornThread")
-    uvicorn_thread.start()
+        uvicorn_thread = UvicornThread(ip=host_ip, port=port)
+        uvicorn_thread.setObjectName("UvicornThread")
+        uvicorn_thread.start()
+        logger.info(f"Uvicorn server started on {host_ip}:{port}")
 
-    # e) Основная логика GUI
-    maps = Maps('screen_1_welcome')
-    window = MainWindow(maps)
-    executor = Executor()
-    executor.attach_serial_manager(serial_manager)
-    executor.attach_barcode_manager(barcode_manager)
-    window.action_callback = executor.handle_widget_executor
-    executor.handle_serial_controller = window.handle_controller_serial_response
-    executor.handle_barcode_manager = window.handle_barcode_manager_response
+        # e) Основная логика GUI
+        logger.info("Initializing GUI components...")
+        maps = Maps('screen_1_welcome')
+        window = MainWindow(maps)
+        executor = Executor()
+        executor.attach_serial_manager(serial_manager)
+        executor.attach_barcode_manager(barcode_manager)
+        window.action_callback = executor.handle_widget_executor
+        executor.handle_serial_controller = window.handle_controller_serial_response
+        executor.handle_barcode_manager = window.handle_barcode_manager_response
+        logger.info("GUI components initialized")
 
-    # f) Таймер для обновления GUI
-    # http_timer = QTimer()
-    # http_timer.timeout.connect(window.handle_timer_event)
-    # http_timer.start(5000)  # например, проверять раз в 5 секунд
+        # f) Таймер для обновления GUI
+        # http_timer = QTimer()
+        # http_timer.timeout.connect(window.handle_timer_event)
+        # http_timer.start(5000)  # например, проверять раз в 5 секунд
 
-    # g) Завершающие привязки: при закрытии Qt — останавливаем сервисы
-    qt_app.aboutToQuit.connect(serial_manager.stop)
-    qt_app.aboutToQuit.connect(barcode_manager.stop)
-    # qt_app.aboutToQuit.connect(http_timer.stop)
-    # Если хотите корректно остановить Uvicorn:
-    qt_app.aboutToQuit.connect(uvicorn_thread.quit)
-    qt_app.aboutToQuit.connect(uvicorn_thread.wait)
+        # g) Завершающие привязки: при закрытии Qt — останавливаем сервисы
+        def cleanup():
+            logger.info("Application shutdown initiated...")
+            serial_manager.stop()
+            barcode_manager.stop()
+            logger.info("Serial managers stopped")
+        
+        qt_app.aboutToQuit.connect(cleanup)
+        # qt_app.aboutToQuit.connect(http_timer.stop)
+        # Если хотите корректно остановить Uvicorn:
+        qt_app.aboutToQuit.connect(uvicorn_thread.quit)
+        qt_app.aboutToQuit.connect(uvicorn_thread.wait)
 
-    # h) Показываем окно и входим в цикл
-    window.show()
-    sys.exit(qt_app.exec_())
+        # h) Показываем окно и входим в цикл
+        logger.info("=" * 60)
+        logger.info("Клиентское приложение готово к работе")
+        logger.info("=" * 60)
+        window.show()
+        sys.exit(qt_app.exec_())
+    except Exception as e:
+        logger.critical(f"Критическая ошибка при запуске приложения: {e}", exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
