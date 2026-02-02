@@ -30,7 +30,7 @@ setup_app_logging(
     app_log_file="app.log",
     sync_log_file="sync.log",
     error_log_file="error.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     console_output=True
 )
 logger = get_logger(__name__)
