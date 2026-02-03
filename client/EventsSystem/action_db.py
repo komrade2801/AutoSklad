@@ -319,10 +319,13 @@ class ActionMapper:
                                 break
                     else:
                         if load and not load.plan_id:
-                            cell_already_consumed = any(c for c in consumptions if c.plan_id is None)
-                            if not cell_already_consumed:
-                                selected_cell = cell
-                                break
+                            consumptions_free = [c for c in consumptions if c.plan_id is None]
+                            if consumptions_free:
+                                max_consumption_history = max(c.history_id for c in consumptions_free)
+                                if load.history_id <= max_consumption_history:
+                                    continue  # выдача новее загрузки — ячейка недоступна
+                            selected_cell = cell
+                            break
 
         # Если результат пустой, возвращаем None
         if not cells:
@@ -453,7 +456,10 @@ class ActionMapper:
         return {"trigger": "view_ok"}
 
     def read_db_rights_tool(self, tool_type_id, name, group_name, tool_description):
-        logger.debug("read_db_rights_tool tool_type_id %s, name %s, group_name %s, tool_description %s", tool_type_id, name, group_name, tool_description)
+        logger.debug(
+            "read_db_rights_tool tool_type_id %s, name %s, group_name %s, tool_description %s",
+            tool_type_id, name, group_name, tool_description
+        )
 
         # tools = self.e_tools.get_tools_by_tool_type_id(tool_type_id)
         # print(f"tools {tools}")
@@ -464,46 +470,19 @@ class ActionMapper:
                 if cell.status_id in [3, 7]:
                     loads = self.e_load.find_by_cell_id(cell.id)
                     load = max(loads, key=lambda rec: rec.id) if loads else None
-                    
-                    # ИСПРАВЛЕНО: Проверяем, не был ли инструмент уже выдан (есть ли Consumption запись)
-                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
-                    cell_already_consumed = False
-                    
                     if self.select_plan:
-                        # Для плановых инструментов проверяем Consumption с тем же plan_id
                         if load and load.plan_id == self.select_plan.id:
-                            for consumption in consumptions:
-                                if consumption.plan_id == self.select_plan.id:
-                                    cell_already_consumed = True
-                                    logger.debug("[read_db_rights_tool] Cell %s уже использована для плана %s, пропускаем", cell.id, self.select_plan.id)
-                                    break
-                            
-                            # Возвращаем инструмент только если он еще не был выдан
-                            if not cell_already_consumed:
-                                self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
-                                return self.select_tool.id, name, group_name, tool_description
+                            self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
+                            return self.select_tool.id, name, group_name, tool_description
                     else:
-                        # Для свободных инструментов проверяем Consumption без plan_id
                         if load and not load.plan_id:
-                            for consumption in consumptions:
-                                if not consumption.plan_id:
-                                    cell_already_consumed = True
-                                    logger.debug("[read_db_rights_tool] Cell %s уже использована (свободный инструмент), пропускаем", cell.id)
-                                    break
-                            
-                            # Возвращаем инструмент только если он еще не был выдан
-                            if not cell_already_consumed:
-                                self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
-                                return self.select_tool.id, name, group_name, tool_description
+                            self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
+                            return self.select_tool.id, name, group_name, tool_description
             logger.warning("Свободные инструменты \"%s\" не найдены.", name)
             return {'trigger': 'err_rights'}
         else:
             logger.warning("Ячейки, содержащие \"%s\" не найдены.", name)
             return {'trigger': 'err_rights'}
-
-        # else:
-        #     print(f"Свободные инструменты \"{name}\" не найдены.")
-        #     return {'trigger': 'err_rights'}
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
         logger.debug("write_db_tool_consumption %s, %s, %s, %s, %s, %s", index, args, kwargs, self.select_tool, self.select_cell, self.select_plan)
@@ -916,12 +895,15 @@ class ActionMapper:
                         loads = self.e_load.find_by_cell_id(cell.id)
                         load = max(loads, key=lambda rec: rec.id) if loads else None
                         # Доступность по ячейкам Cell (статус 3/7), свободной нагрузке (Load.plan_id is None)
-                        # и отсутствию Consumption без plan_id — чтобы список совпадал с read_db_rights_tool
+                        # и отсутствию Consumption без plan_id — если после выдачи была новая загрузка, ячейка снова доступна
                         if load and not load.plan_id:
                             consumptions = self.e_consumption.get_by_cell_id(cell.id)
-                            cell_already_consumed = any(c for c in consumptions if c.plan_id is None)
-                            if not cell_already_consumed:
-                                valid_tools_count += 1
+                            consumptions_free = [c for c in consumptions if c.plan_id is None]
+                            if consumptions_free:
+                                max_consumption_history = max(c.history_id for c in consumptions_free)
+                                if load.history_id <= max_consumption_history:
+                                    continue  # выдача новее загрузки — ячейка недоступна
+                            valid_tools_count += 1
 
             logger.debug(f"tool_type: {tool_type}, valid_tools_count: {valid_tools_count}")
 
@@ -1625,12 +1607,31 @@ class ActionMapper:
                             if cell.status_id in [3, 7]:
                                 loads = self.e_load.find_by_cell_id(cell.id)
                                 load = max(loads, key=lambda rec: rec.id) if loads else None
-                                if load and not load.plan_id:
-                                    # Не считаем доступной ячейку, уже выданную как свободный инструмент (есть Consumption без plan_id)
-                                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
-                                    cell_already_consumed = any(c for c in consumptions if c.plan_id is None)
-                                    if not cell_already_consumed:
-                                        count += 1
+                                if not load:
+                                    logger.info(
+                                        "read_db_groups: ячейка cell_id=%s (number=%s) не в счёте — нет записи Load для ячейки",
+                                        cell.id, getattr(cell, 'number', None),
+                                    )
+                                    continue
+                                if load.plan_id is not None:
+                                    logger.info(
+                                        "read_db_groups: ячейка cell_id=%s (number=%s) не в счёте — Load.plan_id=%s (учёт только свободной выдачи, plan_id должен быть None)",
+                                        cell.id, getattr(cell, 'number', None), load.plan_id,
+                                    )
+                                    continue
+                                # Не считаем доступной ячейку, уже выданную как свободный инструмент (есть Consumption без plan_id),
+                                # если только после этой выдачи не было новой загрузки (Load новее Consumption — ячейка снова доступна).
+                                consumptions = self.e_consumption.get_by_cell_id(cell.id)
+                                consumptions_free = [c for c in consumptions if c.plan_id is None]
+                                if consumptions_free:
+                                    max_consumption_history = max(c.history_id for c in consumptions_free)
+                                    if load.history_id <= max_consumption_history:
+                                        logger.info(
+                                            "read_db_groups: ячейка cell_id=%s (number=%s) не в счёте — уже есть Consumption с plan_id is None и Load не новее (инструмент выдан как свободный)",
+                                            cell.id, getattr(cell, 'number', None),
+                                        )
+                                        continue
+                                count += 1
 
                 logger.debug(f"group: {group}, count: {count}")
 
