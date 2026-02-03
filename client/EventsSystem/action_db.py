@@ -241,7 +241,7 @@ class ActionMapper:
             'write_db_err_barcode_user': lambda *args, **kwargs: logger.debug("write_db_err_barcode_user"),
             'write_db_err_barcode_plan': lambda *args, **kwargs: logger.debug("write_db_err_barcode_plan"),
             'write_db_err_request': lambda *args, **kwargs: logger.debug("write_db_err_request"),
-            'write_db_err_devices': lambda tool_id, tool_name: logger.debug("write_db_err_devices %s %s", tool_id, tool_name),
+            'write_db_err_devices': lambda tool_id, tool_name: logger.debug("write_db_err_devices %s %s".format( tool_id, tool_name)),
             'write_db_err_timeout': lambda *args, **kwargs: logger.debug("write_db_err_timeout"),
             'write_db_err_rights': lambda *args, **kwargs: self.write_db_err_rights(*args, **kwargs),
             'write_db_err_login': lambda *args, **kwargs: logger.debug("write_db_err_login"),
@@ -266,9 +266,9 @@ class ActionMapper:
             self.session_local.commit()
             self.session_local.expire_all()
             if log_prefix:
-                logger.debug("[%s] Availability caches invalidated, fresh data will be loaded from DB", log_prefix)
+                logger.debug("[%s] Availability caches invalidated, fresh data will be loaded from DB".format( log_prefix))
         except Exception as e:
-            logger.warning("[_invalidate_availability_caches] %s", e)
+            logger.warning("[_invalidate_availability_caches] %s".format( e))
 
     def write_db_err_rights(self, *args, **kwargs):
         # Преобразуем позиционные аргументы в строку
@@ -277,7 +277,7 @@ class ActionMapper:
         kwargs_str = ' '.join(f'{k}={v}' for k, v in kwargs.items())
         # Объединяем все аргументы в одну строку с разделением
         output = ' '.join(filter(None, [args_str, kwargs_str]))
-        logger.debug("write_db_err_rights: %s", output)
+        logger.debug("write_db_err_rights: %s".format( output))
 
     def read_db_err_history(self):
         """
@@ -294,7 +294,7 @@ class ActionMapper:
         return err_error
 
     def read_db_get_cell(self, tool_id, tool_name=None):
-        logger.debug("read_db_get_cell %s %s", tool_id, tool_name)
+        logger.debug("read_db_get_cell %s %s".format( tool_id, tool_name))
         """
         Читает номер ячейки (cell.number) по ID инструмента.
 
@@ -339,7 +339,7 @@ class ActionMapper:
         return {"trigger": "send_number", "number": selected_cell.number, "tool_name": tool_name} if selected_cell else None
 
     def read_db_get_cells(self, tool_list):
-        logger.debug("read_db_get_cells %s", tool_list)
+        logger.debug("read_db_get_cells %s".format( tool_list))
         """
         Читает номер ячеек (cell.number) по ID чертежа.
 
@@ -395,8 +395,8 @@ class ActionMapper:
                                 break
 
         # Если результат пустой, возвращаем None
-        logger.debug("needed by plan: %s, found: %s", needed_tools, len(cells_list))
-        logger.debug("cells_list: %s", cells_list)
+        logger.debug("needed by plan: %s, found: %s".format( needed_tools, len(cells_list)))
+        logger.debug("cells_list: %s".format( cells_list))
         if not cells_list or needed_tools > len(cells_list):
             return {"trigger": "err_data"}
 
@@ -406,8 +406,8 @@ class ActionMapper:
         return {"cells_list": cells_list} if cells_list else None
 
     def read_db_get_more_cells(self, cells_list):
-        logger.debug("read_db_get_more_cells %s", cells_list)
-        logger.debug("self.plan_cell_list %s", self.plan_cell_list)
+        logger.debug("read_db_get_more_cells %s".format( cells_list))
+        logger.debug("self.plan_cell_list %s".format( self.plan_cell_list))
         """
         Читает номер первой ячейки (cell.number) из списка, удаляет из списка, если выдано.
 
@@ -430,7 +430,7 @@ class ActionMapper:
             # Проверяем, не была ли ячейка уже выдана
             # 1. Проверяем статус ячейки (должен быть 3 или 7)
             if cell.status_id not in [3, 7]:
-                logger.debug("[read_db_get_more_cells] Cell %s уже выдана (status_id=%s), пропускаем", cell.id, cell.status_id)
+                logger.debug("[read_db_get_more_cells] Cell %s уже выдана (status_id=%s), пропускаем".format( cell.id, cell.status_id))
                 self.plan_cell_list.pop(0)
                 continue
             
@@ -441,7 +441,7 @@ class ActionMapper:
                 for consumption in consumptions:
                     if consumption.plan_id == self.select_plan.id:
                         cell_already_consumed = True
-                        logger.debug("[read_db_get_more_cells] Cell %s уже использована для плана %s, пропускаем", cell.id, self.select_plan.id)
+                        logger.debug("[read_db_get_more_cells] Cell %s уже использована для плана %s, пропускаем".format( cell.id, self.select_plan.id))
                         break
             
             if cell_already_consumed:
@@ -457,9 +457,9 @@ class ActionMapper:
 
     def read_db_rights_tool(self, tool_type_id, name, group_name, tool_description):
         logger.debug(
-            "read_db_rights_tool tool_type_id %s, name %s, group_name %s, tool_description %s",
+            "read_db_rights_tool tool_type_id %s, name %s, group_name %s, tool_description %s".format(
             tool_type_id, name, group_name, tool_description
-        )
+        ))
 
         # tools = self.e_tools.get_tools_by_tool_type_id(tool_type_id)
         # print(f"tools {tools}")
@@ -478,14 +478,14 @@ class ActionMapper:
                         if load and not load.plan_id:
                             self.select_tool = self.e_tool_types.get_tool_type_by_id(tool_type_id)
                             return self.select_tool.id, name, group_name, tool_description
-            logger.warning("Свободные инструменты \"%s\" не найдены.", name)
+            logger.warning("Свободные инструменты \"%s\" не найдены.".format( name))
             return {'trigger': 'err_rights'}
         else:
-            logger.warning("Ячейки, содержащие \"%s\" не найдены.", name)
+            logger.warning("Ячейки, содержащие \"%s\" не найдены.".format( name))
             return {'trigger': 'err_rights'}
 
     def write_db_tool_consumption(self, index, *args, **kwargs):
-        logger.debug("write_db_tool_consumption %s, %s, %s, %s, %s, %s", index, args, kwargs, self.select_tool, self.select_cell, self.select_plan)
+        logger.debug("write_db_tool_consumption %s, %s, %s, %s, %s, %s".format( index, args, kwargs, self.select_tool, self.select_cell, self.select_plan))
         """
         Записывает факт расхода инструмента в базу данных.
         Перед выдачей инвалидирует кэши и заново читает ячейку из БД, чтобы исключить двойную выдачу
@@ -538,7 +538,7 @@ class ActionMapper:
             logger.warning("Failed to clear tool %s from cell %s.", self.select_tool.id, cell.id)
             return {'trigger': 'view_err'}
 
-        logger.debug("cleared %s", cleared)
+        logger.debug("cleared %s".format( cleared))
 
         # loads = self.e_load.find_by_cell_id(cell.id)
         # load = max(loads, key=lambda rec: rec.id) if loads else None
@@ -606,7 +606,7 @@ class ActionMapper:
             return {'trigger': 'get_more_cells', 'cells_list': self.plan_cell_list}
 
     def read_db_tools_collection(self, group_id: int, group_name) -> tuple[list[Any], Any] | Any:
-        logger.debug("action_db read_db_tools_collection, %s, %s", group_id, group_name)
+        logger.debug("action_db read_db_tools_collection, %s, %s".format( group_id, group_name))
         """
         Возвращает коллекцию валидных инструментов, связанных с указанной группой,
         включая количество похожих инструментов и их характеристики.
@@ -643,7 +643,7 @@ class ActionMapper:
                 else:
                     add_all_parent_groups(
                     group_list, group.paren_group_id, group, group_id)
-            logger.debug("group_list: %s", group_list)
+            logger.debug("group_list: %s".format( group_list))
 
             tools = []
 
@@ -684,7 +684,7 @@ class ActionMapper:
             return []
 
     def read_db_tools_by_plans_id(self, plan_id: int):
-        logger.debug("read_db_tools_by_plans_id. plan_id: %s", plan_id)
+        logger.debug("read_db_tools_by_plans_id. plan_id: %s".format( plan_id))
         """
         Извлекает список инструментов, связанных с указанным планом (plan_id), из таблицы Tools.
 
@@ -823,7 +823,7 @@ class ActionMapper:
                 else:
                     add_all_parent_groups(
                     group_list, group.paren_group_id, group, group_id)
-            logger.debug("group_list: %s", group_list)
+            logger.debug("group_list: %s".format( group_list))
 
             # tools = []
             tool_types = []
@@ -994,7 +994,7 @@ class ActionMapper:
             return []
 
     def read_db_history(self, index) -> list[dict]:
-        logger.debug("actions_db read_db_history(%s)", index)
+        logger.debug("actions_db read_db_history(%s)".format( index))
         """
         Возвращает все операции пользователей из таблиц History, LoadOperations, DropOperations и OperationsConsumption.
 
@@ -1150,7 +1150,7 @@ class ActionMapper:
             return []
 
     def read_db_mass_drop_tools(self, index) -> List[dict]:
-        logger.debug("read_db_mass_drop_tools. index: %s", index)
+        logger.debug("read_db_mass_drop_tools. index: %s".format( index))
         """
         Возвращает список ячеек по всем ещё не обработанным массовым выгрузкам (все concurrent mass_drop).
         Объединяет инструменты из клиентской и серверной массовых выгрузок в одном меню.
@@ -1294,7 +1294,7 @@ class ActionMapper:
 
         :return: True, если операция выполнена успешно, иначе False.
         """
-        logger.debug("write_db_drop_tool_groups %s", _)
+        logger.debug("write_db_drop_tool_groups %s".format(_))
         result = True
         user_id = self.current_user.id
 
@@ -1713,7 +1713,7 @@ class ActionMapper:
             return []
 
     def read_db_username(self, code: int) -> Optional[str]:
-        logger.debug("read_db_username. Input code: %s", code)
+        logger.debug("read_db_username. Input code: %s".format( code))
         """
         Получает имя пользователя (username) по коду.
 
@@ -1775,7 +1775,7 @@ class ActionMapper:
         :param password: Пароль пользователя.
         :return: Кортеж (пользователь, роль), если найдено, иначе (None, None).
         """
-        logger.debug("read_db_authorization. login: %s, password: %s", login, password)
+        logger.debug("read_db_authorization. login: %s, password: %s".format( login, password))
         if login == '' and password == '':
             # Пользователь не найден или неверный пароль
             return {'trigger': 'err_authorization'}
@@ -2044,7 +2044,7 @@ class ActionMapper:
         return plan_tool_list, plan_designation, plan_name, plan_id
 
     def read_db_plan_complete(self, plan_id):
-        logger.debug("read_db_plan_complete plan_id %s", plan_id)
+        logger.debug("read_db_plan_complete plan_id %s".format(plan_id))
 
         plan = self.e_plan.get_plan_by_id(plan_id)
         # self.select_plan = plan
@@ -2083,12 +2083,12 @@ class ActionMapper:
 
             plan_tool_list.append(tool_object)
 
-        logger.debug("read_db_plan_complete call view_plan_complete plan_id=%s, designation=%s, tool_list=%s", plan_id, plan.designation, plan_tool_list)
+        logger.debug("read_db_plan_complete call view_plan_complete plan_id=%s, designation=%s, tool_list=%s".format( plan_id, plan.designation, plan_tool_list))
         return {'plan_id': plan_id, 'designation': plan.designation, 'tool_list': plan_tool_list}
 
 
     def write_db_plan_complete(self, plan_id):
-        logger.debug("write_db_plan_complete plan_id %s", plan_id)
+        logger.debug("write_db_plan_complete plan_id %s".format(plan_id))
 
         result = True
         user_id = self.current_user.id
@@ -2221,7 +2221,7 @@ class ActionMapper:
 
         plan_dict = plan.to_dict()
         plan_dict['hidden'] = True
-        self.e_load.update(index=plan.id, **plan_dict)
+        self.e_plan.update(index=plan.id, **plan_dict)
 
         # Инвалидация кеша после завершения чертежа — чтобы меню массовой выгрузки и выдача по плану видели актуальные данные
         self.e_drop._cache.clear()
@@ -2832,7 +2832,7 @@ class ActionMapper:
         :param cells_data: Список объектов Cell, содержащих данные ячеек.
         :return: True, если операция выполнена успешно, иначе False.
         """
-        logger.debug("write_db_mass_load_tools_by_free. tools_data: %s, cells_data: %s", tools_data, cells_data)
+        logger.debug("write_db_mass_load_tools_by_free. tools_data: %s, cells_data: %s".format( tools_data, cells_data))
         # try:
         # 1. Найти или создать статус "mass_load_init"
         for tool in tools_data:
@@ -2925,7 +2925,7 @@ class ActionMapper:
         :param plan_id: Уникальный идентификатор плана.
         :return: Список инструментов, связанных с указанным планом.
         """
-        logger.debug("read_db_mass_load_tools_by_plan. plan_id: %s", plan_id)
+        logger.debug("read_db_mass_load_tools_by_plan. plan_id: %s".format( plan_id))
         try:
             # Проверяем существование плана
             plan = self.e_plan.get_plan_by_id(plan_id)
