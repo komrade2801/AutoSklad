@@ -2018,27 +2018,18 @@ class ActionMapper:
             tool_object["total_count"] = tool_type.count
             tool_object["plan_count"] = plan_tool_type.tool_types_count
 
-            # ИСПРАВЛЕНО: Подсчет доступных инструментов по ячейкам
-            # Считаем количество ячеек с инструментом для данного плана, которые еще не были выданы
+            # Доступные для выдачи по плану: только ячейки со статусом 3 или 7 и привязкой Load к чертежу.
+            # Ячейки, инициализированные до подтверждения массовой загрузки, не считаются свободными.
             tool_available_count = 0
             cells = self.e_cell.get_cells_by_tool(tool_type.id)
             for cell in cells:
-                # Проверяем, загружена ли ячейка для данного плана
+                if cell.status_id not in [3, 7]:
+                    continue
                 loads = self.e_load.find_by_cell_id(cell.id)
                 load = max(loads, key=lambda rec: rec.id) if loads else None
                 if self.select_plan and load and load.plan_id == self.select_plan.id:
-                    # Проверяем, не была ли ячейка уже выдана для этого плана
-                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
-                    cell_already_consumed = False
-                    for consumption in consumptions:
-                        if consumption.plan_id == plan_id:
-                            cell_already_consumed = True
-                            break
-                    
-                    # Если ячейка не была выдана, считаем её доступной
-                    if not cell_already_consumed:
-                        tool_available_count += 1
-            
+                    tool_available_count += 1
+
             tool_object["load_count"] = tool_available_count
 
             if plan_tool_type.tool_types_count <= tool_available_count:
@@ -2070,27 +2061,17 @@ class ActionMapper:
             tool_object["total_count"] = tool_type.count
             tool_object["plan_count"] = plan_tool_type.tool_types_count
 
-            # ИСПРАВЛЕНО: Подсчет доступных инструментов по ячейкам (аналогично read_db_get_plan_tools)
-            # Считаем количество ячеек с инструментом для данного плана, которые еще не были выданы
+            # Доступные для выдачи по плану: только ячейки со статусом 3 или 7 и привязкой Load к чертежу (аналогично read_db_get_plan_tools).
             tool_available_count = 0
             cells = self.e_cell.get_cells_by_tool(tool_type.id)
             for cell in cells:
-                # Проверяем, загружена ли ячейка для данного плана
+                if cell.status_id not in [3, 7]:
+                    continue
                 loads = self.e_load.find_by_cell_id(cell.id)
                 load = max(loads, key=lambda rec: rec.id) if loads else None
                 if plan and load and load.plan_id == plan.id:
-                    # Проверяем, не была ли ячейка уже выдана для этого плана
-                    consumptions = self.e_consumption.get_by_cell_id(cell.id)
-                    cell_already_consumed = False
-                    for consumption in consumptions:
-                        if consumption.plan_id == plan_id:
-                            cell_already_consumed = True
-                            break
-                    
-                    # Если ячейка не была выдана, считаем её доступной
-                    if not cell_already_consumed:
-                        tool_available_count += 1
-            
+                    tool_available_count += 1
+
             tool_object["load_count"] = tool_available_count
 
             if plan_tool_type.tool_types_count <= tool_available_count:
