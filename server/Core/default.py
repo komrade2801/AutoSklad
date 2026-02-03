@@ -458,6 +458,7 @@ def execute():
             "mass_load_init",
             "drop_ready",
             "load_ready",
+            "consumption",
         ]
         status_description = [
             "Инициализация системы!",
@@ -467,6 +468,7 @@ def execute():
             "Объявлена массовая загрузка",
             "Инструмент извлечён из аппарата",
             "Инструмент готов к выдаче",
+            "Инструмент выдан!",
         ]
         for key, name in enumerate(status_names):
             status = e_status.find_by_name(name)
