@@ -102,11 +102,11 @@
 
       window.jsonPlan = {
         id: 0,
-        enterprise: enterpriseValue || "string",
+        enterprise: enterpriseValue || "Без предприятия",
         barcode: "",
-        name: nameValue || "string",
-        description: descriptionValue || "string",
-        designation: designationValue || "string",
+        name: nameValue || "Без названия",
+        description: descriptionValue || "Без описания",
+        designation: designationValue || "Без обозначения",
         index_list: 0,
         list_count: 0,
         parent_plan_id: null,
