@@ -85,6 +85,9 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
     plan_list = []
 
     for plan in plans:
+        if plan.hidden:
+            continue
+
         tool_by_plan = {}
         tools_by_plan = []
         plan_dicts["id"] = plan.id
@@ -247,6 +250,8 @@ def create_plan(
     """
     logger.debug("create_plan. request: %s, Device number: %s, plan_request: %s", request, device_number, plan_request)
     plan = plan_request.plan
+
+    print(f"create_plan({plan}, {plan_request})")
     create_mass_load = getattr(plan_request, "create_mass_load", True)
     logger.debug("[create_plan] входящий create_mass_load=%s", create_mass_load)
 
@@ -288,9 +293,11 @@ def create_plan(
     plan_id = None  # для отката в finally при любой ошибке
     try:
 
-        active_plan = plans_crud.get_plan_by_designation(plan.designation)
+        active_plan = plans_crud.get_last_plan_by_designation(plan.designation)
 
-        if not active_plan:
+        print("active_plan=", active_plan)
+
+        if not active_plan or active_plan.hidden:
             # created_plans = []
             # for plan in plan_data.plans:
             plan_id = max(plans_crud.get_all_ids(), default=0) + 1
@@ -305,6 +312,7 @@ def create_plan(
                 designation=plan.designation,
                 index_list=plan.index_list,
                 list_count=plan.list_count,
+                hidden=False,
                 parent_plan=plan.parent_plan,
                 parent_plan_id=plan.parent_plan_id,
             )

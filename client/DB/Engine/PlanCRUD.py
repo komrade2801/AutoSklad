@@ -30,6 +30,7 @@ class EnginePlan(BaseCRUD):
             designation: Optional[str],
             index_list: Optional[int],
             list_count: Optional[int],
+            hidden: Optional[bool],
             parent_plan: Optional[int],
             parent_plan_id: Optional[int]= None,
     ) -> bool:
@@ -56,6 +57,7 @@ class EnginePlan(BaseCRUD):
             designation=designation,
             index_list=index_list,
             list_count=list_count,
+            hidden=hidden,
             parent_plan_id=parent_plan_id,
             parent_plan=parent_plan,
         )
@@ -78,14 +80,23 @@ class EnginePlan(BaseCRUD):
         """
         return self.session.query(self.model).filter_by(barcode=barcode).one_or_none()
 
-    def get_plan_by_designation(self, designation: str) -> Optional[Plan]:
+    def get_last_plan_by_designation(self, designation: str) -> Optional[Plan]:
         """
         Получает чертеж по штрих-коду.
 
         :param designation: Обозначение чертежа.
         :return: Объект Plan или None, если чертеж не найден.
         """
-        return self.session.query(self.model).filter_by(designation=designation).first()
+        return self.session.query(self.model).filter_by(designation=designation).order_by(Plan.id.desc()).first()
+
+    def get_plans_by_designation(self, designation: str) -> List[Plan]:
+        """
+        Получает чертеж по штрих-коду.
+
+        :param designation: Обозначение чертежа.
+        :return: Объект Plan или None, если чертеж не найден.
+        """
+        return self.session.query(self.model).filter_by(designation=designation).all()
 
     def get_plans_by_enterprise(self, enterprise: str) -> List[Plan]:
         """
@@ -118,6 +129,7 @@ class EnginePlan(BaseCRUD):
         return [plan] + plan.child_plans
 
     def update_plan(self, plan_id: int, **kwargs) -> bool:
+        print(f"update_plan({plan_id}, {kwargs})")
         """
         Обновляет информацию о чертеже по его уникальному идентификатору.
 

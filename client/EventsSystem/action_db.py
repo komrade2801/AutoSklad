@@ -1999,7 +1999,8 @@ class ActionMapper:
             return []
 
     def read_db_get_plan_tools(self, plan_id, plan_designation, plan_name):
-        logger.debug("read_db_get_plan_tools plan_designation %s, plan_name %s", plan_designation, plan_name)
+        print(f"read_db_get_plan_tools plan_designation %s, plan_name %s", plan_designation, plan_name)
+        logger.debug("read_db_get_plan_tools plan_designation %s, plan_name %s".format(plan_designation, plan_name))
 
         plan = self.e_plan.get_plan_by_id(plan_id)
         self.select_plan = plan
@@ -2236,16 +2237,22 @@ class ActionMapper:
                 raise ValueError(
                     f"Не удалось создать запись в таблице DropOperations для Drop ID {drops_by_cell[0]}.")
 
+        plan_dict = plan.to_dict()
+        plan_dict['hidden'] = True
+        self.e_load.update(index=plan.id, **plan_dict)
+
         # Инвалидация кеша после завершения чертежа — чтобы меню массовой выгрузки и выдача по плану видели актуальные данные
         self.e_drop._cache.clear()
         self.e_mass_drop._cache.clear()
         self.e_cell._cache.clear()
         self.e_history._cache.clear()
+        self.e_plan._cache.clear()
 
         return {"trigger": "plan_completed"}
 
     def read_db_plans(self, index):
-        logger.debug("read_db_plans index %s", index)
+        print(f"read_db_plans index %s", index)
+        logger.debug("read_db_plans index %s".format(index))
         """
         Читает данные о всех чертежах из таблицы Plan.
 
@@ -2261,6 +2268,8 @@ class ActionMapper:
             # Формируем список словарей с данными о чертежах
             plans_data = []
             for plan in plans:
+                if plan.hidden:
+                    continue
                 plans_data.append({
                     'id': plan.id,
                     'enterprise': plan.enterprise,
@@ -2357,9 +2366,9 @@ class ActionMapper:
             logger.debug(f"read_db_plan_id: итоговый designation: {repr(designation)}")
             
             # Ищем чертеж по designation
-            plan = self.e_plan.get_plan_by_designation(designation)
+            plan = self.e_plan.get_last_plan_by_designation(designation)
 
-            if plan:
+            if plan and not plan.hidden:
                 logger.debug(f"read_db_plan_id: найден чертеж с ID: {plan.id}")
                 return {'plan_id': plan.id}  # Возвращаем идентификатор чертежа
             else:
@@ -2460,6 +2469,7 @@ class ActionMapper:
                         designation=plan_data['designation'],
                         index_list=plan_data['list_id'],
                         list_count=plan_data['list_count'],
+                        hidden=plan_data['hidden'],
                         parent_plan=0,
                         parent_plan_id=plan_data['parent_plan_id']
                     )
@@ -2968,10 +2978,10 @@ class ActionMapper:
 
     def execute(self, act, *args, **kwargs):
         try:
-            logger.debug("action_db", "execute", act, args, kwargs)
+            logger.debug(("action_db", "execute", act, args, kwargs))
             return self.__actions[act](*args, **kwargs)
         except Exception as e:
-            logger.debug("action_db", "execute", act, "exception", e)
+            logger.debug(("action_db", "execute", act, "exception", e))
             logger.exception("")
             try:
                 return self.__actions_bad[act]

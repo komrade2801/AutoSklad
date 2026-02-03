@@ -11,6 +11,8 @@
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Index
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import Boolean
+
 from DB.Data.base import Base
 from DB.Models.BaseModel import Model
 
@@ -31,6 +33,7 @@ class Plan(Base, Model):
     designation = Column(String(100), nullable=True, comment='Назначение чертежа')
     index_list = Column(Integer, nullable=True, comment='Идентификатор списка')
     list_count = Column(Integer, nullable=True, comment='Количество в списке')
+    hidden = Column(Boolean, nullable=False, comment="Чертеж выполнен и скрыт")
     parent_plan_id = Column(Integer, ForeignKey('Plan.id'), nullable=True, comment='Идентификатор родительского чертежа для создания иерархии чертежей')
     parent_plan = relationship('Plan', remote_side=[id], backref='child_plans')
 
@@ -66,8 +69,7 @@ class Plan(Base, Model):
                 f"name={self.name}, "
                 f"description={self.description}, "
                 f"Designation={self.designation}, "
-                f"List={self.index_list}, "
-                f"ListCount={self.list_count}, "
+                f"hidden={self.hidden}, "
                 f"ParentPlan_id={self.parent_plan_id}"
                 f")>")
 

@@ -9,7 +9,7 @@
 # if "Tools" not in Base.metadata.tables:
 #     from DB.Models.Tools import Tools
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Index
+from sqlalchemy import Column, Integer, String, ForeignKey, Index, Boolean
 from sqlalchemy.orm import relationship
 from ..Data.base import Base
 from ..Models.BaseModel import Model
@@ -31,6 +31,7 @@ class Plan(Base, Model):
     designation = Column(String(100), nullable=True, comment="Назначение чертежа")
     index_list = Column(Integer, nullable=True, comment="Идентификатор списка")
     list_count = Column(Integer, nullable=True, comment="Количество в списке")
+    hidden = Column(Boolean, nullable=False, comment="Чертеж выполнен и скрыт")
     parent_plan_id = Column(Integer, ForeignKey("Plan.id"), nullable=True, comment="Идентификатор родительского чертежа для создания иерархии чертежей")
     parent_plan = relationship("Plan", remote_side=[id], backref="child_plans")
 
@@ -58,7 +59,6 @@ class Plan(Base, Model):
                 f"name={self.name}, "
                 f"description={self.description}, "
                 f"designation={self.designation}, "
-                f"List={self.index_list}, "
-                f"ListCount={self.list_count}, "
+                f"hidden={self.hidden}, "
                 f"parent_plan_id={self.parent_plan_id}"
                 f")>")
