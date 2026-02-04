@@ -199,31 +199,50 @@ def start_sync(
 
                 elif msg_type == "push":
                     # 1) вызываем процессор — он вернёт список статусов
-                    print(
-                        f'[ПОТОК][{threading.current_thread().name}][runner] Вызываем процессор')
+                    logging.getLogger("sync.runner").debug(
+                        "[runner] push: starting process_push for device=%s, msg_keys=%s",
+                        device_id,
+                        list(msg.keys()),
+                    )
+                    import dbSync
+                    data = msg.get("hash", "")
                     try:
-                        data = msg.get("hash", "")
-                        print(f"[ПОТОК][{threading.current_thread().name}][runner] " +
-                              ', '.join(f"{k}: {v}" for k, v in msg.items()))
-                        import dbSync
+                        logging.getLogger("sync.runner").debug(
+                            "[runner] push: message payload hash=%s, payload_len=%s",
+                            data,
+                            len(msg.get("payload", [])),
+                        )
                         dbSync.init_db = True
                         statuses = processor.process_push(
                             device=device_id,
                             commands=msg["payload"],
-                            client_schema_hash=data
+                            client_schema_hash=data,
                         )
-                        dbSync.init_db = False
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] statuses: {statuses}')
+                        logging.getLogger("sync.runner").debug(
+                            "[runner] push: process_push completed, statuses_count=%s",
+                            len(statuses) if isinstance(statuses, list) else "n/a",
+                        )
                     except Exception as e:
                         # если упало — возвращаем ошибку в reply_queue
+                        logging.getLogger("sync.runner").exception(
+                            "[runner] push: error during process_push for device=%s; setting init_db back to False",
+                            device_id,
+                        )
                         statuses = [
-                            {"id": None, "status": "FAILED", "error": str(e)}]
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации ошибка в {time_start} причина: {e} подробности: {traceback.format_exc()}')
+                            {"id": None, "status": "FAILED", "error": str(e)}
+                        ]
+                    finally:
+                        # Гарантируем, что флаг инициализации БД всегда возвращается в False
+                        if getattr(dbSync, "init_db", False):
+                            logging.getLogger("sync.runner").debug(
+                                "[runner] push: resetting dbSync.init_db from True to False after push handling"
+                            )
+                            dbSync.init_db = False
+
                     # 2) отправляем результат в reply_queue
-                    print(
-                        f'[ПОТОК][{threading.current_thread().name}][runner] отправляем результат в reply_queue')
+                    logging.getLogger("sync.runner").debug(
+                        "[runner] push: sending statuses back to reply_queue"
+                    )
                     if reply_queue:
                         reply_queue.put(statuses)
 

@@ -70,7 +70,8 @@ class BatchProcessor:
         """
         self.session = session
         self.sync_manager = sync_manager
-        self.logger = _logger
+        # Если внешний DiagnosticLogger не передан, используем стандартный logging
+        self.logger = _logger or logging.getLogger(__name__)
 
     def execute_batch(self, operations: List[Operation]) -> List[OperationResult]:
         """
@@ -153,12 +154,37 @@ class BatchProcessor:
         if op.get("id") is not None:
             payload["id"] = op["id"]
         import dbSync
-        dbSync.init_db = True
-        # Use process_sync_command with sync_context=True for sync operations
-        result = self.sync_manager.process_sync_command(payload, sync_context=True)
-        dbSync.init_db = False
+        self.logger.debug(
+            "[BatchProcessor] _apply_single start: command_id=%s, table=%s, operation=%s",
+            op.get("command_id"),
+            op.get("table"),
+            op.get("operation"),
+        )
+        try:
+            dbSync.init_db = True
+            # Use process_sync_command with sync_context=True for sync operations
+            result = self.sync_manager.process_sync_command(
+                payload, sync_context=True
+            )
+            self.logger.debug(
+                "[BatchProcessor] _apply_single success: command_id=%s",
+                op.get("command_id"),
+            )
+        except Exception as e:
+            # Логируем и гарантированно сбрасываем флаг init_db
+            self.logger.exception(
+                "[BatchProcessor] _apply_single error for command_id=%s; resetting dbSync.init_db to False",
+                op.get("command_id"),
+            )
+            raise
+        finally:
+            if getattr(dbSync, "init_db", False):
+                self.logger.debug(
+                    "[BatchProcessor] _apply_single: resetting dbSync.init_db from True to False"
+                )
+                dbSync.init_db = False
+
         # Ожидаем, что process_sync_command вернёт new_id для insert
-        print(f'[ПОТОК][{threading.current_thread().name}][BatchProcessor][_apply_single][INFO] - command_id: {op["command_id"]}. [{datetime.now()}]')
         return result or {}
     
     def _link_consumption_to_history(self, operations: List[Operation]) -> None:
