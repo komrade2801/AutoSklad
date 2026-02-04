@@ -153,7 +153,6 @@ class BatchProcessor:
         }
         if op.get("id") is not None:
             payload["id"] = op["id"]
-        import dbSync
         # Отладочное логирование: поддерживаем и DiagnosticLogger, и обычный logging.Logger
         if isinstance(self.logger, DiagnosticLogger):
             self.logger.log_debug(
@@ -172,8 +171,7 @@ class BatchProcessor:
                 op.get("operation"),
             )
         try:
-            dbSync.init_db = True
-            # Use process_sync_command with sync_context=True for sync operations
+            # sync_context=True передаётся в CRUD; поток уже в режиме «без очереди» (Runner.set_skip_sync_enqueue)
             result = self.sync_manager.process_sync_command(
                 payload, sync_context=True
             )
@@ -188,7 +186,6 @@ class BatchProcessor:
                     op.get("command_id"),
                 )
         except Exception as e:
-            # Логируем и гарантированно сбрасываем флаг init_db
             if isinstance(self.logger, DiagnosticLogger):
                 self.logger.log_exception(
                     e,
@@ -199,24 +196,11 @@ class BatchProcessor:
                 )
             else:
                 self.logger.exception(
-                    "[BatchProcessor] _apply_single error for command_id=%s; resetting dbSync.init_db to False",
+                    "[BatchProcessor] _apply_single error for command_id=%s: %s",
                     op.get("command_id"),
+                    e,
                 )
             raise
-        finally:
-            if getattr(dbSync, "init_db", False):
-                if isinstance(self.logger, DiagnosticLogger):
-                    self.logger.log_debug(
-                        "[BatchProcessor] _apply_single: resetting dbSync.init_db from True to False",
-                        {"command_id": op.get("command_id")},
-                    )
-                else:
-                    self.logger.debug(
-                        "[BatchProcessor] _apply_single: resetting dbSync.init_db from True to False"
-                    )
-                dbSync.init_db = False
-
-        # Ожидаем, что process_sync_command вернёт new_id для insert
         return result or {}
     
     def _link_consumption_to_history(self, operations: List[Operation]) -> None:

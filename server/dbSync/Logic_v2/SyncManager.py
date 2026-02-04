@@ -488,9 +488,11 @@ class SyncManager:
         results = []
         for cmd in commands:
             import dbSync
-            dbSync.init_db = True
-            results.append(self.process_command(cmd))
-            dbSync.init_db = False
+            dbSync.set_skip_sync_enqueue(True)
+            try:
+                results.append(self.process_command(cmd))
+            finally:
+                dbSync.set_skip_sync_enqueue(False)
         return results
 
 # Список изменений

@@ -40,10 +40,12 @@ crash_log_path = os.path.join(current_dir, "crash.log")
 faulthandler.enable(all_threads=True, file=open(crash_log_path, "w"))
 logger.info(f"Faulthandler enabled, crash log: {crash_log_path}")
 
-dbSync.init_db = True
-logger.info("Initializing database...")
-initialize_database_if_needed()
-dbSync.init_db = False
+dbSync.set_skip_sync_enqueue(True)
+try:
+    logger.info("Initializing database...")
+    initialize_database_if_needed()
+finally:
+    dbSync.set_skip_sync_enqueue(False)
 logger.info("Database initialization complete")
 
 # 2) Инициализируем кэш настроек после создания БД

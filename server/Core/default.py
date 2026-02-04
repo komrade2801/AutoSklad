@@ -650,10 +650,12 @@ def clear_command_queue_cache():
 if __name__ == "__main__":
     import winsound
 
-    dbSync.init_db = True
-    sqlite_db._engine = None
-    rebuild_db()
-    execute()
-    dbSync.init_db = False
-    clear_command_queue_cache()
+    dbSync.set_skip_sync_enqueue(True)
+    try:
+        sqlite_db._engine = None
+        rebuild_db()
+        execute()
+        clear_command_queue_cache()
+    finally:
+        dbSync.set_skip_sync_enqueue(False)
     winsound.Beep(1000, 500)  # Частота 1000 Гц, длительность 500 мс

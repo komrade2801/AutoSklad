@@ -342,7 +342,9 @@ def clear_command_queue_cache():
 
 if __name__ == "__main__":
     clear_command_queue_cache()
-    dbSync.init_db = True
-    rebuild_db()
-    execute()
-    dbSync.init_db = False
+    dbSync.set_skip_sync_enqueue(True)
+    try:
+        rebuild_db()
+        execute()
+    finally:
+        dbSync.set_skip_sync_enqueue(False)

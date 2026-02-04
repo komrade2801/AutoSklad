@@ -201,19 +201,20 @@ def start_sync(device_id: int, host=None, port="", token="<YOUR_JWT_TOKEN>", sec
                     try:
                         data = msg.get("hash", "")
                         logger.debug("[runner][push] hash=%s, device=%s", data, msg.get("device"))
-                        dbSync.init_db = True
+                        dbSync.set_skip_sync_enqueue(True)
                         statuses = processor.process_push(
                             device=device_id,
                             commands=msg["payload"],
                             client_schema_hash=data
                         )
-                        dbSync.init_db = False
                         logger.debug("[runner] statuses: %s", statuses)
                     except Exception as e:
                         # если упало — возвращаем ошибку в reply_queue
                         statuses = [
                             {"id": None, "status": "FAILED", "error": str(e)}]
                         logger.exception("[runner] процесс синхронизации ошибка push: %s", e)
+                    finally:
+                        dbSync.set_skip_sync_enqueue(False)
                     # 2) отправляем результат в reply_queue
                     logger.debug("[runner] отправляем результат в reply_queue")
                     if reply_queue:

@@ -29,8 +29,8 @@ def sync_aware(func):
     """
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        # --- Если инициализация БД, просто вызываем метод без логики синхра ---
-        if dbSync.init_db:
+        # --- Если в текущем потоке применяется sync или инициализация БД — без постановки в очередь ---
+        if dbSync.is_skip_sync_enqueue():
             table_name  = getattr(self.model, "__tablename__", self.model.__name__)
             method_name = func.__name__
             logger.debug("[decorators][wraps] обработали БЕЗ синхронизации. func: %s, table: %s, args: %s, kwargs: %s", method_name, table_name, args, kwargs)

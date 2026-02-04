@@ -212,7 +212,7 @@ def start_sync(
                             data,
                             len(msg.get("payload", [])),
                         )
-                        dbSync.init_db = True
+                        dbSync.set_skip_sync_enqueue(True)
                         statuses = processor.process_push(
                             device=device_id,
                             commands=msg["payload"],
@@ -225,19 +225,14 @@ def start_sync(
                     except Exception as e:
                         # если упало — возвращаем ошибку в reply_queue
                         logging.getLogger("sync.runner").exception(
-                            "[runner] push: error during process_push for device=%s; setting init_db back to False",
+                            "[runner] push: error during process_push for device=%s",
                             device_id,
                         )
                         statuses = [
                             {"id": None, "status": "FAILED", "error": str(e)}
                         ]
                     finally:
-                        # Гарантируем, что флаг инициализации БД всегда возвращается в False
-                        if getattr(dbSync, "init_db", False):
-                            logging.getLogger("sync.runner").debug(
-                                "[runner] push: resetting dbSync.init_db from True to False after push handling"
-                            )
-                            dbSync.init_db = False
+                        dbSync.set_skip_sync_enqueue(False)
 
                     # 2) отправляем результат в reply_queue
                     logging.getLogger("sync.runner").debug(

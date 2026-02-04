@@ -161,33 +161,22 @@ def check_and_initialize_databases():
 
 def run_database_setup():
     """Run the database setup process as in Create_db.py"""
+    import dbSync
+    dbSync.set_skip_sync_enqueue(True)
     try:
-        # Import the setup functions
         from DB.Create_db import clear_command_queue_cache, rebuild_db, execute
 
-        # Temporarily set init_db flag (as in Create_db.py)
-        import dbSync
-        dbSync.init_db = True
-
         logger.info("Rebuilding main database structure...")
-        # Clean setup - this will recreate vending.db
         clear_command_queue_cache()
         rebuild_db()  # Recreates vending.db structure
         logger.info("Populating database with initial data...")
         execute()     # Populates with test data/roles/users
-
-        dbSync.init_db = False
         logger.info("Database setup completed successfully.")
-
     except Exception as e:
-        # Make sure to reset flag
-        try:
-            import dbSync
-            dbSync.init_db = False
-        except:
-            pass
         logger.error(f"Database setup failed: {e}", exc_info=True)
         raise RuntimeError(f"Database setup failed: {e}") from e
+    finally:
+        dbSync.set_skip_sync_enqueue(False)
 
 
 # 4) Точка входа для GUI-приложения
