@@ -154,34 +154,66 @@ class BatchProcessor:
         if op.get("id") is not None:
             payload["id"] = op["id"]
         import dbSync
-        self.logger.debug(
-            "[BatchProcessor] _apply_single start: command_id=%s, table=%s, operation=%s",
-            op.get("command_id"),
-            op.get("table"),
-            op.get("operation"),
-        )
+        # Отладочное логирование: поддерживаем и DiagnosticLogger, и обычный logging.Logger
+        if isinstance(self.logger, DiagnosticLogger):
+            self.logger.log_debug(
+                "[BatchProcessor] _apply_single start",
+                {
+                    "command_id": op.get("command_id"),
+                    "table": op.get("table"),
+                    "operation": op.get("operation"),
+                },
+            )
+        else:
+            self.logger.debug(
+                "[BatchProcessor] _apply_single start: command_id=%s, table=%s, operation=%s",
+                op.get("command_id"),
+                op.get("table"),
+                op.get("operation"),
+            )
         try:
             dbSync.init_db = True
             # Use process_sync_command with sync_context=True for sync operations
             result = self.sync_manager.process_sync_command(
                 payload, sync_context=True
             )
-            self.logger.debug(
-                "[BatchProcessor] _apply_single success: command_id=%s",
-                op.get("command_id"),
-            )
+            if isinstance(self.logger, DiagnosticLogger):
+                self.logger.log_debug(
+                    "[BatchProcessor] _apply_single success",
+                    {"command_id": op.get("command_id")},
+                )
+            else:
+                self.logger.debug(
+                    "[BatchProcessor] _apply_single success: command_id=%s",
+                    op.get("command_id"),
+                )
         except Exception as e:
             # Логируем и гарантированно сбрасываем флаг init_db
-            self.logger.exception(
-                "[BatchProcessor] _apply_single error for command_id=%s; resetting dbSync.init_db to False",
-                op.get("command_id"),
-            )
+            if isinstance(self.logger, DiagnosticLogger):
+                self.logger.log_exception(
+                    e,
+                    {
+                        "stage": "_apply_single",
+                        "command_id": op.get("command_id"),
+                    },
+                )
+            else:
+                self.logger.exception(
+                    "[BatchProcessor] _apply_single error for command_id=%s; resetting dbSync.init_db to False",
+                    op.get("command_id"),
+                )
             raise
         finally:
             if getattr(dbSync, "init_db", False):
-                self.logger.debug(
-                    "[BatchProcessor] _apply_single: resetting dbSync.init_db from True to False"
-                )
+                if isinstance(self.logger, DiagnosticLogger):
+                    self.logger.log_debug(
+                        "[BatchProcessor] _apply_single: resetting dbSync.init_db from True to False",
+                        {"command_id": op.get("command_id")},
+                    )
+                else:
+                    self.logger.debug(
+                        "[BatchProcessor] _apply_single: resetting dbSync.init_db from True to False"
+                    )
                 dbSync.init_db = False
 
         # Ожидаем, что process_sync_command вернёт new_id для insert
