@@ -545,7 +545,7 @@ class Ui_screen_3_authorization(object):
     def retranslateUi(self, screen_3_authorization):
         _translate = QtCore.QCoreApplication.translate
         screen_3_authorization.setWindowTitle(_translate("screen_3_authorization", "screen_3_authorization"))
-        self.lbl_timeout_back.setText(_translate("screen_3_authorization", "25"))
+        self.lbl_timeout_back.setText(_translate("screen_3_authorization", "60"))
         self.edit_psw.setPlaceholderText(_translate("screen_3_authorization", "Пароль"))
         self.btn_authorization.setText(_translate("screen_3_authorization", "Войти"))
         self.label_info_1.setText(_translate("screen_3_authorization", "Возврат к главному меню через"))

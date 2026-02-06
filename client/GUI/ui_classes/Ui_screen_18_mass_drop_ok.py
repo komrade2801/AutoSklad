@@ -577,7 +577,7 @@ class Ui_screen_18_mass_drop_ok(object):
         _translate = QtCore.QCoreApplication.translate
         screen_18_mass_drop_ok.setWindowTitle(_translate("screen_18_mass_drop_ok", "screen_18_mass_drop_ok"))
         self.lbl_info_3.setText(_translate("screen_18_mass_drop_ok", "Возврат к главному меню через"))
-        self.lbl_timeout_back.setText(_translate("screen_18_mass_drop_ok", "5"))
+        self.lbl_timeout_back.setText(_translate("screen_18_mass_drop_ok", "10"))
         self.lbl_info_2.setText(_translate("screen_18_mass_drop_ok", "применена"))
         self.lbl_info_1.setText(_translate("screen_18_mass_drop_ok", "Конфигурация"))
 from ..img import resources_rc

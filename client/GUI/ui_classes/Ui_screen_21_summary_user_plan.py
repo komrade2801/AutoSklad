@@ -550,7 +550,7 @@ class Ui_screen_21_summary(object):
         screen_21_summary.setWindowTitle(_translate("screen_21_summary", "screen_21_summary"))
         self.lbl_info_1.setText(_translate("screen_21_summary", "Сводка по истории операций"))
         self.listWidget.setWhatsThis(_translate("screen_21_summary", "<html><head/><body><p><br/></p></body></html>"))
-        self.lbl_timeout_back.setText(_translate("screen_21_summary", "25"))
+        self.lbl_timeout_back.setText(_translate("screen_21_summary", "60"))
         self.lbl_info_2.setText(_translate("screen_21_summary", "Возврат к главному меню через"))
         self.btn_select_plans.setText(_translate("screen_21_summary", "Выбор чертежа"))
         self.btn_select_users.setText(_translate("screen_21_summary", "Выбор пользователя"))

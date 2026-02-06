@@ -573,7 +573,7 @@ class Ui_screen_11_tool_issued(object):
         screen_11_tool_issued.setWindowTitle(_translate("screen_11_tool_issued", "screen_11_tool_issued"))
         self.lbl_info_1.setText(_translate("screen_11_tool_issued", "Инструмент"))
         self.lbl_info_4.setText(_translate("screen_11_tool_issued", "после использования"))
-        self.lbl_timeout_back.setText(_translate("screen_11_tool_issued", "5"))
+        self.lbl_timeout_back.setText(_translate("screen_11_tool_issued", "10"))
         self.lbl_info_3.setText(_translate("screen_11_tool_issued", "Не забудьте его вернуть"))
         self.lbl_info_2.setText(_translate("screen_11_tool_issued", "успешно выдан!"))
         self.lbl_info_5.setText(_translate("screen_11_tool_issued", "Возврат к главному меню через"))

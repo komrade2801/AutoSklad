@@ -811,5 +811,5 @@ class Ui_screen_13_no_right(object):
         self.lbl_info_2.setText(_translate("screen_13_no_right", "У вас нет прав на получение"))
         self.lbl_info_4.setText(_translate("screen_13_no_right", "Обратитесь к кладовщику"))
         self.lbl_info_5.setText(_translate("screen_13_no_right", "Возврат к главному меню через"))
-        self.lbl_timeout_back.setText(_translate("screen_13_no_right", "5"))
+        self.lbl_timeout_back.setText(_translate("screen_13_no_right", "10"))
 from ..img import resources_rc

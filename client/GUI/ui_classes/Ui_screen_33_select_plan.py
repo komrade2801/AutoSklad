@@ -483,7 +483,7 @@ class Ui_screen_33_select_plan(object):
         _translate = QtCore.QCoreApplication.translate
         screen_33_select_plan.setWindowTitle(_translate("screen_33_select_plan", "screen_33_select_plan"))
         self.lbl_info_4.setText(_translate("screen_33_select_plan", "Возврат к главному меню через"))
-        self.lbl_timeout_back.setText(_translate("screen_33_select_plan", "25"))
+        self.lbl_timeout_back.setText(_translate("screen_33_select_plan", "60"))
         self.listWidget.setWhatsThis(_translate("screen_33_select_plan", "<html><head/><body><p><br/></p></body></html>"))
         self.lbl_info_1.setText(_translate("screen_33_select_plan", "Выберите чертёж"))
         self.lbl_info_5.setText(_translate("screen_33_select_plan", "Выберите из списка"))

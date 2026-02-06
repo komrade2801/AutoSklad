@@ -820,7 +820,7 @@ class Ui_screen_6_user(object):
         self.lbl_info_3.setText(_translate("screen_6_user", "или"))
         self.lbl_info_1.setText(_translate("screen_6_user", "Добро пожаловать,"))
         self.lbl_name_2.setText(_translate("screen_6_user", "Иванович"))
-        self.lbl_timeout_back.setText(_translate("screen_6_user", "25"))
+        self.lbl_timeout_back.setText(_translate("screen_6_user", "60"))
         self.lbl_info_2.setText(_translate("screen_6_user", "Отсканируйте штрихкод чертежа"))
         self.btn_select_plan.setText(_translate("screen_6_user", "Выбрать чертеж"))
 from ..img import resources_rc

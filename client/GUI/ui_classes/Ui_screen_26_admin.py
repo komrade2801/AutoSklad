@@ -989,7 +989,7 @@ class Ui_screen_26_admin(object):
         _translate = QtCore.QCoreApplication.translate
         screen_26_admin.setWindowTitle(_translate("screen_26_admin", "screen_26_admin"))
         self.lbl_info_3.setText(_translate("screen_26_admin", "Возврат к главному меню через"))
-        self.lbl_timeout_back.setText(_translate("screen_26_admin", "25"))
+        self.lbl_timeout_back.setText(_translate("screen_26_admin", "60"))
         self.btn_net.setText(_translate("screen_26_admin", "Сеть"))
         self.lbl_info_2.setText(_translate("screen_26_admin", "выберите действие:"))
         self.btn_off.setText(_translate("screen_26_admin", "Выключить"))

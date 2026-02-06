@@ -689,7 +689,7 @@ class Ui_screen_12_no_tool(object):
         screen_12_no_tool.setWindowTitle(_translate("screen_12_no_tool", "screen_12_no_tool"))
         self.lbl_info_2.setText(_translate("screen_12_no_tool", "инструмент отсутствует"))
         self.lbl_info_4.setText(_translate("screen_12_no_tool", "Возврат к главному меню через"))
-        self.lbl_timeout_back.setText(_translate("screen_12_no_tool", "5"))
+        self.lbl_timeout_back.setText(_translate("screen_12_no_tool", "10"))
         self.lbl_info_1.setText(_translate("screen_12_no_tool", "Выдача не удалась"))
         self.lbl_info_3.setText(_translate("screen_12_no_tool", "Обратитесь к администратору"))
 from ..img import resources_rc
