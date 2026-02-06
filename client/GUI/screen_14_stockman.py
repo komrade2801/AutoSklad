@@ -2,6 +2,7 @@ import traceback
 
 from Core.app_logging import get_logger
 from PyQt5 import QtCore
+from PyQt5.QtCore import QThread, pyqtSignal
 from GUI.BaseScreen import BaseScreen
 
 logger = get_logger(__name__)
@@ -20,25 +21,54 @@ relay_pin = 18
 GPIO.setup(relay_pin, GPIO.OUT)
 GPIO.output(relay_pin, GPIO.LOW)
 
+# Длительность активации реле в секундах
+RELAY_DURATION = 15
 
-def control_rely(command):
-    try:
-        if command == "1":
-            logger.info("Включаю реле на 15 секунд")
+
+class RelayWorker(QThread):
+    """Рабочий поток для управления реле без блокировки GUI."""
+    finished = pyqtSignal()
+
+    def __init__(self, duration=RELAY_DURATION):
+        super().__init__()
+        self.duration = duration
+
+    def run(self):
+        try:
+            logger.info("Включаю реле на %d секунд", self.duration)
             GPIO.output(relay_pin, GPIO.HIGH)
-            time.sleep(15)
+            time.sleep(self.duration)
             logger.info("Выключаю реле")
             GPIO.output(relay_pin, GPIO.LOW)
-        elif command == "2":
-            logger.info("Выключаю реле")
-            GPIO.output(relay_pin, GPIO.LOW)
-        else:
-            logger.warning("Неверная команда. Используйте 1 - Включить, 2 - Выключить")
+        except Exception as e:
+            logger.exception("RelayWorker: %s", e)
+        finally:
+            self.finished.emit()
+
+
+def control_relay_off():
+    """Немедленно выключить реле."""
+    try:
+        logger.info("Выключаю реле")
+        GPIO.output(relay_pin, GPIO.LOW)
     except Exception as e:
-        logger.exception("control_rely: %s", e)
+        logger.exception("control_relay_off: %s", e)
 
 
 class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
+    # Стиль кнопки в активном состоянии (зелёный фон)
+    BUTTON_STYLE_ACTIVE = """
+        QPushButton {
+            background-color: #4CAF50;
+            border: 2px solid #388E3C;
+            border-radius: 5px;
+        }
+        QPushButton:disabled {
+            background-color: #4CAF50;
+            border: 2px solid #388E3C;
+        }
+    """
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -60,32 +90,50 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         self._barcode_timer.setSingleShot(True)
         self._barcode_timer.timeout.connect(self._process_barcode)
         self.event_enter_barcode = lambda barcode: logger.debug("Получен штрих-код: %s", barcode)
-        # :contentReference[oaicite:0]{index=0}
+
+        # Рабочий поток для реле
+        self._relay_worker = None
+        # Сохраняем оригинальный стиль кнопки
+        self._btn_open_door_original_style = self.btn_open_door.styleSheet()
+
         self.btn_open_door.clicked.connect(self.on_open_door)
-        # :contentReference[oaicite:0]{index=0}
         self.btn_back.clicked.connect(self.close_door)
 
     def on_open_door(self):
         """
-        Это метод-обработчик (слот), который вызовется
-        при каждом клике по btn_open_door.
-        Здесь реализуйте логику открытия двери.
+        Обработчик нажатия кнопки открытия двери.
+        Запускает реле в отдельном потоке, не блокируя GUI.
         """
+        # Игнорируем повторные нажатия, пока реле активно
+        if self._relay_worker and self._relay_worker.isRunning():
+            logger.debug("Реле уже активно, игнорируем повторное нажатие")
+            return
+
         logger.debug("Кнопка «Открыть дверь» нажата!")
-        # TODO Перенести в основную логику программы
-        control_rely("1")
+
+        # Деактивируем кнопку и меняем её стиль на зелёный
+        self.btn_open_door.setEnabled(False)
+        self.btn_open_door.setStyleSheet(self.BUTTON_STYLE_ACTIVE)
+
+        # Запускаем рабочий поток для управления реле
+        self._relay_worker = RelayWorker(RELAY_DURATION)
+        self._relay_worker.finished.connect(self._on_relay_finished)
+        self._relay_worker.start()
+
+    def _on_relay_finished(self):
+        """Вызывается когда реле выключается (поток завершён)."""
+        logger.debug("Реле выключено, восстанавливаем кнопку")
+        # Восстанавливаем оригинальный стиль и активируем кнопку
+        self.btn_open_door.setStyleSheet(self._btn_open_door_original_style)
+        self.btn_open_door.setEnabled(True)
 
     def close_door(self):
         """
-        Это метод-обработчик (слот), который вызовется
-        при каждом клике по btn_open_door.
-        Здесь реализуйте логику открытия двери.
+        Обработчик нажатия кнопки закрытия/выхода.
+        Немедленно выключает реле.
         """
         logger.debug("Кнопка «Закрыть дверь» нажата")
-        # TODO Перенести в основную логику программыц
-        # Настройка режима нумерации пинов (BCM)
-
-        control_rely("2")
+        control_relay_off()
 
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""
@@ -135,6 +183,15 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
             button.setFocusPolicy(QtCore.Qt.NoFocus)
         # Запуск таймера для обработки ввода штрих-кода (fallback на случай, если Enter не придет)
         self._barcode_timer.start()
+        # Проверяем состояние реле при показе экрана
+        if self._relay_worker and self._relay_worker.isRunning():
+            # Реле ещё активно - показываем зелёную кнопку
+            self.btn_open_door.setEnabled(False)
+            self.btn_open_door.setStyleSheet(self.BUTTON_STYLE_ACTIVE)
+        else:
+            # Реле не активно - нормальное состояние
+            self.btn_open_door.setStyleSheet(self._btn_open_door_original_style)
+            self.btn_open_door.setEnabled(True)
 
     def hideEvent(self, event):
         """Событие, которое срабатывает, когда виджет скрывается."""
@@ -143,6 +200,12 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         self.timeout_back = self.__timeout_back
         # Остановка таймера для обработки ввода штрих-кода
         self._barcode_timer.stop()
+        # Восстанавливаем состояние кнопки при скрытии экрана
+        if self._relay_worker and self._relay_worker.isRunning():
+            # Поток продолжит работу в фоне, но кнопку восстановим
+            pass
+        self.btn_open_door.setStyleSheet(self._btn_open_door_original_style)
+        self.btn_open_door.setEnabled(True)
 
     def keyPressEvent(self, event):
         # Обработка Enter/Return - основной механизм завершения ввода QR-кода
