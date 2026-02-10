@@ -143,7 +143,6 @@ export function generateTableUsers(containerId, jsonUsers) {
     "ID",
     "Штрихкод",
     "Логин",
-    "Пароль",
     "ФИО",
     "Роль",
     "Печать штрихкода",
@@ -178,25 +177,6 @@ export function generateTableUsers(containerId, jsonUsers) {
     const tdCode = document.createElement("td");
     tdCode.textContent = user.code;
     tr.appendChild(tdCode);
-
-    // Пароль
-    const tdPassword = document.createElement("td");
-    const btnPassword = document.createElement("button");
-    btnPassword.className = "btn_vending";
-    btnPassword.textContent = "Пароль";
-    btnPassword.style.width = "150px";
-    btnPassword.title = "Посмотреть и редактировать пароль";
-    btnPassword.addEventListener("click", () => {
-      openModalPassword({
-        index: user.index,
-        name: user.name,
-        login: user.login,
-        password: user.password
-      });
-    });
-
-    tdPassword.appendChild(btnPassword);
-    tr.appendChild(tdPassword);
 
     // ФИО
     const tdFio = document.createElement("td");
