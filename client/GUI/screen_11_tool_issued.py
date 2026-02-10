@@ -30,8 +30,9 @@ class screen_11_tool_issued(BaseScreen, Ui_screen_11_tool_issued):
         print(f"screen_11_tool_issued showEvent. event: {event}")
         """Событие, которое срабатывает, когда виджет показывается."""
         super().showEvent(event)
-        self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
+        self.lbl_timeout_back.setText(str(self.timeout_back))
+        self.visibility_timer.start(1000)
 
     def hideEvent(self, event):
         logger.debug("screen_11_tool_issued hideEvent. event: %s", event)

@@ -121,8 +121,9 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         super().showEvent(event)
         self.edit_login.setText("")
         self.edit_psw.setText("")
-        self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
+        self.lbl_timeout_back.setText(str(self.timeout_back))
+        self.visibility_timer.start(1000)
         # self.edit_login.setStyleSheet("color: rgb(0, 0, 0);")
         # self.edit_psw.setStyleSheet("color: rgb(0, 0, 0);")
         self.edit_login.setStyleSheet("color: #000000;\n"
