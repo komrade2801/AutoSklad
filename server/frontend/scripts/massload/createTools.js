@@ -91,8 +91,8 @@ function openMassLoadInput(toolDiv, valueData, planName, toolId, groupName, tool
     // Входное поле внутри inputDiv
     const input = document.createElement('input');
     input.type = 'number';
-    input.min = '0';
-    input.value = '0';
+    input.min = '1';
+    input.value = '1';
     input.step = '1';
     input.pattern = '[0-9]*';
     input.inputMode = 'numeric';
