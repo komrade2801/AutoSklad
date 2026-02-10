@@ -55,16 +55,6 @@ export function navbar_add(element_name) {
     })
     .then(html => {
       document.getElementById('navbar').innerHTML = html;
-
-      // Привязываем бургер-кнопку к toggle sidebar
-      const toggleBtn = document.getElementById('sidebar-toggle');
-      if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-          if (typeof window.toggleSidebar === 'function') {
-            window.toggleSidebar();
-          }
-        });
-      }
     });
 }
 
