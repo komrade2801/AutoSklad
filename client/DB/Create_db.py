@@ -279,7 +279,7 @@ def execute():
 
         test_users = [
             {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим',
-                'second_name': 'Кудрявцев', 'family': 'Иванов', 'password': 1111, 'role_id': 1},
+                'second_name': 'Кудрявцев', 'family': 'Иванович', 'password': 1111, 'role_id': 1},
             {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Юлия',
                 'second_name': 'Пестова', 'family': 'Игоревна', 'password': 2222, 'role_id': 2},
             {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий',

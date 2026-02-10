@@ -131,8 +131,8 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
                 if isinstance(arg, tuple):
                     user = arg[0]
                     logger.debug("user: %s", user)
-                    self.lbl_name.setText(f"{user.first_name} {user.second_name}")
-                    self.lbl_name_2.setText(f"{user.family}")
+                    self.lbl_name.setText(f"{user.second_name}")
+                    self.lbl_name_2.setText(f"{user.first_name[0]}.{user.family[0]}.")
                     continue
 
             except Exception:

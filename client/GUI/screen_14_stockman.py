@@ -146,14 +146,14 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
                 if isinstance(arg, tuple):
                     user = arg[0]
                     logger.debug("user as tuple: %s", user)
-                    self.lbl_name.setText(f"{user.first_name} {user.second_name}")
-                    self.lbl_name_2.setText(f"{user.family}")
+                    self.lbl_name.setText(f"{user.second_name}")
+                    self.lbl_name_2.setText(f"{user.first_name[0]}.{user.family[0]}.")
                 elif isinstance(arg, str) and arg.strip():
                     print(f"user as str: {arg}")
                     full = arg.split(" ")
-                    if len(full) >= 2:
-                        self.lbl_name.setText(f"{full[0]} {full[1]}")
-                        self.lbl_name_2.setText(f"{full[2]}")
+                    if len(full) >= 3:
+                        self.lbl_name.setText(f"{full[1]}")
+                        self.lbl_name_2.setText(f"{full[0][0]}.{full[2][0]}.")
 
             except Exception as e:
                 logger.exception("Ошибка в set_data stockman: %s", e)

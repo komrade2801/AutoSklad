@@ -212,7 +212,7 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             if not len(args[0]) > 1:
                 return
             full = args[0].split(" ")
-            name = f"{full[0][0]}. {full[1][0]}. {full[2]}"
+            name = f"{full[1]} {full[0][0]}.{full[2][0]}."
             self.edit_login.setText(name)
             self.edit_psw.setFocus()
         except Exception:
