@@ -1,6 +1,6 @@
 
 import { createTools } from './createTools.js';
-import { createHistory } from './createHistory.js';
+import { createHistory } from './history_load.js';
 import { nav_btn_add } from '../nav_btn_load.js';
 import { navbar_add } from '../navbar.js';
 

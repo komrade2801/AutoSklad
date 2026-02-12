@@ -20,7 +20,7 @@ class ToolTypesModel(BaseModel):
     amount: int
 
 class AllToolTypesResponse(BaseModel):
-    tools: Dict[int, ToolTypesModel]
+    tools: List[ToolTypesModel]
 
 class SubGroupModel(BaseModel):
     SGName: str

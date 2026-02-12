@@ -150,9 +150,14 @@ function openModalCell(toolId, toolName, toolSum) {
         const amount = parseInt(input.value);
         if (validateInput(amount, max)) {
             performMassLoad(toolId, toolName, toolSum, amount);
-            show('none');  // Закрыть модальное окно
         }
     });
+
+    const unloadBtn = document.querySelector('.btn_vending.upload');
+
+    unloadBtn.dataset.toolId= toolId;
+    unloadBtn.dataset.toolName= toolName;
+    unloadBtn.dataset.toolSum = toolSum;
 
     show('flex');  // Открываем модальное окно
 }

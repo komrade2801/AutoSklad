@@ -5,7 +5,7 @@
     border-radius: 8px 8px 8px 8px;
     padding: 14px 18px 14px 18px;
     padding: 2px;
-    width: 225px;
+    width: 100%;
     height: 35px;
 }
 
@@ -69,6 +69,10 @@
     line-height: 20px;
 }
 
+.btn.active,
+.btn-lg.active,
+.btn:active,
+.btn-lg:active,
 .btn:focus,
 .btn-lg:focus,
 .btn-outline-tabs {
@@ -91,3 +95,7 @@
     cursor: pointer;
     padding: 3px;
  }
+
+.tab-change-bar {
+    width: 100%;
+}

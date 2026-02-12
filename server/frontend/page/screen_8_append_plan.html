@@ -6,75 +6,133 @@
     <link rel="icon" href="/favicon.png?v=1" type="image/png">
 
     <title>Добавление чертежа</title>
-    <link href="../assets/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
+    <!--    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">-->
     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
+
+    <link rel="stylesheet" href="../assets/bootstrap-icons/1.13.1/bootstrap-icons.css">
+    <link href="../assets/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
     <script src="../assets/jquery/2.1.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="../assets/bootstrap-table/1.25.0/bootstrap-table.css">
+    <script src="../assets/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/bootstrap-table.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/locale/bootstrap-table-ru-RU.js"></script>
+
+    <script src="../assets/tableExport.jquery.plugin/tableExport.js"></script>
+    <script src="../assets/tableExport.jquery.plugin/libs/js-xlsx/xlsx.core.min.js"></script>
+    <script src="../assets/tableExport.jquery.plugin/libs/pdfmake/pdfmake.min.js"></script>
+    <script src="../assets/tableExport.jquery.plugin/libs/pdfmake/vfs_fonts.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/extensions/export/bootstrap-table-export.js"></script>
+
     <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
-<!--    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>-->
+    <!--    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>-->
+
     <script src="../scripts/append_plan/clear_all_form.js"></script>
     <script src="../scripts/append_plan/modal_window.js"></script>
     <script type="module" src="../scripts/append_plan/init_8_append_plan.js?v=2"></script>
     <script type="module" src="../scripts/append_plan/save_script.js"></script>
+    <script type="module" src="../scripts/append_plan/selected_tools.js"></script>
+    <script src="../scripts/append_plan/manualFields.js"></script>
+    <script src="../scripts/append_plan/tableScript.js"></script>
 
     <link rel="stylesheet" href="../style/titles.css">
     <link rel="stylesheet" href="../style/background.css">
-    <link rel="stylesheet" href="../style/button_style.css">
     <link rel="stylesheet" href="../style/dropdown_list.css">
     <link rel="stylesheet" href="../style/style_modal_window.css">
+    <link rel="stylesheet" href="../style/button_style.css">
     <link rel="stylesheet" href="../style/append_plan/input_amount.css">
 
 </head>
-<body onload="initialization('screen_8_append_plan')" class="d-flex justify-content-center" id="body"
-      style="margin-bottom: 0; width: 100%; height: 100%; padding-bottom: 0px; background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);">
-  <div id="membrane"></div>
-  <div id="modal_window_confirmation">
+<body onload="initialization('screen_8_append_plan')" class="d-flex justify-content-center" id="body">
+<div id="membrane"></div>
+<div id="modal_window_cell">
+    <span class="tool_name"
+          style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент: </span>
+    <span class="tool_sum" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Количество: </span>
+    <div class="library-tool-row" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">
+        <div class="toolName library-tool-input-div">
+            <input id="modal_amount_input" type="number" min="0" step="1" pattern="[0-9]*" inputmode="numeric"
+                   max="99999999" class="library-tool-input">
+        </div>
+    </div>
+    <div style="display: flex; flex-direction: row; margin-top: 50px;">
+        <button class="btn btn_vending" onclick="show('none')" style="margin-right: 20px;">Назад</button>
+        <button id="modal_drop_button" class="btn btn_vending upload">Загрузить</button>
+    </div>
+</div>
+<div id="modal_window_confirmation">
     <span style="font-size: 24px;">Вы уверены, что хотите отменить добавление чертежа?</span>
     <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Введённые данные не сохранятся.</span>
     <div style="display: flex; flex-direction: row; margin-top: 50px;">
-      <button class="btn_vending" onclick="window.location.href='/screen_7_plans.html?token='+localStorage.getItem('token')" style="margin-right: 20px;">Назад</button>
-      <button class="btn_vending" onclick="window.location.href='/screen_7_plans.html?token='+localStorage.getItem('token')">Отменить добавление</button>
+        <button class="btn btn_vending"
+                onclick="window.location.href='/screen_7_plans.html?token='+localStorage.getItem('token')"
+                style="margin-right: 20px;">Назад
+        </button>
+        <button class="btn btn_vending"
+                onclick="window.location.href='/screen_7_plans.html?token='+localStorage.getItem('token')">Отменить
+            добавление
+        </button>
     </div>
-  </div>
-  <div class="d-flex flex-column" style="height: 100%; width: 100%; position: static; margin-left: 0px; color: rgb(255,255,255);">
-    <nav id="navbar" class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3" style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
+</div>
+<div class="d-flex flex-column" style="height: 100%; width: 100%; position: static; margin-left: 0px;">
+    <nav id="navbar"
+         class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3"
+         style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
     </nav>
     <div class="d-flex" style="height: calc(100% - 120px); margin-top:10px; border-top: 2px solid rgb(78,155,229);">
-    <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical" style="width: 235px; padding-left: 10px; margin-top: 10px;">
-    </div>
-    <div class="tab-pane fade show active d-flex" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
-        <div id="column-1" class="d-flex" style="flex-direction: column; width: calc(50% - 112px); height: 100%; align-items: left; padding: 10px;">
-          <div style="display: flex; flex-direction: row; width: 100%; height: 30px; margin-top: 10px;">
-            <form class="d-flex" role="search" style="width: 100%;">
-              <input class="form-control me-2" type="search" placeholder="Поиск инструмента" aria-label="Поиск" oninput="performSearch(this)">
-<!--              <button class="btn" type="submit" style="width: 30px; display: flex; justify-content: center; align-items: center; border-color: rgb(153, 153, 153);">-->
-<!--                <img src="../assets/img/loupe.png" style="width: 20px; height: 20px; pointer-events: none;">-->
-<!--              </button>-->
-            </form>
-              <script>
-                  function performSearch(input) {
-                    const searchText = input.value.toLowerCase();
-                    if (searchText == '') {
-                        $(".library-tool-div").show();
-                    } else {
-                        $(".library-tool-div").hide();
-                        $(".library-tool-div").filter(function() {
-                            return $(this).attr('data-tool-name').toLowerCase().indexOf(searchText) > -1;
-                        }).show();
-                    }
-                  }
-              </script>
-          </div>
-          <div class="d-flex" id="tools" style="flex-direction: column; width: 98%; overflow-y: scroll; margin-top: 5px; margin-botton: 10px"></div>
+        <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical"
+             style="width: 235px; padding-left: 10px; margin-top: 10px;">
         </div>
-        <div id="column-2" style="display: flex; flex-direction: column; width: calc(50% - 113px); height: 100%; box-sizing: border-box; padding: 10px;">
-            <div style="display: flex; flex-direction: column; width: 100%; height: 100%; border: 2px solid rgb(78, 155, 229); border-radius: 5px; padding: 10px; box-sizing: border-box;">
-                <div id="qrCodeBlock">
+        <div class="tab-pane fade show active d-flex"
+             style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
+            <div id="column-1" class="d-flex"
+                 style="flex-direction: column; width: 60%; height: 100%; align-items: start; overflow: hidden; padding: 10px;">
+
+                <div id="loadable_tools_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                    <table
+                            id='loadable_tools_table'
+                            data-locale="ru-RU"
+                            data-search='true'
+                            data-show-columns='true'
+                            data-show-refresh='false'
+                            data-show-toggle='true'
+                            data-show-export='true'
+                            data-export-types="['json', 'csv', 'xlsx', 'pdf']"
+                            data-pagination='true'
+                            data-side-pagination='client'
+                            data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
+                            data-page-size="210"
+                            data-sort-name="number"
+                            data-sort-order="asc"
+                            data-fixed-scroll="true"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='name' data-sortable='true'><span
+                                    title="Инструмент">Инструмент</span>
+                            </th>
+                            <th data-field='actions' data-width="50" data-formatter="actionToolsFormatter"><span
+                                    title="Информация">Инфо</span></th>
+                            <th data-field='sum' data-sortable='true' data-width="100">
+                                <span title="Количество">Количество</span></th>
+                            <th data-field='load' data-sortable='true' data-width="200"
+                                data-formatter="sumToolsFormatter">
+                                <span title="Загрузка">Загрузка</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+            <div id="column-2" class="d-flex"
+                 style="display: flex; flex-direction: column; width: 40%; height: 100%; align-items: start; overflow: hidden; padding: 10px;">
+                <div id="qrCodeBlock" style="width: 100%;">
                     <div class="btn-group btn-group-toggle tab-change-bar" data-toggle="buttons">
-                        <input type="radio" class="btn-check" name="options-tabs" id="tab1" value="qr" autocomplete="off" checked>
+                        <input type="radio" class="btn-check" name="options-tabs" id="tab1" value="qr"
+                               autocomplete="off" checked>
                         <label class="btn btn-outline-tabs btn-lg" for="tab1">Сканирование QR-кода</label>
 
-                        <input type="radio" class="btn-check" name="options-tabs" id="tab2" value="auto" autocomplete="off">
+                        <input type="radio" class="btn-check" name="options-tabs" id="tab2" value="auto"
+                               autocomplete="off">
                         <label class="btn btn-outline-tabs btn-lg" for="tab2">Ввести вручную</label>
                     </div>
                     <script>
@@ -100,26 +158,35 @@
                                 element.disabled = true;
                             }
                         });
-
-
                     </script>
 
                     <div style="padding-bottom: 20px;">
-                        <textarea id="qrCodeInput" class="form-control me-2 plan-qr" placeholder="Отсканируйте QR-код" style="margin-top: 5px;" onkeydown="fillManualFields(this)"></textarea>
+                            <textarea id="qrCodeInput" class="form-control me-2 plan-qr"
+                                      placeholder="Отсканируйте QR-код" style="margin-top: 5px;"
+                                      onkeydown="fillManualFields(this)"></textarea>
                         <label class="form-check-label" for="qrCodeInput">
                             Первая строка из QR-кода - обозначение чертежа
                         </label>
                     </div>
                 </div>
-                <div id="manualBlock">
-                    <span style="width: 100%; padding-left: 10px;">Предприятие:</span>
-                  <input id="enterpriseInput" class="form-control me-2 plan-input" type="text" placeholder="ООО АзовСталь" style="margin-top: 5px;" disabled>
-                  <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Номер чертежа:</span>
-                  <input id="designationInput" class="form-control me-2 plan-input" type="text" placeholder="XXXX.DDDD.xxxx.xxxx.xxxx" disabled>
-                  <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Название чертежа:</span>
-                  <input id="nameInput" class="form-control me-2 plan-input" type="text" placeholder="Втулка стальная 5мм." disabled>
-                  <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Описание чертежа:</span>
-                  <input id="descriptionInput" class="form-control me-2 plan-input" type="text" placeholder="Описание чертежа." disabled>
+                <div id="manualBlock" class="plan-input-group">
+                    <div class="plan-input-row">
+                        <span style="width: 100%;">Предприятие:</span>
+                        <input id="enterpriseInput" class="form-control plan-input" type="text"
+                               placeholder="ООО АзовСталь" style="margin-top: 5px;" disabled>
+                        <span style="width: 100%;">Номер чертежа:</span>
+                        <input id="designationInput" class="form-control plan-input" type="text"
+                               placeholder="XXXX.DDDD.xxxx.xxxx.xxxx" disabled>
+                    </div>
+                    <div class="plan-input-row">
+                        <span style="width: 100%;">Название чертежа:</span>
+                        <input id="nameInput" class="form-control plan-input" type="text"
+                               placeholder="Втулка стальная 5мм." disabled>
+                        <span style="width: 100%;">Описание чертежа:</span>
+                        <input id="descriptionInput" class="form-control plan-input" type="text"
+                               placeholder="Описание чертежа." disabled>
+                    </div>
+
                 </div>
                 <div class="form-check checkbox-option">
                     <input class="form-check-input" type="checkbox" value="" id="createMassLoad" checked>
@@ -127,108 +194,43 @@
                         Сгенерировать массовую загрузку
                     </label>
                 </div>
-              <span style="width: 100%; margin-top: 10px; padding-left: 10px;">Инструмент для чертежа:</span>
-              <div id="selection_tools" class="d-flex dropable"
-                   style="display: flex; flex-direction: column; flex-grow: 1; margin-top: 5px; padding: 5px; padding-bottom: 50px; box-sizing: border-box; overflow-y: auto; border-radius: 5px; border: 1px solid rgb(255, 255, 255);">
-              </div>
+                <div id="selected_tools_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                    <table
+                            id='selected_tools_table'
+                            data-locale="ru-RU"
+                            data-show-refresh='false'
+                            data-pagination='true'
+                            data-side-pagination='client'
+                            data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
+                            data-page-size="210"
+                            data-toolbar="#customToolsToolbar"
+                            data-fixed-scroll="true"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='name' data-sortable='true'><span
+                                    title="Инструмент">Инструмент</span>
+                            </th>
+                            <th data-field='quantity' data-sortable='true' data-width="100">
+                                <span title="Количество">Количество</span></th>
+                            <th data-field='actions' data-width="100" data-formatter="actionStoryFormatter"><span
+                                    title="Действия">Действия</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                    <div id="customToolsToolbar"
+                         style="display: flex; align-items: flex-end; align-content: flex-end; flex-wrap: nowrap; flex-direction: row;">
+                        <button class="btn btn_vending" type="button" onclick="clearAllForm()">Очистить все поля
+                        </button>
+                        <button class="btn btn_vending" type="button" onclick="openModalConf()">Отмена</button>
+                        <button id="saveButton" class="btn btn_vending" type="button">Сохранить</button>
+                    </div>
+                </div>
             </div>
-            <script>
-                var qr_rows = []
-                function fillManualFields(elem) {
-                //    console.log(event.key)
-                    if (event.key === 'Tab') {
-                        event.preventDefault();
-                        console.log(elem.value);
-
-                        qr_rows.push(elem.value);
-                        elem.value = '';
-                    }
-                    if(event.key === 'Enter') {
-                        event.preventDefault();
-                        
-                        // Если в textarea остался текст, который не был добавлен в массив - добавляем его
-                        if (elem.value && elem.value.trim()) {
-                            qr_rows.push(elem.value);
-                            elem.value = '';
-                        }
-
-                        fetch("/backend/qr/", {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({'content': qr_rows})
-                          })
-                          .then(response => {
-                            if (!response.ok) {
-                              return response.text().then(text => {
-                                throw new Error(`Ошибка ${response.status}: ${text}`);
-                              });
-                            }
-                            return response.json();
-                          })
-                          .then(data => {
-                            console.log('Результат декодировки:', data);
-
-                            const enterpriseInput = document.getElementById('enterpriseInput');
-                            const designationInput = document.getElementById('designationInput');
-                            const nameInput = document.getElementById('nameInput');
-                            const descriptionInput = document.getElementById('descriptionInput');
-
-                            // Заполняем поля из новой структуры ответа
-                            enterpriseInput.value = data.enterprise || "";
-                            designationInput.value = data.designation || "";
-                            nameInput.value = data.name || "";
-                            descriptionInput.value = data.description || "";
-
-                            // Автоматически переключаем на вкладку "Ввести вручную" для возможности редактирования
-                            const autoTab = document.getElementById('tab2');
-                            if (autoTab) {
-                                autoTab.checked = true;
-                                // Триггерим событие change для обновления состояния полей
-                                autoTab.dispatchEvent(new Event('change'));
-                            }
-
-                            // Убеждаемся, что поля редактируемы
-                            enterpriseInput.disabled = false;
-                            designationInput.disabled = false;
-                            nameInput.disabled = false;
-                            descriptionInput.disabled = false;
-
-                            const qrCodeInput = document.getElementById('qrCodeInput');
-                            qrCodeInput.placeholder = 'QR-код отсканирован успешно'
-                            qrCodeInput.blur();
-                            qrCodeInput.value = '';
-
-                            qr_rows = []
-                          })
-                          .catch(err => {
-                            console.error('Ошибка при декодировании:', err);
-                            alert('Ошибка при декодировании QR-кода: ' + err.message);
-                          });
-                    }
-                }
-            </script>
         </div>
-        <div id="column-3" class="d-flex" style="display: flex; flex-direction: column; justify-content: space-between; width: 225px; height: 100%; margin-right: 10px;">
-<!--          <div style="width: 100%; height: 70px; margin-top: 10px;">-->
-<!--            <button class="btn_vending" type="button">Загрузить из 1С</button>-->
-<!--          </div>-->
-          <div class="card" style="width: 225px; border: 20px; border-radius: 5px; border-color: rgb(0,49,114); font-size: 16px;">
-            <div class="card-body" style="color: #2E4461; padding: 10px;">
-              <h6 class="card-title" >Подсказка:</h6>
-              <p class="card-text" style="font-family: Arial;">Перетащите весь необходимый инструмент в соответственное поле. Количество можно будет уточнить позже.</p>
-            </div>
-          </div>
-          <div style="width: 100%; margin-bottom: 10px;">
-            <button class="btn_vending" type="button" onclick="clearAllForm()">Очистить все поля</button>
-            <button class="btn_vending" type="button" onclick="openModalConf()">Отмена</button>
-            <button id="saveButton" class="btn_vending" type="button">Сохранить</button>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
+</div>
 
 </body>
 </html>

@@ -1,9 +1,9 @@
 //import { jsonObjectTools } from './init.js';
 // Функция для создания строк инструмента на основе JSON-данных
-import { createHistory } from './createHistory.js';
-import { updateJsonHistoryLoad } from './history_load.js';
+//import { createHistory } from './createHistory.js';
+import { updateJsonHistoryLoad, createHistory } from './history_load.js';
 
-let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
+//let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
 
 export function createTools() {
     console.log('createTools');
@@ -20,7 +20,7 @@ export function createTools() {
 function performMassLoad(toolId, toolName, toolSum, amount) {
 
     console.log(`🔄 Starting mass load: ${amount} "${toolName}" "`);
-    console.log('📊 Pre-load tool inventory state:', getToolInventoryState());
+//    console.log('📊 Pre-load tool inventory state:', getToolInventoryState());
 
 //    const freeCells = getFreeCells();
 
@@ -39,10 +39,6 @@ function performMassLoad(toolId, toolName, toolSum, amount) {
     }
 
     console.log(`✅ Loading ${amount} tools into cells`);
-
-
-
-
 
     // Ничего не делаем, если содержимое пустое
     if (toolName === 'None') return;
@@ -75,8 +71,8 @@ function performMassLoad(toolId, toolName, toolSum, amount) {
         updateToolsJSONMass(toolId, 1);
     }
 
-    console.log('📊 Post-load tool inventory state:', getToolInventoryState());
-    console.log('📝 Current load history state:', getHistoryState());
+//    console.log('📊 Post-load tool inventory state:', getToolInventoryState());
+//    console.log('📝 Current load history state:', getHistoryState());
     console.log('📝 Final window.appData.history:', window.appData.history);
 
     // Обновляем UI
@@ -84,8 +80,8 @@ function performMassLoad(toolId, toolName, toolSum, amount) {
     createHistory();
 //    initializeDragAndDrop();
 
-    // Закрываем строку ввода
-    closeCurrentInputRow();
+//    // Закрываем строку ввода
+//    closeCurrentInputRow();
 }
 
 window.performMassLoad = performMassLoad;

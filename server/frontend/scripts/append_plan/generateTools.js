@@ -1,105 +1,123 @@
-import { fetchToolLibraryData } from './init_8_append_plan.js';
-
+//import { createHistory } from './createHistory.js';
+import { updateJsonHistoryLoad, createHistory } from './selected_tools.js';
 
 // Функция для создания строк инструмента на основе JSON-данных
-export function generateTools(containerId, jsonToolLibrary) {
+export function generateTools() {
     console.log('generateTools');
-    console.log(jsonToolLibrary.tools);
-    const container = document.getElementById(containerId);
-    container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
+    console.log(window.appData.tools);
+//    const container = document.getElementById(containerId);
+//    container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
 
-    // Проходим по инструментам
-    for (const toolId in jsonToolLibrary.tools) {
-        const toolData = jsonToolLibrary.tools[toolId];
-    //    console.log(toolData);
+    if (window.appData.tools != undefined) {
+//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
+        $('#loadable_tools_table').bootstrapTable('load', window.appData.tools);
+        $('#loadable_tools_table').bootstrapTable('hideLoading');
+    }
+    return;
+}
 
-        const toolDiv = document.createElement('div');
-        // Устанавливаем флекс-контейнер для строки и класс
-        toolDiv.id = `tool_type_${toolData.id}`;
-        toolDiv.className = 'tool_type draggable library-tool-div';
-        toolDiv.draggable = "true";
+// Функция для массовой загрузки
+function performMassLoad(toolId, toolName, toolSum, amount) {
 
-//        toolDiv.setAttribute('data-group-index', groupKey);
-//        toolDiv.setAttribute('data-subgroup-index', subgroupKey);
-        toolDiv.setAttribute('data-tool-index', toolData.id);
-        toolDiv.setAttribute('data-tool-name', toolData.name);
-        toolDiv.setAttribute('data-tool-count', toolData.count);
-        toolDiv.setAttribute('data-tool-amount', toolData.amount);
-//        toolDiv.setAttribute('data-group-name', groupData.name);
-//        toolDiv.setAttribute('data-subgroup-name', subgroupData.SGName);
+    console.log(`🔄 Starting mass load: ${amount} "${toolName}" "`);
+//    console.log('📊 Pre-load tool inventory state:', getToolInventoryState());
 
-        // Устанавливаем стили для строки инструмента
-        toolDiv.style.height = '32px';
-        toolDiv.style.alignItems = 'center';
+//    const freeCells = getFreeCells();
 
-        // Создаем название и количество инструмента
-        const nameDiv = document.createElement('div');
+    var currentLoadAmount = 0;
 
-        // Устанавливаем стили для названия инструмента
-        nameDiv.className = 'toolName library-tool-name-div';
-        nameDiv.textContent = `${toolData.name}`;
-        nameDiv.title = `${toolData.name}`;
-
-        toolDiv.appendChild(nameDiv);
-        container.appendChild(toolDiv); // Добавляем строку в контейнер
+    if (window.appData.history.operation) {
+        currentLoadAmount = Object.keys(window.appData.history.operation).length;
+    } else {
+        currentLoadAmount = 0;
     }
 
-//    // Проходим по группам в JSON
-//    for (const groupKey in jsonToolLibrary.groups) {
-//        const groupData = jsonToolLibrary.groups[groupKey];
-//
-//        for (const subgroupKey in groupData.subgroup) {
-//            const subgroupData = groupData.subgroup[subgroupKey];
-//
-//            // Проходим по инструментам в подгруппе
-//            for (const valueKey in subgroupData.value) {
-//                const valueData = subgroupData.value[valueKey];
-//                const toolDiv = document.createElement('div');
-//
-//                // Устанавливаем флекс-контейнер для строки и класс
-//                toolDiv.style.display = 'flex';
-//                toolDiv.style.flexDirection = 'row';
-//                toolDiv.style.flexWrap = 'nowrap';
-//                toolDiv.className = 'draggable';
-//                toolDiv.draggable = "true";
-//                toolDiv.style.width = '100%';
-//                toolDiv.style.cursor = 'pointer';
-//                toolDiv.style.borderRadius = '5px';
-//                toolDiv.style.backgroundColor = '#D3D3D3A0';
-//
-//                toolDiv.setAttribute('data-group-index', groupKey);
-//                toolDiv.setAttribute('data-subgroup-index', subgroupKey);
-//                toolDiv.setAttribute('data-value-index', valueKey);
-//                toolDiv.setAttribute('data-group-name', groupData.name);
-//                toolDiv.setAttribute('data-subgroup-name', subgroupData.SGName);
-//
-//                // Устанавливаем стили для строки инструмента
-//                toolDiv.style.height = '32px';
-//                toolDiv.style.alignItems = 'center';
-//
-//                // Создаем название и количество инструмента
-//                const nameDiv = document.createElement('div');
-//
-//                // Устанавливаем стили для названия инструмента
-//                nameDiv.className = 'toolName';
-//                nameDiv.textContent = `${valueData.tools}`;
-//                nameDiv.style.display = 'flex';
-//                nameDiv.style.width = '100%';
-//                nameDiv.style.height = '30px';
-//                nameDiv.style.border = '1px solid #ffffff';
-//                nameDiv.style.color = '#003172';
-//                nameDiv.style.fontWeight = 'bold';
-//                nameDiv.style.fontSize = '14px';
-//                nameDiv.style.alignItems = 'center';
-//                nameDiv.style.justifyContent = 'start';
-//                nameDiv.style.margin = '1px';
-//                nameDiv.title = `Группа: ${groupData.name}\nПодгруппа: ${subgroupData.SGName}`;
-//
-//                toolDiv.appendChild(nameDiv);
-//                container.appendChild(toolDiv); // Добавляем строку в контейнер
-//
-//
-//            }
-//        }
-//    }
+    console.log(`✅ Loading ${amount} tools into cells`);
+
+    // Ничего не делаем, если содержимое пустое
+    if (toolName === 'None') return;
+
+    // Убедимся, что window.appData.history.operation существует
+    if (!window.appData.history.operation) {
+        window.appData.history.operation = {}; // Инициализируем, если это null или undefined
+    }
+
+    // create new operation in history
+
+//    const newKey = Object.keys(window.appData.history.operation).length + 1;
+
+    const operation = window.appData.history.operation[toolId];
+    var newAmount = amount;
+
+    if (operation) {
+        newAmount += operation.quantity;
+    }
+
+    window.appData.history.operation[toolId] = {
+        id: toolId,
+        name: toolName,
+        quantity: newAmount
+    }
+
+    updateJsonHistoryLoad();
+
+    for (var i = 0; i < amount; i++) {
+        updateToolsJSONMass(toolId, 1);
+    }
+
+//    console.log('📊 Post-load tool inventory state:', getToolInventoryState());
+//    console.log('📝 Current load history state:', getHistoryState());
+    console.log('📝 Final window.appData.history:', window.appData.history);
+
+    // Обновляем UI
+    generateTools();
+    createHistory();
+//    initializeDragAndDrop();
+
+}
+
+window.performMassLoad = performMassLoad;
+
+function updateToolsJSONMass(toolId, subtractAmount) {
+    console.log("updateToolsJSONMass успешно вызвана");
+
+    const tool = findToolById(toolId);
+
+    if (!tool) {
+        console.error("Tool not found for id:", toolId);
+        return;
+    }
+
+    // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
+    if (tool.sum === undefined || tool.sum === null) {
+        // Для инструментов с бесконечным запасом не уменьшаем sum
+        // (можно оставить как есть или установить специальное значение)
+        return;
+    }
+
+    // Для бесконечного запаса не изменяем sum
+    const currentSum = parseInt(tool.sum, 10);
+    if (isNaN(currentSum) || currentSum < 0) {
+        console.warn(`Invalid sum value for tool ${toolId}:`, tool.sum);
+        return;
+    }
+
+    // Уменьшаем значение sum на указанное количество
+    const newSum = currentSum - subtractAmount;
+    // Не позволяем sum стать отрицательным (должно быть >= 0)
+    tool.sum = Math.max(0, newSum).toString();
+
+    // Обновляем отображение элементов на странице
+    createTools();
+//    initializeDragAndDrop();
+}
+
+// Функция для поиска инструмента по ID
+function findToolById(toolId) {
+    for (const [idx, tool] of Object.entries(window.appData.tools)) {
+        if (tool.id == toolId) {
+            return tool;
+        }
+    }
+    return null;
 }

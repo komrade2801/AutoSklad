@@ -1,4 +1,4 @@
-import { createTools } from './createTools.js'
+import { generateTools } from './generateTools.js'
 
 
 // Функция для генерации JSON-History с историей текущей загрузки
@@ -15,13 +15,13 @@ export function updateJsonHistoryLoad() {
         console.log(operation);
 
         window.appData.history.table.push({
-            tool: operation.tool,
+            id: operation.id,
             name: operation.name,
-            sum: operation.sum
+            quantity: operation.quantity
         });
 
         window.appData.history.list.push({
-            tool: String(operation.tool)
+            id: String(operation.id)
         });
     }
 
@@ -35,7 +35,7 @@ export function createHistory() {
 
     if (window.appData.history.table != undefined) {
 //        $('#droppable_story_table').bootstrapTable('refreshOptions', {'height': $("#droppable_story_div").height()});
-        $('#loadable_story_table').bootstrapTable('load', window.appData.history.table);
-        $('#loadable_story_table').bootstrapTable('hideLoading');
+        $('#selected_tools_table').bootstrapTable('load', window.appData.history.table);
+        $('#selected_tools_table').bootstrapTable('hideLoading');
     }
 }

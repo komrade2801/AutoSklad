@@ -1,6 +1,7 @@
 //alert(1);
 //import { generateToolsSelection } from './generate_tools_selection.js';
 import { generateTools } from './generateTools.js?v=1';
+import { createHistory } from './selected_tools.js';
 //import { jsonToolLibrary } from '../../JSONs/tool_library.js';
 //import { jsonObjectTools } from '../../JSONs/all_tools.js';
 import { initializeDragAndDrop } from './drag_and_drop.js';
@@ -22,6 +23,13 @@ import { navbar_add } from '../navbar.js';
 window.tool_library = {}
 window.jsonLibrary = {};           // turn0search0
 window.jsonPlan = {};
+
+window.appData = window.appData || {};
+window.appData.history = window.appData.history || {};
+window.appData.history.operation = window.appData.history.operation || {};  // словарь со всеми операциями
+window.appData.history.table = window.appData.history.table || [];  // список для таблицы в интерфейсе
+window.appData.history.list = window.appData.history.list || [];  // список для передачи в бэкенд
+window.appData.tools = window.appData.tools || [];
 
 // Функция для получения JSON-данных через эндпоинт
 export async function fetchToolLibraryData(device_number) {
@@ -45,8 +53,9 @@ export async function fetchToolLibraryData(device_number) {
 export function initToolsData(device_number) {
     return fetchToolLibraryData(device_number)
       .then(data => {
-        window.tool_library = data;               // turn1search0
-        window.jsonLibrary = data;
+//        window.tool_library = data;               // turn1search0
+//        window.jsonLibrary = data;
+        window.appData.tools = data.tools;
         return data;
       })
       .catch(err => {
@@ -63,12 +72,45 @@ function initialization(element_name) {
     }
     nav_btn_add(element_name);
     navbar_add(element_name);
+
+    console.log($("#loadable_tools_div").height());
+
+    $('#loadable_tools_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'Список инструментов из библиотеки',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+        height: $("#loadable_tools_div").height()
+    });
+    $('#loadable_tools_table').bootstrapTable('showLoading');
+
+    $('#selected_tools_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'История текущей загрузки',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+        height: $("#selected_tools_div").height()
+    });
+    $('#selected_tools_table').bootstrapTable('load', []);
+
     let device_number = 1;
     initToolsData(device_number).then(data => {
 //        jsonToolLibrary = await fetchToolLibraryData();
-        generateTools("tools", window.tool_library);
+        generateTools();
         initializeDragAndDrop();
     });
+
+    $("#customToolsToolbar").width($("#column-2").width());
     //alert(2);
     // const jsonObjectTools = await fetchToolLibraryData();
     //generateToolsSelection(jsonObjectTools);

@@ -127,19 +127,19 @@
                             </tr>
                             </thead>
                         </table>
-                        <div id="customToolsToolbar" style="display: flex;">
-                            <button id="addTool" class="btn btn_vending" type="button"
+                        <div id="customToolsToolbar" style="display: flex; align-items: center;">
+                            <button id="addTool" class="btn btn_vending" type="button" style="padding-left:30px;padding-right:30px"
                                     onclick="window.location.href='./screen_16_add_tool.html?token='+localStorage.getItem('token');">
                                 Добавить инструмент
                             </button>
                             <form id="importToolsForm" action="javascript:;" onsubmit="doImportTools(this) "
                                   style="display: flex; align-items: center; margin-left: 20px;">
-                                <button id="importTools" type="submit" class="btn btn_vending">Загрузить xlsx</button>
+                                <button id="importTools" type="submit" class="btn btn_vending" style="width:150px">Загрузить xlsx</button>
                                 <input class="import-form" id="importToolsFile" type="file" name="file" accept=".xlsx"
                                        required/>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" value="" id="useToolCount">
-                                    <label class="form-check-label" for="useToolCount">
+                                    <label class="form-check-label" for="useToolCount" style="width:200px">
                                         Учитывать количество
                                     </label>
                                 </div>
@@ -285,7 +285,7 @@
                             </thead>
                         </table>
                         <div id="customGroupsToolbar">
-                            <button id="addGroup" class="btn btn_vending" type="button"
+                            <button id="addGroup" class="btn btn_vending" type="button" style="padding-left:30px;padding-right:30px"
                                     onclick="window.location.href='./screen_23_add_group.html?token='+localStorage.getItem('token');">
                                 Добавить группу
                             </button>

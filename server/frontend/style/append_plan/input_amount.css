@@ -102,11 +102,196 @@
     overflow: hidden;
 }
 
+.plan-input {
+    margin-right: 1rem !important;
+    margin-left: 0.5rem !important;
+}
+
 .plan-input:disabled,
 .plan-qr:disabled {
     background-color: #b3b8bd;
 }
 
 .checkbox-option {
-    margin: 20px;
+    margin: 10px;
+}
+
+.history-tool-name,
+.library-tool-name-div {
+    display: flex;
+    width: 100%;
+    height: 30px;
+    background-color: #D3D3D3A0;
+    border: 1px solid #ffffff;
+    color: #003172;
+    font-weight: bold;
+    font-size: 14px;
+    align-items: stretch;
+    justify-content: start;
+    margin: 1px;
+    overflow: hidden;
+}
+
+.library-tool-input-div {
+    display: flex;
+    width: 100%;
+    height: 30px;
+    background-color: #ffffffff;
+    border: 1px solid #ffffff;
+    color: #003172;
+    font-weight: bold;
+    font-size: 14px;
+    align-items: stretch;
+    justify-content: start;
+    margin: 1px;
+    overflow: hidden;
+}
+
+.library-tool-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: #003172;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: left;
+}
+
+.library-tool-sum-div {
+    display: flex;
+    width: 35px;
+    height: 30px;
+    margin-right: 0px;
+    border: 1px solid #FFFFFF;
+    background-color: #56b358;
+    align-items: center;
+    justify-content: center;
+}
+
+.library-tool-button {
+    width: 30px;
+    height: 30px;
+    background-color: transparent;
+    border: none;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.library-tool-div,
+.library-tool-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 100%;
+    cursor: pointer;
+    height: 32px;
+    align-items: center;
+}
+
+.history-tool-cell {
+    display: flex;
+    width: 52px;
+    height: 30px;
+    margin-right: 1px;
+    border: 1px solid #FFFFFF;
+    background-color: #56b358;
+    align-items: center;
+    justify-content: center;
+}
+
+.history-tool-plan {
+    display: flex;
+    width: 30px;
+    height: 30px;
+    margin-right: 1px;
+    border: 1px solid #FFFFFF;
+    background-color: #56b358;
+    align-items: center;
+    justify-content: center;
+}
+
+.history-tool-plan-image {
+    width: 20px;
+    height: 20px;
+    objectFit: contain; // Сохраняем пропорции
+}
+
+.tool-delete-button {
+  width: 30px;
+  height: 30px;
+  margin-right: 1px;
+  border: 1px solid #FFFFFF;
+  background-color: #56b358;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-delete-button-icon {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.tool-hidden-buttons {
+    display: none;
+    flex-direction: row;
+    z-index: 10;
+    width: 100%;
+}
+
+.tool-confirm-delete-button {
+    width: 50%;
+    height: 30px;
+    background-color: #FF5248;
+    border: 2px solid #003172;
+    color: #003172;
+    font-weight: bold;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+    margin: 1px;
+}
+
+.tool-confirm-cancel-button {
+    width: 50%;
+    height: 30px;
+    background-color: #56b358;
+    border: 2px solid #003172;
+    color: #003172;
+    font-weight: bold;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+    margin: 1px;
+}
+
+.search-input {
+    width: 100%;
+}
+
+.plan-input-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.plan-input-row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.plan-input-element {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

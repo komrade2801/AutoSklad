@@ -365,16 +365,16 @@ def get_tool_types_from_db(device_number: int, db: Session = Depends(get_db)):
 
         tool_types = tool_type_crud.get_all_tool_types()
 
-        tool_dict = {}
+        tool_dict = []
         for i, tool_type in enumerate(tool_types):
 
-            tool_dict[tool_type.id] = {
+            tool_dict.append({
                 'id': tool_type.id,
                 'name': tool_type.name,
                 'description': tool_type.description,
                 'count': tool_type.count,
                 'amount': 1,
-            }
+            })
         result = {"tools": tool_dict}
 
         return result

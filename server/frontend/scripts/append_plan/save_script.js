@@ -73,27 +73,10 @@
         return;
       }
 
-      const toolsContainer = document.getElementById("selection_tools");
-      const toolDivs = toolsContainer.querySelectorAll("div");
-      const tools = [];
+      const plan_tools = window.appData.history.table;
+      console.log(plan_tools);
 
-      toolDivs.forEach(div => {
-        const nameDiv = div.querySelector(".toolName") || div.firstChild;
-        const input = div.querySelector(".input_amount");
-
-        if (nameDiv && input) {
-          const toolId = nameDiv.getAttribute('data-tool-id');
-          const toolName = nameDiv.textContent.trim();
-          const toolCount = parseInt(input.value, 10) || 1;
-          tools.push({
-            id: toolId,
-            name: toolName,
-            quantity: toolCount
-          });
-        }
-      });
-
-      if (tools.length === 0) {
+      if (plan_tools.length === 0) {
         alert('Необходимо выбрать инструменты');
         saveButton.disabled = false;
         saveButton.textContent = 'Сохранить';
@@ -111,7 +94,7 @@
         list_count: 0,
         parent_plan_id: null,
         parent_plan: null,
-        tools: tools
+        tools: plan_tools
       };
 
       const device_number = 1;

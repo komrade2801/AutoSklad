@@ -170,6 +170,14 @@ export function nav_btn_add(element_name) {
         const nowCollapsed = !sidebar.classList.contains('sidebar-collapsed');
         localStorage.setItem(STORAGE_KEY, nowCollapsed);
         applySidebarState(nowCollapsed);
+        console.log('collapse');
+        setTimeout(() => {
+            $('table').each(function(index, element) {
+                if (element.id) {
+                    $('#'+element.id).bootstrapTable('refreshOptions', {silent: true})
+                }
+            });
+        }, 250);
       });
     });
 }
