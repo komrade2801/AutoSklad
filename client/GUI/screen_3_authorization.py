@@ -121,8 +121,9 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         super().showEvent(event)
         self.edit_login.setText("")
         self.edit_psw.setText("")
-        self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
+        self.lbl_timeout_back.setText(str(self.timeout_back))
+        self.visibility_timer.start(1000)
         # self.edit_login.setStyleSheet("color: rgb(0, 0, 0);")
         # self.edit_psw.setStyleSheet("color: rgb(0, 0, 0);")
         self.edit_login.setStyleSheet("color: #000000;\n"
@@ -211,7 +212,7 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             if not len(args[0]) > 1:
                 return
             full = args[0].split(" ")
-            name = f"{full[0][0]}. {full[1][0]}. {full[2]}"
+            name = f"{full[1]} {full[0][0]}.{full[2][0]}."
             self.edit_login.setText(name)
             self.edit_psw.setFocus()
         except Exception:

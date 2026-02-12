@@ -38,8 +38,9 @@ class screen_33_select_plan(BaseScreen, Ui_screen_33_select_plan):
     def showEvent(self, event):
         """Событие, которое срабатывает, когда виджет показывается."""
         super().showEvent(event)
-        self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
+        self.lbl_timeout_back.setText(str(self.timeout_back))
+        self.visibility_timer.start(1000)
 
     def hideEvent(self, event):
         """Событие, которое срабатывает, когда виджет скрывается."""

@@ -1181,10 +1181,13 @@ class ActionMapper:
             cell_list = []
             for drop in drops_pending:
                 cell = self.e_cell.get_cell_by_id(drop.cell_id)
-                if cell and cell.id not in cells_ids:
+                # Проверяем, что Cell существует, уникальна и имеет статус mass_drop_init
+                if cell and cell.id not in cells_ids and cell.status_id == status_init_id:
                     cells_ids.add(cell.id)
                     tool_type = self.e_tool_types.get_tool_type_by_id(cell.tools_id) if cell.tools_id else None
                     cell_list.append(create_cell_dict(cell, tool_type))
+                elif cell and cell.status_id != status_init_id:
+                    logger.debug(f"Cell {cell.id} (number={cell.number}) skipped: status_id={cell.status_id} != mass_drop_init({status_init_id})")
 
             logger.debug(f"cell_list: {len(cell_list)}")
             return cell_list

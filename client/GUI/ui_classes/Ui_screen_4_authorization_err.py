@@ -798,7 +798,7 @@ class Ui_screen_4_authorization_err(object):
     def retranslateUi(self, screen_4_authorization_err):
         _translate = QtCore.QCoreApplication.translate
         screen_4_authorization_err.setWindowTitle(_translate("screen_4_authorization_err", "screen_4_authorization_err"))
-        self.lbl_timeout_back.setText(_translate("screen_4_authorization_err", "5"))
+        self.lbl_timeout_back.setText(_translate("screen_4_authorization_err", "10"))
         self.lbl_info_4.setText(_translate("screen_4_authorization_err", "пароль"))
         self.lbl_info_5.setText(_translate("screen_4_authorization_err", "Возврат к главному меню через"))
         self.lbl_info_2.setText(_translate("screen_4_authorization_err", "Неверный логин"))

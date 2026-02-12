@@ -1020,7 +1020,7 @@ class Ui_screen_5_identification_err(object):
     def retranslateUi(self, screen_5_identification_err):
         _translate = QtCore.QCoreApplication.translate
         screen_5_identification_err.setWindowTitle(_translate("screen_5_identification_err", "screen_5_identification_err"))
-        self.lbl_timeout_back.setText(_translate("screen_5_identification_err", "5"))
+        self.lbl_timeout_back.setText(_translate("screen_5_identification_err", "10"))
         self.lbl_info_1.setText(_translate("screen_5_identification_err", "Идентификация"))
         self.lbl_info_2.setText(_translate("screen_5_identification_err", "не удалась"))
         self.lbl_info_4.setText(_translate("screen_5_identification_err", "или"))

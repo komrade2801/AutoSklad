@@ -1400,7 +1400,7 @@ class Ui_screen_14_stockman(object):
         self.lbl_info_3.setText(_translate("screen_14_stockman", "Возврат к главному меню через"))
         self.lbl_name.setText(_translate("screen_14_stockman", "Васильев Василий"))
         self.btn_mass_drop.setText(_translate("screen_14_stockman", "Массовая выгрузка"))
-        self.lbl_timeout_back.setText(_translate("screen_14_stockman", "25"))
+        self.lbl_timeout_back.setText(_translate("screen_14_stockman", "60"))
         self.btn_summary.setText(_translate("screen_14_stockman", "История операций"))
         self.btn_warehouse_group.setText(_translate("screen_14_stockman", "Управление запасами"))
         self.lbl_info_2.setText(_translate("screen_14_stockman", "выберите действие:"))

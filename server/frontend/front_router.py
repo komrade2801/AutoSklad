@@ -214,7 +214,9 @@ async def navbar(
     user_engine = EngineUser()
     # предполагается, что есть BaseCRUD.get
     user = user_engine.get_user_by_id(user_id)
-    user_fullname = f"{user.second_name} {user.first_name} {user.family}"
+    first_initial = f"{user.first_name[0]}." if user.first_name else ""
+    family_initial = f"{user.family[0]}." if user.family else ""
+    user_fullname = f"{user.second_name} {first_initial}{family_initial}"
     e_role = EngineRole()
     user_role = e_role.get_role_by_id(role_id).name
     # 5) Рендерим шаблон

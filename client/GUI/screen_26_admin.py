@@ -33,8 +33,9 @@ class screen_26_admin(BaseScreen, Ui_screen_26_admin):
     def showEvent(self, event):
         """Событие, которое срабатывает, когда виджет показывается."""
         super().showEvent(event)
-        self.visibility_timer.start(1000)
         self.timeout_back = self.__timeout_back
+        self.lbl_timeout_back.setText(str(self.timeout_back))
+        self.visibility_timer.start(1000)
 
     def hideEvent(self, event):
         """Событие, которое срабатывает, когда виджет скрывается."""
@@ -53,8 +54,8 @@ class screen_26_admin(BaseScreen, Ui_screen_26_admin):
                 if isinstance(arg, tuple):
                     user = arg[0]
                     logger.debug("user: %s", user)
-                    self.lbl_name.setText(f"{user.first_name} {user.second_name}")
-                    self.lbl_name_2.setText(f"{user.family}")
+                    self.lbl_name.setText(f"{user.second_name}")
+                    self.lbl_name_2.setText(f"{user.first_name[0]}.{user.family[0]}.")
                     continue
 
             except Exception:

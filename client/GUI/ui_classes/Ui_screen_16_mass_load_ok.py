@@ -576,7 +576,7 @@ class Ui_screen_16_mass_load_ok(object):
     def retranslateUi(self, screen_16_mass_load_ok):
         _translate = QtCore.QCoreApplication.translate
         screen_16_mass_load_ok.setWindowTitle(_translate("screen_16_mass_load_ok", "screen_16_mass_load_ok"))
-        self.lbl_timeout_back.setText(_translate("screen_16_mass_load_ok", "5"))
+        self.lbl_timeout_back.setText(_translate("screen_16_mass_load_ok", "10"))
         self.lbl_info_3.setText(_translate("screen_16_mass_load_ok", "Возврат к главному меню через"))
         self.lbl_info_2.setText(_translate("screen_16_mass_load_ok", "успешно загружена"))
         self.lbl_info_1.setText(_translate("screen_16_mass_load_ok", "Конфигурация"))
