@@ -12,6 +12,7 @@ if (!document.getElementById('sidebar-toggle-styles')) {
       flex-direction: column;
       background: rgba(255, 255, 255, 0.07);
       border-right: 1.5px solid rgba(78, 155, 229, 0.45);
+      width: 250px !important;
       margin-top: 0 !important;
       padding-top: 10px;
       padding-left: 10px !important;
@@ -158,7 +159,7 @@ export function nav_btn_add(element_name) {
         if (contentPanel) {
           contentPanel.style.width = isCollapsed
             ? 'calc(100% - 30px)'
-            : 'calc(100% - 235px)';
+            : 'calc(100% - 250px)';
         }
       }
 
