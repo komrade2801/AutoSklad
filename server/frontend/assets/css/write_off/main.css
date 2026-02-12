@@ -191,8 +191,6 @@
      transform: translateX(-50%);
      z-index: 99;
      text-align: center;
-     text-shadow: 2px 2px 5px rgb(0,49,114);
-     color: rgb(78,155,229);
      font-weight: bold;
 
      max-width: 100px;

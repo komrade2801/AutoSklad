@@ -1,9 +1,15 @@
+body,
 .bg-theme-gradient {
-    margin-bottom: 0;
-    width: 100%;
+    background: var(--global-palette9);
+    background-image: initial;
+    background-position-x: initial;
+    background-position-y: initial;
+    background-size: initial;
+    background-repeat: initial;
+    background-attachment: initial;
+    background-origin: initial;
+    background-clip: initial;
+    background-color: rgb(255, 255, 255);
     height: 100%;
-    padding-bottom: 0px;
-    background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+    color: #475569;
 }

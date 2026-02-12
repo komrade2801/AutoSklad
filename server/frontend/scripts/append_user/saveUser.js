@@ -1,7 +1,5 @@
 // init_save_user.js
 
-import { saveUserData } from '../crud.js';
-
 export function setupUserForm() {
   // Выбор элементов
   const inputFamily       = document.getElementById('input-family');

@@ -39,8 +39,8 @@
     "serial": "/dev/serial0"
   },
   "locks": {
-    "load_locked": false,
-    "drop_locked": false
+    "load_locked": 0,
+    "drop_locked": 0
   },
   "logs": {
     "critical_errors": []

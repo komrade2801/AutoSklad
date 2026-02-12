@@ -351,64 +351,13 @@ def create_plan(
         if not create_mass_load:
             logger.warning("[create_plan] массовая загрузка не создаётся: create_mass_load=False в запросе")
         if create_mass_load:
-            empty_cells = cells_crud.get_all_empty_cells()
-            total_tools = sum(int(t.get('quantity', 0) or 0) for t in plan.tools)
 
-            logger.debug("[create_plan] create_mass_load=True: empty_cells count=%s, total_tools=%s",
-                         len(empty_cells) if empty_cells else 0, total_tools)
-
-            if total_tools <= 0:
-                raise HTTPException(status_code=400, detail="В чертеже не указаны инструменты или количество равно 0")
-            if not empty_cells or len(empty_cells) == 0:
-                logger.warning("[create_plan] Не хватает свободных ячеек: empty_cells=0, total_tools=%s", total_tools)
-                raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
-
-            # БЛОКИРОВАННЫЕ ЯЧЕЙКИ: первый столбец каждой строки (1, 36, 71, 106, 141, 176)
-            BLOCKED_CELL_NUMBERS = {1, 36, 71, 106, 141, 176}
-            
-            # Симулируем логику цикла для точного подсчета необходимых ячеек
-            # Каждая заблокированная ячейка требует дополнительную ячейку из списка
-            cell_index = 0
-            cells_needed = 0
-            
-            # Подсчитываем, сколько ячеек фактически понадобится
-            for _ in range(total_tools):
-                if cell_index >= len(empty_cells):
-                    # Недостаточно ячеек
-                    raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
-                
-                # Если текущая ячейка заблокирована, пропускаем её
-                if empty_cells[cell_index].number in BLOCKED_CELL_NUMBERS:
-                    cell_index += 1
-                    cells_needed += 1  # Заблокированная ячейка требует дополнительную
-                    # Проверяем, что есть еще одна ячейка после заблокированной
-                    if cell_index >= len(empty_cells):
-                        raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
-                
-                cell_index += 1
-                cells_needed += 1
-            
-            # Проверяем, достаточно ли ячеек с учетом заблокированных
-            if cells_needed > len(empty_cells):
-                logger.warning("[create_plan] Не хватает свободных ячеек: cells_needed=%s, len(empty_cells)=%s", cells_needed, len(empty_cells))
-                raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
-
-            logger.debug("[create_plan] Достаточно ячеек: cells_needed=%s, приступаем к save_mass_load", cells_needed)
             operation = {}
             number = 1
-            cell_checked = 0
-            cell_used = 0
             for tool in plan.tools:
                 for count in range(tool['quantity']):
-                    logger.debug("create_plan tool: %s, cell_used: %s", tool, cell_checked)
-                    cell = empty_cells[cell_checked]
-                    cell_checked += 1
-                    if cell.number in BLOCKED_CELL_NUMBERS:
-                        cell = empty_cells[cell_checked]
-                        cell_checked += 1
-                    cell_used += 1
-                    logger.debug("create_plan cell: %s", cell)
-                    load_operation = History(cell=cell.id, tool=tool['id'], plan=plan_id)
+                    logger.debug("create_plan tool: {}".format(tool))
+                    load_operation = History(tool=tool['id'], plan=plan_id)
                     # load_operation['toolId'] = tool['id']
 
                     operation[str(number)] = load_operation

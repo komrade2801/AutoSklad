@@ -146,8 +146,8 @@ async def nav_btn(request: Request, db=Depends(get_db)):
     allowed = []
     for r in rights:
         # исключаются неиспользуемые страницы
-        # if r.page_id in (2, 5, 11, 19, 20, 22, 23):
-        #     continue
+        if r.page_id in (2, 23, 24):
+            continue
         p = page_engine.get_page_by_id(r.page_id)
         if p:
             nested = svc.is_nested(p.name)

@@ -1,12 +1,15 @@
 from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from sqlalchemy import func
+
+from Core.app_logging import get_logger
 from .CRUD import BaseCRUD  # Предполагается, что BaseCRUD уже реализован
 from ..Models.User import User  # Импортируем связанные модели
 # from ..Models.Role import Role  # Импортируем связанные модели
 from ..Models.History import History  # Импортируем связанные модели
 from ..Models.Identification import Identification  # Импортируем связанные модели
 
+logger = get_logger(__name__)
 
 class EngineUser(BaseCRUD):
     """
@@ -206,8 +209,43 @@ class EngineUser(BaseCRUD):
         return self.get_user_by_id(user_id=user.index)
 
     def put_user(self, user_id, user_data):
-        # TODO: Реализовать метод.
-        pass
+        logger.debug(f"update_cell {user_id} -> {user_data}")
+
+        # 1) Загружаем из БД текущее состояние
+        instance = self.session.query(self.model).get(user_id)
+        if not instance:
+            return False
+
+        # 2) Собираем поля для обновления
+        # Для массовой загрузки важно всегда создавать команды синхронизации,
+        # даже если значения не изменились, поэтому добавляем все переданные поля
+        updates = {}
+
+        if user_data.barcode is not None:
+            updates['barcode'] = user_data.barcode
+        if user_data.code is not None:
+            updates['code'] = user_data.code
+        if user_data.first_name is not None:
+            updates['first_name'] = user_data.first_name
+        if user_data.second_name is not None:
+            updates['second_name'] = user_data.second_name
+        if user_data.family is not None:
+            updates['family'] = user_data.family
+        # if user_data.password is not None:
+        #     updates['password'] = user_data.password
+        if user_data.role_id is not None:
+            updates['role_id'] = user_data.role_id
+
+        # 3) Если нечего менять — вернём True, потому что ошибок нет
+        if not updates:
+            return True
+
+        # 4) Всегда вызываем update для создания команды синхронизации
+        # @sync_aware декоратор гарантирует создание команды, даже если значения не изменились
+        logger.debug(f"[put_user] {updates}")
+        result = self.update(index=user_id, **updates)
+        logger.debug("[put_user] Результат self.update: %s", result)
+        return result
 
     def patch_user(self, user_id, user_data):
         # TODO: Реализовать метод.

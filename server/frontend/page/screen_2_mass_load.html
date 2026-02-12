@@ -3,136 +3,171 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <link rel="icon" href="/favicon.png?v=1" type="image/png">
+
     <title>Массовая загрузка</title>
+
     <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
-    <link rel="stylesheet" href="../assets/css/massload/style_modal_window.css">
-    <link rel="stylesheet" href="../assets/css/massload/main.css">
+    <script type="module" src="../scripts/massload/init.js?v=2"></script>
+    <script type="module" src="../scripts/massload/history_load.js?v=1"></script>
+    <script type="module" src="../scripts/massload/saveHistoryAsMassLoad.js"></script>
+    <script src="../scripts/massload/tableScript.js"></script>
+    <script src="../scripts/authorisation/navigate_token.js"></script>
+
+    <link rel="stylesheet" href="../assets/bootstrap-icons/1.13.1/bootstrap-icons.css">
+    <link href="../assets/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
+    <script src="../assets/jquery/2.1.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="../assets/bootstrap-table/1.25.0/bootstrap-table.css">
+    <script src="../assets/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/bootstrap-table.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/locale/bootstrap-table-ru-RU.js"></script>
+
+    <script src="../assets/tableExport.jquery.plugin/tableExport.js"></script>
+    <script src="../assets/tableExport.jquery.plugin/libs/js-xlsx/xlsx.core.min.js"></script>
+    <script src="../assets/tableExport.jquery.plugin/libs/pdfmake/pdfmake.min.js"></script>
+    <script src="../assets/tableExport.jquery.plugin/libs/pdfmake/vfs_fonts.js"></script>
+    <script src="../assets/bootstrap-table/1.25.0/extensions/export/bootstrap-table-export.js"></script>
+
+    <link rel="stylesheet" href="../style/style_modal_window.css">
+    <link rel="stylesheet" href="../style/massload/main.css">
+    <link rel="stylesheet" href="../style/background.css">
+    <link rel="stylesheet" href="../style/button_style.css">
     <link rel="stylesheet" href="../style/titles.css">
     <link rel="stylesheet" href="../style/dropdown_list.css">
-    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
-    <script src="../assets/jquery/2.1.0/jquery.min.js"></script>
-    <script type="module" src="../scripts/massload/init.js?v=2"></script>
-    <script type="module" src="../scripts/massload/saveHistoryAsMassLoad.js"></script>
-    <script src="../scripts/authorisation/navigate_token.js"></script>
-    <!-- <script src="../scripts/massload/filter_handler.js"></script> -->
-    <!-- <script type="module" src="../scripts/massload/scriptFilterTools.js"></script> -->
-    <script src="../scripts/massload/modal_window_confirmation.js"></script>
-    <script src="../scripts/massload/show_modal.js"></script>
 </head>
 <body onload="initialization('screen_2_mass_load');"
-      class="d-flex justify-content-center" id="body"
-      style="margin-bottom: 0; width: 100%; height: 100%; padding-bottom: 0px; background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);">
-  <div id="membrane"></div>
-  <div id="modal_window_confirmation">
+      class="d-flex justify-content-center" id="body">
+<div id="membrane"></div>
+<div id="modal_window_cell">
+    <span class="tool_name"
+          style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент: </span>
+    <span class="tool_sum" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Количество: </span>
+    <div class="library-tool-row" style="display: flex; width: 80%; align-items: start; margin-top: 10px;" >
+        <div class="toolName library-tool-input-div">
+            <input id="modal_amount_input" type="number" min="0" step="1" pattern="[0-9]*" inputmode="numeric" max="99999999" class="library-tool-input">
+        </div>
+    </div>
+    <div style="display: flex; flex-direction: row; margin-top: 50px;">
+        <button class="btn btn_vending" onclick="show('none')" style="margin-right: 20px;">Назад</button>
+        <button id="modal_drop_button" class="btn btn_vending upload">Загрузить</button>
+    </div>
+</div>
+<div id="modal_window_confirmation">
     <span style="font-size: 24px;">Вы уверены, что хотите отменить загрузку?</span>
     <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент вернётся на склад.</span>
     <div style="display: flex; flex-direction: row; margin-top: 50px;">
-      <button class="btn_vending" onclick="window.location.href='/screen_14_history_load.html?token='+localStorage.getItem('token')" style="margin-right: 20px;">Назад</button>
-      <button class="btn_vending" onclick="window.location.href='/screen_14_history_load.html?token='+localStorage.getItem('token')">Отменить загрузку</button>
+        <button class="btn btn_vending"
+                onclick="window.location.href='/screen_14_history_load.html?token='+localStorage.getItem('token')"
+                style="margin-right: 20px;">Назад
+        </button>
+        <button class="btn btn_vending"
+                onclick="window.location.href='/screen_14_history_load.html?token='+localStorage.getItem('token')">
+            Отменить загрузку
+        </button>
     </div>
-  </div>
-  <div class="d-flex flex-column" style="height: 100%; width: 100%; position: static; margin-left: 0px; color: rgb(255,255,255);">
-    <nav id="navbar" class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3" style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
+</div>
+<div class="d-flex flex-column"
+     style="height: 100%; width: 100%; position: static; margin-left: 0px;">
+    <nav id="navbar"
+         class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3"
+         style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
     </nav>
     <div class="d-flex" style="height: calc(100% - 120px); margin-top:10px; border-top: 2px solid rgb(78,155,229);">
-        <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical" style="width: 235px; padding-left: 10px; margin-top: 10px;">
+        <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical"
+             style="width: 235px; padding-left: 10px; margin-top: 10px;">
         </div>
-    <div class="tab-pane fade show active d-flex" id="v-pills-page_15_mass_load" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
-        <div id="column-1" class="d-flex" style="flex-direction: column; width: calc(80% - 225px); height: 100%; align-items: center;">
-          <div id="cells-container" style="overflow-y: visible; margin-top: 10px; width: 97%; height: calc(100% - 59px); overflow-x: auto; padding: 1px; border-style: solid; border-color: rgb(255, 255, 255); border-width: 0.5px; border-radius: 5px;"></div>
-          <div class="d-flex container-fluid" style="margin-top: 15px; margin-bottom: 10px; flex-direction: row; justify-content: space-evenly; align-items: center;">
-            <div class="d-flex">
-              <span style="color: #979797; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
-              <span style="color: rgb(0,49,114); font-size: 16px; font-weight: bold;">Пустые</span>
+        <div class="tab-pane fade show active d-flex" id="v-pills-page_15_mass_load"
+             style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
+
+            <div id="column-1" class="d-flex"
+                 style="flex-direction: column; width: 60%; height: 100%; align-items: start; overflow: hidden; padding: 10px;">
+
+                <div class="d-flex container-fluid"
+                     style="margin-top: 15px; margin-bottom: 10px; flex-direction: row; justify-content: space-evenly; align-items: center;">
+                    <div class="d-flex">
+                        <span style="color: #979797; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
+                        <span style="color: #2E4461; font-size: 16px; font-weight: bold;">Ячеек занято: <span
+                                id="occupied_cell_count">Нет данных</span></span>
+                    </div>
+                    <div class="d-flex">
+                        <span style="color: #007e0f; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
+                        <span style="color: #2E4461; font-size: 16px; font-weight: bold;">Ячеек свободно: <span
+                                id="free_cell_count">Нет данных</span></span>
+                    </div>
+                </div>
+
+                <div id="loadable_tools_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                    <table
+                            id='loadable_tools_table'
+                            data-locale="ru-RU"
+                            data-search='true'
+                            data-show-columns='true'
+                            data-show-refresh='false'
+                            data-show-toggle='true'
+                            data-show-export='true'
+                            data-export-types="['json', 'csv', 'xlsx', 'pdf']"
+                            data-pagination='true'
+                            data-side-pagination='client'
+                            data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
+                            data-page-size="210"
+                            data-sort-name="number"
+                            data-sort-order="asc"
+                            data-fixed-scroll="true"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='name' data-sortable='true'><span
+                                    title="Инструмент">Инструмент</span>
+                            </th>
+                            <th data-field='actions' data-width="50" data-formatter="actionToolsFormatter"><span
+                                    title="Информация">Инфо</span></th>
+                            <th data-field='sum' data-sortable='true' data-width="100">
+                                <span title="Количество">Количество</span></th>
+                            <th data-field='load' data-sortable='true' data-width="200" data-formatter="sumToolsFormatter">
+                                <span title="Загрузка">Загрузка</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
-            <div class="d-flex">
-              <span style="color: #007e0f; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
-              <span style="color: rgb(0,49,114); font-size: 16px; font-weight: bold;">Занятые по чертежу</span>
+            <div id="column-2" class="d-flex"
+                 style="display: flex; flex-direction: column; width: 40%; height: 100%; align-items: start; overflow: hidden; padding: 10px;">
+                <div id="loadable_story_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                    <table
+                            id='loadable_story_table'
+                            data-locale="ru-RU"
+                            data-show-refresh='false'
+                            data-pagination='true'
+                            data-side-pagination='client'
+                            data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
+                            data-page-size="210"
+                            data-toolbar="#customToolsToolbar"
+                            data-fixed-scroll="true"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='name' data-sortable='true'><span
+                                    title="Инструмент">Инструмент</span>
+                            </th>
+                            <th data-field='sum' data-sortable='true' data-width="100">
+                                <span title="Количество">Количество</span></th>
+                            <th data-field='actions' data-width="100" data-formatter="actionStoryFormatter"><span
+                                    title="Действия">Действия</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                    <div id="customToolsToolbar" style="display: flex;">
+                        <button id="saveLoad" class="btn btn_vending" type="button" onclick="saveHistoryAsMassLoad(1)"
+                                style="margin-right: 20px">Сохранить загрузку
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="d-flex">
-              <span style="color: #001fff; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
-              <span style="color: rgb(0,49,114); font-size: 16px; font-weight: bold;">Занятые свободные</span>
-            </div>
-            <div class="d-flex">
-              <span style="color: #00ed0f; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
-              <span style="color: rgb(0,49,114); font-size: 16px; font-weight: bold;">К загрузке по чертежу</span>
-            </div>
-            <div class="d-flex">
-              <span style="color: #008dff; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
-              <span style="color: rgb(0,49,114); font-size: 16px; font-weight: bold;">К загрузке свободные</span>
-            </div>
-            <div class="d-flex">
-              <span style="color: #d5612a; font-size: 16px; font-weight: bold; padding-right: 5px">⬤</span>
-              <span style="color: rgb(0,49,114); font-size: 16px; font-weight: bold;">Текущая загрузка</span>
-            </div>
-          </div>
         </div>
-        <div id="column-2" class="d-flex" style="display: flex; flex-direction: column; width: 20%; height: 100%; align-items: start;">
-          <div style="display: flex; flex-direction: row; width: 100%; height: 30px; margin-top: 10px;">
-            <form class="d-flex" role="search" style="width: 100%;">
-              <input class="form-control me-2" type="search" placeholder="Поиск инструмента" aria-label="Поиск" oninput="performSearch(this)">
-<!--              <button class="btn" type="submit" style="width: 30px; display: flex; justify-content: center; align-items: center; border-color: rgb(153, 153, 153);">-->
-<!--                <img src="../assets/img/loupe.png" style="width: 20px; height: 20px; pointer-events: none;">-->
-<!--              </button>-->
-            </form>
-              <script>
-                  function performSearch(input) {
-                    const searchText = input.value.toLowerCase();
-                    if (searchText == '') {
-                        $(".library-tool-div").show();
-                    } else {
-                        $(".library-tool-div").hide();
-                        $(".library-tool-div").filter(function() {
-                            return $(this).attr('data-tool-name').toLowerCase().indexOf(searchText) > -1;
-                        }).show();
-                    }
-                  }
-              </script>
-          </div>
-          <div id="tools-container" class="d-flex" style="flex-direction: column; margin-top: 5px; width: 93%; height: 60%; overflow-x: auto; padding: 1px; border-style: solid; border-color: rgb(255, 255, 255); border-width: 0.5px; border-radius: 5px;"></div>
-          <span class="d-flex" style="margin-top: 10px; color: rgb(0,49,114); font-size: 20px; font-weight: bold; width: 93%;">История текущей загрузки:</span>
-          <div id="history" style="overflow-y: auto;  margin-top: 5px; margin-bottom: 10px; width: 93%; height: calc(40% - 100px); padding: 1px; border-style: solid; border-color: rgb(255, 255, 255); border-width: 0.5px; border-radius: 5px;"></div>
-        </div>
-        <div id="column-3" class="d-flex" style="display: flex; flex-direction: column; justify-content: space-between; width: 225px; height: 100%; margin-right: 10px;">
-          <div style="width: 100%; height: 70px; margin-top: 10px;">
-<!--            <div id="plan-or-free" style="display: flex; flex-direction: row;">-->
-<!--              <div class="btn_vending" style="width: 190px; font-size: 16px; border: 2px solid rgb(171, 170, 165); border-top-color: rgb(255, 255, 255); border-left-color: rgb(255, 255, 255); border-radius: 5px;">-</div>-->
-<!--              <button class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button" style="width: 35px;"></button>-->
-<!--              <div class="dropdown-menu dropdown-menu-div">-->
-<!--                <a class="dropdown-item" href="#">Свободный</a>-->
-<!--                <a class="dropdown-item" href="#">По чертежу</a>-->
-<!--              </div>-->
-<!--            </div>-->
-<!--            <div id="tools-group" style="display: flex; flex-direction: row;">-->
-<!--              <button class="btn_vending" type="button" style="width: 190px;">Группа инструмента</button>-->
-<!--              <button class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button" style="width: 35px;"></button>-->
-<!--              <div class="dropdown-menu dropdown-menu-div"></div>-->
-<!--            </div>-->
-<!--            <div id="tools-subgroup" style="display: flex; flex-direction: row;">-->
-<!--              <button class="btn_vending" type="button" style="width: 190px;">Подгруппа инструмента</button>-->
-<!--              <button class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button" style="width: 35px;"></button>-->
-<!--              <div class="dropdown-menu dropdown-menu-div"></div>-->
-<!--            </div>-->
-<!--            <div id="number-plan" style="display: flex; flex-direction: row;">-->
-<!--              <button class="btn_vending" type="button" style="width: 190px;">Номер чертежа</button>-->
-<!--              <button class="btn_vending dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" type="button" style="width: 35px;"></button>-->
-<!--              <div class="dropdown-menu dropdown-menu-div"></div>-->
-<!--            </div>-->
-          </div>
-          <div class="card" style="width: 225px; border: 20px; border-radius: 5px; border-color: rgb(0,49,114); font-size: 16px;">
-            <div class="card-body" style="color: rgb(0,49,114); padding: 10px;">
-              <h6 class="card-title" >Подсказка:</h6>
-              <p class="card-text" style="font-family: Arial;">Перетащите инструмент в ячейку, зажав левую кнопку мыши, и отпустив над номером нужной ячейки.</p>
-            </div>
-          </div>
-          <div style="width: 100%; margin-bottom: 10px;">
-            <button class="btn_vending" type="button" onclick="openModalConfirmation()">Отмена всей загрузки</button>
-            <button class="btn_vending" type="button" onclick="saveHistoryAsMassLoad(1)">Сохранить загрузку</button>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
+</div>
 </body>
 </html>

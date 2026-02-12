@@ -1,5 +1,5 @@
 function show_detail(state) {
-  document.getElementById('modal_window_detail').style.display = state;
+  document.getElementById('modal_window_details').style.display = state;
   document.getElementById('membrane').style.display = state;
 }
 

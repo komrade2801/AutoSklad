@@ -28,21 +28,3 @@ export function initData(url) {
         return null;
       });
 }
-
-// crud.js
-export async function saveUserData(userObj) {
-    const token = localStorage.getItem('token');
-    const response = await fetch('../backend/create_user?token='+token, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(userObj),
-    });
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Ошибка сохранения: ${err}`);
-    }
-    return response.json();
-  }

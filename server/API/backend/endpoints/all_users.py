@@ -1,5 +1,6 @@
 # import traceback
 import traceback
+from http.client import responses
 from typing import List
 
 from Core.app_logging import get_logger
@@ -175,6 +176,7 @@ def all_users(db: Session = Depends(get_db)):
             password='****',  # user.password
             second_name=user.second_name,
             family=user.family,
+            role_id=role.id,
             role=role.name
         )
         all_user_response.append(user_response)
@@ -243,7 +245,6 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
             raise HTTPException(
                 status_code=400, detail="Ошибка создания пользователя")
         role = e_role.get_role_by_id(created_user.role_id)
-        role_name = role.name
         return UserResponse(
             index=created_user.id,
             barcode=created_user.barcode,
@@ -252,7 +253,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
             password=created_user.password,
             second_name=created_user.second_name,
             family=created_user.family,
-            role=role_name,
+            role_id=role.id,
+            role=role.name
         )
     except IntegrityError as ie:
         # например, код занят
@@ -274,11 +276,31 @@ def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_d
     :param db: Сессия для работы с базой данных.
     :return: Обновленный пользователь.
     """
-    e_user = EngineUser()
-    updated_user = e_user.put_user(user_id, user_data)
-    if not updated_user:
+    print(f'update_user {user_id} {user_data}')
+    e_user = EngineUser(session=db)
+    e_role = EngineRole(session=db)
+    result = e_user.put_user(user_id, user_data)
+    if not result:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-    return updated_user
+    updated_user = e_user.get_user_by_id(user_id)
+    print(f'updated_user {updated_user}')
+
+    role = e_role.get_role_by_id(updated_user.role_id)
+    response = UserResponse(
+        index=updated_user.id,
+        barcode=updated_user.barcode,
+        code=updated_user.code,
+        first_name=updated_user.first_name,
+        password=updated_user.password,
+        second_name=updated_user.second_name,
+        family=updated_user.family,
+        role_id=role.id,
+        role=role.name
+    )
+    print(f'response {response}')
+    return response
+
+    return e_user.get_user_by_id(user_id)
 
 
 # PATCH эндпоинт для частичного обновления данных пользователя

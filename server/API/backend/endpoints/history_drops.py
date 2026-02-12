@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 logger = get_logger(__name__)
 from sqlalchemy.orm import Session
-from typing import Dict, Any
+from typing import Dict, Any, List
 from datetime import datetime
 
 from API.backend.endpoints.tool_library import tool_library_router
@@ -54,7 +54,7 @@ def format_id(load_id: int) -> str:
 
 
 
-@history_drops_router.get("/random_drop", response_model=Dict[str, Dict[str, Any]])
+@history_drops_router.get("/random_drop", response_model=Dict[str, List[Any]])
 def get_random_drop(
     ID_drop: int,
     db: Session = Depends(get_db)
@@ -74,7 +74,7 @@ def get_random_drop(
     mass_drop_crud = EngineMassDrop()
     # load_crud = EngineLoad()
     drop_crud = EngineDrop()
-    op_crud   = EngineLoadOperations()
+    # op_crud   = EngineLoadOperations()
     # status_crud = EngineStatus()
     cell_crud = EngineCell()
     # tools_crud = EngineTools()
@@ -89,7 +89,8 @@ def get_random_drop(
 
     # Берём все записи Load, привязанные к этой массовой загрузке
     drops = drop_crud.filter_by(mass_drop_id=ID_drop)
-    result: Dict[str, Dict[str, Any]] = {}
+    # result: Dict[str, Dict[str, Any]] = {}
+    result: List[Dict[str, Any]] = []
 
     # Для каждой записи Drop — находим связанную последнюю операцию
     for idx, drop in enumerate(drops, start=1):
@@ -111,16 +112,16 @@ def get_random_drop(
         plan = plan_crud.get(drop.plan_id)
 
         # Формируем запись
-        result[str(idx)] = {
+        result.append({
             "cell": str(cell.id) if cell else "",
             "tool": tool_type.name if tool_type else "",
             "plan": plan.designation if plan else "",
             "group": group.name if group else ""
-        }
+        })
 
     return {"operation": result}
 
-@history_drops_router.get("/history_drops", response_model=Dict[str, Dict[str, Any]])
+@history_drops_router.get("/history_drops", response_model=Dict[str, List[Any]])
 def get_history_drops(db: Session = Depends(get_db)):
     """
     Возвращает события массовых загрузок (mass_load),
@@ -141,7 +142,8 @@ def get_history_drops(db: Session = Depends(get_db)):
     e_plans = EnginePlan()
     # 1) Получаем все mass_load-записи, сортируем по created_at по убыванию
     mass_drops = sorted(mass_drop_crud.all(), key=lambda m: m.created_at, reverse=True)
-    result_ops: Dict[str, Dict[str, Any]] = {}
+    # result_ops: Dict[str, Dict[str, Any]] = {}
+    result_ops: List[Dict[str, Any]] = []
     for idx, mass in enumerate(mass_drops):
         cells = []
         tools = []
@@ -193,7 +195,8 @@ def get_history_drops(db: Session = Depends(get_db)):
 
             logger.debug("cells: %s", cells)
 
-            result_ops[str(idx)] = {
+            result_ops.append({
+                "mass_id": mass.id,
                 "ID_drop": op_id_str,
                 "date": date_str,
                 "user": user_name,
@@ -201,7 +204,7 @@ def get_history_drops(db: Session = Depends(get_db)):
                 "cells": cells,
                 "tools": tools,
                 "plans": plans
-            }
+            })
 
         except Exception as e:
             logger.exception("history_drops: %s", e)

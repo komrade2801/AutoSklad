@@ -1,34 +1,93 @@
 .btn_vending {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: radial-gradient(black, rgb(131,173,239) 1%, rgb(120,158,217) 97%, white), rgb(0,49,114);
-        border-color: rgb(255, 255, 255);
-        border-radius: 5px;
-        color: rgb(0,49,114);
-        font-weight: bold;
-        font-size: 16px;
-        letter-spacing: normal;
-        line-height: 1;
-        width: 225px;
-        height: 35px;
-        margin-top: 2px;
-      }
-
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
+    border-radius: 8px 8px 8px 8px;
+    padding: 14px 18px 14px 18px;
+    padding: 2px;
+    width: 225px;
+    height: 35px;
+}
 
 .btn_vending_active {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: rgb(0,49,114);
-        border-color: rgb(80, 130, 179);
-        border-radius: 5px;
-        color: rgb(199, 224, 249);
-        font-weight: bold;
-        font-size: 16px;
-        letter-spacing: normal;
-        line-height: 1;
-        width: 225px;
-        height: 35px;
-        margin-top: 2px;
-      }
+    background-color: #F09022;
+    font-family: "Roboto", Sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 20px;
+    border-style: none;
+    border-radius: 8px 8px 8px 8px;
+    padding: 14px 18px 14px 18px;
+    padding: 2px;
+    color: #fff;
+    display: inline-block;
+    fill: #fff;
+    text-align: center;
+    transition: all .3s;
+    width: 225px;
+    height: 35px;
+}
+
+.btn-outline-tabs {
+    --bs-btn-color: #ff9923;
+    --bs-btn-border-color: #ff9923;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #ff9923;
+    --bs-btn-hover-border-color: #ff9923;
+    --bs-btn-focus-shadow-rgb: 13, 110, 253;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #ff9923;
+    --bs-btn-active-border-color: #ff9923;
+    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    --bs-btn-disabled-color: #ff9923;
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: #ff9923;
+    --bs-gradient: none;
+    font-weight: 600;
+}
+
+.btn {
+    background-color: #2E4461;
+    font-family: "Roboto", Sans-serif;
+    fill: #FFFFFF;
+    color: #FFFFFF;
+    border-style: solid;
+    border-width: 1px 1px 1px 1px;
+    border-color: #CBD5E1;
+    display: inline-block;
+    text-align: center;
+    transition: all .3s;
+}
+
+.btn:hover {
+    background-color: #F09022;
+    border-color: #F09022;
+    color: #2E4461;
+    font-family: "Roboto", Sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
+}
+
+.btn:focus,
+.btn-lg:focus,
+.btn-outline-tabs {
+    background-color: #2E4461;
+    color: #FFFFFF;
+}
+
+.btn-lg:hover {
+    font-size: 1.25rem;
+    line-height: 1.5;
+}
+
+.btn-outline-tabs:hover {
+    font-weight: 600;
+}
+
+ .action-button {
+    margin: 5px;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 3px;
+ }

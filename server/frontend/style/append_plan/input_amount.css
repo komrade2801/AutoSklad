@@ -101,3 +101,12 @@
     margin: 1px;
     overflow: hidden;
 }
+
+.plan-input:disabled,
+.plan-qr:disabled {
+    background-color: #b3b8bd;
+}
+
+.checkbox-option {
+    margin: 20px;
+}

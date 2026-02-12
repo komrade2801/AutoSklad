@@ -1,50 +1,47 @@
 {# templates/navbar.html #}
-<div class="container-fluid">
-  <img id="logo_image_manufacture" class="d-flex"
-       src="{{ url_for('assets', path='/img/logo.png') }}"
-       style="height:100px;margin:0 10px;">
-  <span id="main_name_manufacture"
-        style="color:#4E9BE5;font-size:22px;font-weight:bold;margin-right:10px;">
-        Завод Контакт
-  </span>
+<div class="container-fluid" style="height:100%">
 
-  <h1 id="screen_main_name" class="d-flex"
-      style="position:absolute;left:50%;transform:translateX(-50%);z-index:99;
-             text-align:center;text-shadow:2px 2px 5px #003172;
-             color:#4E9BE5;font-weight:bold; overflow-wrap: break-word; word-break: break-word;">
-    {{ screen_name }}
-  </h1>
+    <img fetchpriority="high"
+         src="{{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }}"
+         class="custom-logo" alt="Автосклад промышленный вендинг для выдачи инструментов" decoding="async"
+         srcset="{{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 1999w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 300w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 1024w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 768w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 1536w"
+         sizes="(max-width: 1999px) 100vw, 1999px" style="height:100%">
+
+    <h1 id="screen_main_name" class="d-flex"
+        style="position:absolute;left:50%;transform:translateX(-50%);z-index:99;
+             text-align:center;font-weight:bold; overflow-wrap: break-word; word-break: break-word;">
+        {{ screen_name }}
+    </h1>
 
 
-  <div class="collapse navbar-collapse d-flex" id="navcol-2">
-    <ul class="navbar-nav">
-      {%- for key, label in buttons %}
-      <li class="nav-item">
-        <a class="nav-link {% if key==screen_key %}active{% endif %}"
-           href="{{ url_for(request.scope.endpoint, page=key) }}">
-          {{ label }}
-        </a>
-      </li>
-      {%- endfor %}
-    </ul>
-  </div>
+    <div class="collapse navbar-collapse d-flex" id="navcol-2">
+        <ul class="navbar-nav">
+            {%- for key, label in buttons %}
+            <li class="nav-item">
+                <a class="nav-link {% if key==screen_key %}active{% endif %}"
+                   href="{{ url_for(request.scope.endpoint, page=key) }}">
+                    {{ label }}
+                </a>
+            </li>
+            {%- endfor %}
+        </ul>
+    </div>
 
-  <div id="user_information" class="d-flex ms-auto" style="overflow-wrap: break-word; word-break: break-word;">
+    <div id="user_information" class="d-flex ms-auto" style="overflow-wrap: break-word; word-break: break-word;">
     <span style="color:#4E9BE5;font-size:22px;font-weight:bold;">
       {{ user_role }},&nbsp;
     </span>
-    <span style="color:#4E9BE5;font-size:22px;font-weight:bold;">
+        <span style="color:#4E9BE5;font-size:22px;font-weight:bold;">
       {{ user_fullname }}
     </span>
-  </div>
+    </div>
 
-  <button id="in_screen_user_out_btn" class="btn_vending"
-          type="button" onclick="window.location.href='/'; localStorage.removeItem('token')"
-          style="width:90px;font-family:Arial Black;font-size:18px;">
-    Выйти
-  </button>
+    <button id="in_screen_user_out_btn" class="btn_vending"
+            type="button" onclick="window.location.href='/'; localStorage.removeItem('token')"
+            style="width:90px;font-family:Arial Black;font-size:18px;">
+        Выйти
+    </button>
 </div>
-
 
 
 <!--<div class="container-fluid">-->

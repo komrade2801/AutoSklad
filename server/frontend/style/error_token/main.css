@@ -18,8 +18,10 @@ body {
     height: 100vh;
     padding-bottom: 0px;
     margin-bottom: 0;
-    color: rgb(255,255,255);
-    background: repeating-linear-gradient(black, rgb(47,70,105) 0%, rgb(131,149,174) 99%, rgb(247, 248, 251) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 h1 {

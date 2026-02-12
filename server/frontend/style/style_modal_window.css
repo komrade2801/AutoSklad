@@ -1,0 +1,279 @@
+#modal_window_barcode {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 600px;
+    /*height: 400px;*/
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+#modal_window_edit {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 800px;
+    /*height: 400px;*/
+    background-color: #ffffff;
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+#modal_window_tool {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 500px;
+    /*height: 400px;*/
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+#modal_window_issuing {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 500px;
+    /*height: 400px;*/
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+#modal_window_cell {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 500px;
+    /*height: 400px;*/
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+#modal_window_details {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 800px;
+    height: 600px;
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+
+#modal_window_finish {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 500px;
+    /*height: 400px;*/
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+
+#modal_window_confirmation {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 500px;
+    /*height: 400px;*/
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+
+#modal_window_password{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 150;
+    display: none;
+    width: 500px;
+    /*height: 400px;*/
+    background-color: rgb(131,149,174);
+    border-color: rgb(0,49,114);
+    border-radius: 15px;
+    border-width: 2px;
+    border-style: solid;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 35px;
+    padding-bottom: 40px;
+    color: rgb(0,49,114);
+    font-size: 18px;
+    font-family: Arial Black;
+}
+
+
+#membrane {
+    background-color: rgba(0,0,0,0.7);
+    position: fixed;
+    top: 0; right: 0; left: 0; bottom: 0;
+    z-index: 100;
+    display: none;
+}
+/* Полупрозрачный фон поверх всего */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  /* top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh; */
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Собственно окно — увеличили размеры */
+.modal-content {
+  background-color: rgb(131, 149, 174);
+  padding: 30px;               /* чуть больше отступы */
+  border-radius: 10px;
+  max-width: 95%;              /* почти вся ширина экрана */
+  /* width: 600px;                фиксированная большая ширина */
+  /* height: 400px; */
+  max-height: 90vh;            /*не выходит за пределы окна */
+  overflow-y: auto;            /* прокрутка, если высота большая */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Отступы и размер картинки */
+.barcode-img {
+   height: 200px;              /*увеличили высоту изображения */
+  margin: 20px 0;
+  border-radius: 5px;
+}
+
+/* Кнопки в ряд */
+.modal-actions {
+  display: flex;
+  gap: 15px;                  /* увеличенный промежуток */
+  margin-top: 30px;
+}
+
+.form-control {
+    --bs-secondary-color: #b3b3b3;
+}
+
+.edit-input {
+    margin-bottom: 20px;
+    display: flex;
+}

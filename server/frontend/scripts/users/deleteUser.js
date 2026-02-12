@@ -1,6 +1,3 @@
-import { generateTableUsers } from './createTableAllUsers.js'
-
-
 function parseJwt(token) {
   try {
     const base64Url = token.split('.')[1];
@@ -57,8 +54,7 @@ console.log("функция удаления вызвана")
     }
 
     // Удаляем из локального массива и обновляем таблицу
-    window.jsonUsers.splice(userPos, 1);
-    generateTableUsers('column-1', window.jsonUsers);
+    loadUsers();
     show_conf('none');
     window.userIndexToDelete = null;
   })

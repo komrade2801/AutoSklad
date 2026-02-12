@@ -3,7 +3,7 @@
 {% macro btn(page, label) -%}
   <button
     id="{{ page|replace('.html','') }}"
-    class="btn_vending"
+    class="btn btn_vending"
     onclick="navigateWithToken('../{{ page }}');"
     type="button"
   >{{ label }}</button>
@@ -17,8 +17,8 @@
   {# {{ btn('screen_2_mass_load.html','Массовая загрузка') }} #}
 
 <div style="display: flex; flex-direction: row;">
-  <button class="btn_vending" style="margin-left:0; width:190px;">Аппарат 1</button>
-  <button class="btn_vending dropdown-toggle dropdown-toggle-split"
+  <button class="btn btn_vending" style="margin-left:0; width:190px;">Аппарат 1</button>
+  <button class="btn btn_vending dropdown-toggle dropdown-toggle-split"
           data-bs-toggle="dropdown" aria-expanded="false" type="button"
           style="color: rgb(0,49,114); width:35px;"></button>
   <div class="dropdown-menu dropdown-menu-div">

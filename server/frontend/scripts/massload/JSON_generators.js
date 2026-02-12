@@ -24,49 +24,9 @@ export function generateJsonTool(plansCount, groupsPerPlanCount, valuesPerGroupC
         }
     }
 
+    console.log(jsonObject);
+
     return jsonObject;
 }
-
-// Пример вызова функции
-//const jsonResult = generateJsonTool(2, 2, 3);
-//console.log(JSON.stringify(jsonResult, null, 2));
-
-
-
-
-// Функция для генерации JSON-файла с ячейками аппарата
-export function generateJsonCells(rowsCount, cellsCount) {
-    const jsonObject = { rows: {} };
-
-    for (let row = 1; row <= rowsCount; row++) {
-        jsonObject.rows[row] = { cells: {} };
-
-        for (let cell = 1; cell <= cellsCount; cell++) {
-            jsonObject.rows[row].cells[cell] = {
-                id: (row - 1) * cellsCount + cell, // Уникальный номер в зависимости от строки и ячейки
-                type: "big", // Или "small", в зависимости от требований
-                backgroundColor: '#69696910', // Общий цвет
-                content: {
-                    tool: "None",
-                    plan: "None"
-                },
-                block: false
-            };
-        }
-    }
-
-    console.log(jsonObject)
-    return jsonObject; //JSON.stringify(, null, 2) Форматированное представление
-}
-
-
-//цвета для ячеек:
-//backgroundColor: '#69696910', для пустых
-//'#535353' для занятых
-//'#ff4f00' по чертежу
-//'#2C8822' free_tools
-
-
-
 
 

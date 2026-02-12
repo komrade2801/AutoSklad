@@ -1,11 +1,4 @@
-
 import { generateJsonTool } from '../massload/JSON_generators.js';
-//import { generateJsonOperations } from './JSON_generators.js';
-//import { generateJsonCells } from './JSON_generators.js';
-//import { createTools } from './createTools.js';
-//import { createHistory } from './createHistory.js';
-import { createCells } from './createCells.js';
-import { generateJsonCellsDrop } from './JSON_drop_generators.js';
 import { createToolForDrop } from './createToolForDrop.js'
 import { generateJsonToolsDrop } from './JSON_drop_generators.js'
 import { nav_btn_add } from '../nav_btn_load.js';
@@ -13,7 +6,10 @@ import { navbar_add } from '../navbar.js';
 
 window.appData = window.appData || {};           // turn0search0
 window.appData.story = window.appData.story || {};
-window.appData.tools = window.appData.tools || {};
+window.appData.story.operation = window.appData.story.operation || {};  // словарь со всеми операциями
+window.appData.story.table = window.appData.story.table || [];  // список для таблицы в интерфейсе
+window.appData.story.list = window.appData.story.list || [];  // список для передачи в бэкенд
+window.appData.tools = window.appData.tools || [];
 //export const jsonObjectTools = generateJsonTool(8, 4, 2);
 //export const jsonCellsDrop = generateJsonCellsDrop(32, 32, jsonObjectTools);
 //export const jsonHistoryDrop = {};
@@ -41,9 +37,9 @@ export async function fetchCellMapData() {
  */
 export function initCellsData() {
     return fetchCellMapData()
-      .then(сells => {
-        window.appData.cells = сells;               // turn1search0
-        return сells;
+      .then(cells => {
+        window.appData.cells = cells;               // turn1search0
+        return cells;
       })
       .catch(err => {
         console.error('Не удалось загрузить инструменты', err);
@@ -57,13 +53,45 @@ function initialization(element_name) {
         console.log('token не обнаружен в хранилище!');
         window.location.href='/';
     }
+    nav_btn_add(element_name);
+    navbar_add(element_name);
+
+    console.log($("#droppable_tools_div").height());
+
+    $('#droppable_tools_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'Список загруженных инструментов',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+        height: $("#droppable_tools_div").height()
+    });
+    $('#droppable_tools_table').bootstrapTable('showLoading');
+
+    $('#droppable_story_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'История текущей выгрузки',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+        height: $("#droppable_story_div").height()
+    });
+    $('#droppable_story_table').bootstrapTable('load', []);
+
     initCellsData().then(cells => {
         if (cells) {
-            nav_btn_add(element_name);
-            navbar_add(element_name);
-            window.appData.tools = generateJsonToolsDrop(window.appData.cells); //export const jsonToolForDrop
-            createCells('cells-container', window.appData.cells); //jsonCellsDrop
-            createToolForDrop('tools-container', window.appData.tools);
+
+            window.appData.tools = generateJsonToolsDrop(cells); //export const jsonToolForDrop
+//            createCells('cells-container', cells); //jsonCellsDrop
+            createToolForDrop();
         }
     });
 }

@@ -1,236 +1,94 @@
 //import { jsonObjectTools } from './init.js';
 // Функция для создания строк инструмента на основе JSON-данных
-import { updateToolsJSONMass, updateCellsJSON, updateJsonHistory, initializeDragAndDrop } from './drag_and_drop.js';
-import { createCells } from './createCells.js';
 import { createHistory } from './createHistory.js';
-import { jsonObjectHistory } from './init.js';
+import { updateJsonHistoryLoad } from './history_load.js';
 
 let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
 
-export function createTools(containerId, jsonObjectTools) {
+export function createTools() {
     console.log('createTools');
-    console.log(jsonObjectTools.tools);
-    const container = document.getElementById(containerId);
-    container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
-    // Проходим по строкам в JSON
-//    for (const planKey in jsonObjectTools.plans) {
-//        const planData = jsonObjectTools.plans[planKey];
-//        for (const groupKey in planData.groups) {
-//            const groupData = planData.groups[groupKey];
-//            // Проходим по ячейкам в строке
-//            for (const valueKey in groupData.value) {
-//                const valueData = groupData.value[valueKey];
-    for (const [idx, tool] of Object.entries(jsonObjectTools.tools)) {
-//    console.log(idx + ' - ' + tool)
-                // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
-                var count;
-                if (tool.sum === undefined || tool.sum === null) {
-                    count = '-'; // Бесконечный запас
-                } else {
-                    const parsedSum = parseInt(tool.sum, 10);
-                    if (isNaN(parsedSum) || parsedSum <= 0) {
-                        count = '-'; // Бесконечный запас
-                    } else {
-                        count = parsedSum;
-                    }
-                }
-                const toolDiv = document.createElement('div');
-                // Устанавливаем флекс-контейнер для строки и класс
-                toolDiv.className = 'draggable library-tool-div';
-                toolDiv.draggable = "true";
-//                toolDiv.content = planData['name'];
-                toolDiv.setAttribute('data-tool-id', tool.id);
-//                toolDiv.setAttribute('data-plan-name', planData.name);
-//                toolDiv.setAttribute('data-group-name', groupData.name);
-                toolDiv.setAttribute('data-tool-name', tool.name);
-//                toolDiv.setAttribute('data-group-name', groupData.name);
-                // Устанавливаем стили для строки инструмента
-                //Создаем название и количество инструмента
-                const nameDiv = document.createElement('div');
-                const sumDiv = document.createElement('div');
-                // Устанавливаем стили для названия инструмента
-                nameDiv.className = 'toolName';
-//                nameDiv.textContent = groupData.name + " " + tool.name;
-                nameDiv.textContent = tool.name;
-                nameDiv.title = tool.name || "Нет описания";
-                nameDiv.className = 'library-tool-name-div';
-                // Добавляем всплывающую подсказку с полным наименованием инструмента
-                //nameDiv.title = `Инструмент: ${cellData.content.tool}\nЧертёж: ${cellData.content.plan}`;
-                // Устанавливаем стили для количества инструмента
-                sumDiv.textContent = count;
-                sumDiv.className = 'sumTool library-tool-sum-div';
-                // Добавляем название и количество в строку инструмента
-                toolDiv.appendChild(nameDiv);
-                toolDiv.appendChild(sumDiv);
+    console.log(window.appData.tools);
 
-                // Добавляем обработчик клика для массовой загрузки
-                toolDiv.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Предотвращаем bubble
-                    openMassLoadInput(toolDiv, tool, '', tool.id, '', tool.name);
-                });
-
-                container.appendChild(toolDiv); // Добавляем строку в контейнер
-//            }
-//        }
+    if (window.appData.tools != undefined) {
+//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
+        $('#loadable_tools_table').bootstrapTable('load', window.appData.tools);
+        $('#loadable_tools_table').bootstrapTable('hideLoading');
     }
-}
-
-// Функция для открытия строки ввода массовой загрузки
-function openMassLoadInput(toolDiv, valueData, planName, toolId, groupName, toolName) {
-    // Закрываем предыдущую строку ввода, если есть
-    closeCurrentInputRow();
-
-    // Создаем новую строку ввода
-    const inputRow = document.createElement('div');
-    inputRow.className = 'library-tool-row';
-
-    // Создаем div для поля ввода, копируя стили из nameDiv
-    const inputDiv = document.createElement('div');
-    inputDiv.className = 'toolName library-tool-input-div';
-
-    // Входное поле внутри inputDiv
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.min = '0';
-    input.value = '0';
-    input.step = '1';
-    input.pattern = '[0-9]*';
-    input.inputMode = 'numeric';
-    // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
-    var max;
-    if (valueData.sum === undefined || valueData.sum === null) {
-        max = 99999999; // Бесконечный запас
-    } else {
-        const parsedSum = parseInt(valueData.sum, 10);
-        if (isNaN(parsedSum) || parsedSum <= 0) {
-            max = 99999999; // Бесконечный запас
-        } else {
-            max = parsedSum;
-        }
-    }
-    input.max = max.toString();
-    input.className = 'library-tool-input';
-
-    inputDiv.appendChild(input);
-
-    // Создаем div для кнопки, копируя стили из sumDiv
-    const buttonDiv = document.createElement('div');
-    buttonDiv.className = 'sumTool library-tool-button-div';
-
-    // Кнопка внутри buttonDiv
-    const button = document.createElement('button');
-    button.className = 'sumTool library-tool-button';
-    button.textContent = '+';
-
-    buttonDiv.appendChild(button);
-
-    // Обработчик для кнопки +
-    button.addEventListener('click', (event) => {
-        event.stopPropagation();
-        const amount = parseInt(input.value);
-        if (validateInput(amount, max)) {
-            performMassLoad(amount, planName, toolId, groupName, toolName);
-        }
-    });
-
-    inputRow.appendChild(inputDiv);
-    inputRow.appendChild(buttonDiv);
-
-    // Вставляем строку после toolDiv
-    toolDiv.parentNode.insertBefore(inputRow, toolDiv.nextSibling);
-
-    // Фокус на input
-    input.focus();
-
-    currentInputRow = inputRow;
-
-    // Добавляем глобальные обработчики для закрытия
-    const handleClickOutside = (event) => {
-        if (currentInputRow && !currentInputRow.contains(event.target) && !currentInputRow.parentNode.contains(event.target)) {
-            closeCurrentInputRow();
-            document.removeEventListener('click', handleClickOutside);
-            document.removeEventListener('contextmenu', handleRMB);
-            window.removeEventListener('keydown', handleEsc);
-        }
-    };
-
-    const handleRMB = (event) => {
-        if (currentInputRow) {
-            event.preventDefault(); // Prevent context menu
-            closeCurrentInputRow();
-            document.removeEventListener('click', handleClickOutside);
-            document.removeEventListener('contextmenu', handleRMB);
-            window.removeEventListener('keydown', handleEsc);
-        }
-    };
-
-    const handleEsc = (event) => {
-        if (event.key === 'Escape' && currentInputRow) {
-            closeCurrentInputRow();
-            document.removeEventListener('click', handleClickOutside);
-            document.removeEventListener('contextmenu', handleRMB);
-            window.removeEventListener('keydown', handleEsc);
-        }
-    };
-
-    // Задержка для предотвращения немедленного срабатывания
-    setTimeout(() => {
-        document.addEventListener('click', handleClickOutside);
-        document.addEventListener('contextmenu', handleRMB);
-        window.addEventListener('keydown', handleEsc);
-    }, 0);
-}
-
-// Функция валидации ввода
-function validateInput(value, maxSum) {
-    if (!Number.isInteger(value) || value <= 0 || value > maxSum) {
-        alert('Введено некорректное число. Должно быть целое положительное число, не превышающее доступное количество.');
-        return false;
-    }
-    return true;
 }
 
 // Функция для массовой загрузки
-function performMassLoad(amount, planName, toolId, groupName, toolName) {
+function performMassLoad(toolId, toolName, toolSum, amount) {
 
-    const combinedToolName = toolName;
-
-    console.log(`🔄 Starting mass load: ${amount} units of "${combinedToolName}" for plan "${planName}"`);
+    console.log(`🔄 Starting mass load: ${amount} "${toolName}" "`);
     console.log('📊 Pre-load tool inventory state:', getToolInventoryState());
 
-    const freeCells = getFreeCells();
-    if (freeCells.length < amount) {
+//    const freeCells = getFreeCells();
+
+    var currentLoadAmount = 0;
+
+    if (window.appData.history.operation) {
+        currentLoadAmount = Object.keys(window.appData.history.operation).length;
+    } else {
+        currentLoadAmount = 0;
+    }
+
+    if (window.appData.freeCells < amount + currentLoadAmount) {
         console.warn(`❌ Mass load failed: Requested ${amount} cells, only ${freeCells.length} free cells available`);
         alert('Не хватает свободных ячеек.');
         return;
     }
 
-    const cellsToLoad = freeCells.slice(0, amount);
-    console.log(`✅ Loading ${cellsToLoad.length} tools into cells: [${cellsToLoad.join(', ')}]`);
+    console.log(`✅ Loading ${amount} tools into cells`);
 
-    console.log(cellsToLoad)
-    cellsToLoad.forEach((cell, index) => {
-        console.log(`   ${index + 1}. Loading "${combinedToolName}" into cell #${cell.id}`);
-        // Имитируем выборку инструмента (уменьшаем sum на 1)
-        updateToolsJSONMass(window.appData.tools, toolId, 1);
-        updateCellsJSON(window.appData.cells, planName, combinedToolName, parseInt(cell.id));
-        updateJsonHistory(window.appData.history, 0, toolId, combinedToolName, parseInt(cell.id), parseInt(cell.number));
-    });
+
+
+
+
+    // Ничего не делаем, если содержимое пустое
+    if (toolName === 'None') return;
+
+    // Убедимся, что window.appData.history.operation существует
+    if (!window.appData.history.operation) {
+        window.appData.history.operation = {}; // Инициализируем, если это null или undefined
+    }
+
+    // create new operation in history
+
+//    const newKey = Object.keys(window.appData.history.operation).length + 1;
+
+    const operation = window.appData.history.operation[toolId];
+    var newAmount = amount;
+
+    if (operation) {
+        newAmount += operation.sum;
+    }
+
+    window.appData.history.operation[toolId] = {
+        tool: toolId,
+        name: toolName,
+        sum: newAmount
+    }
+
+    updateJsonHistoryLoad();
+
+    for (var i = 0; i < amount; i++) {
+        updateToolsJSONMass(toolId, 1);
+    }
 
     console.log('📊 Post-load tool inventory state:', getToolInventoryState());
     console.log('📝 Current load history state:', getHistoryState());
     console.log('📝 Final window.appData.history:', window.appData.history);
-    console.log('window.appData.history === init.companyHistory:', window.appData.history === jsonObjectHistory);
 
     // Обновляем UI
-    createTools('tools-container', window.appData.tools);
-    createCells('cells-container', window.appData.cells);
-    createHistory('history', window.appData.history, toolId);
-    initializeDragAndDrop();
+    createTools();
+    createHistory();
+//    initializeDragAndDrop();
 
     // Закрываем строку ввода
     closeCurrentInputRow();
 }
+
+window.performMassLoad = performMassLoad;
 
 // Функция для получения свободных ячеек
 function getFreeCells() {
@@ -298,3 +156,66 @@ function closeCurrentInputRow() {
         currentInputRow = null;
     }
 }
+
+function updateToolsJSONMass(toolId, subtractAmount) {
+    console.log("updateToolsJSONMass успешно вызвана");
+
+    const tool = findToolById(toolId);
+
+    if (!tool) {
+        console.error("Tool not found for id:", toolId);
+        return;
+    }
+
+    // ИСПРАВЛЕНО: обрабатываем случаи, когда sum отсутствует или null/undefined
+    if (tool.sum === undefined || tool.sum === null) {
+        // Для инструментов с бесконечным запасом не уменьшаем sum
+        // (можно оставить как есть или установить специальное значение)
+        return;
+    }
+
+    // Для бесконечного запаса не изменяем sum
+    const currentSum = parseInt(tool.sum, 10);
+    if (isNaN(currentSum) || currentSum < 0) {
+        console.warn(`Invalid sum value for tool ${toolId}:`, tool.sum);
+        return;
+    }
+
+    // Уменьшаем значение sum на указанное количество
+    const newSum = currentSum - subtractAmount;
+    // Не позволяем sum стать отрицательным (должно быть >= 0)
+    tool.sum = Math.max(0, newSum).toString();
+
+    // Обновляем отображение элементов на странице
+    createTools();
+//    initializeDragAndDrop();
+}
+
+// Функция для поиска инструмента по ID
+function findToolById(toolId) {
+    for (const [idx, tool] of Object.entries(window.appData.tools)) {
+        if (tool.id == toolId) {
+            return tool;
+        }
+    }
+    return null;
+}
+
+function deleteLoad(toolId) {
+
+    // Вносим изменения в инструмент: найти по id и увеличить sum
+    // ИСПРАВЛЕНО: используем новый формат данных tools.tools вместо plans.groups.value
+
+    if (toolId !== null) {
+        // Удаляем операцию с указанным индексом
+        const operation = window.appData.history.operation[toolId];
+        delete window.appData.history.operation[toolId];
+
+        updateToolsJSONMass(toolId, -operation.sum);
+    }
+
+    updateJsonHistoryLoad();
+    createTools();
+    createHistory();
+}
+window.deleteLoad = deleteLoad;

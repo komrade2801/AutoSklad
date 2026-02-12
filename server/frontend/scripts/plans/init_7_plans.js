@@ -39,6 +39,8 @@ import { navbar_add } from '../navbar.js';
  * @param {Array} allPlans - Массив всех планов от эндпоинта.
  * @returns {Object} Результат в требуемом формате.
  */
+
+
 function processAllPlans(allPlans) {
   if (!allPlans){
     return null;
@@ -53,7 +55,7 @@ function processAllPlans(allPlans) {
 //    });
 
     // 2. Формируем итоговый объект
-    const jsonAllPlans = {};
+    const jsonAllPlans = [];
     allPlans.forEach((plan, index) => {
         console.log(plan, " - ", index)
         // Создаем объект tools с динамическими ключами
@@ -69,14 +71,14 @@ function processAllPlans(allPlans) {
 //        });
 
         // Формируем запись плана
-        jsonAllPlans[index] = {
+        jsonAllPlans.push({
             enterprise: plan.enterprise,
             barcode: plan.barcode,
-            numberPlan: plan.designation,
+            designation: plan.designation,
             name: plan.name,
             description: plan.description,
             tools: plan.tools
-        };
+        });
     });
 
     return jsonAllPlans;
@@ -90,6 +92,20 @@ async function initialization(element_name) {
     }
     nav_btn_add(element_name);
     navbar_add(element_name);
+
+    $('#plans_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'Список чертежей',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+    });
+    $('#plans_table').bootstrapTable('showLoading');
+
   try {
     const deviceNumber = 1; // можно изменить, если нужно другое устройство
     const response = await fetch(`/backend/get_all_plans/${deviceNumber}`,

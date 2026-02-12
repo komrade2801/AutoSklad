@@ -5,7 +5,7 @@ from Core.app_logging import get_logger
 
 logger = get_logger(__name__)
 from sqlalchemy.orm import Session
-from typing import Dict, Any
+from typing import Dict, Any, List
 from datetime import datetime
 
 from API.backend.endpoints.tool_library import tool_library_router
@@ -52,7 +52,7 @@ def format_id(load_id: int) -> str:
 
 
 
-@history_loads_router.get("/random_load", response_model=Dict[str, Dict[str, Any]])
+@history_loads_router.get("/random_load", response_model=Dict[str, List[Any]])
 def get_random_load(
     ID_load: int,
     db: Session = Depends(get_db)
@@ -70,7 +70,7 @@ def get_random_load(
     # CRUD‑объекты
     mass_crud = EngineMassLoad()
     load_crud = EngineLoad()
-    op_crud   = EngineLoadOperations()
+    # op_crud   = EngineLoadOperations()
     # status_crud = EngineStatus()
     cell_crud = EngineCell()
     # tools_crud = EngineTools()
@@ -85,7 +85,7 @@ def get_random_load(
 
     # Берём все записи Load, привязанные к этой массовой загрузке
     loads = load_crud.filter_by(mass_load_id=ID_load)
-    result: Dict[str, Dict[str, Any]] = {}
+    result: List[Dict[str, Any]] = []
 
     # Для каждой записи Load — находим связанную последнюю операцию
     for idx, load in enumerate(loads, start=1):
@@ -107,12 +107,12 @@ def get_random_load(
         plan = plan_crud.get(load.plan_id)
 
         # Формируем запись
-        result[str(idx)] = {
+        result.append({
             "cell": str(cell.id) if cell else "",
             "tool": tool_type.name if tool_type else "",
             "plan": plan.designation if plan else "",
             "group": group.name if group else ""
-        }
+        })
 
     return {"operation": result}
 
@@ -167,7 +167,7 @@ def get_history_loads(device_number: int, db: Session = Depends(get_db)):
 
 
 
-@history_loads_router.get("/history_loads", response_model=Dict[str, Dict[str, Any]])
+@history_loads_router.get("/history_loads", response_model=Dict[str, List[Any]])
 def get_history_loads(db: Session = Depends(get_db)):
     """
     Возвращает события массовых загрузок (mass_load),
@@ -176,7 +176,7 @@ def get_history_loads(db: Session = Depends(get_db)):
     """
     mass_crud = EngineMassLoad()
     hist_crud = EngineHistory()
-    op_crud   = EngineLoadOperations()
+    # op_crud   = EngineLoadOperations()
     stat_crud = EngineStatus()
     user_crud = EngineUser()
     load_crud = EngineLoad()
@@ -186,7 +186,8 @@ def get_history_loads(db: Session = Depends(get_db)):
     e_plans = EnginePlan()
     # 1) Получаем все mass_load-записи, сортируем по created_at по убыванию
     mass_loads = sorted(mass_crud.all(), key=lambda m: m.created_at, reverse=True)
-    result_ops: Dict[str, Dict[str, Any]] = {}
+    # result_ops: Dict[str, Dict[str, Any]] = {}
+    result_ops: List[Dict[str, Any]] = []
     for idx, mass in enumerate(mass_loads):
         cells = []
         tools = []
@@ -239,7 +240,8 @@ def get_history_loads(db: Session = Depends(get_db)):
 
             logger.debug("cells: %s", cells)
 
-            result_ops[str(idx)] = {
+            result_ops.append({
+                "mass_id": mass.id,
                 "ID_load": op_id_str,
                 "date": date_str,
                 "user": user_name,
@@ -247,7 +249,7 @@ def get_history_loads(db: Session = Depends(get_db)):
                 "cells": cells,
                 "tools": tools,
                 "plans": plans
-            }
+            })
 
         except Exception as e:
             logger.exception("history_loads error: %s", e)

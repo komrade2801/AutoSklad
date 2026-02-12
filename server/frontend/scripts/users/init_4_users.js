@@ -1,4 +1,3 @@
-import { generateTableUsers } from './createTableAllUsers.js'
 import { nav_btn_add } from '../nav_btn_load.js';
 
 import { navbar_add } from '../navbar.js';
@@ -43,13 +42,48 @@ function initialization(element_name) {
     }
     nav_btn_add(element_name);
     navbar_add(element_name);
+    console.log($("#users_div").height());
+
+    $('#users_table').bootstrapTable({
+        exportOptions: {
+            fileName: 'Список пользователей',
+            pdfmake: {
+                enabled: true,
+                docDefinition: {
+                    pageMargins: [ 20, 20, 20, 20 ]
+                }
+            }
+        },
+        height: $("#users_div").height()
+    });
+    $('#users_table').bootstrapTable('showLoading');
+
+    loadUsers();
+}
+
+function loadUsers() {
     initData("../backend/all_users/").then(data => {
         if (data) {
             window.jsonUsers = data['users'];
-            generateTableUsers('column-1', window.jsonUsers);
-        }    
+
+            console.log(data);
+            generateTableUsers();
+        }
     });
 }
+window.loadUsers = loadUsers;
 
 // Делаем функцию доступной глобально
 window.initialization = initialization;
+
+function generateBarcode() {
+    const inputBarcode      = document.getElementById('input-barcode');
+    const inputCode         = document.getElementById('input-code');
+
+    const barcode = Date.now();            // или любая ваша логика
+    const code    = Math.floor(Math.random() * 9000) + 1000;
+    inputBarcode.value = barcode;
+    inputCode.value    = code;
+}
+
+window.generateBarcode = generateBarcode;

@@ -456,6 +456,7 @@ class UserResponse(BaseModel):
     password: str
     second_name: str
     family: str
+    role_id: int
     role: str
 
 

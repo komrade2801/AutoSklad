@@ -52,7 +52,7 @@ class ToolValue(BaseModel):
     id: int
     name: str
     description: str
-    sum: int
+    sum: str
 
 
 class GroupForPlan(BaseModel):
@@ -73,7 +73,7 @@ class ToolTypesResponse(BaseModel):
 
 
 class History(BaseModel):
-    cell: int
+    # cell: int
     tool: int
     plan: int
 
@@ -85,6 +85,7 @@ class MassLoadCreate(BaseModel):
 # Pydantic‑модели
 class Content(BaseModel):
     tool: str
+    group: str
     plan: str
     load: str
 
@@ -105,6 +106,10 @@ class RowResponse(BaseModel):
 class CellsMapResponse(BaseModel):
     rows: Dict[str, RowResponse]
 
+class CellsStatusResponse(BaseModel):
+    free: int
+    occupied: int
+
 
 #   {
 #       "1": {
@@ -119,6 +124,49 @@ class CellsMapResponse(BaseModel):
 #       }
 #   }
 
+@mass_load_router.get(
+    "/cells_status",
+    response_model=CellsStatusResponse,
+    status_code=status.HTTP_200_OK,
+    responses={400: {"description": "Ошибка формирования cells map JSON"}}
+)
+def cells_status(device_number: int, db: Session = Depends(get_db)):
+    # 1. Достаём устройство и парсим details
+    e_dev = EngineDevice()
+    device = e_dev.get_device_by_number(device_number)
+    if not device:
+        raise HTTPException(status_code=404, detail="Устройство не найдено")
+
+    # try:
+    #     details = json.loads(device.details or "{}")
+    #     sig = details.get("signature", {})
+    #     cols = sig["cells"]["columns"]
+    #     rows = sig["cells"]["rows"]
+    # except Exception:
+    #     raise HTTPException(400, "Неверный формат Device.details")
+
+    # 2. Берём все связи Cell ←→ Device
+    e_chd = EngineCellHasDevice()
+    # предполагается list of models, у которых .cell_id
+    linked_cells = e_chd.get_cells_by_device_id(device.id)
+
+    free_cells = 0
+    occupied_cells = 0
+
+    # 3. Для быстрого поиска
+    e_cell = EngineCell()
+
+    for cell_id in linked_cells:
+        cell = e_cell.get_cell_by_id(cell_id)
+
+        if cell.status_id in {1, 8}:
+            free_cells += 1
+        else:
+            occupied_cells += 1
+
+    print(f"free {free_cells}, occupied {occupied_cells}")
+
+    return CellsStatusResponse(free=free_cells, occupied=occupied_cells)
 
 @mass_load_router.get(
     "/cells_map/{device_number}",
@@ -142,22 +190,19 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
         raise HTTPException(400, "Неверный формат Device.details")
 
     # 2. Берём все связи Cell ←→ Device
-    e_chd = EngineCellHasDevice()
+    # e_chd = EngineCellHasDevice()
     # предполагается list of models, у которых .cell_id
-    linked_cells = e_chd.get_cells_by_device_id(device.id)
+    # linked_cells = e_chd.get_cells_by_device_id(device.id)
 
     # linked_ids = linked_cells
 
     # 3. Для быстрого поиска
     e_cell = EngineCell()
-    # e_tools = EngineTools()
     e_tool_types = EngineToolTypes()
+    e_group = EngineGroup()
     e_plan = EnginePlan()
     e_status = EngineStatus()
     e_load = EngineLoad()
-    # e_history = EngineHistory()
-    # e_load_operations = EngineLoadOperations()
-    # e_mass_load = EngineMassLoad()
 
     def get_background_color(
             status_id: int,
@@ -209,6 +254,8 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                 plan = None
                 load = None
 
+                plan_name = ""
+
                 if loads:
                     load = max(loads, key=lambda rec: rec.id)
 
@@ -217,36 +264,23 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
 
                     if plan:
                         plan_name = plan.designation
-                    else:
-                        plan_name = ""
-
-                    # if history:
-                    #     _status = history.status
-
-                    # load_operations = e_load_operations.get_operations_by_load_id(load.id)
-                    # if load_operations:
-                    #     print(f"load_operations: {load_operations}")
-                    #     load_operation = max(load_operations, key=lambda rec: rec.id)
-                    #     print(f"load_operation: {load_operation}")
-                    #     _status = e_status.get_status_by_id(load_operation.status_id).id
-                    #     print(f"_status: {_status}")
-                else:
-                    plan_name = ""
 
                 # 4.1 Определяем block
                 block = cell.tools_id is not None and cell.tools_id != 0
+
+                tool_name = "None"
+                group_name = "Группа неизвестна"
 
                 # 4.2 Контент (tool, plan)
                 if block:
                     # tool = e_tools.get_tool_by_id(cell.tools_id)
                     # название инструмента — inventory_number, а не тип
-                    tool_name = e_tool_types.get_tool_type_by_id(
-                        cell.tools_id).name or ""
-                    # plan = e_plan.get(
-                    #     tool.plan_id) if tool and tool.plan_id else None
-                    # plan_name = plan.name if plan else ""
-                else:
-                    tool_name = "None"
+                    tool_type = e_tool_types.get_tool_type_by_id(
+                        cell.tools_id)
+                    if tool_type:
+                        tool_name = tool_type.name or ""
+
+                        group_name = e_group.get_group_by_id(tool_type.groups_id).name or ""
 
                 # 4.3 Цвет по статусу и наличию чертежа
                 bg = get_background_color(_status, bool(plan), db)
@@ -259,7 +293,7 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                     number=cell.number,
                     type=cell_type,
                     backgroundColor=bg,
-                    content=Content(tool=tool_name, plan=plan_name,
+                    content=Content(tool=tool_name, group=group_name, plan=plan_name,
                                     load=str(load.id) if load else '',),
                     block=block
                 )
@@ -279,138 +313,28 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
 )
 def export_tools(device_number: int, db: Session = Depends(get_db)):
     try:
-        # e_plan = EnginePlan()
-        # e_tools = EngineTools()
         e_tool_types = EngineToolTypes()
-        # e_group = EngineGroup()
         e_load = EngineLoad()
-        # e_load_operations = EngineLoadOperations()
-        # e_load_operations_has_device = EngineLoadOperationsHasDevice()
-        # e_tools_has_device = EngineToolsHasDevice()
-        # e_mass_load = EngineMassLoad()
         e_device = EngineDevice()
-        # e_cells = EngineCell()
-        # e_status = EngineStatus()
         all_tool_types = e_tool_types.get_all_tool_types()
-        # all_tools = e_tools.get_all_tools()
-        # all_plans = e_plan.get_all_plans()
-        # all_groups = e_group.get_all_groups()
 
         device = e_device.get_device_by_number(device_number)
         if not device:
             raise HTTPException(
                 status_code=404, detail="Устройство не найдено")
 
-        # last_mass_load_id = e_mass_load.get_max_id()
-        # loads_by_mass_loads = e_load.get_loads_by_mass_load_id(
-        #     mass_load_id=last_mass_load_id
-        # )
-        # load = loads_by_mass_loads[0].id if loads_by_mass_loads else 0
-        # load_operations = e_load_operations.get_operations_by_load_id(load)
-        # if load_operations:
-        #     loads_by_mass_load = max(load_operations, key=lambda rec: rec.id)
-        #     operations_has_device = e_load_operations_has_device.get_by_device(
-        #         device.id)
-        #
-        #     # loads_by_mass_load = loads_by_mass_loads[0]  # .first()
-        #     load = e_load.get_load_by_id(loads_by_mass_load.load_id)
-        #     cell = e_cells.get_cell_by_id(load.cell_id)
-        #
-        #     _status = e_status.get_status_by_id(loads_by_mass_load.status_id)
-        #
-        #     if not _status:
-        #         # return {"redirect_to": "/screen_23_mass_locked.html"}
-        #         return RedirectResponse("/screen_23_mass_locked.html", status_code=302)
-        #
-        #     if 'init' in _status.stype:
-        #         # return {"redirect_to": "/screen_23_mass_locked.html"}
-        #         return RedirectResponse("/screen_23_mass_locked.html", status_code=302)
-
-        # plan_id_to_name = {plan.id: plan.name for plan in all_plans}
-        # group_id_to_obj = {group.id: group for group in all_groups}
-        # tool_type_id_to_obj = {tt.id: tt for tt in all_tool_types}
-        # tool_type_map = {}  # to store tool_type obj per concatenated name
-
         tool_type_list = []
 
-        # # Собираем данные
-        # plan_map = defaultdict(lambda: {
-        #     "name": "None",
-        #     "groups": defaultdict(lambda: {
-        #         "name": "None",
-        #         "value": defaultdict(int)
-        #     })
-        # })
-
-        # for tool in all_tools:
-        #
-        #     is_linked = e_tools_has_device.this_tool_is_linked(tool.id)
-        #     if is_linked:
-        #         continue
-        #
-        #     load = e_load.find_by_tools_id(
-        #         tools_id=tool.id
-        #     )
-        #
-        #     if load:
-        #         continue
-        #     tool_type = tool_type_id_to_obj.get(tool.tool_type_id)
-        #     if not tool_type:
-        #         continue
-        #
-        #     group = group_id_to_obj.get(tool_type.groups_id)
-        #     group_name = group.name if group else "None"  # None вместо "Без группы"
-        #
-        #     plan_id = tool.plan_id
-        #     plan_name = plan_id_to_name.get(plan_id)  # None если нет плана
-        #     if not plan_name:
-        #         plan_name = "None"
-        #     plan_entry = plan_map[plan_name]
-        #     plan_entry["name"] = plan_name  # Прямое присвоение
-        #
-        #     group_entry = plan_entry["groups"][group_name]
-        #     group_entry["name"] = group_name
-        #     tool_type_name = ""
-        #     if tool_type.description and tool_type.name:
-        #         tool_type_name = tool_type.name + " " + tool_type.description
-        #     else:
-        #         tool_type_name = tool_type.name
-        #     tool_type_map[tool_type_name] = tool_type  # store for later
-        #     tool_type_id = tool_type.id
-        #     group_entry["value"][tool_type_name] += 1
-        #     # group_entry["value"]["id"] = tool_type_id
-        #
-        #     # Преобразование в ответ
-        # plans_dict = {}
-        # for plan_idx, (plan_name, plan_data) in enumerate(plan_map.items()):
-        #     groups_dict = {}
-        #     for group_idx, (group_name, group_data) in enumerate(plan_data["groups"].items()):
-        #         value_dict = {}
-        #         for tool_idx, (tool_name, count) in enumerate(group_data["value"].items()):
-        #             tt = tool_type_map[tool_name]
-        #             value_dict[str(tool_idx)] = {
-        #                 "id": tt.id, "name": tt.name, "description": tt.description or "", "sum": count}
-        #
-        #         groups_dict[str(group_idx)] = {
-        #             "name": group_data["name"],
-        #             "value": value_dict
-        #         }
-        #
-        #     plans_dict[str(plan_idx)] = {
-        #         "name": plan_data["name"],
-        #         "groups": groups_dict
-        #     }
-        #
-        # return {"plans": plans_dict}
-
         for tool_type in all_tool_types:
-            # print(f"tool_type: {tool_type}")
             count = tool_type.count
-            # print(f"count: {count}")
-            loads = e_load.find_by_tools_id(tool_type.id)
-            if loads:
-                # print(f"len(loads): {len(loads)}")
-                count -= len(loads)
+
+            if count == 0:
+                count = '-'
+            else:
+                loads = e_load.find_by_tools_id(tool_type.id)
+                if loads:
+                    count -= len(loads)
+                count = str(count)
 
             tool_type_list.append({"id": tool_type.id, "name": tool_type.name, "description": tool_type.description or "", "sum": count})
 
@@ -501,6 +425,51 @@ def save_mass_load(
     e_mass_load_has_device.device_id = queue_device_id
     logger.debug("[save_mass_load] Установлен device_id=%s для CRUD-объектов (ключ очереди)", queue_device_id)
 
+    empty_cells = e_cells.get_all_empty_cells()
+    total_tools = len(stories)
+
+    logger.debug("[create_plan] create_mass_load=True: empty_cells count=%s, total_tools=%s",
+                 len(empty_cells) if empty_cells else 0, total_tools)
+
+    if total_tools <= 0:
+        raise HTTPException(status_code=400, detail="В чертеже не указаны инструменты или количество равно 0")
+    if not empty_cells or len(empty_cells) == 0:
+        logger.warning("[create_plan] Не хватает свободных ячеек: empty_cells=0, total_tools=%s", total_tools)
+        raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
+
+    # БЛОКИРОВАННЫЕ ЯЧЕЙКИ: первый столбец каждой строки (1, 36, 71, 106, 141, 176)
+    BLOCKED_CELL_NUMBERS = {1, 36, 71, 106, 141, 176}
+
+    # Симулируем логику цикла для точного подсчета необходимых ячеек
+    # Каждая заблокированная ячейка требует дополнительную ячейку из списка
+    cell_index = 0
+    cells_needed = 0
+
+    # Подсчитываем, сколько ячеек фактически понадобится
+    for _ in range(total_tools):
+        if cell_index >= len(empty_cells):
+            # Недостаточно ячеек
+            raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
+
+        # Если текущая ячейка заблокирована, пропускаем её
+        if empty_cells[cell_index].number in BLOCKED_CELL_NUMBERS:
+            cell_index += 1
+            cells_needed += 1  # Заблокированная ячейка требует дополнительную
+            # Проверяем, что есть еще одна ячейка после заблокированной
+            if cell_index >= len(empty_cells):
+                raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
+
+        cell_index += 1
+        cells_needed += 1
+
+    # Проверяем, достаточно ли ячеек с учетом заблокированных
+    if cells_needed > len(empty_cells):
+        logger.warning("[create_plan] Не хватает свободных ячеек: cells_needed=%s, len(empty_cells)=%s", cells_needed,
+                       len(empty_cells))
+        raise HTTPException(status_code=400, detail="Не хватает свободных ячеек")
+
+    logger.debug("[create_plan] Достаточно ячеек: cells_needed=%s, приступаем к save_mass_load", cells_needed)
+
     try:
         # 5) создаём запись MassLoad
         mass_load_id = max(e_mass_load.get_all_ids(), default=0) + 1
@@ -534,34 +503,48 @@ def save_mass_load(
         
         logger.debug("[save_mass_load] Начало обработки массовой загрузки. Всего операций: %s, device_id=%s, mass_load_id=%s",
                      total_operations, device_id, mass_load_id)
-        
+
+        cell_checked = 0
+        cell_used = 0
+
         for key, story in stories.items():
+            print(f"create_plan key: {key}, story={story}")
             processed_count += 1
             operation_start_time = datetime.datetime.now()
+
+            cell = empty_cells[cell_checked]
+            print(f"check sell: {cell}")
+            cell_checked += 1
+            while cell.number in BLOCKED_CELL_NUMBERS:
+                print(f"blocked")
+                cell = empty_cells[cell_checked]
+                cell_checked += 1
+            cell_used += 1
+            logger.debug(f"create_plan cell: {cell}")
             
             try:
-                logger.debug("[save_mass_load] Обработка операции %s/%s (key=%s): cell=%s, tool=%s, plan=%s",
-                             processed_count, total_operations, key, story.cell, story.tool, story.plan)
+                logger.debug("[save_mass_load] Обработка операции {}/{} (key={}): tool={}, plan={}".format(
+                             processed_count, total_operations, key, story.tool, story.plan))
                 
                 # разбираем вход
                 # print(f"save_mass_load story: {story}")
-                request_cell = story.cell
+                request_cell = cell.id
                 request_tool = story.tool
                 request_plan = story.plan
-                logger.debug("[save_mass_load][%s/%s] story.plan (сырое)=%s", processed_count, total_operations, request_plan)
+                logger.debug("[save_mass_load][{}/{}] story.plan (сырое)={}".format(processed_count, total_operations, request_plan))
 
                 if not request_plan or request_plan == "":
                     request_plan = None
-                    logger.debug("[save_mass_load][%s/%s] plan_id сброшен: пустое значение", processed_count, total_operations)
+                    logger.debug("[save_mass_load][{}/{}] plan_id сброшен: пустое значение".format(processed_count, total_operations))
                 else:
                     plan = e_plan.get_plan_by_id(request_plan)
                     if not plan:
-                        logger.warning("[save_mass_load][%s/%s] Plan id=%s не найден в БД, plan_id будет null для History/Load",
-                                       processed_count, total_operations, request_plan)
+                        logger.warning("[save_mass_load][{}/{}] Plan id={} не найден в БД, plan_id будет null для History/Load".format(
+                                       processed_count, total_operations, request_plan))
                         request_plan = None
                     else:
-                        logger.debug("[save_mass_load][%s/%s] Plan id=%s найден, plan_id передаётся в History и Load",
-                                     processed_count, total_operations, request_plan)
+                        logger.debug("[save_mass_load][{}/{}] Plan id={} найден, plan_id передаётся в History и Load".format(
+                                     processed_count, total_operations, request_plan))
 
                 # print(f"request_cell: {request_cell}, request_tool: {request_tool}, request_plan: {request_plan}")
 
@@ -578,27 +561,27 @@ def save_mass_load(
                 # else:
 
                 # tool_types = e_tool_types.find_by_name(request_tool)
-                logger.debug("[save_mass_load][%s/%s] Получение tool_type для tool_id=%s", processed_count, total_operations, request_tool)
+                logger.debug("[save_mass_load][%s/%s] Получение tool_type для tool_id=%s".format(processed_count, total_operations, request_tool))
                 tool_type = e_tool_types.get_tool_type_by_id(request_tool)
                 if not tool_type:
                     error_msg = f"Подходящий инструмент '{request_tool}' не найден для операции {processed_count}/{total_operations}"
                     logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=404, detail=error_msg)
-                logger.debug("[save_mass_load][%s/%s] Tool_type найден: id=%s, name=%s", processed_count, total_operations, tool_type.id, tool_type.name)
+                logger.debug("[save_mass_load][%s/%s] Tool_type найден: id=%s, name=%s".format(processed_count, total_operations, tool_type.id, tool_type.name))
                 # tool_type = tool_types[0]
 
                 # создаём History
-                logger.debug("[save_mass_load][%s/%s] Создание History записи", processed_count, total_operations)
+                logger.debug("[save_mass_load][%s/%s] Создание History записи".format(processed_count, total_operations))
                 story_id = max(e_stories.get_all_ids(), default=0) + 1
                 story_ids.append(story_id)
                 user = e_user.get_user_by_barcode(validation.user_barcode)
                 if not user:
                     error_msg = f"Пользователь не найден для операции {processed_count}/{total_operations}"
-                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
+                    logger.error("[save_mass_load][%s/%s] %s".format(processed_count, total_operations, error_msg))
                     raise HTTPException(status_code=402, detail=error_msg)
-                logger.debug("[save_mass_load][%s/%s] Пользователь найден: id=%s, barcode=%s", processed_count, total_operations, user.id, validation.user_barcode)
+                logger.debug("[save_mass_load][%s/%s] Пользователь найден: id=%s, barcode=%s".format(processed_count, total_operations, user.id, validation.user_barcode))
                 # print(f"add_history: {story_id}")
-                logger.debug("[save_mass_load][%s/%s] add_history с plan_id=%s", processed_count, total_operations, request_plan)
+                logger.debug("[save_mass_load][%s/%s] add_history с plan_id=%s".format(processed_count, total_operations, request_plan))
                 e_stories.add_history(
                     history_id=story_id,
                     user_id=user.id,
@@ -612,9 +595,9 @@ def save_mass_load(
                 new_history = e_stories.get_history_by_id(story_id)
                 if not new_history:
                     error_msg = f"Не удалось получить History после добавления для операции {processed_count}/{total_operations}, story_id={story_id}"
-                    logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
+                    logger.error("[save_mass_load][%s/%s] %s".format(processed_count, total_operations, error_msg))
                     raise HTTPException(status_code=500, detail=error_msg)
-                logger.debug("[save_mass_load][%s/%s] History создана: id=%s", processed_count, total_operations, new_history.id)
+                logger.debug("[save_mass_load][%s/%s] History создана: id=%s".format(processed_count, total_operations, new_history.id))
                 e_history_has_device.add_link(
                     history_id=new_history.id, device_id=device.id)
 
@@ -628,13 +611,13 @@ def save_mass_load(
 
                 # получаем и обновляем cell
                 # cell = e_cells.get_cell_by_number(int(request_cell))
-                logger.debug("[save_mass_load][%s/%s] Получение ячейки cell_id=%s", processed_count, total_operations, request_cell)
+                logger.debug("[save_mass_load][%s/%s] Получение ячейки cell_id=%s".format(processed_count, total_operations, request_cell))
                 cell = e_cells.get_cell_by_id(int(request_cell))
                 if not cell:
                     error_msg = f"Ячейка не найдена для операции {processed_count}/{total_operations}, cell_id={request_cell}"
                     logger.error("[save_mass_load][%s/%s] %s", processed_count, total_operations, error_msg)
                     raise HTTPException(status_code=404, detail=error_msg)
-                logger.debug("[save_mass_load][%s/%s] Ячейка найдена: id=%s, number=%s", processed_count, total_operations, cell.id, cell.number)
+                logger.debug("[save_mass_load][%s/%s] Ячейка найдена: id=%s, number=%s".format(processed_count, total_operations, cell.id, cell.number))
 
                 # # привязываем инструмент к устройству
                 # e_tools_has_device.add_link(

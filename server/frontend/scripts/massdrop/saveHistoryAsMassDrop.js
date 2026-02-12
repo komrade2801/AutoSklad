@@ -9,7 +9,7 @@
 export function saveHistoryAsMassDrop(deviceNumber) {
   const url = `../backend/mass_drop_tools/${deviceNumber}`+"?token="+localStorage.getItem("token");
   console.log(url);
-  let jsonObjectHistory = window.appData.story;
+  let jsonObjectHistory = {'operation': window.appData.story.list};
   fetch(url, {
     method: 'POST',
     headers: {
