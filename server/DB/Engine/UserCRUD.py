@@ -231,8 +231,8 @@ class EngineUser(BaseCRUD):
             updates['second_name'] = user_data.second_name
         if user_data.family is not None:
             updates['family'] = user_data.family
-        # if user_data.password is not None:
-        #     updates['password'] = user_data.password
+        if user_data.password is not None and user_data.password != '****':
+            updates['password'] = user_data.password
         if user_data.role_id is not None:
             updates['role_id'] = user_data.role_id
 

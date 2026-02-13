@@ -24,7 +24,7 @@ function passwordFormatter(value, row, index, field) {
 }
 
 function fullNameFormatter(value, row, index, field) {
-     return row.second_name + ' ' + row.first_name + ' ' + row.family;
+     return row.family + ' ' + row.first_name + ' ' + row.second_name;
 }
 
 function actionToolsFormatter(value, row, index, field) {
