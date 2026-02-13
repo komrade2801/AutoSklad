@@ -25,22 +25,20 @@
         </ul>
     </div>
 
-  <div id="user_information" class="d-flex ms-auto" style="overflow-wrap: break-word; word-break: break-word; margin-right: 15px;">
-    <span style="color:#4E9BE5;font-size:22px;font-weight:bold;">
-      {{ user_role }},&nbsp;
-    </span>
-        <span style="color:#4E9BE5;font-size:22px;font-weight:bold;">
-      {{ user_fullname }}
-    </span>
+    <div id="user_information" class="d-flex ms-auto user-information">
+        <span>
+            {{ user_fullname }}
+        </span>
+        <span>
+            {{ user_role }}
+        </span>
     </div>
 
-    <button id="in_screen_user_out_btn" class="btn_vending"
-            type="button" onclick="window.location.href='/'; localStorage.removeItem('token')"
-            style="width:90px;font-family:Arial Black;font-size:18px;">
+    <button id="in_screen_user_out_btn" class="btn btn_vending"
+            type="button" onclick="window.location.href='/'; localStorage.removeItem('token')">
         Выйти
     </button>
 </div>
-
 
 
 <!--<div class="container-fluid">-->

@@ -44,3 +44,17 @@ body,
     margin-top: 10px;
     margin-left: 0px;
 }
+
+.user-information {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    margin-right: 15px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-content: stretch;
+    justify-content: flex-start;
+    align-items: flex-start;
+    font-size:18px;
+    font-weight:bold;
+}
