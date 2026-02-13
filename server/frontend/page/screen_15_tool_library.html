@@ -55,8 +55,7 @@
 <div class="d-flex flex-column"
      style="height: 100%; width: 100%; position: static; margin-left: 0px;">
     <nav id="navbar"
-         class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3"
-         style="width: 100%;height: 100px;margin-top: 10px;margin-left: 0px;">
+         class="navbar navbar-light navbar-expand d-flex flex-row mx-auto align-items-center justify-content-center py-3">
     </nav>
     <div class="d-flex" style="height: calc(100% - 120px); margin-top:10px; border-top: 2px solid rgb(78,155,229);">
         <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical"
@@ -128,13 +127,13 @@
                             </thead>
                         </table>
                         <div id="customToolsToolbar" style="display: flex; align-items: center;">
-                            <button id="addTool" class="btn btn_vending" type="button" style="padding-left:30px;padding-right:30px"
+                            <button id="addTool" class="btn btn_vending" type="button"
                                     onclick="window.location.href='./screen_16_add_tool.html?token='+localStorage.getItem('token');">
                                 Добавить инструмент
                             </button>
                             <form id="importToolsForm" action="javascript:;" onsubmit="doImportTools(this) "
                                   style="display: flex; align-items: center; margin-left: 20px;">
-                                <button id="importTools" type="submit" class="btn btn_vending" style="width:150px">Загрузить xlsx</button>
+                                <button id="importTools" type="submit" class="btn btn_vending" style="width:180px">Загрузить xlsx</button>
                                 <input class="import-form" id="importToolsFile" type="file" name="file" accept=".xlsx"
                                        required/>
                                 <div class="form-check">
@@ -285,7 +284,7 @@
                             </thead>
                         </table>
                         <div id="customGroupsToolbar">
-                            <button id="addGroup" class="btn btn_vending" type="button" style="padding-left:30px;padding-right:30px"
+                            <button id="addGroup" class="btn btn_vending" type="button"
                                     onclick="window.location.href='./screen_23_add_group.html?token='+localStorage.getItem('token');">
                                 Добавить группу
                             </button>

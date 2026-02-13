@@ -1,15 +1,13 @@
 {# templates/navbar.html #}
-<div class="container-fluid" style="height:100%">
+<div class="container-fluid navbar-container" style="height:100%">
 
     <img fetchpriority="high"
          src="{{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }}"
          class="custom-logo" alt="Автосклад промышленный вендинг для выдачи инструментов" decoding="async"
          srcset="{{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 1999w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 300w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 1024w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 768w, {{ url_for('assets', path='/img/cropped-ver1-2-scaled-1.png') }} 1536w"
-         sizes="(max-width: 1999px) 100vw, 1999px" style="height:100%">
+         sizes="(max-width: 1999px) 100vw, 1999px">
 
-    <h1 id="screen_main_name" class="d-flex"
-        style="position:absolute;left:50%;transform:translateX(-50%);z-index:99;
-             text-align:center;font-weight:bold; overflow-wrap: break-word; word-break: break-word;">
+    <h1 id="screen_main_name" class="d-flex main-screen-title">
         {{ screen_name }}
     </h1>
 

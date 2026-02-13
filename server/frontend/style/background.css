@@ -13,3 +13,34 @@ body,
     height: 100%;
     color: #475569;
 }
+
+.main-screen-title {
+    position: relative;
+    z-index: 99;
+    text-align: center;
+    font-weight: bold;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    align-content: center;
+    margin-left: 30px;
+}
+
+.custom-logo {
+    height: 60px;
+}
+
+.container-fluid.navbar-container {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    align-content: flex-start;
+    flex-wrap: wrap;
+}
+
+#navbar {
+    width: 100%;
+    margin-top: 10px;
+    margin-left: 0px;
+}
