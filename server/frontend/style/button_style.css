@@ -60,19 +60,15 @@
 }
 
 .btn:hover {
-    background-color: #F09022;
-    border-color: #F09022;
-    color: #2E4461;
+    background-color: #F09022!important;
+    border-color: #F09022!important;
+    color: #2E4461!important;
     font-family: "Roboto", Sans-serif;
     font-size: 16px;
     font-weight: 400;
     line-height: 20px;
 }
 
-.btn.active,
-.btn-lg.active,
-.btn:active,
-.btn-lg:active,
 .btn:focus,
 .btn-lg:focus,
 .btn-outline-tabs {
@@ -98,4 +94,11 @@
 
 .tab-change-bar {
     width: 100%;
+}
+
+#customToolsToolbar {
+    .btn {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
 }
