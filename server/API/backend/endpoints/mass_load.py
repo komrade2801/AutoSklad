@@ -37,7 +37,7 @@ from DB.Engine.LoadCRUD import EngineLoad
 from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
 from DB.Engine.MassLoadCRUD import EngineMassLoad
 from DB.Engine.MassLoadHasDeviceCRUD import EngineMassLoadHasDevice
-from typing import Dict, List  # , Optional  # Добавлен Optional
+from typing import Dict, List, Optional
 from collections import defaultdict
 from fastapi.responses import RedirectResponse
 
@@ -75,7 +75,8 @@ class ToolTypesResponse(BaseModel):
 class History(BaseModel):
     # cell: int
     tool: int
-    plan: int
+    plan: Optional[int] = None
+    sum: int = 1
 
 
 class MassLoadCreate(BaseModel):
@@ -426,7 +427,7 @@ def save_mass_load(
     logger.debug("[save_mass_load] Установлен device_id=%s для CRUD-объектов (ключ очереди)", queue_device_id)
 
     empty_cells = e_cells.get_all_empty_cells()
-    total_tools = len(stories)
+    total_tools = sum(s.sum for s in stories.values())
 
     logger.debug("[create_plan] create_mass_load=True: empty_cells count=%s, total_tools=%s",
                  len(empty_cells) if empty_cells else 0, total_tools)
@@ -496,8 +497,13 @@ def save_mass_load(
         e_mass_load_has_device.add_link(mass_load_id=mass_load_id, device_id=device_id)
         logger.info("[save_mass_load] Связь MassLoadHasDevice создана успешно")
 
-        # 6) обрабатываем каждую операцию
-        total_operations = len(stories)
+        # 6) разворачиваем операции: каждый инструмент с sum > 1 превращается в sum отдельных записей
+        flat_stories = []
+        for key, story in stories.items():
+            for _i in range(story.sum):
+                flat_stories.append((key, story))
+
+        total_operations = len(flat_stories)
         processed_count = 0
         failed_operations = []
         
@@ -507,7 +513,7 @@ def save_mass_load(
         cell_checked = 0
         cell_used = 0
 
-        for key, story in stories.items():
+        for key, story in flat_stories:
             print(f"create_plan key: {key}, story={story}")
             processed_count += 1
             operation_start_time = datetime.datetime.now()
