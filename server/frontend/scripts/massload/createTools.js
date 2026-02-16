@@ -62,6 +62,7 @@ function performMassLoad(toolId, toolName, toolSum, amount) {
     window.appData.history.operation[toolId] = {
         tool: toolId,
         name: toolName,
+        plan: null,
         sum: newAmount
     }
 

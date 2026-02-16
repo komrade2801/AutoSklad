@@ -212,7 +212,7 @@ class ActionMapper:
             'write_db_plan_complete': lambda tool_list, plan_id: self.write_db_plan_complete(plan_id),
             # "": None,
             'read_db_group_collection': lambda index: self.read_db_group_collection(index),
-            'read_db_groups': lambda index: self.read_db_groups(),
+            'read_db_groups': lambda *args, **kwargs: self.read_db_groups(),
             # "": None,
             'write_db_tool_consumption': lambda index=0, *args, trigger='', **kwargs: self.write_db_tool_consumption(index, *args, **kwargs),
             'read_db_get_tools': lambda plan_id: self.read_db_tools_by_plans_id(plan_id),
