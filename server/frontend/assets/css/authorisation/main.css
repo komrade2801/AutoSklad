@@ -16,6 +16,10 @@ input {
     /* Выравнивание текста и плейсхолдера */
 }
 
+input:focus::placeholder {
+    opacity: 0;
+  }
+
 #img_logo {
     max-width: 90%;
     height: auto;
