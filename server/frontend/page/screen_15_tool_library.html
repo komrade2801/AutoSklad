@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <link rel="icon" href="/favicon.png?v=1" type="image/png">
     <title>Библиотека инструмента</title>
-<!--    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">-->
+    <!--    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">-->
     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
     <script type="module" src="../scripts/tool_library/init_15.js?v=3"></script>
     <script src="../scripts/tool_library/toolsImport.js?v=3"></script>
+    <script src="../scripts/tool_library/tableScript.js"></script>
     <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
     <!--    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>-->
     <link rel="stylesheet" href="../assets/bootstrap-icons/1.13.1/bootstrap-icons.css">
@@ -43,6 +44,77 @@
 <body onload="initialization('screen_15_tool_library')"
       class="d-flex justify-content-center" id="body">
 <div id="membrane"></div>
+<div id="modal_window_create">
+    <div id="tool-form"
+         style="display: flex; flex-direction: column; width: 90%; margin-top: 10px; padding: 10px; border: 2px solid rgb(78, 155, 229); border-radius: 5px;">
+        <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Группа инструмента:</span>
+        <div style="display: flex; flex-direction: row;">
+            <select id="select_group" class="form-select" style="padding: 5px; width:200px">
+                <option value="0" selected>Нет</option>
+            </select>
+            <!--        <div id="groups" class="suggestions"></div>-->
+        </div>
+        <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Наименование инструмента:</span>
+        <input class="form-control" type="text" id="tool_name" placeholder="Наименование инструмента">
+        <div class="d-flex" id="selection_tools" style="flex-direction: column;"></div>
+
+        <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Описание инструмента:</span>
+        <textarea class="form-control" id="tool_description" placeholder="Введите описание..." rows="6"
+                  cols="40" maxlength="500" spellcheck="true" style="resize: vertical;"></textarea>
+
+        <div class="form-check checkbox-option">
+            <input class="form-check-input" type="checkbox" value="" id="useToolCount"
+                   oninput="showToolCount()">
+            <label class="form-check-label" for="useToolCount">
+                Указать количество
+            </label>
+        </div>
+        <div id="ToolCountBlock" style="display:none">
+            <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Количество инструмента:</span>
+            <input class="form-control" type="number" id="tool_count" placeholder="Количество инструмента"
+                   min="1" value="1">
+            <table id="tools_table" style="width: 100%; display:none">
+                <thead>
+                <tr>
+                    <th style="width: 10%;">№</th>
+                    <th style="width: 90%;">Инвентарный номер</th>
+                </tr>
+                </thead>
+                <tbody id="table_body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div style="display: flex; flex-direction: row; margin-top: 50px;">
+        <button class="btn btn_vending" onclick="show_create('none')" style="margin-right: 20px;">Назад</button>
+        <button id="saveToolBtn" class="btn btn_vending upload" onclick="collectDataAndSend()">Создать</button>
+    </div>
+</div>
+
+<div id="modal_window_create_group">
+    <div id="group-form"
+         style="display: flex; flex-direction: column; width: 90%; margin-top: 10px; padding: 10px; border: 2px solid rgb(78, 155, 229); border-radius: 5px;">
+        <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Наименование группы инструмента:</span>
+        <div class="search-container" style="display: flex; flex-direction: row;">
+            <input class="form-control" type="text" id="group_name" placeholder="Группа инструмента">
+            <!--        <div id="groups" class="suggestions"></div>-->
+        </div>
+        <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Родительская группа:</span>
+        <div style="display: flex; flex-direction: row;">
+            <select id="select_parent_group" class="form-select" style="padding: 5px; width:200px">
+                <option value="0" selected>Нет</option>
+            </select>
+            <div id="parent_groups" class="suggestions"></div>
+        </div>
+        <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Описание группы:</span>
+        <textarea class="form-control" id="group_description" placeholder="Введите описание..." rows="6" cols="40"
+                  maxlength="500" spellcheck="true" style="resize: vertical;"></textarea>
+    </div>
+    <div style="display: flex; flex-direction: row; margin-top: 50px;">
+        <button class="btn btn_vending" onclick="show_create_group('none')" style="margin-right: 20px;">Назад</button>
+        <button id="saveGroupBtn" class="btn btn_vending upload" onclick="collectDataAndSendGroup()">Создать</button>
+    </div>
+</div>
 <div id="modal_window_confirmation">
     <span style="font-size: 24px;">Вы уверены, что хотите удалить инструмент?</span>
     <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Отменить действие будет невозможно. При необходимости добавьте инструмент в библиотеку заново.</span>
@@ -128,126 +200,24 @@
                         </table>
                         <div id="customToolsToolbar" style="display: flex; align-items: center;">
                             <button id="addTool" class="btn btn_vending" type="button"
-                                    onclick="window.location.href='./screen_16_add_tool.html?token='+localStorage.getItem('token');">
+                                    onclick="openModalCreate()">
                                 Добавить инструмент
                             </button>
                             <form id="importToolsForm" action="javascript:;" onsubmit="doImportTools(this) "
                                   style="display: flex; align-items: center; margin-left: 20px;">
-                                <button id="importTools" type="submit" class="btn btn_vending" style="width:180px">Загрузить xlsx</button>
+                                <button id="importTools" type="submit" class="btn btn_vending" style="width:180px">
+                                    Загрузить xlsx
+                                </button>
                                 <input class="import-form" id="importToolsFile" type="file" name="file" accept=".xlsx"
                                        required/>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="useToolCount">
-                                    <label class="form-check-label" for="useToolCount" style="width:200px">
+                                    <input class="form-check-input" type="checkbox" value="" id="getToolCount">
+                                    <label class="form-check-label" for="getToolCount" style="width:200px">
                                         Учитывать количество
                                     </label>
                                 </div>
                             </form>
                         </div>
-                        <script>
-                            function actionToolsFormatter(value, row, index, field) {
-                            //    console.log(value);
-                            //    console.log(row);
-                            //    console.log(index);
-                            //    console.log(field);
-        
-                                 let actionsDiv = document.createElement("div");
-                                 actionsDiv.className = "table-actions";
-        
-                                 // Edit button
-                            //     let editCell = document.createElement("td");
-                                 let editButton = document.createElement("button");
-                                 editButton.style.width = "35px";
-                                 editButton.style.height = "35px";
-                                 editButton.innerHTML = "✏️";
-                                 editButton.title = "Редактировать";
-        
-                                 editButton.addEventListener('click', async function () {
-                                     const toolTypeId = row.id;
-                                     if (!toolTypeId) {
-                                         console.error("ID инструмента не найден");
-                                         return;
-                                     }
-                                     
-                                     // Проверяем, занят ли инструмент
-                                     try {
-                                         const checkResponse = await fetch(`../backend/check_tool_busy/${toolTypeId}`);
-                                         if (!checkResponse.ok) {
-                                             throw new Error("Ошибка проверки инструмента");
-                                         }
-                                         const checkData = await checkResponse.json();
-                                         
-                                         if (checkData.is_busy) {
-                                             alert("Данный инструмент используется в вендинге.\nРедактировать можно только свободный инструмент.\n" + checkData.message);
-                                             return;
-                                         }
-                                         
-                                         // Переходим на страницу редактирования с параметром tool_type_id
-                                         let url = '../screen_16_add_tool.html';
-                                         let targetUrl = new URL(url, window.location.origin).href;
-                                         let token = localStorage.getItem('token');
-                                         let full_url = targetUrl + "?token=" + token + "&tool_type_id=" + toolTypeId;
-                                         window.location.href = full_url;
-                                     } catch (error) {
-                                         console.error('Ошибка при проверке инструмента:', error);
-                                         alert('Ошибка при проверке инструмента');
-                                     }
-                                 });
-        
-                                 actionsDiv.appendChild(editButton);
-        
-                                 // Delete button
-                            //     let deleteCell = document.createElement("td");
-                                 let deleteButton = document.createElement("button");
-                                 deleteButton.style.width = "35px";
-                                 deleteButton.style.height = "35px";
-                                 deleteButton.innerHTML = "❌";
-                                 deleteButton.title = "Удалить";
-        
-                                 deleteButton.addEventListener('click', async function () {
-                                     const toolTypeId = row.id;
-                                     if (!toolTypeId) {
-                                         console.error("ID инструмента не найден");
-                                         return;
-                                     }
-                                     
-                                     // Подтверждение удаления
-                                     if (!confirm("Вы уверены, что хотите удалить этот инструмент?")) {
-                                         return;
-                                     }
-                                     
-                                     // Удаляем инструмент (endpoint сам проверит занятость)
-                                     try {
-                                         const deleteResponse = await fetch(`../backend/delete_tool_type/${toolTypeId}`, {
-                                             method: 'DELETE'
-                                         });
-                                         
-                                         if (!deleteResponse.ok) {
-                                             const errorData = await deleteResponse.json();
-                                             alert(errorData.detail || "Ошибка при удалении инструмента");
-                                             return;
-                                         }
-                                         
-                                         const result = await deleteResponse.json();
-                                         alert(result.message || "Инструмент успешно удален");
-                                         
-                                         // Перезагружаем страницу для обновления таблицы
-                                         let url = '../screen_15_tool_library.html';
-                                         let targetUrl = new URL(url, window.location.origin).href;
-                                         let token = localStorage.getItem('token');
-                                         let full_url = targetUrl + "?token=" + token;
-                                         window.location.href = full_url;
-                                     } catch (error) {
-                                         console.error('Ошибка при удалении инструмента:', error);
-                                         alert('Ошибка при удалении инструмента');
-                                     }
-                                 });
-        
-                                 actionsDiv.appendChild(deleteButton);
-        
-                                 return actionsDiv;
-                            }
-                        </script>
                     </div>
                 </div>
                 <div id="group_library_div" class="panel-body" style="width: 100%; display:none;">
@@ -285,114 +255,10 @@
                         </table>
                         <div id="customGroupsToolbar">
                             <button id="addGroup" class="btn btn_vending" type="button"
-                                    onclick="window.location.href='./screen_23_add_group.html?token='+localStorage.getItem('token');">
+                                    onclick="openModalCreateGroup();">
                                 Добавить группу
                             </button>
                         </div>
-                        <script>
-                            function actionGroupsFormatter(value, row, index, field) {
-                            //    console.log(value);
-                            //    console.log(row);
-                            //    console.log(index);
-                            //    console.log(field);
-        
-                                 let actionsDiv = document.createElement("div");
-                                 actionsDiv.className = "table-actions";
-        
-                                 // Edit button
-                            //     let editCell = document.createElement("td");
-                                 let editButton = document.createElement("button");
-                                 editButton.style.width = "35px";
-                                 editButton.style.height = "35px";
-                                 editButton.innerHTML = "✏️";
-                                 editButton.title = "Редактировать";
-        
-                                 editButton.addEventListener('click', async function () {
-                                     const groupId = row.id;
-                                     if (!groupId) {
-                                         console.error("ID группы не найден");
-                                         return;
-                                     }
-                                     
-                                     // Проверяем, занята ли группа
-                                     try {
-                                         const checkResponse = await fetch(`../backend/check_group_busy/${groupId}`);
-                                         if (!checkResponse.ok) {
-                                             throw new Error("Ошибка проверки группы");
-                                         }
-                                         const checkData = await checkResponse.json();
-                                         
-                                         if (checkData.is_busy) {
-                                             alert("Данный инструмент используется в вендинге.\nРедактировать можно только свободный инструмент.");
-                                             return;
-                                         }
-                                         
-                                         // Переходим на страницу редактирования с параметром group_id
-                                         let url = '../screen_23_add_group.html';
-                                         let targetUrl = new URL(url, window.location.origin).href;
-                                         let token = localStorage.getItem('token');
-                                         let full_url = targetUrl + "?token=" + token + "&group_id=" + groupId;
-                                         window.location.href = full_url;
-                                     } catch (error) {
-                                         console.error('Ошибка при проверке группы:', error);
-                                         alert('Ошибка при проверке группы');
-                                     }
-                                 });
-        
-                                 actionsDiv.appendChild(editButton);
-        
-                                 // Delete button
-                            //     let deleteCell = document.createElement("td");
-                                 let deleteButton = document.createElement("button");
-                                 deleteButton.style.width = "35px";
-                                 deleteButton.style.height = "35px";
-                                 deleteButton.innerHTML = "❌";
-                                 deleteButton.title = "Удалить";
-        
-                                 deleteButton.addEventListener('click', async function () {
-                                     const groupId = row.id;
-                                     if (!groupId) {
-                                         console.error("ID группы не найден");
-                                         return;
-                                     }
-                                     
-                                     // Подтверждение удаления
-                                     if (!confirm("Вы уверены, что хотите удалить эту группу?")) {
-                                         return;
-                                     }
-                                     
-                                     // Удаляем группу (endpoint сам проверит занятость)
-                                     try {
-                                         const deleteResponse = await fetch(`../backend/delete_group/${groupId}`, {
-                                             method: 'DELETE'
-                                         });
-                                         
-                                         if (!deleteResponse.ok) {
-                                             const errorData = await deleteResponse.json();
-                                             alert(errorData.detail || "Ошибка при удалении группы");
-                                             return;
-                                         }
-                                         
-                                         const result = await deleteResponse.json();
-                                         alert(result.message || "Группа успешно удалена");
-                                         
-                                         // Перезагружаем страницу для обновления таблицы
-                                         let url = '../screen_15_tool_library.html';
-                                         let targetUrl = new URL(url, window.location.origin).href;
-                                         let token = localStorage.getItem('token');
-                                         let full_url = targetUrl + "?token=" + token;
-                                         window.location.href = full_url;
-                                     } catch (error) {
-                                         console.error('Ошибка при удалении группы:', error);
-                                         alert('Ошибка при удалении группы');
-                                     }
-                                 });
-        
-                                 actionsDiv.appendChild(deleteButton);
-        
-                                 return actionsDiv;
-                            }
-                        </script>
                     </div>
                 </div>
             </div>

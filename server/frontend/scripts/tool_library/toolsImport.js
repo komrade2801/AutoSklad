@@ -1,6 +1,6 @@
 function doImportTools() {
     const selectedFile = document.getElementById("importToolsFile").files[0];
-    const useCount = document.getElementById("useToolCount").checked;
+    const useCount = document.getElementById("getToolCount").checked;
     const endpointUrl = "../backend/upload";
     const formData = new FormData();
 
@@ -24,11 +24,15 @@ function doImportTools() {
         return response.json();
     })
     .then(result => {
-        let url = '../screen_15_tool_library.html';
-        let targetUrl = new URL(url, window.location.origin).href;
-        let token = localStorage.getItem('token');
-        let full_url = targetUrl + "?token=" + token;
-        window.location.href = full_url;
+
+
+        let device_number = 1;
+        loadToolLibraryTable(device_number);
+//        let url = '../screen_15_tool_library.html';
+//        let targetUrl = new URL(url, window.location.origin).href;
+//        let token = localStorage.getItem('token');
+//        let full_url = targetUrl + "?token=" + token;
+//        window.location.href = full_url;
     })
     .catch(error => {
         console.error('Ошибка при сохранении данных:', error);

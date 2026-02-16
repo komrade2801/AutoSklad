@@ -1,11 +1,13 @@
 import { createTableToolLibrary } from './createTableToolLibrary.js?v=3';
-import { loadToolLibraryTable } from './createTableToolLibrary.js?v=3';
+//import { loadToolLibraryTable } from './createTableToolLibrary.js?v=3';
 import { fetchToolLibraryData } from './createTableToolLibrary.js?v=3';
 
 //import { jsonToolLibrary } from '../../JSONs/tool_library.js';
 import { nav_btn_add } from '../nav_btn_load.js';
 
 import { navbar_add } from '../navbar.js';
+
+import { loadGroupsData } from './fillSelectGroups.js?v=3'
 
 //export const jsonObjectCells = generateJsonCells(32, 32);
 //export const jsonObjectHistory = {};
@@ -19,7 +21,6 @@ function initialization(element_name) {
     let device_number = 1;
     nav_btn_add(element_name);
     navbar_add(element_name);
-    loadToolLibraryTable("column-1", device_number);
 
     $('#tool_library_table').bootstrapTable({
         exportOptions: {
@@ -46,7 +47,10 @@ function initialization(element_name) {
         },
     });
     $('#group_library_table').bootstrapTable('showLoading');
-    
+
+    loadToolLibraryTable(device_number);
+    loadGroupsData(device_number);
+
     // Восстанавливаем выбранную вкладку из localStorage
     // Используем setTimeout, чтобы убедиться, что все элементы DOM готовы
     setTimeout(() => {
@@ -70,3 +74,15 @@ function initialization(element_name) {
 
 // Делаем функцию доступной глобально
 window.initialization = initialization;
+
+
+// Функция для загрузки данных и создания таблицы
+async function loadToolLibraryTable(device_number) {
+    const jsonToolLibrary = await fetchToolLibraryData(device_number);
+    if (jsonToolLibrary) {
+        createTableToolLibrary(jsonToolLibrary);
+    } else {
+        console.error("Не удалось загрузить данные для таблицы.");
+    }
+}
+window.loadToolLibraryTable = loadToolLibraryTable;
