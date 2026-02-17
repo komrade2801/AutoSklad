@@ -146,7 +146,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
                 if isinstance(arg, tuple):
                     user = arg[0]
                     logger.debug("user as tuple: %s", user)
-                    self.lbl_name.setText(f"{user.family} {user.second_name[0]}. {user.first_name[0]}.")
+                    self.lbl_name.setText(f"{user.family} {user.first_name[0]}. {user.second_name[0]}.")
                 elif isinstance(arg, str) and arg.strip():
                     print(f"user as str: {arg}")
                     full = arg.split(" ")

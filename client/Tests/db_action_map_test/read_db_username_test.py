@@ -49,7 +49,7 @@ def test_read_db_username_success(mapper, fake_user):
     result = mapper.read_db_username(fake_user.code)
 
     # Проверяем, что результат совпадает с ожидаемым
-    expected_username = f"{fake_user.first_name} {fake_user.second_name} {fake_user.family}".strip()
+    expected_username = f"{fake_user.family} {fake_user.first_name} {fake_user.second_name}".strip()
     assert result == expected_username
 
     # Проверяем, что метод был вызван с правильным аргументом

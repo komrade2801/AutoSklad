@@ -279,17 +279,17 @@ def execute():
 
         test_users = [
             {'barcode': 4850357853783, 'code': 1111, 'first_name': 'Максим',
-                'second_name': 'Кудрявцев', 'family': 'Иванович', 'password': 1111, 'role_id': 1},
+                'second_name': 'Иванович', 'family': 'Кудрявцев', 'password': 1111, 'role_id': 1},
             {'barcode': 5879166479259, 'code': 2222, 'first_name': 'Юлия',
-                'second_name': 'Пестова', 'family': 'Игоревна', 'password': 2222, 'role_id': 2},
+                'second_name': 'Игоревна', 'family': 'Пестова', 'password': 2222, 'role_id': 2},
             {'barcode': 4736941559234, 'code': 3333, 'first_name': 'Валерий',
-                'second_name': 'Комаров', 'family': 'Александрович', 'password': 3333, 'role_id': 3},
+                'second_name': 'Александрович', 'family': 'Комаров', 'password': 3333, 'role_id': 3},
             {'barcode': 4589949233008, 'code': 4444, 'first_name': 'Милица',
-                'second_name': 'Устинова', 'family': 'Максимовна', 'password': 4444, 'role_id': 4},
+                'second_name': 'Максимовна', 'family': 'Устинова', 'password': 4444, 'role_id': 4},
             {'barcode': 7185212918381, 'code': 5555, 'first_name': 'Елена',
-                'second_name': 'Никифорова', 'family': 'Дмитриевна', 'password': 5555, 'role_id': 5},
+                'second_name': 'Дмитриевна', 'family': 'Никифорова', 'password': 5555, 'role_id': 5},
             {'barcode': 2586362915568, 'code': 6666, 'first_name': 'Игнатий',
-                'second_name': 'Фомичев', 'family': 'Игоревич', 'password': 6666, 'role_id': 6}
+                'second_name': 'Игоревич', 'family': 'Фомичев', 'password': 6666, 'role_id': 6}
         ]
 
         for user in test_users:

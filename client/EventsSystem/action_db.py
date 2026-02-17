@@ -1025,7 +1025,7 @@ class ActionMapper:
 
                 return {
                     "datetime": history.datetime,
-                    "user_name": f"{user.second_name} {user.first_name} {user.family}",
+                    "user_name": f"{user.family} {user.first_name} {user.second_name}",
                     # "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
                     # "user_family": self.e_user.get_user_by_id(history.user_id).family,
                     "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
@@ -1730,7 +1730,7 @@ class ActionMapper:
                 return None  # Пользователь не найден
 
             # Формирование имени пользователя (username)
-            username = f"{user.first_name} {user.second_name} {user.family}".strip()
+            username = f"{user.family} {user.first_name} {user.second_name}".strip()
             logger.debug(f"read_db_username. Found username: {username}")
             return username if username else None  # Возвращает None, если username пустой
 
