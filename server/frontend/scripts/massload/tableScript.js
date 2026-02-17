@@ -58,6 +58,14 @@ function sumToolsFormatter(value, row, index, field) {
         event.stopPropagation();
         const amount = parseInt(input.value);
         if (validateInput(amount, max)) {
+            // Проверяем доступность свободных ячеек перед загрузкой
+            const currentLoadAmount = window.getTotalToolsToLoad();
+
+            if (window.appData.freeCells < amount + currentLoadAmount) {
+                alert(`Недостаточно свободных ячеек. Доступно: ${window.appData.freeCells}, требуется: ${amount + currentLoadAmount}`);
+                return;
+            }
+
             performMassLoad(row.id, row.name, max, amount);
         }
     });
@@ -154,6 +162,14 @@ function openModalCell(toolId, toolName, toolSum) {
         event.stopPropagation();
         const amount = parseInt(input.value);
         if (validateInput(amount, max)) {
+            // Проверяем доступность свободных ячеек перед загрузкой
+            const currentLoadAmount = window.getTotalToolsToLoad();
+
+            if (window.appData.freeCells < amount + currentLoadAmount) {
+                alert(`Недостаточно свободных ячеек. Доступно: ${window.appData.freeCells}, требуется: ${amount + currentLoadAmount}`);
+                return;
+            }
+
             performMassLoad(toolId, toolName, toolSum, amount);
             show('none');  // Закрыть модальное окно
         }

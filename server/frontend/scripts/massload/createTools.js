@@ -5,6 +5,18 @@ import { updateJsonHistoryLoad, createHistory } from './history_load.js';
 
 //let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
 
+// Вспомогательная функция для подсчета общего количества инструментов к загрузке
+function getTotalToolsToLoad() {
+    if (!window.appData.history || !window.appData.history.operation) {
+        return 0;
+    }
+    return Object.values(window.appData.history.operation)
+        .reduce((total, operation) => total + operation.sum, 0);
+}
+
+// Делаем функцию доступной глобально
+window.getTotalToolsToLoad = getTotalToolsToLoad;
+
 export function createTools() {
     if (window.appData.tools != undefined) {
         // Заменяем "-" на символ бесконечности перед загрузкой в таблицу
@@ -26,16 +38,10 @@ function performMassLoad(toolId, toolName, toolSum, amount) {
 
 //    const freeCells = getFreeCells();
 
-    var currentLoadAmount = 0;
-
-    if (window.appData.history.operation) {
-        currentLoadAmount = Object.keys(window.appData.history.operation).length;
-    } else {
-        currentLoadAmount = 0;
-    }
+    const currentLoadAmount = getTotalToolsToLoad();
 
     if (window.appData.freeCells < amount + currentLoadAmount) {
-        console.warn(`❌ Mass load failed: Requested ${amount} cells, only ${freeCells.length} free cells available`);
+        console.warn(`❌ Mass load failed: Requested ${amount} cells, only ${window.appData.freeCells} free cells available`);
         alert('Не хватает свободных ячеек.');
         return;
     }
