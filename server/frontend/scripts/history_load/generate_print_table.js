@@ -100,6 +100,16 @@ export function printElement(elem) {
                     .logo {
                         display: flex;
                         align-items: center;
+                        margin-bottom: 20px;
+                    }
+
+                    .logo h2 {
+                        margin: 0;
+                        flex: 1;
+                        text-align: center;
+                        color: rgb(78,155,229);
+                        font-size: 24px;
+                        font-weight: bold;
                     }
 
                     .a4 {
@@ -151,8 +161,8 @@ export function printElement(elem) {
             <body>
                 <div id="a4" class="a4">
                     <div class="logo">
-                      <img class="d-flex" src="../assets/img/logo.png" style="height: 100px;margin-right: 10px;margin-left: 10px;">
-                      <span style="color: rgb(78,155,229);font-size: 22px;font-weight: bold;margin-right: 10px;">Завод Контакт</span>
+                      <img class="d-flex" src="../assets/img/logo.png" style="height: 50px;margin-right: 10px;">
+                      <h2>История загрузок</h2>
                     </div>
                     ${elem.innerHTML}
                 </div>

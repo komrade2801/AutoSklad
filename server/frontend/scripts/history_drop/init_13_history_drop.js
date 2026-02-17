@@ -104,3 +104,4 @@ function printMassDrop(e) {
 }
 
 window.printMassDrop = printMassDrop;
+window.printMassLoad = printMassDrop; // Для совместимости с HTML

@@ -1,31 +1,14 @@
 export function generatePrintTable() {
-    console.log("generatePrintTable")
-    console.log(window.appData.history_drops)
-    const operations = window.appData.history_drops.operation;
+    console.log("generatePrintTable for operations")
+    console.log(window.appData.jsonHistoryOperation)
+    const operations = window.appData.jsonHistoryOperation.operation;
     if (!operations) return;
 
-    const rows = [];
+    // 1. Преобразуем операции в массив, если это объект
+    const rows = Array.isArray(operations) ? operations : Object.values(operations);
 
-    for (const operationKey in operations) {
-        const op = operations[operationKey];
-        console.log(op)
-        const status = op.status.trim().toLowerCase();
-        if (status === "на выгрузке" || status === "mass_drop_init" || status === "объявлена массовая выгрузка") {
-            const { cells = [], tools = [], plans = [] } = op;
-            const count = cells.length;
-
-            for (let i = 0; i < count; i++) {
-              rows.push({
-                cell: cells[i],
-                tool: tools[i] ?? '—',
-                plan: plans[i] ?? '—',
-              });
-            }
-        }
-    }
-
-    // 2. Сортируем по cell (числово)
-    rows.sort((a, b) => Number(a.cell) - Number(b.cell));
+    // 2. Сортируем по дате (новые сверху)
+    rows.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     // 3. Собираем HTML
     let tableHTML = `
@@ -33,20 +16,26 @@ export function generatePrintTable() {
              style="border-collapse:collapse; width:100%;">
         <thead>
           <tr>
-            <th>Номер ячейки</th>
+            <th>Дата</th>
+            <th>Название операции</th>
             <th>Инструмент</th>
             <th>Чертёж</th>
+            <th>Пользователь</th>
+            <th>Аппарат</th>
           </tr>
         </thead>
         <tbody>
     `;
 
-    rows.forEach(({ cell, tool, plan }) => {
+    rows.forEach((operation) => {
       tableHTML += `
         <tr>
-          <td>${cell}</td>
-          <td>${tool}</td>
-          <td>${plan}</td>
+          <td>${operation.date || '—'}</td>
+          <td>${operation.name_operation || '—'}</td>
+          <td>${operation.tool || '—'}</td>
+          <td>${operation.plan || '—'}</td>
+          <td>${operation.user || '—'}</td>
+          <td>${operation.device || '—'}</td>
         </tr>
       `;
     });
@@ -61,7 +50,7 @@ export function generatePrintTable() {
     if (printArea) {
       printArea.innerHTML = tableHTML;
     }
-}
+  }
 
 export function printElement(elem) {
     const width = 900;
@@ -70,7 +59,7 @@ export function printElement(elem) {
     const left = (window.screen.width / 2) - (width / 2);
     const top = (window.screen.height / 2) - (height / 2);
 
-    const printWindow = window.open('', '_blank', 'width=${width},height=${height},top=${top},left=${left}');
+    const printWindow = window.open('', '_blank', `width=${width},height=${height},top=${top},left=${left}`);
 
     printWindow.document.write(`
         <html>
@@ -160,7 +149,7 @@ export function printElement(elem) {
                 <div id="a4" class="a4">
                     <div class="logo">
                       <img class="d-flex" src="../assets/img/logo.png" style="height: 50px;margin-right: 10px;">
-                      <h2>История выгрузок</h2>
+                      <h2>История операций</h2>
                     </div>
                     ${elem.innerHTML}
                 </div>

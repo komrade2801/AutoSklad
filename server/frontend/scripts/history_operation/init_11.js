@@ -3,6 +3,7 @@
 //import { populateOperationTypeDropdown } from './filter_handler.js'
 import { createTableHistoryOperation } from './createTableHistoryOperation.js'
 import { DoOnCellHtmlData } from './createTableHistoryOperation.js'
+import { generatePrintTable, printElement } from './generate_print_table.js'
 
 // import { jsonHistoryOperation } from '../../JSONs/history_operation.js'
 
@@ -125,7 +126,13 @@ window.initialization = initialization;
 window.alignToolbar = alignToolbar;
 
 function printMassOperation(e) {
-    console.log('Print function called for history operations');
+    // Генерируем таблицу
+    generatePrintTable();
+
+    // Печатаем только содержимое printArea
+    let print_area = document.getElementById('printArea')
+    console.log(print_area);
+    printElement(print_area);
 }
 
 window.printMassOperation = printMassOperation;
