@@ -33,8 +33,8 @@ class MockSerialManager(threading.Thread, QObject):
         # имитируем ответ контроллера: $1 -> $2
         self.signal_received.emit('command_is_send')
         # задержка 20 сек для имитации работы Arduino (открытие ячейки)
-        print("[MockSerial] Ожидание 20 сек (имитация работы Arduino)...")
-        time.sleep(20)
+        print("[MockSerial] Ожидание 2 сек (имитация работы Arduino)...")
+        time.sleep(2)
         self.signal_received.emit('command_ok')
         print("[MockSerial] Команда выполнена успешно")
 
