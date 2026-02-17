@@ -49,7 +49,7 @@ class EngineHistoryOperation:
         if record.user_id:
             user = self.user_crud.get(record.user_id)
             if user:
-                user_name = f"{user.second_name} {user.first_name}."
+                user_name = f"{user.family} {user.first_name[0]}. {user.second_name[0]}."
             else:
                 user_name = "Unknown"
         else:

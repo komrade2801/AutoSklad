@@ -183,7 +183,7 @@ def get_history_drops(db: Session = Depends(get_db)):
             # 6) Пользователь: из связанной истории
             history = hist_crud.get(latest_op.history_id) if latest_op and latest_op.history_id else None
             user = user_crud.get(history.user_id) if history else None
-            user_name = f"{user.family} {user.first_name}" if user else "—"
+            user_name = f"{user.family} {user.first_name[0]}. {user.second_name[0]}." if user else "—"
 
             # 5) Статус: из самой операции
             status = stat_crud.get(latest_op.status_id) if history else None
