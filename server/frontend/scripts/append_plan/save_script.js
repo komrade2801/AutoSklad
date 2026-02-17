@@ -27,7 +27,7 @@
     })
     .catch(err => {
       console.error('Ошибка при сохранении чертежа/массовой загрузки:', err);
-      alert('Ошибка при сохранении: ' + (err.message || err));
+      showToast('Ошибка при сохранении: ' + (err.message || err), 'danger');
       if (saveButton) {
         saveButton.disabled = false;
         saveButton.textContent = 'Сохранить';
@@ -58,7 +58,7 @@
       const createMassLoad = createMassLoadCheckbox ? Boolean(createMassLoadCheckbox.checked) : true;
 
       if (nameValue === '') {
-        alert('Название чертежа не может быть пустым');
+        showToast('Название чертежа не может быть пустым', 'warning');
         document.getElementById('nameInput').focus();
         saveButton.disabled = false;
         saveButton.textContent = 'Сохранить';
@@ -66,7 +66,7 @@
       }
 
       if (designationValue === '') {
-        alert('Номер чертежа не может быть пустым');
+        showToast('Номер чертежа не может быть пустым', 'warning');
         document.getElementById('designationInput').focus();
         saveButton.disabled = false;
         saveButton.textContent = 'Сохранить';
@@ -77,7 +77,7 @@
       console.log(plan_tools);
 
       if (plan_tools.length === 0) {
-        alert('Необходимо выбрать инструменты');
+        showToast('Необходимо выбрать инструменты', 'warning');
         saveButton.disabled = false;
         saveButton.textContent = 'Сохранить';
         return;

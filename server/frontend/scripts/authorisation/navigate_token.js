@@ -68,7 +68,7 @@ function loginUser() {
   })
   .catch(error => {
     console.error('Ошибка авторизации:', error);
-    alert(error.message);
+    showToast(error.message, 'danger');
   });
 }
 
@@ -84,6 +84,61 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     document.getElementById('login').addEventListener('click', loginUser);
   } catch (error) {
-    
-  }  
+
+  }
 });
+
+// Функция для показа toast уведомлений
+function showToast(message, type = 'info', title = '') {
+    // Создаем контейнер для toast, если его нет
+    let toastContainer = document.querySelector('.toast-container.position-fixed.top-0.end-0');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+
+    // Создаем toast элемент
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+
+    // Определяем заголовок в зависимости от типа
+    const defaultTitles = {
+        'success': 'Успех',
+        'danger': 'Ошибка',
+        'warning': 'Предупреждение',
+        'info': 'Информация'
+    };
+
+    const toastTitle = title || defaultTitles[type] || 'Уведомление';
+
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <strong>${toastTitle}:</strong> ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+        </div>
+    `;
+
+    // Добавляем toast в контейнер
+    toastContainer.appendChild(toastEl);
+
+    // Показываем toast
+    const toast = new bootstrap.Toast(toastEl, {
+        delay: 5000 // Автоматическое скрытие через 5 секунд
+    });
+    toast.show();
+
+    // Удаляем toast из DOM после скрытия
+    toastEl.addEventListener('hidden.bs.toast', () => {
+        toastEl.remove();
+    });
+}
+
+// Делаем функцию глобальной
+window.showToast = showToast;

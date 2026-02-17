@@ -72,7 +72,7 @@ function sumToolsFormatter(value, row, index, field) {
 // Функция валидации ввода
 function validateInput(value, maxSum) {
     if (!Number.isInteger(value) || value <= 0 || value > maxSum) {
-        alert('Введено некорректное число. Должно быть целое положительное число, не превышающее доступное количество.');
+        showToast('Введено некорректное число. Должно быть целое положительное число, не превышающее доступное количество.', 'warning');
         return false;
     }
     return true;

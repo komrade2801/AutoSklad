@@ -531,19 +531,19 @@ async function saveSetting(settingKey, newValue) {
 
 async function saveAllSettings() {
     if (factoryResetLocked) {
-        alert('Сохранение недоступно во время сброса к заводским настройкам.');
+        showToast('Сохранение недоступно во время сброса к заводским настройкам.', 'warning');
         return;
     }
 
     if (pendingChanges.size === 0) {
-        alert('Нет изменений для сохранения.');
+        showToast('Нет изменений для сохранения.', 'info');
         return;
     }
 
     try {
         validatePendingChanges();
     } catch (error) {
-        alert(error.message);
+        showToast(error.message, 'danger');
         return;
     }
 
@@ -569,13 +569,13 @@ async function saveAllSettings() {
         // Перезапуск только если есть настройки, требующие перезапуска
         if (requiresRestart.size > 0) {
             await requestApplicationRestart();
-            alert('Настройки сохранены. Приложение перезапускается...');
+            showToast('Настройки сохранены. Приложение перезапускается...', 'success');
         } else {
-            alert('Настройки успешно сохранены.');
+            showToast('Настройки успешно сохранены.', 'success');
         }
     } catch (error) {
         console.error('Error saving settings:', error);
-        alert('Error saving settings: ' + error.message);
+        showToast('Error saving settings: ' + error.message, 'danger');
     } finally {
         setSavingState(false);
         updateSaveButtonState();
@@ -650,7 +650,7 @@ async function requestApplicationRestart() {
         return response.json();
     } catch (error) {
         console.error('Не удалось инициировать перезапуск приложения:', error);
-        alert('Не удалось инициировать перезапуск: ' + error.message);
+        showToast('Не удалось инициировать перезапуск: ' + error.message, 'danger');
     }
 }
 

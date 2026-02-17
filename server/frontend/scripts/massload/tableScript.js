@@ -62,7 +62,7 @@ function sumToolsFormatter(value, row, index, field) {
             const currentLoadAmount = window.getTotalToolsToLoad();
 
             if (window.appData.freeCells < amount + currentLoadAmount) {
-                alert(`Недостаточно свободных ячеек. Доступно: ${window.appData.freeCells}, требуется: ${amount + currentLoadAmount}`);
+                showToast(`Недостаточно свободных ячеек. Доступно: ${window.appData.freeCells}, требуется: ${amount + currentLoadAmount}`, 'warning');
                 return;
             }
 
@@ -80,7 +80,7 @@ function sumToolsFormatter(value, row, index, field) {
 // Функция валидации ввода
 function validateInput(value, maxSum) {
     if (!Number.isInteger(value) || value <= 0 || value > maxSum) {
-        alert('Введено некорректное число. Должно быть целое положительное число, не превышающее доступное количество.');
+        showToast('Введено некорректное число. Должно быть целое положительное число, не превышающее доступное количество.', 'warning');
         return false;
     }
     return true;
@@ -166,7 +166,7 @@ function openModalCell(toolId, toolName, toolSum) {
             const currentLoadAmount = window.getTotalToolsToLoad();
 
             if (window.appData.freeCells < amount + currentLoadAmount) {
-                alert(`Недостаточно свободных ячеек. Доступно: ${window.appData.freeCells}, требуется: ${amount + currentLoadAmount}`);
+                showToast(`Недостаточно свободных ячеек. Доступно: ${window.appData.freeCells}, требуется: ${amount + currentLoadAmount}`, 'warning');
                 return;
             }
 

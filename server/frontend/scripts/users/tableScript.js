@@ -197,7 +197,7 @@ function saveUser() {
 
         // Валидация
         if (!userObj.family || !userObj.first_name || !userObj.second_name || !userObj.role_id) {
-            alert('Пожалуйста, заполните все поля и выберите должность');
+            showToast('Пожалуйста, заполните все поля и выберите должность', 'warning');
             return;
         }
 
@@ -209,7 +209,7 @@ function saveUser() {
         show_edit('none');
     } catch (err) {
         console.error(err);
-        alert('Ошибка при сохранении пользователя');
+        showToast('Ошибка при сохранении пользователя', 'danger');
     }
 }
 

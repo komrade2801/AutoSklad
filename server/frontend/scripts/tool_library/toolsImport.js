@@ -36,7 +36,7 @@ function doImportTools() {
     })
     .catch(error => {
         console.error('Ошибка при сохранении данных:', error);
-        alert();
+        showToast('Неизвестная ошибка при импорте', 'danger');
         // Обработка ошибок
     });
 }

@@ -32,7 +32,7 @@ export function saveHistoryAsMassLoad(deviceNumber) {
   })
   .catch(err => {
     console.error('Ошибка при сохранении истории:', err);
-    alert('Не удалось сохранить историю:\n' + err.message);
+    showToast('Не удалось сохранить историю: ' + err.message, 'danger');
   });
 }
 

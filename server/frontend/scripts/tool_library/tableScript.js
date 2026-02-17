@@ -40,7 +40,7 @@ async function loadToolData(toolTypeId) {
         window.currentToolTypeId = toolTypeId;
     } catch (error) {
         console.error('Ошибка при загрузке данных инструмента:', error);
-        alert('Ошибка при загрузке данных инструмента');
+        showToast('Ошибка при загрузке данных инструмента', 'danger');
     }
 }
 
@@ -92,25 +92,25 @@ function collectDataAndSend() {
 
     // Валидация обязательных полей
     if (isNaN(groupId)) {
-        alert('Выбрана некорректная группа инструментов');
+        showToast('Выбрана некорректная группа инструментов', 'warning');
         return;
     }
 
     if (groupId === 0) {
-        alert('Необходимо выбрать группу инструмента');
+        showToast('Необходимо выбрать группу инструмента', 'warning');
         groupInput.focus();
         return;
     }
 
     if (toolName === '') {
-        alert('Наименование инструмента не может быть пустым');
+        showToast('Наименование инструмента не может быть пустым', 'warning');
         toolNameInput.focus();
         return;
     }
 
     if (useCount) {
         if (isNaN(count) || count <= 0) {
-            alert('Количество инструмента должно быть положительным числом');
+            showToast('Количество инструмента должно быть положительным числом', 'warning');
             countInput.focus();
             return;
         }
@@ -184,7 +184,7 @@ function collectDataAndSend() {
 // Функция валидации ввода
 function validateInput(value, maxSum) {
     if (!Number.isInteger(value) || value <= 0 || value > maxSum) {
-        alert('Введено некорректное число. Должно быть целое положительное число, не превышающее доступное количество.');
+        showToast('Введено некорректное число. Должно быть целое положительное число, не превышающее доступное количество.', 'warning');
         return false;
     }
     return true;
@@ -206,7 +206,7 @@ async function editTool(row) {
          const checkData = await checkResponse.json();
 
          if (checkData.is_busy) {
-             alert("Данный инструмент используется в вендинге.\nРедактировать можно только свободный инструмент.\n" + checkData.message);
+             showToast("Данный инструмент используется в вендинге. Редактировать можно только свободный инструмент. " + checkData.message, 'warning');
              return;
          }
 
@@ -222,7 +222,7 @@ async function editTool(row) {
 
      } catch (error) {
          console.error('Ошибка при проверке инструмента:', error);
-         alert('Ошибка при проверке инструмента');
+         showToast('Ошибка при проверке инструмента', 'danger');
      }
 }
 
@@ -246,12 +246,12 @@ async function deleteTool(row) {
 
         if (!deleteResponse.ok) {
             const errorData = await deleteResponse.json();
-            alert(errorData.detail || "Ошибка при удалении инструмента");
+            showToast(errorData.detail || "Ошибка при удалении инструмента", 'danger');
             return;
         }
 
         const result = await deleteResponse.json();
-        alert(result.message || "Инструмент успешно удален");
+        showToast(result.message || "Инструмент успешно удален", 'success');
 
         // Перезагружаем страницу для обновления таблицы
         let device_number = 1;
@@ -264,7 +264,7 @@ async function deleteTool(row) {
 //        window.location.href = full_url;
     } catch (error) {
         console.error('Ошибка при удалении инструмента:', error);
-        alert('Ошибка при удалении инструмента');
+        showToast('Ошибка при удалении инструмента', 'danger');
     }
 }
 
@@ -323,7 +323,7 @@ async function loadGroupData(groupId) {
         window.currentGroupId = groupId;
     } catch (error) {
         console.error('Ошибка при загрузке данных группы:', error);
-        alert('Ошибка при загрузке данных группы');
+        showToast('Ошибка при загрузке данных группы', 'danger');
     }
 }
 
@@ -349,12 +349,12 @@ function collectDataAndSendGroup() {
 
     // Валидация обязательных полей
     if (isNaN(parentGroupId)) {
-        alert('Выбрана некорректная родительская группа инструментов');
+        showToast('Выбрана некорректная родительская группа инструментов', 'warning');
         return;
     }
 
     if (groupName === '') {
-        alert('Наименование группы не может быть пустым');
+        showToast('Наименование группы не может быть пустым', 'warning');
         groupNameInput.focus();
         return;
     }
@@ -425,7 +425,7 @@ async function editGroup(row) {
          const checkData = await checkResponse.json();
 
          if (checkData.is_busy) {
-             alert("Данный инструмент используется в вендинге.\nРедактировать можно только свободный инструмент.");
+             showToast("Данный инструмент используется в вендинге. Редактировать можно только свободный инструмент.", 'warning');
              return;
          }
 
@@ -440,7 +440,7 @@ async function editGroup(row) {
 //         window.location.href = full_url;
      } catch (error) {
          console.error('Ошибка при проверке группы:', error);
-         alert('Ошибка при проверке группы');
+         showToast('Ошибка при проверке группы', 'danger');
      }
 }
 
@@ -464,12 +464,12 @@ async function deleteGroup(row) {
 
          if (!deleteResponse.ok) {
              const errorData = await deleteResponse.json();
-             alert(errorData.detail || "Ошибка при удалении группы");
+             showToast(errorData.detail || "Ошибка при удалении группы", 'danger');
              return;
          }
 
          const result = await deleteResponse.json();
-         alert(result.message || "Группа успешно удалена");
+         showToast(result.message || "Группа успешно удалена", 'success');
 
 
         let device_number = 1;
@@ -483,7 +483,7 @@ async function deleteGroup(row) {
 //         window.location.href = full_url;
      } catch (error) {
          console.error('Ошибка при удалении группы:', error);
-         alert('Ошибка при удалении группы');
+         showToast('Ошибка при удалении группы', 'danger');
      }
 }
 

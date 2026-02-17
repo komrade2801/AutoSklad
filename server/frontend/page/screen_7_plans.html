@@ -26,6 +26,7 @@
     <script src="../assets/tableExport.jquery.plugin/libs/pdfmake/vfs_fonts.js"></script>
     <script src="../assets/bootstrap-table/1.25.0/extensions/export/bootstrap-table-export.js"></script>
 
+    <script src="../scripts/authorisation/navigate_token.js"></script>
     <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
     <link rel="stylesheet" href="../style/titles.css">
@@ -203,7 +204,7 @@
                                          const checkData = await checkResponse.json();
 
                                          if (checkData.is_busy) {
-                                             alert("Данный инструмент используется в вендинге.\nРедактировать можно только свободный инструмент.\n" + checkData.message);
+                                             showToast("Данный инструмент используется в вендинге. Редактировать можно только свободный инструмент. " + checkData.message, 'warning');
                                              return;
                                          }
 
@@ -215,7 +216,7 @@
                                          window.location.href = full_url;
                                      } catch (error) {
                                          console.error('Ошибка при проверке инструмента:', error);
-                                         alert('Ошибка при проверке инструмента');
+                                         showToast('Ошибка при проверке инструмента', 'danger');
                                      }
                                  });
 
@@ -249,12 +250,12 @@
 
                                          if (!deleteResponse.ok) {
                                              const errorData = await deleteResponse.json();
-                                             alert(errorData.detail || "Ошибка при удалении инструмента");
+                                             showToast(errorData.detail || "Ошибка при удалении инструмента", 'danger');
                                              return;
                                          }
 
                                          const result = await deleteResponse.json();
-                                         alert(result.message || "Инструмент успешно удален");
+                                         showToast(result.message || "Инструмент успешно удален", 'success');
 
                                          // Перезагружаем страницу для обновления таблицы
                                          let url = '../screen_15_tool_library.html';
@@ -264,7 +265,7 @@
                                          window.location.href = full_url;
                                      } catch (error) {
                                          console.error('Ошибка при удалении инструмента:', error);
-                                         alert('Ошибка при удалении инструмента');
+                                         showToast('Ошибка при удалении инструмента', 'danger');
                                      }
                                  });
 

@@ -42,7 +42,7 @@ function performMassLoad(toolId, toolName, toolSum, amount) {
 
     if (window.appData.freeCells < amount + currentLoadAmount) {
         console.warn(`❌ Mass load failed: Requested ${amount} cells, only ${window.appData.freeCells} free cells available`);
-        alert('Не хватает свободных ячеек.');
+        showToast('Не хватает свободных ячеек.', 'warning');
         return;
     }
 

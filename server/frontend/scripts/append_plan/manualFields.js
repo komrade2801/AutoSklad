@@ -69,7 +69,7 @@ function fillManualFields(elem) {
           })
           .catch(err => {
             console.error('Ошибка при декодировании:', err);
-            alert('Ошибка при декодировании QR-кода: ' + err.message);
+            showToast('Ошибка при декодировании QR-кода: ' + err.message, 'danger');
           });
     }
 }
