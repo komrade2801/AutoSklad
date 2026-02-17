@@ -3,6 +3,48 @@ function sumFormatter(value, row, index, field) {
     return (value === '-' || value === 0 || value === '0') ? '∞' : value;
 }
 
+// Универсальная функция для модального подтверждения удаления
+function showDeleteConfirm(message) {
+    return new Promise((resolve) => {
+        // Устанавливаем текст сообщения
+        document.getElementById('deleteConfirmMessage').textContent = message;
+
+        // Показываем модальное окно
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+
+        // Обработчики кнопок
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const cancelBtn = document.getElementById('cancelDeleteBtn');
+
+        const handleConfirm = () => {
+            modal.hide();
+            cleanup();
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            modal.hide();
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+        };
+
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+
+        // Обработчик закрытия модального окна по крестику или клику вне
+        document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', () => {
+            cleanup();
+            resolve(false);
+        }, { once: true });
+    });
+}
+
 // Функция для загрузки данных инструмента при редактировании
 async function loadToolData(toolTypeId) {
     try {
@@ -234,7 +276,8 @@ async function deleteTool(row) {
     }
 
     // Подтверждение удаления
-    if (!confirm("Вы уверены, что хотите удалить этот инструмент?")) {
+    const confirmed = await showDeleteConfirm("Вы уверены, что хотите удалить этот инструмент?");
+    if (!confirmed) {
         return;
     }
 
@@ -452,7 +495,8 @@ async function deleteGroup(row) {
      }
 
      // Подтверждение удаления
-     if (!confirm("Вы уверены, что хотите удалить эту группу?")) {
+     const confirmed = await showDeleteConfirm("Вы уверены, что хотите удалить эту группу?");
+     if (!confirmed) {
          return;
      }
 
