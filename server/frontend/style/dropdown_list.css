@@ -24,3 +24,48 @@
     border-radius: 5px;/**/
     padding: 0px;
 }
+
+.tableFixHead {
+  overflow-y: auto;
+  height: 200px;
+}
+
+.tableFixHead table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tableFixHead th,
+.tableFixHead td {
+  padding: 8px 16px;
+}
+
+.tableFixHead th {
+  position: sticky;
+  top: 57px;
+  background: #fff;
+}
+
+.tableFixHead .fixed-table-body {
+    overflow: visible!important;
+}
+
+.tableFixHead .th-inner {
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+    border-color: inherit;
+}
+
+.tableFixHead .fixed-table-toolbar {
+  position: sticky;
+  top: 0px;
+  background: #fff;
+  z-index: 999;
+}
+
+.tableFixHead .fixed-table-pagination {
+  position: sticky;
+  bottom: 0px;
+  background: #fff;
+}
+

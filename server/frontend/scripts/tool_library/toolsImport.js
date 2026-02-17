@@ -44,8 +44,13 @@ function doImportTools() {
 function changeTab(idToShow, idToHide) {
     elemToShow = $(idToShow);
     elemToHide = $(idToHide);
-    elemToShow.show();
     elemToHide.hide();
+    elemToShow.show();
+
+    $('#tool_library_table').bootstrapTable('refreshOptions', {'height': 100});
+    $('#group_library_table').bootstrapTable('refreshOptions', {'height': 100});
+    $('#tool_library_table').bootstrapTable('refreshOptions', {'height': $("#tool_library_div").height()});
+    $('#group_library_table').bootstrapTable('refreshOptions', {'height': $("#group_library_div").height()});
 }
 
 // Делаем функцию доступной глобально

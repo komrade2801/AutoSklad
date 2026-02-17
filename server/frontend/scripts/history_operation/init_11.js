@@ -65,7 +65,7 @@ function initialization(element_name) {
             },
             onCellHtmlData: DoOnCellHtmlData
         },
-        height: $("#history_operation_div").height()
+//        height: $("#history_operation_div").height()
     });
     $('#operation_history_table').bootstrapTable('showLoading');
 

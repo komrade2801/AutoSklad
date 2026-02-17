@@ -23,7 +23,7 @@
 <!--    <link rel="stylesheet" href="../assets/jquery-resizable-columns/jquery.resizableColumns.css">-->
 <!--    <script src="../assets/jquery-resizable-columns/jquery.resizableColumns.js"></script>-->
 <!--    <script src="../assets/bootstrap-table/1.25.0/extensions/resizable/bootstrap-table-resizable.js"></script>-->
-<!--    <script src="../assets/moment/moment.js"></script>-->
+    <script src="../assets/moment/moment.js"></script>
 
     <link rel="stylesheet"
           href="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.css">
@@ -61,7 +61,7 @@
         <div id="column-1" class="d-flex"
              style="flex-direction: column; width: 100%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
 
-            <div id="history_operation_div" class="panel-body"
+            <div id="history_operation_div" class="panel-body tableFixHead"
                  style="width: 100%; height: 100%; display:block;">
                 <table
                     id='operation_history_table'
@@ -73,11 +73,10 @@
                     data-export-types="['json', 'csv', 'xlsx', 'pdf']"
                     data-pagination='true'
                     data-side-pagination='client'
-                    data-row-style='rowStyle'
                     data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
                     data-page-size="25"
-                    data-filter-control="true"
                     data-toolbar="#customToolsToolbar"
+                    data-filter-control="true"
                     >
                         <thead>
                         <tr>
@@ -86,7 +85,7 @@
                             </th>
                             <th data-field='name_operation' data-sortable='true' data-filter-control="select"
                                 data-filter-data="func:getStatusDescriptions" data-search-formatter="true"
-                                data-formatter="statusDescriptionFormatter"><span
+                                data-formatter="statusDescriptionFormatter" data-sorter='statusDescriptionSorter'><span
                                     title="Наименование операции">Операция</span></th>
                             <th data-field='description'><span title="Описание операции">Описание</span></th>
                             <th data-field='tool' data-sortable='true' data-filter-control="input"><span
@@ -127,6 +126,10 @@
                             }
 
                             return 0;
+                        }
+
+                        function statusDescriptionSorter(a, b, c, d) {
+                            return c.description.localeCompare(d.description);
                         }
 
                         function getStatusDescriptions() {
