@@ -64,8 +64,16 @@ function initialization(element_name) {
             },
             onCellHtmlData: DoOnCellHtmlData
         },
+        height: $("#history_operation_div").height()
     });
     $('#operation_history_table').bootstrapTable('showLoading');
+
+    // Выравниваем тулбар после загрузки данных
+    $('#operation_history_table').on('load-success.bs.table', function() {
+        if (window.alignToolbar) {
+            window.alignToolbar('#operation_history_table');
+        }
+    });
 
     initData(url_status).then(data => {
         if (data) {
@@ -91,5 +99,33 @@ function initialization(element_name) {
     });
 }
 
+// Функция для выравнивания тулбара по заголовку таблицы
+function alignToolbar(tableSelector) {
+    const $table = $(tableSelector);
+    const $bootstrapTable = $table.closest('.bootstrap-table');
+    const $toolbar = $bootstrapTable.find('.fixed-table-toolbar');
+    const $container = $bootstrapTable.find('.fixed-table-body');
+
+    if ($container.length && $toolbar.length) {
+        // Проверяем, есть ли скроллбар
+        const tableHeight = $container.find('.table').height();
+        const containerHeight = $container.height();
+        const hasScrollbar = tableHeight > containerHeight;
+
+        if (hasScrollbar) {
+            $toolbar.css('margin-right', '17px');
+        } else {
+            $toolbar.css('margin-right', '0');
+        }
+    }
+}
+
 // Делаем функцию доступной глобально
 window.initialization = initialization;
+window.alignToolbar = alignToolbar;
+
+function printMassOperation(e) {
+    console.log('Print function called for history operations');
+}
+
+window.printMassOperation = printMassOperation;

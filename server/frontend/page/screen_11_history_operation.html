@@ -52,26 +52,29 @@
     <div class="d-flex" style="height: calc(100% - 120px); margin-top:10px; border-top: 2px solid rgb(78,155,229);">
     <div class="flex-column nav-pills" id="v-pills-tab" aria-orientation="vertical" style="width: 235px; padding-left: 10px; margin-top: 10px;">
     </div>
-    <div class="tab-pane fade show active d-flex" id="v-pills-page_15_mass_load" style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
-        <div id="column-1" class="d-flex" style="flex-direction: column; width: 100%; height: 100%; padding: 0 10px 10px 10px;">
-            <div class="panel-body">
-              <div id="operation_history_div" class="row" style="display:block;">
+    <div class="tab-pane fade show active d-flex"
+         style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
+        <div id="printArea" style="display:none;"></div>
+        <div id="column-1" class="d-flex"
+             style="flex-direction: column; width: 100%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
+
+            <div id="history_operation_div" class="panel-body"
+                 style="width: 100%; height: 100%; display:block;">
                 <table
                     id='operation_history_table'
                     data-locale="ru-RU"
                     data-resizable='true'
                     data-search='true'
-                    data-show-columns='true'
                     data-show-refresh='false'
-                    data-show-toggle='true'
                     data-show-export='true'
                     data-export-types="['json', 'csv', 'xlsx', 'pdf']"
                     data-pagination='true'
                     data-side-pagination='client'
                     data-row-style='rowStyle'
                     data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
-                    data-page-size="50"
+                    data-page-size="25"
                     data-filter-control="true"
+                    data-toolbar="#customToolsToolbar"
                     >
                     <thead>
                         <tr>
@@ -154,8 +157,13 @@
                             }
                         }
                     }
-                </script>
-              </div>
+                    </script>
+                </table>
+                <div id="customToolsToolbar" style="">
+                    <button id="printHistory" class="btn btn_vending" type="button" onclick="printMassOperation(e)"
+                            style="margin-right: 20px">Печать
+                    </button>
+                </div>
             </div>
         </div>
       </div>

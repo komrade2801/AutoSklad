@@ -69,14 +69,16 @@
             <div id="column-1" class="d-flex"
                  style="flex-direction: column; width: 60%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
 
+                <div style="width: 100%; text-align: center; margin-top: 10px; flex-shrink: 0;">
+                    <span style="color: #2E4461; font-size: 18px; font-weight: bold;">Инструмент к выгрузке</span>
+                </div>
+
                 <div id="droppable_tools_div" class="panel-body" style="width: 100%; height: 100%; overflow-y: visible; display:block;">
                     <table
                             id='droppable_tools_table'
                             data-locale="ru-RU"
                             data-search='true'
-                            data-show-columns='true'
                             data-show-refresh='false'
-                            data-show-toggle='true'
                             data-show-export='true'
                             data-export-types="['json', 'csv', 'xlsx', 'pdf']"
                             data-pagination='true'
@@ -85,7 +87,6 @@
                             data-page-size="210"
                             data-sort-name="number"
                             data-sort-order="asc"
-                            data-fixed-scroll="true"
                     >
                         <thead>
                         <tr>
@@ -103,17 +104,22 @@
             </div>
             <div id="column-2" class="d-flex"
                  style="display: flex; flex-direction: column; width: 40%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
+                <div style="width: 100%; text-align: center; margin-top: 10px; flex-shrink: 0;">
+                    <span style="color: #2E4461; font-size: 18px; font-weight: bold;">Выбранный инструмент</span>
+                </div>
                 <div id="droppable_story_div" class="panel-body" style="width: 100%; height: 100%; overflow-y: visible; display:block;">
                     <table
                             id='droppable_story_table'
                             data-locale="ru-RU"
+                            data-search='true'
                             data-show-refresh='false'
+                            data-show-export='true'
+                            data-export-types="['json', 'csv', 'xlsx', 'pdf']"
                             data-pagination='true'
                             data-side-pagination='client'
                             data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
                             data-page-size="210"
                             data-toolbar="#customToolsToolbar"
-                            data-fixed-scroll="true"
                     >
                         <thead>
                         <tr>

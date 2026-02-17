@@ -23,6 +23,7 @@ function initialization(element_name) {
     navbar_add(element_name);
 
     $('#tool_library_table').bootstrapTable({
+        toolbar: '#customToolsToolbar',
         exportOptions: {
             fileName: 'Список инструментов',
             pdfmake: {
@@ -32,10 +33,12 @@ function initialization(element_name) {
                 }
             }
         },
+        height: $("#tool_library_div").height()
     });
     $('#tool_library_table').bootstrapTable('showLoading');
 
     $('#group_library_table').bootstrapTable({
+        toolbar: '#customGroupsToolbar',
         exportOptions: {
             fileName: 'Список групп',
             pdfmake: {
@@ -45,8 +48,26 @@ function initialization(element_name) {
                 }
             }
         },
+        height: $("#group_library_div").height()
     });
     $('#group_library_table').bootstrapTable('showLoading');
+
+    // Выравниваем тулбар после загрузки данных
+    $('#tool_library_table').on('load-success.bs.table', function() {
+        if (window.alignToolbar) {
+            window.alignToolbar('#tool_library_table');
+        }
+        // Перемещаем кастомные кнопки в fixed-table-toolbar
+        moveCustomToolbar('#tool_library_table', '#customToolsToolbar');
+    });
+
+    $('#group_library_table').on('load-success.bs.table', function() {
+        if (window.alignToolbar) {
+            window.alignToolbar('#group_library_table');
+        }
+        // Перемещаем кастомные кнопки в fixed-table-toolbar
+        moveCustomToolbar('#group_library_table', '#customGroupsToolbar');
+    });
 
     loadToolLibraryTable(device_number);
     loadGroupsData(device_number);
@@ -72,8 +93,45 @@ function initialization(element_name) {
     }, 100);
 }
 
+// Функция для выравнивания тулбара по заголовку таблицы
+function alignToolbar(tableSelector) {
+    const $table = $(tableSelector);
+    const $bootstrapTable = $table.closest('.bootstrap-table');
+    const $toolbar = $bootstrapTable.find('.fixed-table-toolbar');
+    const $container = $bootstrapTable.find('.fixed-table-body');
+
+    if ($container.length && $toolbar.length) {
+        // Проверяем, есть ли скроллбар
+        const tableHeight = $container.find('.table').height();
+        const containerHeight = $container.height();
+        const hasScrollbar = tableHeight > containerHeight;
+
+        if (hasScrollbar) {
+            $toolbar.css('margin-right', '17px');
+        } else {
+            $toolbar.css('margin-right', '0');
+        }
+    }
+}
+
+// Функция для перемещения кастомного тулбара в fixed-table-toolbar
+function moveCustomToolbar(tableSelector, toolbarSelector) {
+    const $table = $(tableSelector);
+    const $bootstrapTable = $table.closest('.bootstrap-table');
+    const $fixedToolbar = $bootstrapTable.find('.fixed-table-toolbar');
+    const $customToolbar = $(toolbarSelector);
+
+    if ($fixedToolbar.length && $customToolbar.length) {
+        // Перемещаем кастомный тулбар в fixed-table-toolbar
+        $fixedToolbar.append($customToolbar);
+        $customToolbar.show();
+    }
+}
+
 // Делаем функцию доступной глобально
 window.initialization = initialization;
+window.alignToolbar = alignToolbar;
+window.moveCustomToolbar = moveCustomToolbar;
 
 
 // Функция для загрузки данных и создания таблицы

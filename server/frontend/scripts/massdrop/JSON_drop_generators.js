@@ -1,4 +1,6 @@
 export function generateJsonToolsDrop(jsonCellsDrop) {
+    console.log('[massdrop] Входной массив ячеек:', JSON.stringify(jsonCellsDrop, null, 2));
+
     const allTools = [];
 
     const sortedRowKeys = Object.keys(jsonCellsDrop.rows).map(Number).sort((a, b) => a - b);
@@ -11,8 +13,10 @@ export function generateJsonToolsDrop(jsonCellsDrop) {
         for (const cellKey of sortedCellKeys) {
             const cell = row.cells[cellKey];
 
-            // исключаются инструменты без названия и добавленные в чертеж
-            if (cell.content.tool === "None" || cell.content.plan !== '') {
+            // исключаются инструменты без названия, добавленные в чертеж,
+            // и ячейки без статуса mass_load_ready (3) или load_ready (7)
+            const allowedStatuses = [3, 7];
+            if (cell.content.tool === "None" || cell.content.plan !== '' || !allowedStatuses.includes(cell.content.status_id)) {
                 continue;
             }
 
@@ -25,5 +29,7 @@ export function generateJsonToolsDrop(jsonCellsDrop) {
             });
         }
     }
+
+    console.log('[massdrop] Отфильтрованный список инструментов:', JSON.stringify(allTools, null, 2));
     return allTools;
 }

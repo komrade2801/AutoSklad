@@ -56,6 +56,11 @@ export function createTableAllPlans(containerId, jsonAllPlans) {
     $('#plans_table').bootstrapTable('load', data);
     $('#plans_table').bootstrapTable('hideLoading');
 
+    // Выравниваем тулбар после загрузки данных
+    if (window.alignToolbar) {
+        window.alignToolbar('#plans_table');
+    }
+
 //    const container = document.getElementById(containerId);
 //
 //    let table = document.createElement("table");

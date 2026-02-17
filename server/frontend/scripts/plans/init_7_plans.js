@@ -94,6 +94,7 @@ async function initialization(element_name) {
     navbar_add(element_name);
 
     $('#plans_table').bootstrapTable({
+        toolbar: '#customToolsToolbar',
         exportOptions: {
             fileName: 'Список чертежей',
             pdfmake: {
@@ -103,8 +104,18 @@ async function initialization(element_name) {
                 }
             }
         },
+        height: $("#plans_div").height()
     });
     $('#plans_table').bootstrapTable('showLoading');
+
+    // Выравниваем тулбар после загрузки данных
+    $('#plans_table').on('load-success.bs.table', function() {
+        if (window.alignToolbar) {
+            window.alignToolbar('#plans_table');
+        }
+        // Перемещаем кастомные кнопки в fixed-table-toolbar
+        moveCustomToolbar('#plans_table', '#customToolsToolbar');
+    });
 
   try {
     const deviceNumber = 1; // можно изменить, если нужно другое устройство
@@ -146,5 +157,42 @@ async function initialization(element_name) {
   }
 }
 
+// Функция для выравнивания тулбара по заголовку таблицы
+function alignToolbar(tableSelector) {
+    const $table = $(tableSelector);
+    const $bootstrapTable = $table.closest('.bootstrap-table');
+    const $toolbar = $bootstrapTable.find('.fixed-table-toolbar');
+    const $container = $bootstrapTable.find('.fixed-table-body');
+
+    if ($container.length && $toolbar.length) {
+        // Проверяем, есть ли скроллбар
+        const tableHeight = $container.find('.table').height();
+        const containerHeight = $container.height();
+        const hasScrollbar = tableHeight > containerHeight;
+
+        if (hasScrollbar) {
+            $toolbar.css('margin-right', '17px');
+        } else {
+            $toolbar.css('margin-right', '0');
+        }
+    }
+}
+
+// Функция для перемещения кастомного тулбара в fixed-table-toolbar
+function moveCustomToolbar(tableSelector, toolbarSelector) {
+    const $table = $(tableSelector);
+    const $bootstrapTable = $table.closest('.bootstrap-table');
+    const $fixedToolbar = $bootstrapTable.find('.fixed-table-toolbar');
+    const $customToolbar = $(toolbarSelector);
+
+    if ($fixedToolbar.length && $customToolbar.length) {
+        // Перемещаем кастомный тулбар в fixed-table-toolbar
+        $fixedToolbar.append($customToolbar);
+        $customToolbar.show();
+    }
+}
+
 // Делаем функцию доступной глобально
 window.initialization = initialization;
+window.alignToolbar = alignToolbar;
+window.moveCustomToolbar = moveCustomToolbar;

@@ -48,15 +48,15 @@ export function initCellsData() {
 }
 
 
-function initialization(element_name) {
+async function initialization(element_name) {
     if (localStorage.getItem('token') === null){
         console.log('token не обнаружен в хранилище!');
         window.location.href='/';
     }
-    nav_btn_add(element_name);
-    navbar_add(element_name);
-
-    console.log($("#droppable_tools_div").height());
+    await Promise.allSettled([
+        nav_btn_add(element_name),
+        navbar_add(element_name)
+    ]);
 
     $('#droppable_tools_table').bootstrapTable({
         exportOptions: {

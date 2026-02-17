@@ -16,7 +16,7 @@ function actionToolsFormatter(value, row, index, field) {
 
      // Drop button
      let dropButton = document.createElement("i");
-     dropButton.className = "bi bi-download action-button";
+     dropButton.className = "bi bi-arrow-right-square action-button";
      dropButton.title = "Выгрузить";
 
      dropButton.addEventListener('click', async function () {

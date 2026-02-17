@@ -89,6 +89,7 @@ class Content(BaseModel):
     group: str
     plan: str
     load: str
+    status_id: int | None = None
 
 
 class CellResponse(BaseModel):
@@ -295,7 +296,8 @@ def cells_map(device_number: int, db: Session = Depends(get_db)):
                     type=cell_type,
                     backgroundColor=bg,
                     content=Content(tool=tool_name, group=group_name, plan=plan_name,
-                                    load=str(load.id) if load else '',),
+                                    load=str(load.id) if load else '',
+                                    status_id=_status),
                     block=block
                 )
             except Exception as e:

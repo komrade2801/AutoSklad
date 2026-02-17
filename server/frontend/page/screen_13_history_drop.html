@@ -86,22 +86,21 @@
                  style="flex-direction: column; width: 100%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
 
                 <div id="history_drop_div" class="panel-body"
-                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                     style="width: 100%; height: 100%; display:block;">
                     <table
                             id='history_drop_table'
                             data-locale="ru-RU"
                             data-search='true'
-                            data-show-columns='true'
                             data-show-refresh='false'
-                            data-show-toggle='true'
                             data-show-export='true'
                             data-export-types="['json', 'csv', 'xlsx', 'pdf']"
                             data-pagination='true'
                             data-side-pagination='client'
                             data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
+                            data-page-size="25"
+                            data-height="500"
                             data-sort-name="date"
                             data-sort-order="desc"
-                            data-fixed-scroll="true"
                             data-toolbar="#customToolsToolbar"
                     >
                         <thead>
