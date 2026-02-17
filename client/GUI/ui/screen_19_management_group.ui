@@ -15,29 +15,34 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget{
-	background-color: #1A4789;
+	background-color: #2e4461;
 }
 QLabel {
 	background: none;
 	color: #FFFFFF;
 	border-width: 0px;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }
 #background {
 	color: #FFFFFF;
-	background-color: #1A4789;
+	background-color: #2e4461;
 	border-width: 2px;
 	border-style: groove;
 	border-color: #ff9923;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }
 QPushButton {
-	color: #000000;
-	background-color: #86B7F4;
-	border-width: 2px;
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
 	border-style: outset;
 	border-color: #EAA657;
-	border-radius: 10px;
+	border-radius: 8px;
+	font-weight: 600;
+    font-size: 25px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }</string>
   </property>
   <widget class="QListWidget" name="listWidget">
@@ -70,7 +75,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>19</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -97,7 +102,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>24</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -130,8 +135,8 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
@@ -170,8 +175,8 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
@@ -210,8 +215,8 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
@@ -221,7 +226,7 @@ QPushButton {
    </property>
    <property name="icon">
     <iconset resource="../img/resources.qrc">
-     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
+     <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
    </property>
    <property name="iconSize">
     <size>

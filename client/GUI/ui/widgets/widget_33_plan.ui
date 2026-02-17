@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
-    <height>166</height>
+    <width>467</width>
+    <height>141</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,11 +17,36 @@
    <enum>Qt::LeftToRight</enum>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: #1A4789;
-border-width: 2px;
-border-style: groove;
-border-color: #ff9923;
-border-radius: 0px;</string>
+   <string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
+	color: #FFFFFF;
+	border-width: 0px;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+#background {
+	color: #FFFFFF;
+	background-color: #2e4461;
+	border-width: 2px;
+	border-style: groove;
+	border-color: #ff9923;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-style: outset;
+	border-color: #EAA657;
+	border-radius: 8px;
+	font-weight: 600;
+    font-size: 25px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}</string>
   </property>
   <widget class="QLabel" name="name">
    <property name="enabled">
@@ -29,16 +54,16 @@ border-radius: 0px;</string>
    </property>
    <property name="geometry">
     <rect>
-     <x>5</x>
+     <x>10</x>
      <y>40</y>
-     <width>431</width>
-     <height>30</height>
+     <width>451</width>
+     <height>21</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>11</pointsize>
+     <family>Roboto</family>
+     <pointsize>13</pointsize>
      <weight>75</weight>
      <italic>false</italic>
      <bold>true</bold>
@@ -56,12 +81,6 @@ border-radius: 0px;</string>
    </property>
    <property name="autoFillBackground">
     <bool>false</bool>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
    </property>
    <property name="lineWidth">
     <number>1</number>
@@ -95,14 +114,14 @@ border-radius: 0px;</string>
    <property name="geometry">
     <rect>
      <x>5</x>
-     <y>10</y>
+     <y>5</y>
      <width>131</width>
      <height>36</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>13</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -110,12 +129,6 @@ border-radius: 0px;</string>
    </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
    </property>
    <property name="text">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Чертёж №&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -131,14 +144,14 @@ border-radius: 0px;</string>
    <property name="geometry">
     <rect>
      <x>145</x>
-     <y>10</y>
-     <width>291</width>
+     <y>5</y>
+     <width>301</width>
      <height>36</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>13</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -146,12 +159,6 @@ border-radius: 0px;</string>
    </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
    </property>
    <property name="text">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span&gt;XXXX.DDDD.xxxx.xxxx.xxxx&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -163,7 +170,7 @@ border-radius: 0px;</string>
   <widget class="QLabel" name="enterprise">
    <property name="geometry">
     <rect>
-     <x>5</x>
+     <x>10</x>
      <y>70</y>
      <width>431</width>
      <height>30</height>
@@ -370,20 +377,14 @@ border-radius: 0px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>11</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
-   </property>
    <property name="text">
-    <string>ООО АзовСталь</string>
+    <string>ООО Тринитум</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -392,10 +393,10 @@ border-radius: 0px;</string>
   <widget class="QLabel" name="description">
    <property name="geometry">
     <rect>
-     <x>5</x>
+     <x>10</x>
      <y>100</y>
-     <width>431</width>
-     <height>61</height>
+     <width>451</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="palette">
@@ -599,20 +600,14 @@ border-radius: 0px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>10</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
-   </property>
    <property name="text">
-    <string>Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.</string>
+    <string>Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа. Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.Описание_чертежа.</string>
    </property>
    <property name="textFormat">
     <enum>Qt::AutoText</enum>
@@ -629,24 +624,9 @@ border-radius: 0px;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>440</width>
-     <height>166</height>
+     <width>467</width>
+     <height>141</height>
     </rect>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QLabel {
-	color: #FFFFFF;
-	border-width: 0px;
-	border-radius: 0px;
-}
-#background {
-	color: #FFFFFF;
-	background-color: #1A4789;
-	border-width: 2px;
-	border-style: groove;
-	border-color: #ff9923;
-	border-radius: 0px;
-}</string>
    </property>
    <property name="frameShape">
     <enum>QFrame::StyledPanel</enum>

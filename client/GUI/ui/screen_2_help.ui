@@ -15,29 +15,34 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget{
-	background-color: #1A4789;
+	background-color: #2e4461;
 }
 QLabel {
 	background: none;
 	color: #FFFFFF;
 	border-width: 0px;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }
 #background {
 	color: #FFFFFF;
-	background-color: #1A4789;
+	background-color: #2e4461;
 	border-width: 2px;
 	border-style: groove;
 	border-color: #ff9923;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }
 QPushButton {
-	color: #000000;
-	background-color: #86B7F4;
-	border-width: 2px;
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
 	border-style: outset;
 	border-color: #EAA657;
-	border-radius: 10px;
+	border-radius: 8px;
+	font-weight: 600;
+    font-size: 25px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }</string>
   </property>
   <widget class="QTextEdit" name="text_window">
@@ -64,9 +69,9 @@ QPushButton {
       <colorrole role="Button">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
@@ -91,18 +96,18 @@ QPushButton {
       <colorrole role="Base">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
       <colorrole role="Window">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
@@ -129,9 +134,9 @@ QPushButton {
       <colorrole role="Button">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
@@ -156,18 +161,18 @@ QPushButton {
       <colorrole role="Base">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
       <colorrole role="Window">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
@@ -194,9 +199,9 @@ QPushButton {
       <colorrole role="Button">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
@@ -221,18 +226,18 @@ QPushButton {
       <colorrole role="Base">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
       <colorrole role="Window">
        <brush brushstyle="SolidPattern">
         <color alpha="255">
-         <red>26</red>
-         <green>71</green>
-         <blue>137</blue>
+         <red>46</red>
+         <green>68</green>
+         <blue>97</blue>
         </color>
        </brush>
       </colorrole>
@@ -252,9 +257,6 @@ QPushButton {
     <font>
      <pointsize>10</pointsize>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: rgb(255, 255, 255);</string>
    </property>
    <property name="html">
     <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -284,19 +286,11 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #000000;
-background-color: #86B7F4;
-border-width: 2px;
-border-style: outset;
-border-color: #EAA657;
-border-radius: 10px;</string>
    </property>
    <property name="text">
     <string/>
@@ -332,26 +326,18 @@ border-radius: 10px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #000000;
-background-color: #86B7F4;
-border-width: 2px;
-border-style: outset;
-border-color: #EAA657;
-border-radius: 10px;</string>
    </property>
    <property name="text">
     <string/>
    </property>
    <property name="icon">
     <iconset resource="../img/resources.qrc">
-     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
+     <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -570,17 +556,11 @@ border-radius: 10px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial</family>
+     <family>Roboto</family>
      <pointsize>18</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
    </property>
    <property name="text">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Статус: Работает&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -622,19 +602,11 @@ border-radius: 0px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #000000;
-background-color: #86B7F4;
-border-width: 2px;
-border-style: outset;
-border-color: #EAA657;
-border-radius: 10px;</string>
    </property>
    <property name="text">
     <string/>
@@ -860,17 +832,11 @@ border-radius: 10px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>24</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
    </property>
    <property name="text">
     <string>Информация</string>

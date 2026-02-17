@@ -117,8 +117,9 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
 
     def update_icon(self):
         # Установка нового pixmap
-        pixmap = QtGui.QPixmap(Avatar().get_pixmap())  # Укажите правильный путь к изображению
-        self.lbl_info_ico.setPixmap(pixmap)
+        pass
+        # pixmap = QtGui.QPixmap(Avatar().get_pixmap())  # Укажите правильный путь к изображению
+        # self.lbl_info_ico.setPixmap(pixmap)
 
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""
@@ -131,8 +132,7 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
                 if isinstance(arg, tuple):
                     user = arg[0]
                     logger.debug("user: %s", user)
-                    self.lbl_name.setText(f"{user.second_name}")
-                    self.lbl_name_2.setText(f"{user.first_name[0]}.{user.family[0]}.")
+                    self.lbl_name.setText(f"{user.family} {user.second_name[0]}. {user.first_name[0]}.")
                     continue
 
             except Exception:

@@ -12,7 +12,7 @@ class screen_1_welcome(BaseScreen, Ui_screen_1_welcome):
         super().__init__()
         self.setupUi(self)
 
-        self.lbl_info_ico.setPixmap(QtGui.QPixmap(Logo().get_pixmap()))  # Установка пиксмапа
+        # self.lbl_info_ico.setPixmap(QtGui.QPixmap(Logo().get_pixmap()))  # Установка пиксмапа
         self.event_enter_barcode = lambda barcode=0: logger.debug("Получен штрих-код: %s", barcode)
 
         self._barcode_buffer = ""

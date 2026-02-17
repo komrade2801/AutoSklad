@@ -22,8 +22,8 @@ class screen_10_confirmation(BaseScreen, Ui_screen_10_confirmation):
 
             self.name = value[1]
             self.tool_id = value[0]
-            self.lbl_tool_number.setText(self.name)
-            self.lbl_name_group.setText(value[2])
+            self.tool_number.setText(self.name)
+            self.tool_group.setText(value[2])
             self.tool_description.setText(value[3])
         except Exception as e:...
             # print(e)

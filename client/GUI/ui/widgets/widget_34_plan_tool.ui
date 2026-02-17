@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
+    <width>470</width>
     <height>150</height>
    </rect>
   </property>
@@ -14,18 +14,24 @@
    <string>widget_34_plan_tool</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QLabel {
+   <string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
 	color: #FFFFFF;
 	border-width: 0px;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }
 #background {
 	color: #FFFFFF;
-	background-color: #1A4789;
+	background-color: #2e4461;
 	border-width: 2px;
 	border-style: groove;
 	border-color: #ff9923;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }
 QPushButton {
 	color: #000000;
@@ -342,7 +348,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Calibri</family>
+     <family>Roboto</family>
      <pointsize>15</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -372,7 +378,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>10</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -399,7 +405,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>10</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -426,7 +432,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>10</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -453,7 +459,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>10</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -471,7 +477,7 @@ QPushButton {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>440</width>
+     <width>470</width>
      <height>150</height>
     </rect>
    </property>
@@ -977,7 +983,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>12</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -1004,7 +1010,7 @@ QPushButton {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>12</pointsize>
      <weight>75</weight>
      <bold>true</bold>

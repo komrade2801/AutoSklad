@@ -141,67 +141,67 @@
                                 // Подставляем ID в текст
                                 document.getElementById('modal_plan_tools_id').textContent = plan_name;
 
-                                let tool_list_element = document.getElementById('tool_list');
-                                tool_list_element.innerHTML = '';
+                            let tool_list_element = document.getElementById('tool_list');
+                            tool_list_element.innerHTML = '';
 
-                                plan_tools.forEach(tool => {
-                                    const tool_row = document.createElement('div');
-                                    tool_row.style = 'padding-top: 20px;'
-                                    tool_row.innerHTML = tool.name + '\t-\t' + tool.tool_types_count + ' шт.';
-                                    tool_list_element.appendChild(tool_row);
-                                })
+                            plan_tools.forEach(tool => {
+                                const tool_row = document.createElement('div');
+                                tool_row.style = 'padding-top: 20px;'
+                                tool_row.innerHTML = tool.name + '\t-\t' + tool.tool_types_count + ' шт.';
+                                tool_list_element.appendChild(tool_row);
+                            })
 
-                                showTool('flex');  // Открываем модальное окно
-                            }
+                            showTool('flex');  // Открываем модальное окно
+                        }
 
-                            function toolListFormatter(value, row, index, field) {
-                                let toolListActionDiv = document.createElement("div");
-                                 toolListActionDiv.className = "table-actions";
+                        function toolListFormatter(value, row, index, field) {
+                            let toolListActionDiv = document.createElement("div");
+                             toolListActionDiv.className = "table-actions";
 
-                                 let toolListButton = document.createElement("button");
-                                 toolListButton.style.width = "35px";
-                                 toolListButton.style.height = "35px";
-                                 toolListButton.innerHTML = "📋";
-                                 toolListButton.title = "Показать список инструментов";
+                             let toolListButton = document.createElement("button");
+                             toolListButton.style.width = "35px";
+                             toolListButton.style.height = "35px";
+                             toolListButton.innerHTML = "📋";
+                             toolListButton.title = "Показать список инструментов";
 
-                                 toolListButton.addEventListener('click', async function() {openPlanToolListModal(row.designation, row.tools)});
+                             toolListButton.addEventListener('click', async function() {openPlanToolListModal(row.designation, row.tools)});
 
-                                 toolListActionDiv.appendChild(toolListButton);
+                             toolListActionDiv.appendChild(toolListButton);
 
-                                 return toolListActionDiv;
-                            }
+                             return toolListActionDiv;
+                        }
 
-                            function actionToolsFormatter(value, row, index, field) {
-                            //    console.log(value);
-                            //    console.log(row);
-                            //    console.log(index);
-                            //    console.log(field);
+                        function actionToolsFormatter(value, row, index, field) {
+                        //    console.log(value);
+                        //    console.log(row);
+                        //    console.log(index);
+                        //    console.log(field);
 
-                                 let actionsDiv = document.createElement("div");
-                                 actionsDiv.className = "table-actions";
+                             let actionsDiv = document.createElement("div");
+                             actionsDiv.className = "table-actions";
 
-                                 // Edit button
-                            //     let editCell = document.createElement("td");
-                                 let editButton = document.createElement("button");
-                                 editButton.style.width = "35px";
-                                 editButton.style.height = "35px";
-                                 editButton.innerHTML = "✏️";
-                                 editButton.title = "Редактировать";
+                             // Edit button
+                        //     let editCell = document.createElement("td");
+                             let editButton = document.createElement("button");
+                             editButton.style.width = "35px";
+                             editButton.style.height = "35px";
+                             editButton.innerHTML = "✏️";
+                             editButton.title = "Редактировать";
 
-                                 editButton.addEventListener('click', async function () {
-                                     const toolTypeId = row.id;
-                                     if (!toolTypeId) {
-                                         console.error("ID инструмента не найден");
-                                         return;
+                             editButton.addEventListener('click', async function () {
+                                 const toolTypeId = row.id;
+                                 if (!toolTypeId) {
+                                     console.error("ID инструмента не найден");
+                                     return;
+                                 }
+
+                                 // Проверяем, занят ли инструмент
+                                 try {
+                                     const checkResponse = await fetch(`../backend/check_tool_busy/${toolTypeId}`);
+                                     if (!checkResponse.ok) {
+                                         throw new Error("Ошибка проверки инструмента");
                                      }
-
-                                     // Проверяем, занят ли инструмент
-                                     try {
-                                         const checkResponse = await fetch(`../backend/check_tool_busy/${toolTypeId}`);
-                                         if (!checkResponse.ok) {
-                                             throw new Error("Ошибка проверки инструмента");
-                                         }
-                                         const checkData = await checkResponse.json();
+                                     const checkData = await checkResponse.json();
 
                                          if (checkData.is_busy) {
                                              showToast("Данный инструмент используется в вендинге. Редактировать можно только свободный инструмент. " + checkData.message, 'warning');
@@ -220,33 +220,33 @@
                                      }
                                  });
 
-                                 actionsDiv.appendChild(editButton);
+                             actionsDiv.appendChild(editButton);
 
-                                 // Delete button
-                            //     let deleteCell = document.createElement("td");
-                                 let deleteButton = document.createElement("button");
-                                 deleteButton.style.width = "35px";
-                                 deleteButton.style.height = "35px";
-                                 deleteButton.innerHTML = "❌";
-                                 deleteButton.title = "Удалить";
+                             // Delete button
+                        //     let deleteCell = document.createElement("td");
+                             let deleteButton = document.createElement("button");
+                             deleteButton.style.width = "35px";
+                             deleteButton.style.height = "35px";
+                             deleteButton.innerHTML = "❌";
+                             deleteButton.title = "Удалить";
 
-                                 deleteButton.addEventListener('click', async function () {
-                                     const toolTypeId = row.id;
-                                     if (!toolTypeId) {
-                                         console.error("ID инструмента не найден");
-                                         return;
-                                     }
+                             deleteButton.addEventListener('click', async function () {
+                                 const toolTypeId = row.id;
+                                 if (!toolTypeId) {
+                                     console.error("ID инструмента не найден");
+                                     return;
+                                 }
 
-                                     // Подтверждение удаления
-                                     if (!confirm("Вы уверены, что хотите удалить этот инструмент?")) {
-                                         return;
-                                     }
+                                 // Подтверждение удаления
+                                 if (!confirm("Вы уверены, что хотите удалить этот инструмент?")) {
+                                     return;
+                                 }
 
-                                     // Удаляем инструмент (endpoint сам проверит занятость)
-                                     try {
-                                         const deleteResponse = await fetch(`../backend/delete_tool_type/${toolTypeId}`, {
-                                             method: 'DELETE'
-                                         });
+                                 // Удаляем инструмент (endpoint сам проверит занятость)
+                                 try {
+                                     const deleteResponse = await fetch(`../backend/delete_tool_type/${toolTypeId}`, {
+                                         method: 'DELETE'
+                                     });
 
                                          if (!deleteResponse.ok) {
                                              const errorData = await deleteResponse.json();
@@ -269,7 +269,7 @@
                                      }
                                  });
 
-                                 actionsDiv.appendChild(deleteButton);
+                             actionsDiv.appendChild(deleteButton);
 
                                  return actionsDiv;
                             }

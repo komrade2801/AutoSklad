@@ -1,5 +1,3 @@
-import traceback
-
 from Core.app_logging import get_logger
 from PyQt5.QtWidgets import QListWidgetItem
 
@@ -25,7 +23,7 @@ class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
     def populate_list(self):
         for group in self.groups:
             widget = WidgetSelectGroup(self.trigger_name)
-            widget.set_data(group)
+            widget.set_data(group, 0)
             widget.key_pressed.connect(self.on_group_selected)  # Подключаем обработчик сигнала
 
             list_item = QListWidgetItem(self.listWidget)

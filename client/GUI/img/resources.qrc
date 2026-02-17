@@ -1,5 +1,11 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>unlock_white.png</file>
+    <file>back_white.png</file>
+    <file>ok_white.png</file>
+    <file>back_white.png</file>
+    <file>ver1-white.png</file>
+    <file>logo-autosklad.png</file>
     <file>plan-completed_disabled.png</file>
     <file>plan-completed.png</file>
     <file>ok_disabled.png</file>

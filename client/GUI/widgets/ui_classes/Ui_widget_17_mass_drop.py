@@ -14,27 +14,44 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_widget_17_mass_drop(object):
     def setupUi(self, widget_17_mass_drop):
         widget_17_mass_drop.setObjectName("widget_17_mass_drop")
-        widget_17_mass_drop.resize(440, 75)
+        widget_17_mass_drop.resize(467, 75)
         widget_17_mass_drop.setLayoutDirection(QtCore.Qt.LeftToRight)
-        widget_17_mass_drop.setStyleSheet("QLabel {\n"
+        widget_17_mass_drop.setStyleSheet("QWidget{\n"
+"    background-color: #2e4461;\n"
+"}\n"
+"QLabel {\n"
+"    background: none;\n"
 "    color: #FFFFFF;\n"
 "    border-width: 0px;\n"
 "    border-radius: 0px;\n"
+"    font-family: \"Roboto\", Sans-serif;\n"
 "}\n"
 "#background {\n"
 "    color: #FFFFFF;\n"
-"    background-color: #1A4789;\n"
+"    background-color: #2e4461;\n"
 "    border-width: 2px;\n"
 "    border-style: groove;\n"
 "    border-color: #ff9923;\n"
 "    border-radius: 0px;\n"
+"    font-family: \"Roboto\", Sans-serif;\n"
+"}\n"
+"QPushButton {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #f09022;\n"
+"    border-width: 0px;\n"
+"    border-style: outset;\n"
+"    border-color: #EAA657;\n"
+"    border-radius: 8px;\n"
+"    font-weight: 600;\n"
+"    font-size: 25px;\n"
+"    font-family: \"Roboto\", Sans-serif;\n"
 "}\n"
 "\n"
 "QCheckBox {\n"
-"color: #FFFFFF;\n"
-"background-color: #1A4789;\n"
-"border-width: 0px;\n"
-"border-radius: 0px;\n"
+"    color: #FFFFFF;\n"
+"    background-color: #2e4461;\n"
+"    border-width: 0px;\n"
+"    border-radius: 0px;\n"
 "}\n"
 "QCheckBox::indicator {\n"
 "    width: 30px; \n"
@@ -115,7 +132,7 @@ class Ui_widget_17_mass_drop(object):
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
         self.group_name.setPalette(palette)
         font = QtGui.QFont()
-        font.setFamily("Arial Black")
+        font.setFamily("Roboto")
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
@@ -190,7 +207,7 @@ class Ui_widget_17_mass_drop(object):
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
         self.tools_name.setPalette(palette)
         font = QtGui.QFont()
-        font.setFamily("Arial Black")
+        font.setFamily("Roboto")
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
@@ -200,7 +217,7 @@ class Ui_widget_17_mass_drop(object):
         self.lbl_info = QtWidgets.QLabel(widget_17_mass_drop)
         self.lbl_info.setGeometry(QtCore.QRect(290, 5, 60, 30))
         font = QtGui.QFont()
-        font.setFamily("Arial Black")
+        font.setFamily("Roboto")
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
@@ -210,7 +227,7 @@ class Ui_widget_17_mass_drop(object):
         self.cell_number = QtWidgets.QLabel(widget_17_mass_drop)
         self.cell_number.setGeometry(QtCore.QRect(390, 5, 41, 30))
         font = QtGui.QFont()
-        font.setFamily("Arial Black")
+        font.setFamily("Roboto")
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
@@ -239,7 +256,7 @@ class Ui_widget_17_mass_drop(object):
         self.checkBox.setTristate(False)
         self.checkBox.setObjectName("checkBox")
         self.background = QtWidgets.QLabel(widget_17_mass_drop)
-        self.background.setGeometry(QtCore.QRect(0, 0, 440, 75))
+        self.background.setGeometry(QtCore.QRect(0, 0, 467, 75))
         self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.background.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.background.setText("")
