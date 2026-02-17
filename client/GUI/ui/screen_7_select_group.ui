@@ -14,7 +14,36 @@
    <string>screen_7_select_group</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: #1A4789;</string>
+   <string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
+	color: #FFFFFF;
+	border-width: 0px;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+#background {
+	color: #FFFFFF;
+	background-color: #2e4461;
+	border-width: 2px;
+	border-style: groove;
+	border-color: #ff9923;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-style: outset;
+	border-color: #EAA657;
+	border-radius: 8px;
+	font-weight: 600;
+    font-size: 25px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}</string>
   </property>
   <widget class="QListWidget" name="listWidget">
    <property name="enabled">
@@ -30,9 +59,6 @@
    </property>
    <property name="whatsThis">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 0), stop:1 rgba(255, 255, 255, 0));</string>
    </property>
   </widget>
   <widget class="QPushButton" name="btn_back">
@@ -55,26 +81,18 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #000000;
-background-color: #86B7F4;
-border-width: 2px;
-border-style: outset;
-border-color: #EAA657;
-border-radius: 10px;</string>
    </property>
    <property name="text">
     <string/>
    </property>
    <property name="icon">
     <iconset resource="../img/resources.qrc">
-     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
+     <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -97,7 +115,7 @@ border-radius: 10px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>24</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -105,12 +123,6 @@ border-radius: 10px;</string>
    </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #FFFFFF;
-background-color: #1A4789;
-border-width: 0px;
-border-radius: 0px;</string>
    </property>
    <property name="text">
     <string>Выберите группу:</string>

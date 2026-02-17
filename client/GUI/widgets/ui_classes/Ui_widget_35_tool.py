@@ -14,22 +14,39 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_widget_35_tool(object):
     def setupUi(self, widget_35_tool):
         widget_35_tool.setObjectName("widget_35_tool")
-        widget_35_tool.resize(440, 64)
-        widget_35_tool.setStyleSheet("QLabel {\n"
+        widget_35_tool.resize(467, 64)
+        widget_35_tool.setStyleSheet("QWidget{\n"
+"    background-color: #2e4461;\n"
+"}\n"
+"QLabel {\n"
+"    background: none;\n"
 "    color: #FFFFFF;\n"
 "    border-width: 0px;\n"
 "    border-radius: 0px;\n"
+"    font-family: \"Roboto\", Sans-serif;\n"
 "}\n"
 "#background {\n"
 "    color: #FFFFFF;\n"
-"    background-color: #1A4789;\n"
+"    background-color: #2e4461;\n"
 "    border-width: 2px;\n"
 "    border-style: groove;\n"
 "    border-color: #ff9923;\n"
 "    border-radius: 0px;\n"
+"    font-family: \"Roboto\", Sans-serif;\n"
+"}\n"
+"QPushButton {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #f09022;\n"
+"    border-width: 0px;\n"
+"    border-style: outset;\n"
+"    border-color: #EAA657;\n"
+"    border-radius: 8px;\n"
+"    font-weight: 600;\n"
+"    font-size: 25px;\n"
+"    font-family: \"Roboto\", Sans-serif;\n"
 "}")
         self.lbl_name = QtWidgets.QLabel(widget_35_tool)
-        self.lbl_name.setGeometry(QtCore.QRect(10, 5, 331, 51))
+        self.lbl_name.setGeometry(QtCore.QRect(10, 5, 341, 51))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -132,7 +149,7 @@ class Ui_widget_35_tool(object):
         palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.PlaceholderText, brush)
         self.lbl_name.setPalette(palette)
         font = QtGui.QFont()
-        font.setFamily("Calibri")
+        font.setFamily("Roboto")
         font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
@@ -143,7 +160,7 @@ class Ui_widget_35_tool(object):
         self.lbl_count = QtWidgets.QLabel(widget_35_tool)
         self.lbl_count.setGeometry(QtCore.QRect(360, 20, 41, 30))
         font = QtGui.QFont()
-        font.setFamily("Arial Black")
+        font.setFamily("Roboto")
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
@@ -153,7 +170,7 @@ class Ui_widget_35_tool(object):
         self.lbl_info = QtWidgets.QLabel(widget_35_tool)
         self.lbl_info.setGeometry(QtCore.QRect(400, 20, 31, 30))
         font = QtGui.QFont()
-        font.setFamily("Arial Black")
+        font.setFamily("Roboto")
         font.setPointSize(10)
         font.setBold(True)
         font.setWeight(75)
@@ -161,7 +178,7 @@ class Ui_widget_35_tool(object):
         self.lbl_info.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.lbl_info.setObjectName("lbl_info")
         self.background = QtWidgets.QLabel(widget_35_tool)
-        self.background.setGeometry(QtCore.QRect(0, 0, 440, 64))
+        self.background.setGeometry(QtCore.QRect(0, 0, 467, 64))
         self.background.setStyleSheet("")
         self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.background.setFrameShadow(QtWidgets.QFrame.Sunken)

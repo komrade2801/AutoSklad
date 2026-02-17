@@ -51,7 +51,7 @@ class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
             return
 
         name = args[0][1]
-        self.lbl_name_group.setText(name)
+        self.tool_group.setText(name)
 
         self.listWidget.clear()  # Очищаем список перед добавлением новых данных
         try:

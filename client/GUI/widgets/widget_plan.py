@@ -53,7 +53,7 @@ class WidgetPlan(BaseScreen, Ui_widget_33_plan):
 
     def sizeHint(self):
         """Возвращает рекомендуемый размер виджета."""
-        return QtCore.QSize(440, 166)
+        return QtCore.QSize(self.width(), self.height())
 
     def mousePressEvent(self, event):
         """Обработка нажатия мыши на виджет."""

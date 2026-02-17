@@ -14,7 +14,36 @@
    <string>screen_27_history_err</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: #1A4789;</string>
+   <string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
+	color: #FFFFFF;
+	border-width: 0px;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+#background {
+	color: #FFFFFF;
+	background-color: #2e4461;
+	border-width: 2px;
+	border-style: groove;
+	border-color: #ff9923;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-style: outset;
+	border-color: #EAA657;
+	border-radius: 8px;
+	font-weight: 600;
+    font-size: 25px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}</string>
   </property>
   <widget class="QPushButton" name="btn_back">
    <property name="enabled">
@@ -36,26 +65,18 @@
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #000000;
-background-color: #86B7F4;
-border-width: 2px;
-border-style: outset;
-border-color: #EAA657;
-border-radius: 10px;</string>
    </property>
    <property name="text">
     <string/>
    </property>
    <property name="icon">
     <iconset resource="../img/resources.qrc">
-     <normaloff>:/icons/back.png</normaloff>:/icons/back.png</iconset>
+     <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -79,11 +100,6 @@ border-radius: 10px;</string>
    <property name="whatsThis">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
-   <property name="styleSheet">
-    <string notr="true">background-color: #1A4789; border-color: #EAA657;border-width: 2px;
-border-style: outset;
-border-color: #EAA657;</string>
-   </property>
   </widget>
   <widget class="QPushButton" name="btn_up">
    <property name="enabled">
@@ -105,19 +121,11 @@ border-color: #EAA657;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #000000;
-background-color: #86B7F4;
-border-width: 2px;
-border-style: outset;
-border-color: #EAA657;
-border-radius: 10px;</string>
    </property>
    <property name="text">
     <string/>
@@ -153,19 +161,11 @@ border-radius: 10px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
-     <pointsize>16</pointsize>
+     <family>Roboto</family>
+     <pointsize>-1</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: #000000;
-background-color: #86B7F4;
-border-width: 2px;
-border-style: outset;
-border-color: #EAA657;
-border-radius: 10px;</string>
    </property>
    <property name="text">
     <string/>
@@ -195,7 +195,7 @@ border-radius: 10px;</string>
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>24</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -203,10 +203,6 @@ border-radius: 10px;</string>
    </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: white;
-background-color: #1A4789;</string>
    </property>
    <property name="text">
     <string>История ошибок</string>

@@ -39,7 +39,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.setWindowTitle("Main Window")
         self.resize(480, 800)
-        self.setStyleSheet("background-color: #1A4789;")
+        self.setStyleSheet("background-color: #2e4461;")
 
         # Словари для хранения виджетов и сигналов кнопок
         self.widgets: Dict[str, BaseScreen] = {}

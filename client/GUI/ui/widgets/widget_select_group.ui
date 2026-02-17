@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
+    <width>467</width>
     <height>80</height>
    </rect>
   </property>
@@ -15,21 +15,34 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget{
-	background-color: #1A4789;
+	background-color: #2e4461;
 }
 QLabel {
 	background: none;
 	color: #FFFFFF;
 	border-width: 0px;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }
 #background {
 	color: #FFFFFF;
-	background-color: #1A4789;
+	background-color: #2e4461;
 	border-width: 2px;
 	border-style: groove;
 	border-color: #ff9923;
 	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-style: outset;
+	border-color: #EAA657;
+	border-radius: 8px;
+	font-weight: 600;
+    font-size: 25px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
 }</string>
   </property>
   <widget class="QLabel" name="lbl_photo">
@@ -62,7 +75,7 @@ QLabel {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>14</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -81,7 +94,7 @@ QLabel {
     <number>0</number>
    </property>
    <property name="text">
-    <string>Фрезы</string>
+    <string/>
    </property>
    <property name="textFormat">
     <enum>Qt::AutoText</enum>
@@ -107,7 +120,7 @@ QLabel {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>450</width>
+     <width>467</width>
      <height>80</height>
     </rect>
    </property>
@@ -135,7 +148,7 @@ QLabel {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>16</pointsize>
      <weight>75</weight>
      <bold>true</bold>
@@ -162,7 +175,7 @@ QLabel {
    </property>
    <property name="font">
     <font>
-     <family>Arial Black</family>
+     <family>Roboto</family>
      <pointsize>16</pointsize>
      <weight>75</weight>
      <bold>true</bold>
