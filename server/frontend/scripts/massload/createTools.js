@@ -6,12 +6,14 @@ import { updateJsonHistoryLoad, createHistory } from './history_load.js';
 //let currentInputRow = null; // Глобальная переменная для текущей строки с вводом
 
 export function createTools() {
-    console.log('createTools');
-    console.log(window.appData.tools);
-
     if (window.appData.tools != undefined) {
-//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
-        $('#loadable_tools_table').bootstrapTable('load', window.appData.tools);
+        // Заменяем "-" на символ бесконечности перед загрузкой в таблицу
+        const processedTools = window.appData.tools.map(tool => ({
+            ...tool,
+            sum: (tool.sum === '-' || tool.count === 0 || tool.count === '-') ? '∞' : (tool.sum || tool.count)
+        }));
+
+        $('#loadable_tools_table').bootstrapTable('load', processedTools);
         $('#loadable_tools_table').bootstrapTable('hideLoading');
     }
 }

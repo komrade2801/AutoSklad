@@ -3,14 +3,14 @@ import { updateJsonHistoryLoad, createHistory } from './selected_tools.js';
 
 // Функция для создания строк инструмента на основе JSON-данных
 export function generateTools() {
-    console.log('generateTools');
-    console.log(window.appData.tools);
-//    const container = document.getElementById(containerId);
-//    container.innerHTML = ''; // Очищаем контейнер перед добавлением ячеек
-
     if (window.appData.tools != undefined) {
-//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
-        $('#loadable_tools_table').bootstrapTable('load', window.appData.tools);
+        // Заменяем "-" на символ бесконечности перед загрузкой в таблицу
+        const processedTools = window.appData.tools.map(tool => ({
+            ...tool,
+            sum: (tool.sum === '-' || tool.count === 0 || tool.count === '-') ? '∞' : (tool.sum || tool.count)
+        }));
+
+        $('#loadable_tools_table').bootstrapTable('load', processedTools);
         $('#loadable_tools_table').bootstrapTable('hideLoading');
     }
     return;

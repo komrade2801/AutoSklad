@@ -1,3 +1,8 @@
+function sumFormatter(value, row, index, field) {
+    // Заменяем "-" на символ бесконечности
+    return (value === '-' || value === 0 || value === '0') ? '∞' : value;
+}
+
 // Функция для загрузки данных инструмента при редактировании
 async function loadToolData(toolTypeId) {
     try {
@@ -517,7 +522,7 @@ function openModalCell(toolId, toolName, toolSum) {
     // Заполняем данные в модальном окне (это может быть динамическое содержимое)
     //document.querySelector('img').src = 'image_' + cellNumber + '.jpg'; // Изменить путь к изображению
     document.querySelector('.tool_name').textContent = 'Инструмент: ' + toolName;
-    document.querySelector('.tool_sum').textContent = 'Количество: ' + ('-' ? 'Неограничено' : toolSum);
+    document.querySelector('.tool_sum').textContent = 'Количество: ' + (toolSum === '-' ? '∞' : toolSum);
 
     const input = document.getElementById('modal_amount_input');
 
