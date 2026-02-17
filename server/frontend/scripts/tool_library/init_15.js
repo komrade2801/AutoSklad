@@ -32,6 +32,7 @@ function initialization(element_name) {
                 }
             }
         },
+        height: $("#tool_library_div").height()
     });
     $('#tool_library_table').bootstrapTable('showLoading');
 
@@ -45,6 +46,7 @@ function initialization(element_name) {
                 }
             }
         },
+        height: $("#group_library_div").height()
     });
     $('#group_library_table').bootstrapTable('showLoading');
 

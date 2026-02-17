@@ -1,34 +1,3 @@
-//import { createTableAllPlans } from './createTableAllPlans.js'
-//import { jsonAllPlans } from '../../JSONs/all_plans.js'
-//import { nav_btn_add } from '../nav_btn_load.js';
-
-//import { AllPlansApi } from '../cruds/api/AllPlansApi.js'
-//import { ApiClient } from '../cruds/ApiClient.js'
-//
-//function initialization() {
-////    console.log("Зашли в initialization")
-////    // Создаем экземпляр API-клиента
-////    const apiClient = new ApiClient('http://192.168.0.10/'); // Укажите базовый URL вашего API
-////    const allPlansApi = new AllPlansApi(apiClient);
-////
-////    // Укажите номер устройства (deviceNumber), для которого загружаются планы
-////    const deviceNumber = 1; // Здесь должен быть реальный номер устройства
-////
-////    // Выполняем запрос к API
-////    allPlansApi.getAllPlansBackendAllPlansDeviceNumberGet(deviceNumber, (error, data) => {
-////        if (error) {
-////            console.error('Ошибка при загрузке планов:', error);
-////            return;
-////        }
-////
-////        // Сохраняем данные в jsonAllPlans и создаем таблицу
-////        const jsonAllPlans = data; // Данные уже имеют структуру PlanResponse
-//        createTableAllPlans('column-1', jsonAllPlans);
-////    });
-//}
-//// Делаем функцию доступной глобально
-//window.initialization = initialization;
-
 import { createTableAllPlans } from './createTableAllPlans.js';
 import { nav_btn_add } from '../nav_btn_load.js';
 
@@ -103,6 +72,7 @@ async function initialization(element_name) {
                 }
             }
         },
+        height: $("#plans_div").height()
     });
     $('#plans_table').bootstrapTable('showLoading');
 

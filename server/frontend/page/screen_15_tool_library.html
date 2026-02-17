@@ -20,13 +20,13 @@
     <script src="../assets/bootstrap-table/1.25.0/bootstrap-table.js"></script>
     <script src="../assets/bootstrap-table/1.25.0/locale/bootstrap-table-ru-RU.js"></script>
 
-    <link rel="stylesheet" href="../assets/jquery-resizable-columns/jquery.resizableColumns.css">
-    <script src="../assets/jquery-resizable-columns/jquery.resizableColumns.js"></script>
-    <script src="../assets/bootstrap-table/1.25.0/extensions/resizable/bootstrap-table-resizable.js"></script>
+    <!--    <link rel="stylesheet" href="../assets/jquery-resizable-columns/jquery.resizableColumns.css">-->
+    <!--    <script src="../assets/jquery-resizable-columns/jquery.resizableColumns.js"></script>-->
+    <!--    <script src="../assets/bootstrap-table/1.25.0/extensions/resizable/bootstrap-table-resizable.js"></script>-->
 
-    <link rel="stylesheet"
-          href="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.css">
-    <script src="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.js"></script>
+    <!--    <link rel="stylesheet"-->
+    <!--          href="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.css">-->
+    <!--    <script src="../assets/bootstrap-table/1.25.0/extensions/filter-control/bootstrap-table-filter-control.js"></script>-->
 
     <script src="../assets/tableExport.jquery.plugin/tableExport.js"></script>
     <script src="../assets/tableExport.jquery.plugin/libs/js-xlsx/xlsx.core.min.js"></script>
@@ -165,100 +165,97 @@
                     });
                 </script>
 
-                <div id="tool_library_div" class="panel-body" style="width: 100%; display:block;">
-                    <div class="row">
-                        <table
-                                id='tool_library_table'
-                                data-locale="ru-RU"
-                                data-resizable='true'
-                                data-search='true'
-                                data-show-columns='true'
-                                data-show-refresh='false'
-                                data-show-toggle='true'
-                                data-show-export='true'
-                                data-export-types="['json', 'csv', 'xlsx', 'pdf']"
-                                data-pagination='true'
-                                data-side-pagination='client'
-                                data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
-                                data-page-size="50"
-                                data-toolbar="#customToolsToolbar"
-                        >
-                            <thead>
-                            <tr>
-                                <th data-field='group' data-sortable='true' data-width="20" data-width-unit="%"
-                                    data-sorter='dateTimeSorter'><span title="Группа инструмента">Группа</span></th>
-                                <th data-field='name' data-sortable='true' data-width="35" data-width-unit="%"><span
-                                        title="Наименование инструмента">Номенклатура</span></th>
-                                <th data-field='description' data-sortable='true' data-width="35" data-width-unit="%">
-                                    <span title="Описание">Описание</span></th>
-                                <th data-field='sum' data-sortable='true' data-width="126"><span title="В наличии">В наличии</span>
-                                </th>
-                                <th data-field='actions' data-width="100" data-formatter="actionToolsFormatter"><span
-                                        title="Действия">Действия</span></th>
-                            </tr>
-                            </thead>
-                        </table>
-                        <div id="customToolsToolbar" style="display: flex; align-items: center;">
-                            <button id="addTool" class="btn btn_vending" type="button"
-                                    onclick="openModalCreate()">
-                                Добавить инструмент
+                <div id="tool_library_div" class="panel-body" style="width: 100%; height: 100%; display:block;">
+                    <table
+                            id='tool_library_table'
+                            data-locale="ru-RU"
+                            data-resizable='true'
+                            data-search='true'
+                            data-show-columns='true'
+                            data-show-refresh='false'
+                            data-show-toggle='true'
+                            data-show-export='true'
+                            data-export-types="['json', 'csv', 'xlsx', 'pdf']"
+                            data-pagination='true'
+                            data-side-pagination='client'
+                            data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
+                            data-page-size="50"
+                            data-toolbar="#customToolsToolbar"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='group' data-sortable='true'
+                                data-sorter='dateTimeSorter'><span title="Группа инструмента">Группа</span></th>
+                            <th data-field='name' data-sortable='true'><span
+                                    title="Наименование инструмента">Номенклатура</span></th>
+                            <th data-field='description' data-sortable='true'>
+                                <span title="Описание">Описание</span></th>
+                            <th data-field='sum' data-sortable='true' data-width="126"><span
+                                    title="В наличии">В наличии</span>
+                            </th>
+                            <th data-field='actions' data-width="100" data-formatter="actionToolsFormatter"><span
+                                    title="Действия">Действия</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                    <div id="customToolsToolbar" style="display: flex; align-items: center;">
+                        <button id="addTool" class="btn btn_vending" type="button"
+                                onclick="openModalCreate()">
+                            Добавить инструмент
+                        </button>
+                        <form id="importToolsForm" action="javascript:;" onsubmit="doImportTools(this) "
+                              style="display: flex; align-items: center; margin-left: 20px;">
+                            <button id="importTools" type="submit" class="btn btn_vending" style="width:180px">
+                                Загрузить xlsx
                             </button>
-                            <form id="importToolsForm" action="javascript:;" onsubmit="doImportTools(this) "
-                                  style="display: flex; align-items: center; margin-left: 20px;">
-                                <button id="importTools" type="submit" class="btn btn_vending" style="width:180px">
-                                    Загрузить xlsx
-                                </button>
-                                <input class="import-form" id="importToolsFile" type="file" name="file" accept=".xlsx"
-                                       required/>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" value="" id="getToolCount">
-                                    <label class="form-check-label" for="getToolCount" style="width:200px">
-                                        Учитывать количество
-                                    </label>
-                                </div>
-                            </form>
-                        </div>
+                            <input class="import-form" id="importToolsFile" type="file" name="file" accept=".xlsx"
+                                   required/>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="getToolCount">
+                                <label class="form-check-label" for="getToolCount" style="width:200px">
+                                    Учитывать количество
+                                </label>
+                            </div>
+                        </form>
                     </div>
                 </div>
-                <div id="group_library_div" class="panel-body" style="width: 100%; display:none;">
-                    <div class="row">
-                        <table
-                                id='group_library_table'
-                                data-locale="ru-RU"
-                                data-resizable='true'
-                                data-search='true'
-                                data-show-columns='true'
-                                data-show-refresh='false'
-                                data-show-toggle='true'
-                                data-show-export='true'
-                                data-export-types="['json', 'csv', 'xlsx', 'pdf']"
-                                data-pagination='true'
-                                data-side-pagination='client'
-                                data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
-                                data-page-size="50"
-                                data-toolbar="#customGroupsToolbar"
-                        >
-                            <thead>
-                            <tr>
-                                <th data-field='group' data-width="20" data-width-unit="%" data-sortable='true'
-                                    data-sorter='dateTimeSorter'><span title="Группа">Группа</span></th>
-                                <th data-field='parent_group' data-width="20" data-width-unit="%" data-sortable='true'>
-                                    <span title="Родительская группа">Родительская группа</span></th>
-                                <th data-field='description' data-width="30" data-width-unit="%" data-sortable='true'>
-                                    <span title="Описание">Описание</span></th>
-                                <th data-field='full' data-sortable='true' data-width="20" data-width-unit="%"><span
-                                        title="Полное обозначение">Полное обозначение</span></th>
-                                <th data-field='actions' data-width="100" data-formatter="actionGroupsFormatter"><span
-                                        title="Действия">Действия</span></th>
-                            </tr>
-                            </thead>
-                        </table>
-                        <div id="customGroupsToolbar">
-                            <button id="addGroup" class="btn btn_vending" type="button"
-                                    onclick="openModalCreateGroup();">
-                                Добавить группу
-                            </button>
-                        </div>
+                <div id="group_library_div" class="panel-body" style="width: 100%; height: 100%; display:none;">
+                    <table
+                            id='group_library_table'
+                            data-locale="ru-RU"
+                            data-resizable='true'
+                            data-search='true'
+                            data-show-columns='true'
+                            data-show-refresh='false'
+                            data-show-toggle='true'
+                            data-show-export='true'
+                            data-export-types="['json', 'csv', 'xlsx', 'pdf']"
+                            data-pagination='true'
+                            data-side-pagination='client'
+                            data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
+                            data-page-size="50"
+                            data-toolbar="#customGroupsToolbar"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='group' data-sortable='true' data-width="20" data-width-unit="%"
+                                data-sorter='dateTimeSorter'><span title="Группа">Группа</span></th>
+                            <th data-field='parent_group' data-sortable='true'>
+                                <span title="Родительская группа">Родительская группа</span></th>
+                            <th data-field='description' data-sortable='true'>
+                                <span title="Описание">Описание</span></th>
+                            <th data-field='full' data-sortable='true'><span
+                                    title="Полное обозначение">Полное обозначение</span></th>
+                            <th data-field='actions' data-width="100" data-formatter="actionGroupsFormatter"><span
+                                    title="Действия">Действия</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                    <div id="customGroupsToolbar">
+                        <button id="addGroup" class="btn btn_vending" type="button"
+                                onclick="openModalCreateGroup();">
+                            Добавить группу
+                        </button>
                     </div>
                 </div>
             </div>
