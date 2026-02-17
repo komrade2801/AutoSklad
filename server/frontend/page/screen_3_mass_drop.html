@@ -40,6 +40,23 @@
     <link rel="stylesheet" href="../style/dropdown_list.css">
     <link rel="stylesheet" href="../style/style_modal_window.css">
     <link rel="stylesheet" href="../style/massdrop/main.css">
+    <style>
+        /* Стили для кастомных тулбаров в fixed-table-toolbar */
+        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content {
+            display: flex !important;
+            align-items: center;
+            gap: 10px;
+            margin-left: 10px;
+        }
+
+        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content .btn {
+            margin: 0;
+        }
+
+        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content form {
+            margin: 0;
+        }
+    </style>
 </head>
 <body onload="initialization('screen_3_mass_drop');"
       class="d-flex justify-content-center" id="body">
@@ -87,6 +104,7 @@
                             data-page-size="210"
                             data-sort-name="number"
                             data-sort-order="asc"
+                            data-toolbar="#droppableToolsToolbar"
                     >
                         <thead>
                         <tr>
@@ -100,6 +118,12 @@
                         </tr>
                         </thead>
                     </table>
+                    <div id="droppableToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
+                        <span style="color: #2E4461; font-size: 18px; font-weight: bold;">Аппарат: Вендинг №1</span>
+                        <button class="btn btn-primary" style="width: 24px; height: 24px; padding: 0;">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <div id="column-2" class="d-flex"
@@ -133,9 +157,8 @@
                         </tr>
                         </thead>
                     </table>
-                    <div id="customToolsToolbar" style="">
-                        <button id="saveDrop" class="btn btn_vending" type="button" onclick="saveHistoryAsMassDrop(1)" style="margin-right: 20px">Сохранить выгрузку
-                        </button>
+                    <div id="customToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
+                        <button id="saveDrop" class="btn btn_vending" type="button" onclick="saveHistoryAsMassDrop(1)">Сохранить выгрузку</button>
                     </div>
                 </div>
             </div>

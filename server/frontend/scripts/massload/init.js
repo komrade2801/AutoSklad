@@ -201,6 +201,17 @@ function initialization(element_name) {
     });
     $('#loadable_story_table').bootstrapTable('load', []);
 
+    // Вызываем moveCustomToolbar после загрузки данных таблиц
+    $('#loadable_tools_table').on('load-success.bs.table', function() {
+        // Перемещаем заголовок в fixed-table-toolbar
+        moveCustomToolbar('#loadable_tools_table', '#loadableToolsToolbar');
+    });
+
+    $('#loadable_story_table').on('load-success.bs.table', function() {
+        // Перемещаем кнопку "Сохранить загрузку" в fixed-table-toolbar
+        moveCustomToolbar('#loadable_story_table', '#customToolsToolbar');
+    });
+
     initToolsData(device_number).then(data => {
       if (data) {
         initCellsData().then(cells => {
@@ -216,5 +227,20 @@ function initialization(element_name) {
     });
 }
 
+// Функция для перемещения кастомного тулбара в fixed-table-toolbar
+function moveCustomToolbar(tableSelector, toolbarSelector) {
+    const $table = $(tableSelector);
+    const $bootstrapTable = $table.closest('.bootstrap-table');
+    const $fixedToolbar = $bootstrapTable.find('.fixed-table-toolbar');
+    const $customToolbar = $(toolbarSelector);
+
+    if ($fixedToolbar.length && $customToolbar.length) {
+        // Перемещаем кастомный тулбар в fixed-table-toolbar
+        $fixedToolbar.append($customToolbar);
+        $customToolbar.show();
+    }
+}
+
 // Делаем функцию доступной глобально
 window.initialization = initialization;
+window.moveCustomToolbar = moveCustomToolbar;
