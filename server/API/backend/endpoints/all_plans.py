@@ -80,7 +80,7 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
     plans = plans_crud.get_all_plans()
     logger.debug("plans: %s", plans)
     if not plans:
-        raise HTTPException(status_code=404, detail="Чертёжы не найдены")
+        return PlanResponse(plans=[])
     plan_dicts = {}
     plan_list = []
 

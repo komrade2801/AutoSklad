@@ -64,16 +64,16 @@ export function initToolsData(device_number) {
       });
   }
 
-function initialization(element_name) {
+async function initialization(element_name) {
     console.log('initialization');
     if (localStorage.getItem('token') === null){
         console.log('token не обнаружен в хранилище!');
         window.location.href='/';
     }
-    nav_btn_add(element_name);
-    navbar_add(element_name);
-
-    console.log($("#loadable_tools_div").height());
+    await Promise.allSettled([
+        nav_btn_add(element_name),
+        navbar_add(element_name)
+    ]);
 
     $('#loadable_tools_table').bootstrapTable({
         exportOptions: {

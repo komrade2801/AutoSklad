@@ -279,6 +279,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 5px;
 }
 
 .plan-input-row {
@@ -287,6 +288,7 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
+    gap: 5px;
 }
 
 .plan-input-element {
@@ -294,4 +296,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+#loadable_tools_div .fixed-table-body table,
+#selected_tools_div .fixed-table-body table {
+    width: 100% !important;
 }

@@ -127,13 +127,22 @@ async function initialization(element_name) {
     let jsonAllPlans = await response.json(); // Объявление через let
     let allPlansArray = jsonAllPlans.plans
     console.log(allPlansArray)
+
+    if (!allPlansArray || allPlansArray.length === 0) {
+      createTableAllPlans('column-1', []);
+      return;
+    }
+
     jsonAllPlans = processAllPlans(allPlansArray); // ✅ Теперь можно перезаписать
     if (jsonAllPlans !== null){
       console.log(jsonAllPlans);
       createTableAllPlans('column-1', jsonAllPlans);
+    } else {
+      createTableAllPlans('column-1', []);
     }
   } catch (error) {
     console.error('Ошибка при получении данных с API:', error);
+    $('#plans_table').bootstrapTable('hideLoading');
   }
 }
 

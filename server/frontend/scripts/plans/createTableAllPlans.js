@@ -49,13 +49,12 @@ export function createTableAllPlans(containerId, jsonAllPlans) {
 
     console.log('createTableAllPlans');
     console.log(jsonAllPlans);
-    const data = jsonAllPlans["plans"];
+
+    const data = Array.isArray(jsonAllPlans) ? jsonAllPlans : (jsonAllPlans ? jsonAllPlans["plans"] : []);
     console.log(data);
 
-    if (jsonAllPlans != undefined) {
-        $('#plans_table').bootstrapTable('load', jsonAllPlans);
-        $('#plans_table').bootstrapTable('hideLoading');
-    }
+    $('#plans_table').bootstrapTable('load', data);
+    $('#plans_table').bootstrapTable('hideLoading');
 
 //    const container = document.getElementById(containerId);
 //

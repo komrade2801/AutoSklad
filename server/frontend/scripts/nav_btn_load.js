@@ -115,7 +115,7 @@ if (!document.getElementById('sidebar-toggle-styles')) {
 
 
 export function nav_btn_add(element_name) {
-  fetch('/assets/html/nav_btn.html?token=' + localStorage.getItem('token'))
+  return fetch('/assets/html/nav_btn.html?token=' + localStorage.getItem('token'))
     .then(response => response.text())
     .then(html => {
       const sidebar = document.getElementById('v-pills-tab');
@@ -163,8 +163,14 @@ export function nav_btn_add(element_name) {
         }
       }
 
-      // Применяем сохранённое состояние
+      // Применяем сохранённое состояние мгновенно (без CSS-transition),
+      // чтобы layout устоялся до инициализации таблиц
+      sidebar.style.transition = 'none';
+      if (contentPanel) contentPanel.style.transition = 'none';
       applySidebarState(collapsed);
+      sidebar.offsetHeight; // force reflow
+      sidebar.style.transition = '';
+      if (contentPanel) contentPanel.style.transition = '';
 
       // Обработчик клика
       document.getElementById('sidebar-toggle').addEventListener('click', () => {

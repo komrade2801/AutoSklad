@@ -40,14 +40,13 @@
     <link rel="stylesheet" href="../style/style_modal_window.css">
     <link rel="stylesheet" href="../style/button_style.css">
     <link rel="stylesheet" href="../style/append_plan/input_amount.css">
-
 </head>
 <body onload="initialization('screen_8_append_plan')" class="d-flex justify-content-center" id="body">
 <div id="membrane"></div>
 <div id="modal_window_cell">
     <span class="tool_name"
           style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент: </span>
-    <span class="tool_sum" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Количество: </span>
+    <span class="tool_sum" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">В наличии: </span>
     <div class="library-tool-row" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">
         <div class="toolName library-tool-input-div">
             <input id="modal_amount_input" type="number" min="0" step="1" pattern="[0-9]*" inputmode="numeric"
@@ -84,7 +83,7 @@
         <div class="tab-pane fade show active d-flex"
              style="display: flex; flex-direction: row; flex-wrap: nowrap; width: calc(100% - 235px); height: 100%; padding: 0px;">
             <div id="column-1" class="d-flex"
-                 style="flex-direction: column; width: 60%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
+                 style="flex-direction: column; width: 40%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
 
                 <div id="loadable_tools_div" class="panel-body"
                      style="width: 100%; height: 100%; overflow-y: visible; display:block;">
@@ -103,7 +102,6 @@
                             data-page-size="210"
                             data-sort-name="number"
                             data-sort-order="asc"
-                            data-fixed-scroll="true"
                     >
                         <thead>
                         <tr>
@@ -113,17 +111,17 @@
                             <th data-field='actions' data-width="50" data-formatter="actionToolsFormatter"><span
                                     title="Информация">Инфо</span></th>
                             <th data-field='sum' data-sortable='true' data-width="100">
-                                <span title="Количество">Количество</span></th>
+                                <span title="В наличии">В наличии</span></th>
                             <th data-field='load' data-sortable='true' data-width="200"
                                 data-formatter="sumToolsFormatter">
-                                <span title="Загрузка">Загрузка</span></th>
+                                <span title="К загрузке">К загрузке</span></th>
                         </tr>
                         </thead>
                     </table>
                 </div>
             </div>
             <div id="column-2" class="d-flex"
-                 style="display: flex; flex-direction: column; width: 40%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
+                 style="display: flex; flex-direction: column; width: 60%; height: 100%; align-items: start; overflow: hidden; padding: 0 10px 10px 10px;">
                 <div id="qrCodeBlock" style="width: 100%;">
                     <div class="btn-group btn-group-toggle tab-change-bar" data-toggle="buttons" style="margin-top: 10px;">
                         <input type="radio" class="btn-check" name="options-tabs" id="tab1" value="qr"
@@ -159,11 +157,11 @@
                         });
                     </script>
 
-                    <div style="padding-bottom: 20px;">
+                    <div style="padding-bottom: 10px;">
                             <textarea id="qrCodeInput" class="form-control me-2 plan-qr"
                                       placeholder="Отсканируйте QR-код" style="margin-top: 5px;"
                                       onkeydown="fillManualFields(this)"></textarea>
-                        <label class="form-check-label" for="qrCodeInput">
+                        <label class="form-check-label" style="padding-top: 5px;"for="qrCodeInput">
                             Первая строка из QR-кода - обозначение чертежа
                         </label>
                     </div>
@@ -172,10 +170,10 @@
                     <div class="plan-input-row">
                         <span style="width: 100%;">Предприятие:</span>
                         <input id="enterpriseInput" class="form-control plan-input" type="text"
-                               placeholder="ООО АзовСталь" style="margin-top: 5px;" disabled>
+                               placeholder="Завод Контакт" style="margin-top: 5px;" disabled>
                         <span style="width: 100%;">Номер чертежа:</span>
                         <input id="designationInput" class="form-control plan-input" type="text"
-                               placeholder="XXXX.DDDD.xxxx.xxxx.xxxx" disabled>
+                               placeholder="5108-39" disabled>
                     </div>
                     <div class="plan-input-row">
                         <span style="width: 100%;">Название чертежа:</span>
@@ -194,7 +192,7 @@
                     </label>
                 </div>
                 <div id="selected_tools_div" class="panel-body"
-                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                     style="width: 100%; height: 100%; overflow-y: auto; display:block;">
                     <table
                             id='selected_tools_table'
                             data-locale="ru-RU"
@@ -204,7 +202,6 @@
                             data-page-list="[10, 25, 50, 100, 200, 500, 1000]"
                             data-page-size="210"
                             data-toolbar="#customToolsToolbar"
-                            data-fixed-scroll="true"
                     >
                         <thead>
                         <tr>
@@ -212,14 +209,14 @@
                                     title="Инструмент">Инструмент</span>
                             </th>
                             <th data-field='quantity' data-sortable='true' data-width="100">
-                                <span title="Количество">Количество</span></th>
+                                <span title="В наличии">В наличии</span></th>
                             <th data-field='actions' data-width="100" data-formatter="actionStoryFormatter"><span
                                     title="Действия">Действия</span></th>
                         </tr>
                         </thead>
                     </table>
                     <div id="customToolsToolbar"
-                         style="display: flex; align-items: flex-end; align-content: flex-end; flex-wrap: nowrap; flex-direction: row;">
+                         style="display: flex; align-items: flex-end; align-content: flex-end; flex-wrap: nowrap; flex-direction: row; gap: 10px;">
                         <button class="btn btn_vending" type="button" onclick="clearAllForm()">Очистить все поля
                         </button>
                         <button class="btn btn_vending" type="button" onclick="openModalConf()">Отмена</button>
