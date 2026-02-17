@@ -146,7 +146,7 @@ function displaySettings(settingsData) {
     container.style.flex = '1';
     container.style.height = '100%';
     container.style.overflow = 'hidden';
-    container.style.padding = 'var(--settings-padding)';
+    container.style.padding = '0 var(--settings-padding) var(--settings-padding) var(--settings-padding)';
     container.style.gap = 'var(--settings-gap)';
 
     const tabContainer = document.createElement('div');
