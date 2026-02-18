@@ -66,7 +66,7 @@
     font-family: "Roboto", Sans-serif;
     font-size: 16px;
     font-weight: 400;
-    line-height: 20px;
+    /* line-height: 20px; */
 }
 
 .btn:focus,
@@ -107,4 +107,27 @@
         padding-left: 30px;
         padding-right: 30px;
     }
+}
+
+.custom-toolbar-content{
+    .btn {
+        padding-left: 30px;
+        padding-right: 30px;
+        margin: 0;
+    }
+}
+
+/* Стили для кастомных тулбаров в fixed-table-toolbar */
+.bootstrap-table .fixed-table-toolbar .custom-toolbar-content {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    margin-left: 10px;
+}
+
+.bootstrap-table .fixed-table-toolbar .custom-toolbar-content .btn {
+}
+
+.bootstrap-table .fixed-table-toolbar .custom-toolbar-content form {
+    margin: 0;
 }
