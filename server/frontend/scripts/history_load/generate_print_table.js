@@ -17,11 +17,13 @@ export function generatePrintTable() {
             const count = cells.length;
 
             for (let i = 0; i < count; i++) {
-              rows.push({
-                cell: cells[i],
-                tool: tools[i] ?? '—',
-                plan: plans[i] ?? '—',
-              });
+                if (cells[i].status === 5) {
+                    rows.push({
+                        cell: cells[i].cell,
+                        tool: tools[i] ?? '—',
+                        plan: plans[i] ?? '—',
+                    });
+                }
             }
         }
     }
