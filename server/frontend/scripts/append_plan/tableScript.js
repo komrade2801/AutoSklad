@@ -1,6 +1,6 @@
 function sumFormatter(value, row, index, field) {
     // Заменяем "-" на символ бесконечности
-    return (value === '-' || value === 0 || value === '0') ? '∞' : value;
+    return (value === '-' || !isNaN(value) && value < 0) ? '∞' : value;
 }
 
 function sumToolsFormatter(value, row, index, field) {

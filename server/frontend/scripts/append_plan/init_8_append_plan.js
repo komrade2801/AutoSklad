@@ -34,7 +34,7 @@ window.appData.tools = window.appData.tools || [];
 // Функция для получения JSON-данных через эндпоинт
 export async function fetchToolLibraryData(device_number) {
     console.log('fetchToolLibraryData');
-    const url = "../backend/get_tool_types_from_db?device_number="+device_number;
+    const url = "../backend/mass_load_tools?device_number="+device_number;
     try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -107,7 +107,7 @@ async function initialization(element_name) {
     initToolsData(device_number).then(data => {
 //        jsonToolLibrary = await fetchToolLibraryData();
         generateTools();
-        initializeDragAndDrop();
+//        initializeDragAndDrop();
     });
 
     $("#customToolsToolbar").width($("#column-2").width());

@@ -34,6 +34,7 @@ from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 # from barcode.writer import ImageWriter
 from barcode.codex import Code128
 from barcode.writer import ImageWriter
+import segno
 from io import BytesIO
 from fastapi import HTTPException, Depends
 from fastapi.responses import StreamingResponse
@@ -130,49 +131,19 @@ def get_all_plans(device_number: int, db: Session = Depends(get_db)):
     responses={200: {"content": {"image/png": {}}}},
     response_class=StreamingResponse,
 )
-def plan_barcode(barcode_index: str, db: Session = Depends(get_db)):
+def plan_barcode(plan_index: int, db: Session = Depends(get_db)):
     e_plan = EnginePlan()
-    plan = e_plan.get_plan_by_barcode(barcode=barcode_index)
+    plan = e_plan.get_plan_by_id(plan_id=plan_index)
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found")
 
     # 1) Генерируем штрих-код как PIL.Image
-    data = str(plan.barcode)
-    barcode_obj = Code128(data, writer=ImageWriter())
-    # вместо .write(buf) используем .render()
-    code_img: Image.Image = barcode_obj.render()
-    w, h = code_img.size
+    data = str(plan.designation + "\n\n\n" + plan.enterprise + "\n" + plan.description + "\n" + plan.name)
+    print(f"plan_barcode: {plan_index}, data: {data}")
 
-    # 2) Дорисовываем текст
-    padding = 40
-    canvas = Image.new("RGBA", (w, h + padding), "WHITE")
-    canvas.paste(code_img, (0, 0))
-
-    draw = ImageDraw.Draw(canvas)
-    # путь к шрифту с поддержкой кириллицы
-
-    try:
-        # Попробуем системный шрифт
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 32)
-    except (OSError, IOError):
-        # Аварийно — встроенный bitmap-шрифт
-        try:
-            # Windows
-            font = ImageFont.truetype("arial.ttf", 32)
-        except (OSError, IOError):
-            # Ничего другого не нашли — используем дефолт (без контроля размера)
-            font = ImageFont.load_default()
-
-    text = plan.designation or ""
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    x = (w - text_w) // 2
-    y = h + (padding - text_h) // 2
-    draw.text((x, y), text, fill="black", font=font)
-
-    # 3) Сохраняем в BytesIO и возвращаем
     out_buf = BytesIO()
-    canvas.convert("RGB").save(out_buf, format="PNG")
+    qrcode = segno.make_qr(data)
+    qrcode.save(out_buf, kind='png', scale=5)  # Adjust scale as needed
     out_buf.seek(0)
     return StreamingResponse(out_buf, media_type="image/png")
 
