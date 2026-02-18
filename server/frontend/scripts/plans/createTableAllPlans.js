@@ -6,34 +6,7 @@ var showTool = function (state) {
 
 window.showTool = showTool;
 
-// Функция для отображения модального окна Штрихкода
-var showBarcode = function (state) {
-    document.getElementById('modal_window_barcode').style.display = state
-    document.getElementById('membrane').style.display = state
-}
 
-
-/**
- * Устанавливает в модалку URL изображения и открывает её.
- * @param {number} planId 
- */
-export function openModalBarcode(planId) {
-  // Подставляем ID в текст
-  document.getElementById('modal_plan_id').textContent = planId;
-
-  // Формируем URL к вашему эндпоинту
-  const img = document.getElementById('modal_barcode_img');
-  img.src = `/backend/plan_barcode?barcode_index=${encodeURIComponent(planId)}`;
-
-  // Очистим старое, если вдруг
-  img.onerror = () => {
-    console.error('Не удалось загрузить штрих‑код');
-    img.alt = 'Ошибка загрузки';
-  };
-
-  // Открываем модалку
-  showBarcode('flex');
-}
 
 /**
  * Печать содержимого модалки (только картинки).
@@ -137,4 +110,3 @@ export function createTableAllPlans(containerId, jsonAllPlans) {
 //}
 
 
-window.showBarcode = showBarcode;

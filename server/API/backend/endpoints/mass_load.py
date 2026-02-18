@@ -4,6 +4,9 @@ import traceback
 from Core.app_logging import get_logger
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 
+from DB.Engine.ConsumptionCRUD import EngineConsumption
+from DB.Engine.DropCRUD import EngineDrop
+
 logger = get_logger(__name__)
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
@@ -318,6 +321,8 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
     try:
         e_tool_types = EngineToolTypes()
         e_load = EngineLoad()
+        e_drop = EngineDrop()
+        # e_consumption = EngineConsumption()
         e_device = EngineDevice()
         all_tool_types = e_tool_types.get_all_tool_types()
 
@@ -334,9 +339,13 @@ def export_tools(device_number: int, db: Session = Depends(get_db)):
             if count == 0:
                 count = '-'
             else:
-                loads = e_load.find_by_tools_id(tool_type.id)
+                loads = e_load.find_by_tools_id_and_status_list(tool_type.id, [3,5])
+                drops = e_drop.find_by_tools_id_and_status_list(tool_type.id, [2,4])
+                # consumptions = e_consumption.get_by_tool_id(tool_type.id)
                 if loads:
                     count -= len(loads)
+                if drops:
+                    count += len(drops)
                 count = str(count)
 
             tool_type_list.append({"id": tool_type.id, "name": tool_type.name, "description": tool_type.description or "", "sum": count})
@@ -385,6 +394,7 @@ def save_mass_load(
     e_tool_types = EngineToolTypes(session=db)
     e_group = EngineGroup(session=db)
     e_load = EngineLoad(session=db)
+    e_drop = EngineDrop(session=db)
     e_load_operation = EngineLoadOperations(session=db)
     e_operation_has_device = EngineLoadOperationsHasDevice(session=db)
     e_history_has_device = EngineHistoryHasDevice(session=db)
@@ -427,6 +437,35 @@ def save_mass_load(
     e_mass_load.device_id = queue_device_id
     e_mass_load_has_device.device_id = queue_device_id
     logger.debug("[save_mass_load] Установлен device_id=%s для CRUD-объектов (ключ очереди)", queue_device_id)
+
+    # 6) разворачиваем операции: каждый инструмент с sum > 1 превращается в sum отдельных записей
+    flat_stories = []
+    for key, story in stories.items():
+
+        # проверяем, что инструмент ещё в наличии
+
+        request_tool_type_id = story.tool
+        request_count = story.sum
+        tool_type = e_tool_types.get_tool_type_by_id(request_tool_type_id)
+        if tool_type:
+            count = tool_type.count
+
+            if count > 0:
+                loads = e_load.find_by_tools_id_and_status_list(request_tool_type_id, [3,5])
+                drops = e_drop.find_by_tools_id_and_status_list(request_tool_type_id, [2,4])
+                # consumptions = e_consumption.get_by_tool_id(tool_type.id)
+                if loads:
+                    count -= len(loads)
+                if drops:
+                    count += len(drops)
+
+                if count < request_count:
+                    error_msg = f"Инструмента с id '{request_tool_type_id}' недостаточно на складе. Требуется: {request_count}, имеется: {count}"
+                    logger.error(f"[save_mass_load] {error_msg})")
+                    raise HTTPException(status_code=400, detail=error_msg)
+
+        for _i in range(story.sum):
+            flat_stories.append((key, story))
 
     empty_cells = e_cells.get_all_empty_cells()
     total_tools = sum(s.sum for s in stories.values())
@@ -499,11 +538,6 @@ def save_mass_load(
         e_mass_load_has_device.add_link(mass_load_id=mass_load_id, device_id=device_id)
         logger.info("[save_mass_load] Связь MassLoadHasDevice создана успешно")
 
-        # 6) разворачиваем операции: каждый инструмент с sum > 1 превращается в sum отдельных записей
-        flat_stories = []
-        for key, story in stories.items():
-            for _i in range(story.sum):
-                flat_stories.append((key, story))
 
         total_operations = len(flat_stories)
         processed_count = 0

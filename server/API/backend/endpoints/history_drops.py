@@ -151,6 +151,11 @@ def get_history_drops(db: Session = Depends(get_db)):
         try:
             # 2) Находим все Load для этой mass_load
             drops = drop_crud.filter_by(mass_drop_id=mass.id)
+            op_status = stat_crud.find_by_name("mass_drop_ready")
+            if op_status:
+                op_status = op_status.id
+            else:
+                op_status = 4
 
             # 3) Находим все операции загрузки для этих Load
             ops = []
@@ -164,7 +169,7 @@ def get_history_drops(db: Session = Depends(get_db)):
                 cell = e_cells.get_cell_by_id(cell_id=drop.cell_id)
                 if cell:
                     cell_number = cell.number
-                    cells.append(cell_number)
+                    cells.append({'cell': cell_number, 'status': drop.status_id})
                 else:
                     cell_number = drop.cell_id
                 # if tool.plan_id:
@@ -173,6 +178,9 @@ def get_history_drops(db: Session = Depends(get_db)):
                 if drop.plan_id:
                     plan = e_plans.get_plan_by_id(drop.plan_id)
                     plans.append(plan.designation + " " + plan.name)
+
+                if drop.status_id == 4:
+                    op_status = drop.status_id
 
 
             # 4) Берём самую свежую операцию, если есть
@@ -186,7 +194,7 @@ def get_history_drops(db: Session = Depends(get_db)):
             user_name = f"{user.family} {user.first_name[0]}. {user.second_name[0]}." if user else "—"
 
             # 5) Статус: из самой операции
-            status = stat_crud.get(latest_op.status_id) if history else None
+            status = stat_crud.get(op_status) if op_status else None
             status_desc = status.description if status and status.description else (status.stype if status else "—")
 
             # 7) Формат полей

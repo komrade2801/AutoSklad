@@ -23,9 +23,9 @@
     <script src="../assets/bootstrap-table/1.25.0/bootstrap-table.js"></script>
     <script src="../assets/bootstrap-table/1.25.0/locale/bootstrap-table-ru-RU.js"></script>
 
-<!--    <link rel="stylesheet" href="../assets/jquery-resizable-columns/jquery.resizableColumns.css">-->
-<!--    <script src="../assets/jquery-resizable-columns/jquery.resizableColumns.js"></script>-->
-<!--    <script src="../assets/bootstrap-table/1.25.0/extensions/resizable/bootstrap-table-resizable.js"></script>-->
+    <!--    <link rel="stylesheet" href="../assets/jquery-resizable-columns/jquery.resizableColumns.css">-->
+    <!--    <script src="../assets/jquery-resizable-columns/jquery.resizableColumns.js"></script>-->
+    <!--    <script src="../assets/bootstrap-table/1.25.0/extensions/resizable/bootstrap-table-resizable.js"></script>-->
 
     <script src="../assets/tableExport.jquery.plugin/tableExport.js"></script>
     <script src="../assets/tableExport.jquery.plugin/libs/js-xlsx/xlsx.core.min.js"></script>
@@ -40,23 +40,6 @@
     <link rel="stylesheet" href="../style/dropdown_list.css">
     <link rel="stylesheet" href="../style/style_modal_window.css">
     <link rel="stylesheet" href="../style/massdrop/main.css">
-    <style>
-        /* Стили для кастомных тулбаров в fixed-table-toolbar */
-        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content {
-            display: flex !important;
-            align-items: center;
-            gap: 10px;
-            margin-left: 10px;
-        }
-
-        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content .btn {
-            margin: 0;
-        }
-
-        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content form {
-            margin: 0;
-        }
-    </style>
 </head>
 <body onload="initialization('screen_3_mass_drop');"
       class="d-flex justify-content-center" id="body">
@@ -90,7 +73,8 @@
                     <span style="color: #2E4461; font-size: 18px; font-weight: bold;">Инструмент к выгрузке</span>
                 </div>
 
-                <div id="droppable_tools_div" class="panel-body" style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                <div id="droppable_tools_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
                     <table
                             id='droppable_tools_table'
                             data-locale="ru-RU"
@@ -118,10 +102,14 @@
                         </tr>
                         </thead>
                     </table>
-                    <div id="droppableToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
-                        <span style="color: #2E4461; font-size: 18px; font-weight: bold;">Аппарат: Вендинг №1</span>
+                    <div id="droppableToolsToolbar" class="custom-toolbar-content"
+                         style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 18px; font-weight: bold;">Аппарат: Вендинг №1</span>
                         <button class="btn btn-primary" style="width: 24px; height: 24px; padding: 0;">
                             <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <button id="dropAll" class="btn btn_vending" type="button" onclick="dropAllRows()">
+                            Выбрать все
                         </button>
                     </div>
                 </div>
@@ -131,7 +119,8 @@
                 <div style="width: 100%; text-align: center; margin-top: 10px; flex-shrink: 0;">
                     <span style="color: #2E4461; font-size: 18px; font-weight: bold;">Выбранный инструмент</span>
                 </div>
-                <div id="droppable_story_div" class="panel-body" style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                <div id="droppable_story_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
                     <table
                             id='droppable_story_table'
                             data-locale="ru-RU"
@@ -157,8 +146,11 @@
                         </tr>
                         </thead>
                     </table>
-                    <div id="customToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
-                        <button id="saveDrop" class="btn btn_vending" type="button" onclick="saveHistoryAsMassDrop(1)">Сохранить выгрузку</button>
+                    <div id="customToolsToolbar" class="custom-toolbar-content"
+                         style="display: flex; align-items: center; gap: 10px;">
+                        <button id="saveDrop" class="btn btn_vending" type="button" onclick="saveHistoryAsMassDrop(1)">
+                            Сохранить выгрузку
+                        </button>
                     </div>
                 </div>
             </div>

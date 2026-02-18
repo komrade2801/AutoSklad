@@ -6,6 +6,7 @@
     <link rel="icon" href="/favicon.png?v=1" type="image/png">
     <title>Все чертежи</title>
     <script type="module" src="../scripts/plans/init_7_plans.js"></script>
+    <script src="../scripts/plans/tableScript.js"></script>
     <script src="../scripts/authorisation/navigate_token.js"></script>
     <!--    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>-->
     <link rel="stylesheet" href="../assets/bootstrap-icons/1.13.1/bootstrap-icons.css">
@@ -35,18 +36,6 @@
     <link rel="stylesheet" href="../style/dropdown_list.css">
     <link rel="stylesheet" href="../style/style_modal_window.css">
     <style>
-        /* Стили для кастомных тулбаров в fixed-table-toolbar */
-        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content {
-            display: flex !important;
-            align-items: center;
-            gap: 10px;
-            margin-left: 10px;
-        }
-
-        .bootstrap-table .fixed-table-toolbar .custom-toolbar-content .btn {
-            margin: 0;
-        }
-
         /* Красивые стили для модального окна подтверждения удаления */
         #deleteConfirmModal .modal-content {
             border: none;
@@ -224,188 +213,6 @@
                                 Добавить чертёж
                             </button>
                         </div>
-                        <script>
-                            // Универсальная функция для модального подтверждения удаления
-                            function showDeleteConfirm(message) {
-                                return new Promise((resolve) => {
-                                    // Устанавливаем текст сообщения
-                                    document.getElementById('deleteConfirmMessage').textContent = message;
-
-                                    // Показываем модальное окно
-                                    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-                                    modal.show();
-
-                                    // Обработчики кнопок
-                                    const confirmBtn = document.getElementById('confirmDeleteBtn');
-                                    const cancelBtn = document.getElementById('cancelDeleteBtn');
-
-                                    const handleConfirm = () => {
-                                        modal.hide();
-                                        cleanup();
-                                        resolve(true);
-                                    };
-
-                                    const handleCancel = () => {
-                                        modal.hide();
-                                        cleanup();
-                                        resolve(false);
-                                    };
-
-                                    const cleanup = () => {
-                                        confirmBtn.removeEventListener('click', handleConfirm);
-                                        cancelBtn.removeEventListener('click', handleCancel);
-                                    };
-
-                                    confirmBtn.addEventListener('click', handleConfirm);
-                                    cancelBtn.addEventListener('click', handleCancel);
-
-                                    // Обработчик закрытия модального окна по крестику или клику вне
-                                    document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', () => {
-                                        cleanup();
-                                        resolve(false);
-                                    }, { once: true });
-                                });
-                            }
-
-                            // Функция для открытия модального окна
-                            function openPlanToolListModal(plan_name, plan_tools) {
-                                // Подставляем ID в текст
-                                document.getElementById('modal_plan_tools_id').textContent = plan_name;
-
-                            let tool_list_element = document.getElementById('tool_list');
-                            tool_list_element.innerHTML = '';
-
-                            plan_tools.forEach(tool => {
-                                const tool_row = document.createElement('div');
-                                tool_row.style = 'padding-top: 20px;'
-                                tool_row.innerHTML = tool.name + '\t-\t' + tool.tool_types_count + ' шт.';
-                                tool_list_element.appendChild(tool_row);
-                            })
-
-                            showTool('flex');  // Открываем модальное окно
-                        }
-
-                        function toolListFormatter(value, row, index, field) {
-                            let toolListActionDiv = document.createElement("div");
-                             toolListActionDiv.className = "table-actions";
-
-                             let toolListButton = document.createElement("button");
-                             toolListButton.style.width = "35px";
-                             toolListButton.style.height = "35px";
-                             toolListButton.innerHTML = "📋";
-                             toolListButton.title = "Показать список инструментов";
-
-                             toolListButton.addEventListener('click', async function() {openPlanToolListModal(row.designation, row.tools)});
-
-                             toolListActionDiv.appendChild(toolListButton);
-
-                             return toolListActionDiv;
-                        }
-
-                        function actionToolsFormatter(value, row, index, field) {
-                        //    console.log(value);
-                        //    console.log(row);
-                        //    console.log(index);
-                        //    console.log(field);
-
-                             let actionsDiv = document.createElement("div");
-                             actionsDiv.className = "table-actions";
-
-                             // Edit button
-                        //     let editCell = document.createElement("td");
-                             let editButton = document.createElement("button");
-                             editButton.style.width = "35px";
-                             editButton.style.height = "35px";
-                             editButton.innerHTML = "✏️";
-                             editButton.title = "Редактировать";
-
-                             editButton.addEventListener('click', async function () {
-                                 const toolTypeId = row.id;
-                                 if (!toolTypeId) {
-                                     console.error("ID инструмента не найден");
-                                     return;
-                                 }
-
-                                 // Проверяем, занят ли инструмент
-                                 try {
-                                     const checkResponse = await fetch(`../backend/check_tool_busy/${toolTypeId}`);
-                                     if (!checkResponse.ok) {
-                                         throw new Error("Ошибка проверки инструмента");
-                                     }
-                                     const checkData = await checkResponse.json();
-
-                                         if (checkData.is_busy) {
-                                             showToast("Данный инструмент используется в вендинге. Редактировать можно только свободный инструмент. " + checkData.message, 'warning');
-                                             return;
-                                         }
-
-                                         // Переходим на страницу редактирования с параметром tool_type_id
-                                         let url = '../screen_16_add_tool.html';
-                                         let targetUrl = new URL(url, window.location.origin).href;
-                                         let token = localStorage.getItem('token');
-                                         let full_url = targetUrl + "?token=" + token + "&tool_type_id=" + toolTypeId;
-                                         window.location.href = full_url;
-                                     } catch (error) {
-                                         console.error('Ошибка при проверке инструмента:', error);
-                                         showToast('Ошибка при проверке инструмента', 'danger');
-                                     }
-                                 });
-
-                             actionsDiv.appendChild(editButton);
-
-                             // Delete button
-                        //     let deleteCell = document.createElement("td");
-                             let deleteButton = document.createElement("button");
-                             deleteButton.style.width = "35px";
-                             deleteButton.style.height = "35px";
-                             deleteButton.innerHTML = "❌";
-                             deleteButton.title = "Удалить";
-
-                             deleteButton.addEventListener('click', async function () {
-                                 const toolTypeId = row.id;
-                                 if (!toolTypeId) {
-                                     console.error("ID инструмента не найден");
-                                     return;
-                                 }
-
-                                 // Подтверждение удаления
-                                 const confirmed = await showDeleteConfirm("Вы уверены, что хотите удалить этот инструмент?");
-                                 if (!confirmed) {
-                                     return;
-                                 }
-
-                                 // Удаляем инструмент (endpoint сам проверит занятость)
-                                 try {
-                                     const deleteResponse = await fetch(`../backend/delete_tool_type/${toolTypeId}`, {
-                                         method: 'DELETE'
-                                     });
-
-                                         if (!deleteResponse.ok) {
-                                             const errorData = await deleteResponse.json();
-                                             showToast(errorData.detail || "Ошибка при удалении инструмента", 'danger');
-                                             return;
-                                         }
-
-                                         const result = await deleteResponse.json();
-                                         showToast(result.message || "Инструмент успешно удален", 'success');
-
-                                         // Перезагружаем страницу для обновления таблицы
-                                         let url = '../screen_15_tool_library.html';
-                                         let targetUrl = new URL(url, window.location.origin).href;
-                                         let token = localStorage.getItem('token');
-                                         let full_url = targetUrl + "?token=" + token;
-                                         window.location.href = full_url;
-                                     } catch (error) {
-                                         console.error('Ошибка при удалении инструмента:', error);
-                                         showToast('Ошибка при удалении инструмента', 'danger');
-                                     }
-                                 });
-
-                             actionsDiv.appendChild(deleteButton);
-
-                                 return actionsDiv;
-                            }
-                        </script>
                 </div>
             </div>
         </div>

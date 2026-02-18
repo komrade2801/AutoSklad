@@ -80,7 +80,7 @@ class Load(Base, Model):
         """Представляет объект Load в виде строки для удобства отладки."""
         return (f"<{self.__tablename__}("
                 f"id={self.id}, "
-                f"description={self.description}"
+                f"description={self.description}, "
                 f"tools_id={self.tools_id}, "
                 f"mass_load_id={self.mass_load_id}, "
                 f"cell_id={self.cell_id}, "

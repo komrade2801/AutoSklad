@@ -196,6 +196,11 @@ def get_history_loads(db: Session = Depends(get_db)):
             # 2) Находим последнюю операцию loadOperations для этой mass_load
             # 2) Находим все Load для этой mass_load
             loads = load_crud.filter_by(mass_load_id=mass.id)
+            op_status = stat_crud.find_by_name("mass_load_ready")
+            if op_status:
+                op_status = op_status.id
+            else:
+                op_status = 5
 
             # 3) Находим все операции загрузки для этих Load
             ops = []
@@ -209,7 +214,7 @@ def get_history_loads(db: Session = Depends(get_db)):
                 cell = e_cells.get_cell_by_id(cell_id=load.cell_id)
                 if cell:
                     cell_number = cell.number
-                    cells.append(cell_number)
+                    cells.append({'cell': cell_number, 'status': load.status_id})
                 else:
                     cell_number = load.cell_id
                 # if tool.plan_id:
@@ -219,11 +224,15 @@ def get_history_loads(db: Session = Depends(get_db)):
                     plan = e_plans.get_plan_by_id(load.plan_id)
                     plans.append(plan.designation + " " + plan.name)
 
+                if load.status_id == 5:
+                    op_status = load.status_id
+
 
             # 4) Берём самую свежую операцию, если есть
             latest_op = max(ops, key=lambda o: o.id) if ops else None
 
-            logger.debug("latest_op = %s", latest_op)
+            logger.debug(f"latest_op = {latest_op}")
+            logger.debug(f"op_status = {op_status}")
 
             # 6) Пользователь: из связанной истории
             history = hist_crud.get(latest_op.history_id) if latest_op and latest_op.history_id else None
@@ -231,7 +240,7 @@ def get_history_loads(db: Session = Depends(get_db)):
             user_name = f"{user.family} {user.first_name[0]}. {user.second_name[0]}." if user else "—"
 
             # 5) Статус: из самой операции
-            status = stat_crud.get(mass.status_id) if history else None
+            status = stat_crud.get(op_status) if history else None
             status_desc = status.description if status and status.description else (status.stype if status else "—")
 
             # 7) Формат полей

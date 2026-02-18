@@ -51,7 +51,13 @@ class EngineLoad(BaseCRUD):
         """
         Возвращает список записей Load, связанных с указанным tools_id.
         """
-        return self.session.query(self.model).filter_by(tools_id=tools_id).all()
+        return self.session.query(self.model).filter_by(tools_id=tools_id, ).all()
+
+    def find_by_tools_id_and_status_list(self, tools_id: int, status_id_list: List[int]) -> List[Load]:
+        """
+        Возвращает список записей Load, связанных с указанным tools_id.
+        """
+        return self.session.query(self.model).filter_by(tools_id=tools_id).filter(self.model.status_id.in_(status_id_list)).all()
 
     def find_by_status_id(self, status_id: int) -> List[Load]:
         """

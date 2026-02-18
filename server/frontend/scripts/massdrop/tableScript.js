@@ -75,3 +75,12 @@ var show = function (state) {
 }
 
 window.show = show;
+
+function dropAllRows() {
+
+    while (window.appData.tools.length > 0) {
+        const row = window.appData.tools[0];
+        console.log(row);
+        handleUnloadClick(row.tool, row.group, row.number, row.cell, row.plan)
+    }
+}

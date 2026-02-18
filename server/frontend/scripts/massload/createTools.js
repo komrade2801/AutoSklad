@@ -19,13 +19,8 @@ window.getTotalToolsToLoad = getTotalToolsToLoad;
 
 export function createTools() {
     if (window.appData.tools != undefined) {
-        // Заменяем "-" на символ бесконечности перед загрузкой в таблицу
-        const processedTools = window.appData.tools.map(tool => ({
-            ...tool,
-            sum: (tool.sum === '-' || tool.count === 0 || tool.count === '-') ? '∞' : (tool.sum || tool.count)
-        }));
-
-        $('#loadable_tools_table').bootstrapTable('load', processedTools);
+//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
+        $('#loadable_tools_table').bootstrapTable('load', window.appData.tools);
         $('#loadable_tools_table').bootstrapTable('hideLoading');
     }
 }

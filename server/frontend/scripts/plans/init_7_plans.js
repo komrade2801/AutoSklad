@@ -41,6 +41,7 @@ function processAllPlans(allPlans) {
 
         // Формируем запись плана
         jsonAllPlans.push({
+            id: plan.id,
             enterprise: plan.enterprise,
             barcode: plan.barcode,
             designation: plan.designation,
