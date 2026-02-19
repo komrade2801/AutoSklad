@@ -101,15 +101,8 @@
     width: 100%;
 }
 
-#customToolsToolbar,
-#customGroupsToolbar{
-    .btn {
-        padding-left: 30px;
-        padding-right: 30px;
-    }
-}
-
-.custom-toolbar-content{
+.custom-toolbar-content,
+.modal-overlay{
     .btn {
         padding-left: 30px;
         padding-right: 30px;
@@ -122,7 +115,6 @@
     display: flex !important;
     align-items: center;
     gap: 10px;
-    margin-left: 10px;
 }
 
 .bootstrap-table .fixed-table-toolbar .custom-toolbar-content .btn {
