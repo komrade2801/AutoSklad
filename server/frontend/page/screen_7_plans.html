@@ -34,9 +34,94 @@
     <link rel="stylesheet" href="../style/background.css">
     <link rel="stylesheet" href="../style/button_style.css">
     <link rel="stylesheet" href="../style/dropdown_list.css">
-    <link rel="stylesheet" href="../style/style_modal_window.css">
     <style>
-        /* Красивые стили для модального окна подтверждения удаления */
+        /* Модалки списка инструментов и штрихкода — по образцу screen_15 */
+        #modal_window_tool,
+        #modal_window_barcode {
+            padding: 0;
+        }
+
+        #modal_window_tool .modal-dialog,
+        #modal_window_barcode .modal-dialog {
+            max-width: 550px;
+        }
+
+        #modal_window_tool .modal-content,
+        #modal_window_barcode .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            background: #fff;
+            overflow: hidden;
+        }
+
+        #modal_window_tool .modal-header,
+        #modal_window_barcode .modal-header {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 16px 16px 0 0;
+            border-bottom: none;
+            padding: 16px 20px;
+            background: #4e9be5;
+            color: white;
+        }
+
+        #modal_window_tool .modal-title,
+        #modal_window_barcode .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin: 0;
+        }
+
+        #modal_window_tool .modal-header p,
+        #modal_window_barcode .modal-header p {
+            font-weight: 400;
+            margin: 0;
+            margin-top: 4px;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.4;
+        }
+
+        #modal_window_tool .modal-body,
+        #modal_window_barcode .modal-body {
+            background: #fff;
+            padding: 16px 20px;
+        }
+
+        #modal_window_tool .modal-footer,
+        #modal_window_barcode .modal-footer {
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-radius: 0 0 16px 16px;
+            justify-content: center;
+        }
+
+        #modal_window_tool .btn-close,
+        #modal_window_barcode .btn-close {
+            filter: invert(1);
+            opacity: 0.8;
+            flex-shrink: 0;
+        }
+
+        #modal_window_tool .btn-close:hover,
+        #modal_window_barcode .btn-close:hover {
+            opacity: 1;
+        }
+
+        #modal_window_tool .modal.fade .modal-dialog,
+        #modal_window_barcode .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+            transform: translate(0, -50px);
+        }
+
+        #modal_window_tool .modal.show .modal-dialog,
+        #modal_window_barcode .modal.show .modal-dialog {
+            transform: translate(0, 0);
+        }
+
+        /* Модальное окно подтверждения удаления — собственное, по образцу screen_15 */
         #deleteConfirmModal .modal-content {
             border: none;
             border-radius: 16px;
@@ -63,6 +148,13 @@
             margin: 0;
         }
 
+        #deleteConfirmModal #deleteConfirmMessage {
+            font-weight: 400;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.4;
+        }
+
         #deleteConfirmModal .btn-close {
             filter: invert(1);
             opacity: 0.8;
@@ -78,7 +170,8 @@
             padding: 20px 24px;
             background: #f8f9fa;
             border-radius: 0 0 16px 16px;
-            gap: 12px;
+            gap: 5px;
+            justify-content: center;
         }
 
         #deleteConfirmModal .btn {
@@ -115,7 +208,6 @@
             box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);
         }
 
-        /* Анимация появления модального окна */
         #deleteConfirmModal .modal.fade .modal-dialog {
             transition: transform 0.3s ease-out;
             transform: translate(0, -50px);
@@ -129,29 +221,56 @@
 <body onload="initialization('screen_7_plans')"
       class="d-flex justify-content-center" id="body">
 
-<div id="membrane"></div>
-<div id="modal_window_tool">
-    <span class="plan_name" style="width: 80%; align-items: start; margin-top: 10px;">Чертёж №: <span
-            id="modal_plan_tools_id"></span></span>
-    <div id="tool_list">
-    </div>
-    <div style="display: flex; flex-direction: row; margin-top: 50px;">
-        <button class="btn_vending" onclick="showTool('none')" style="margin-right: 20px;">Назад</button>
+<!-- Модальное окно списка инструментов -->
+<div class="modal fade" id="modal_window_tool" tabindex="-1" aria-labelledby="modalToolListLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; width: 100%;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0;">
+                        <i class="bi bi-tools" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h5 class="modal-title" id="modalToolListLabel">Чертёж №: <span id="modal_plan_tools_id"></span></h5>
+                        <p style="margin: 0; margin-top: 4px;">Список инструментов для данного чертежа</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="showToolModal(false)" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tool_list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="showToolModal(false)">Назад</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Разметка модалки -->
-<div id="modal_window_barcode" class="modal-overlay">
-    <span class="plan_name">Чертёж №: <span id="modal_plan_id"></span></span>
-    <img
-            id="modal_barcode_img"
-            class="barcode-img"
-            src=""
-            alt="Plan barcode"
-    />
-    <div class="modal-actions">
-        <button class="btn_vending" onclick="showBarcode('none')">Назад</button>
-        <button class="btn_vending" onclick="printBarcode()">Распечатать</button>
+<!-- Модальное окно штрихкода -->
+<div class="modal fade" id="modal_window_barcode" tabindex="-1" aria-labelledby="modalBarcodeLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; width: 100%;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0;">
+                        <i class="bi bi-qr-code" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h5 class="modal-title" id="modalBarcodeLabel">Чертёж №: <span id="modal_plan_id"></span></h5>
+                        <p style="margin: 0; margin-top: 4px;">Штрихкод чертежа</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" onclick="showBarcodeModal(false)" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modal_barcode_img" class="barcode-img" src="" alt="Plan barcode" style="max-height: 200px; border-radius: 5px; margin: 10px 0;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="showBarcodeModal(false)">Назад</button>
+                <button type="button" class="btn btn-primary" onclick="printBarcode()" style="background-color: #4e9be5; border-color: #4e9be5;">Распечатать</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -218,7 +337,7 @@
         </div>
 
         <!-- Модальное окно подтверждения удаления -->
-        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">

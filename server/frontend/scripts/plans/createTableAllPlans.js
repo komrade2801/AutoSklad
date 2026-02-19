@@ -1,10 +1,16 @@
-// Функция для отображения модального окна с инструментами
-var showTool = function (state) {
-    document.getElementById('modal_window_tool').style.display = state
-    document.getElementById('membrane').style.display = state
+// Функция для отображения модального окна с инструментами (Bootstrap 5)
+function showToolModal(show) {
+    const modalEl = document.getElementById('modal_window_tool');
+    if (!modalEl) return;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (show) {
+        modal.show();
+    } else {
+        modal.hide();
+    }
 }
 
-window.showTool = showTool;
+window.showToolModal = showToolModal;
 
 
 
@@ -14,9 +20,11 @@ window.showTool = showTool;
 export function printBarcode() {
     const img = document.getElementById('modal_barcode_img');
     const w = window.open('');
-    w.document.write(`<img src="${img.src}" onload="window. print();window.close()">`);
+    w.document.write(`<img src="${img.src}" onload="window.print();window.close()">`);
     w.document.close();
 }
+
+window.printBarcode = printBarcode;
 
 export function createTableAllPlans(containerId, jsonAllPlans) {
 

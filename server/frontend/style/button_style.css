@@ -122,7 +122,6 @@
     display: flex !important;
     align-items: center;
     gap: 10px;
-    margin-left: 10px;
 }
 
 .bootstrap-table .fixed-table-toolbar .custom-toolbar-content .btn {
