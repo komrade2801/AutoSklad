@@ -142,51 +142,7 @@
     font-family: Arial Black;
 }
 
-#modal_window_create {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 800px;
-    background-color: #ffffff;
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-#modal_window_create_group {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 800px;
-    background-color: #ffffff;
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
+/* #modal_window_create и #modal_window_create_group — Bootstrap-модалки, стили в screen_15_tool_library.html */
 
 
 #modal_window_finish {
