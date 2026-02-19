@@ -216,13 +216,33 @@
         #deleteConfirmModal .modal.show .modal-dialog {
             transform: translate(0, 0);
         }
+
+        /* Видимая полоса прокрутки в модалках при переполнении */
+        .modal-dialog-scrollable .modal-body {
+            scrollbar-width: auto;
+            scrollbar-gutter: stable;
+        }
+        .modal-dialog-scrollable .modal-body::-webkit-scrollbar {
+            width: 10px;
+        }
+        .modal-dialog-scrollable .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+        .modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb {
+            background: #adb5bd;
+            border-radius: 5px;
+        }
+        .modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #6c757d;
+        }
     </style>
 </head>
 <body onload="initialization('screen_7_plans')"
       class="d-flex justify-content-center" id="body">
 
 <!-- Модальное окно списка инструментов -->
-<div class="modal fade" id="modal_window_tool" tabindex="-1" aria-labelledby="modalToolListLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+<div class="modal fade modal-dialog-scrollable" id="modal_window_tool" tabindex="-1" aria-labelledby="modalToolListLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="height: 600px;">
             <div class="modal-header">
@@ -265,7 +285,7 @@
 </div>
 
 <!-- Модальное окно штрихкода -->
-<div class="modal fade" id="modal_window_barcode" tabindex="-1" aria-labelledby="modalBarcodeLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+<div class="modal fade modal-dialog-scrollable" id="modal_window_barcode" tabindex="-1" aria-labelledby="modalBarcodeLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -349,7 +369,7 @@
         </div>
 
         <!-- Модальное окно подтверждения удаления -->
-        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal fade modal-dialog-scrollable" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
