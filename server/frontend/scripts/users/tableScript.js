@@ -130,7 +130,11 @@ window.show_edit = show_edit;
 function openModalEdit(user) {
     if (user) {
         window.userIndexToEdit = user.index; // сохраняем индекс глобально
+        $('#modal_window_edit_title').text("Редактирование пользователя");
+        $('#btn-save-user').text("Сохранить");
     } else {
+        $('#modal_window_edit_title').text("Создание пользователя");
+        $('#btn-save-user').text("Создать");
         window.userIndexToEdit = 0;
         user = {
             index:    0,

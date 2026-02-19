@@ -42,7 +42,10 @@
       class="d-flex justify-content-center" id="body">
 
 <div id="membrane"></div>
-<div id="modal_window_edit">
+<div id="modal_window_edit" class="modal-overlay">
+    <div style="display: flex; flex-direction: row; margin-bottom: 20px;">
+        <span id="modal_window_edit_title"></span>
+    </div>
     <div id="user-form"
          style="display: flex; flex-direction: column; width: 90%; margin-top: 10px; padding: 10px; border: 2px solid rgb(78, 155, 229); border-radius: 5px;">
         <div class="edit-input"><span class="col-sm-4">Фамилия:</span>
@@ -90,7 +93,7 @@
         </div>
         </div>
     </div>
-    <div style="display: flex; flex-direction: row; margin-top: 50px; width: 90%;">
+    <div style="display: flex; flex-direction: row; margin-top: 50px; width: 90%; justify-content: center;">
         <button class="btn btn_vending" type="button" onclick="clearAllForm()">Очистить все поля
         </button>
         <button class="btn btn_vending" type="button" onclick="show_edit('none')">Отмена</button>
@@ -99,7 +102,7 @@
         </button>
     </div>
 </div>
-<div id="modal_window_confirmation">
+<div id="modal_window_confirmation" class="modal-overlay">
     <span style="font-size: 24px; padding-left:10px;">Вы уверены, что хотите удалить пользователя?</span>
     <span id="role" style="display: flex; width: 80%; align-items: start; margin-top: 15px;"></span>
     <span id="name_user"
@@ -112,7 +115,7 @@
     </div>
 </div>
 
-<div id="modal_window_password">
+<div id="modal_window_password" class="modal-overlay">
     <span id="user" style="font-size: 24px;"></span>
     <span id="login" style="display: flex; width: 80%; align-items: start; margin-top: 15px;"></span>
     <span id="password" style="display: flex; width: 80%; align-items: start; margin-top: 15px;">
@@ -132,8 +135,8 @@
         <span class="plan_name">Пользователь №: <span id="modal_user_id"></span></span>
         <img id="modal_barcode_img" class="barcode-img" src="" alt="User barcode"/>
         <div class="modal-actions">
-            <button class="btn_vending" onclick="showBarcode('none')">Назад</button>
-            <button class="btn_vending" onclick="printBarcode()">Распечатать</button>
+            <button class="btn btn_vending" onclick="showBarcode('none')">Назад</button>
+            <button class="btn btn_vending" onclick="printBarcode()">Распечатать</button>
         </div>
     </div>
 </div>
@@ -185,7 +188,7 @@
                         </tr>
                         </thead>
                     </table>
-                    <div id="customToolsToolbar" style="display: flex;">
+                    <div id="customToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
                         <button id="addUserButton" class="btn btn_vending" type="button"
                                 onclick="openModalEdit();">
                             Добавить пользователя

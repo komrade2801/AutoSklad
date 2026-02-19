@@ -44,13 +44,10 @@ window.addUser = function() {
 }
 
 
-/**
- * Показывает или скрывает модалку.
- * @param {'flex'|'none'} mode
- */
-export function showBarcode(mode) {
-  const overlay = document.getElementById('modal_window_barcode');
-  overlay.style.display = mode;
+// Функция для отображения модального окна
+export function showBarcode(state) {
+    document.getElementById('modal_window_barcode').style.display = state;
+    document.getElementById('membrane').style.display = state;
 }
 
 

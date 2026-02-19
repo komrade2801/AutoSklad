@@ -39,102 +39,15 @@
     <link rel="stylesheet" href="../style/background.css">
     <link rel="stylesheet" href="../style/button_style.css">
     <link rel="stylesheet" href="../style/style_modal_window.css">
-    <style>
-        /* Красивые стили для модального окна подтверждения удаления */
-        #deleteConfirmModal .modal-content {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            background: white;
-            overflow: hidden;
-        }
-
-        #deleteConfirmModal .modal-dialog {
-            max-width: 500px;
-        }
-
-        #deleteConfirmModal .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom: none;
-            padding: 24px;
-            border-radius: 16px 16px 0 0;
-        }
-
-        #deleteConfirmModal .modal-title {
-            font-weight: 600;
-            font-size: 1.25rem;
-            margin: 0;
-        }
-
-        #deleteConfirmModal .btn-close {
-            filter: invert(1);
-            opacity: 0.8;
-            flex-shrink: 0;
-        }
-
-        #deleteConfirmModal .btn-close:hover {
-            opacity: 1;
-        }
-
-        #deleteConfirmModal .modal-footer {
-            border-top: 1px solid #e9ecef;
-            padding: 20px 24px;
-            background: #f8f9fa;
-            border-radius: 0 0 16px 16px;
-            gap: 12px;
-        }
-
-        #deleteConfirmModal .btn {
-            border-radius: 8px;
-            padding: 8px 20px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            min-width: 100px;
-            transition: all 0.2s ease;
-        }
-
-        #deleteConfirmModal .btn-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-            color: white;
-        }
-
-        #deleteConfirmModal .btn-secondary:hover {
-            background-color: #5a6268;
-            border-color: #5a6268;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        #deleteConfirmModal .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-            border: none;
-            color: white;
-        }
-
-        #deleteConfirmModal .btn-danger:hover {
-            background: linear-gradient(135deg, #ee5a52 0%, #dc4545 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);
-        }
-
-        /* Анимация появления модального окна */
-        #deleteConfirmModal .modal.fade .modal-dialog {
-            transition: transform 0.3s ease-out;
-            transform: translate(0, -50px);
-        }
-
-        #deleteConfirmModal .modal.show .modal-dialog {
-            transform: translate(0, 0);
-        }
-    </style>
 </head>
 
 <body onload="initialization('screen_15_tool_library')"
       class="d-flex justify-content-center" id="body">
 <div id="membrane"></div>
-<div id="modal_window_create">
+<div id="modal_window_create" class="modal-overlay">
+    <div style="display: flex; flex-direction: row; margin-bottom: 20px;">
+        <span id="modal_window_create_title"></span>
+    </div>
     <div id="tool-form"
          style="display: flex; flex-direction: column; width: 90%; margin-top: 10px; padding: 10px; border: 2px solid rgb(78, 155, 229); border-radius: 5px;">
         <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Группа инструмента:</span>
@@ -181,7 +94,10 @@
     </div>
 </div>
 
-<div id="modal_window_create_group">
+<div id="modal_window_create_group" class="modal-overlay">
+    <div style="display: flex; flex-direction: row; margin-bottom: 20px;">
+        <span id="modal_window_create_group_title"></span>
+    </div>
     <div id="group-form"
          style="display: flex; flex-direction: column; width: 90%; margin-top: 10px; padding: 10px; border: 2px solid rgb(78, 155, 229); border-radius: 5px;">
         <span style="width: 100%; margin-top: 10px; padding-left: 10px; align-items: left;">Наименование группы инструмента:</span>
@@ -205,7 +121,7 @@
         <button id="saveGroupBtn" class="btn btn_vending upload" onclick="collectDataAndSendGroup()">Создать</button>
     </div>
 </div>
-<div id="modal_window_confirmation">
+<div id="modal_window_confirmation" class="modal-overlay">
     <span style="font-size: 24px;">Вы уверены, что хотите удалить инструмент?</span>
     <span style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Отменить действие будет невозможно. При необходимости добавьте инструмент в библиотеку заново.</span>
     <div style="display: flex; flex-direction: row; margin-top: 50px;">
@@ -289,7 +205,7 @@
                         </table>
                         <div id="customToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
                             <button id="addTool" class="btn btn_vending" type="button"
-                                    onclick="openModalCreate()">
+                                    onclick="openModalCreate(0)">
                                 Добавить инструмент
                             </button>
                             <form id="importToolsForm" action="javascript:;" onsubmit="doImportTools(this) "
@@ -341,7 +257,7 @@
                         </table>
                         <div id="customGroupsToolbar" class="custom-toolbar-content">
                             <button id="addGroup" class="btn btn_vending" type="button"
-                                    onclick="openModalCreateGroup();">
+                                    onclick="openModalCreateGroup(0);">
                                 Добавить группу
                             </button>
                         </div>

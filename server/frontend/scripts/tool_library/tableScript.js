@@ -260,7 +260,7 @@ async function editTool(row) {
 //         window.location.href = full_url;
 
             loadToolData(parseInt(toolTypeId));
-            openModalCreate();
+            openModalCreate(1);
 
      } catch (error) {
          console.error('Ошибка при проверке инструмента:', error);
@@ -473,7 +473,7 @@ async function editGroup(row) {
          }
 
          loadGroupData(parseInt(groupId));
-         openModalCreateGroup();
+         openModalCreateGroup(1);
 
          // Переходим на страницу редактирования с параметром group_id
 //         let url = '../screen_23_add_group.html';
@@ -627,7 +627,14 @@ var show_create = function (state) {
     document.getElementById('membrane').style.display = state
 }
 
-function openModalCreate() {
+function openModalCreate(edit) {
+    if (edit == 1) {
+        $('#modal_window_create_title').text("Редактирование инструмента");
+        $('#saveToolBtn').text("Сохранить");
+    } else {
+        $('#modal_window_create_title').text("Создание инструмента");
+        $('#saveToolBtn').text("Создать");
+    }
     show_create('flex');  // Открываем модальное окно
 }
 
@@ -639,6 +646,13 @@ var show_create_group = function (state) {
 }
 
 function openModalCreateGroup() {
+    if (edit == 1) {
+        $('#modal_window_create_title').text("Редактирование группы");
+        $('#saveGroupBtn').text("Сохранить");
+    } else {
+        $('#modal_window_create_title').text("Создание группы");
+        $('#saveGroupBtn').text("Создать");
+    }
     show_create_group('flex');  // Открываем модальное окно
 }
 
