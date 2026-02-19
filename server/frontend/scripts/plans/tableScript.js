@@ -41,38 +41,19 @@ function showDeleteConfirm(message) {
 }
 
 // Функция для открытия модального окна списка инструментов
-function openPlanToolListModal(plan_name, plan_tools) {
-    document.getElementById('modal_plan_tools_id').textContent = plan_name;
+function openPlanToolListModal(plan_designation, plan_tools) {
+    document.getElementById('modal_plan_tools_id').textContent = plan_designation;
 
-    const tool_list_element = document.getElementById('tool_list');
-    tool_list_element.innerHTML = '';
+    if (plan_tools != undefined) {
 
-    (plan_tools || []).forEach(tool => {
-        const tool_row = document.createElement('div');
-        tool_row.style.paddingTop = '12px';
-        tool_row.style.fontWeight = '400';
-        tool_row.innerHTML = tool.name + ' — ' + (tool.tool_types_count || tool.count || 0) + ' шт.';
-        tool_list_element.appendChild(tool_row);
-    });
+//        show_random_plan('flex');  // Открываем модальное окно
 
-    showToolModal(true);
-}
-
-function toolListFormatter(value, row, index, field) {
-let toolListActionDiv = document.createElement("div");
- toolListActionDiv.className = "table-actions";
-
- let toolListButton = document.createElement("button");
- toolListButton.style.width = "35px";
- toolListButton.style.height = "35px";
- toolListButton.innerHTML = "📋";
- toolListButton.title = "Показать список инструментов";
-
- toolListButton.addEventListener('click', async function() {openPlanToolListModal(row.designation, row.tools)});
-
- toolListActionDiv.appendChild(toolListButton);
-
- return toolListActionDiv;
+        showToolModal(true);
+//        $('#random_plan_table').bootstrapTable('refreshOptions', {'height': $("#random_plan_div").height()});
+        $('#random_plan_table').bootstrapTable('showLoading');
+        $('#random_plan_table').bootstrapTable('load',plan_tools);
+        $('#random_plan_table').bootstrapTable('hideLoading');
+    }
 }
 
 
@@ -81,7 +62,18 @@ function actionToolsFormatter(value, row, index, field) {
      let actionsDiv = document.createElement("div");
      actionsDiv.className = "table-actions";
 
-     // Info button
+     // Tool list button
+     let toolListButton = document.createElement("i");
+     toolListButton.className = "bi bi-list-ol action-button";
+     toolListButton.title = "Показать список инструментов";
+
+     toolListButton.addEventListener('click', async function () {
+        openPlanToolListModal(row.designation, row.tools);
+     });
+
+     actionsDiv.appendChild(toolListButton);
+
+     // Barcode button
      let barcodeButton = document.createElement("i");
      barcodeButton.className = "bi bi-qr-code action-button";
      barcodeButton.title = "Показать штрихкод";

@@ -224,7 +224,7 @@
 <!-- Модальное окно списка инструментов -->
 <div class="modal fade" id="modal_window_tool" tabindex="-1" aria-labelledby="modalToolListLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+        <div class="modal-content" style="height: 600px;">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; width: 100%;">
                     <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0;">
@@ -238,7 +238,24 @@
                 <button type="button" class="btn-close btn-close-white" onclick="showToolModal(false)" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
-                <div id="tool_list"></div>
+                <div id="random_plan_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                    <table
+                            id='random_plan_table'
+                            data-locale="ru-RU"
+                            data-pagination='false'
+                            data-height="400"
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='name' data-sortable='true'>
+                                <span title="Инструмент">Инструмент</span></th>
+                            <th data-field='tool_types_count'>
+                                <span title="Количество">Количество</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="showToolModal(false)">Назад</button>
@@ -308,21 +325,16 @@
                         >
                             <thead>
                             <tr>
-                                <th data-field='barcode' data-sortable='true' data-width="20" data-width-unit="%">
-                                    <span title="Штрихкод">Штрихкод</span></th>
-                                <th data-field='designation' data-sortable='true' data-width="126"><span
+                                <th data-field='designation' data-sortable='true'><span
                                         title="Обозначение">Обозначение</span>
                                 </th>
-                                <th data-field='name' data-sortable='true' data-width="126"><span title="Наименование">Наименование</span>
+                                <th data-field='name' data-sortable='true'><span title="Наименование">Наименование</span>
                                 </th>
-                                <th data-field='enterprise' data-sortable='true' data-width="35"
-                                    data-width-unit="%"><span
+                                <th data-field='enterprise' data-sortable='true'><span
                                         title="Предприятие">Предприятие</span></th>
-                                <th data-field='description' data-sortable='true' data-width="35" data-width-unit="%">
+                                <th data-field='description' data-sortable='true'>
                                     <span title="Описание">Описание</span></th>
-                                <th data-field='toolList' data-width="100" data-formatter="toolListFormatter"><span
-                                        title="Список инструментов">Список инструментов</span></th>
-                                <th data-field='actions' data-width="100" data-formatter="actionToolsFormatter"><span
+                                <th data-field='actions' data-width="200" data-formatter="actionToolsFormatter"><span
                                         title="Действия">Действия</span></th>
                             </tr>
                             </thead>
