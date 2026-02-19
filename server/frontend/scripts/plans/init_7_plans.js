@@ -78,6 +78,9 @@ async function initialization(element_name) {
     });
     $('#plans_table').bootstrapTable('showLoading');
 
+    $('#random_plan_table').bootstrapTable();
+    $('#random_plan_table').bootstrapTable('showLoading');
+
     // Выравниваем тулбар после загрузки данных
     $('#plans_table').on('load-success.bs.table', function() {
         if (window.alignToolbar) {

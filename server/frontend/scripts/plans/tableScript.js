@@ -40,48 +40,24 @@ function showDeleteConfirm(message) {
     });
 }
 
-// Функция для открытия модального окна
-function openPlanToolListModal(plan_name, plan_tools) {
-    // Подставляем ID в текст
-    document.getElementById('modal_plan_tools_id').textContent = plan_name;
-
-let tool_list_element = document.getElementById('tool_list');
-tool_list_element.innerHTML = '';
-
-plan_tools.forEach(tool => {
-    const tool_row = document.createElement('div');
-    tool_row.style = 'padding-top: 20px;'
-    tool_row.innerHTML = tool.name + '\t-\t' + tool.tool_types_count + ' шт.';
-    tool_list_element.appendChild(tool_row);
-})
-
-showTool('flex');  // Открываем модальное окно
-}
-
-function toolListFormatter(value, row, index, field) {
-let toolListActionDiv = document.createElement("div");
- toolListActionDiv.className = "table-actions";
-
- let toolListButton = document.createElement("button");
- toolListButton.style.width = "35px";
- toolListButton.style.height = "35px";
- toolListButton.innerHTML = "📋";
- toolListButton.title = "Показать список инструментов";
-
- toolListButton.addEventListener('click', async function() {openPlanToolListModal(row.designation, row.tools)});
-
- toolListActionDiv.appendChild(toolListButton);
-
- return toolListActionDiv;
-}
-
 
 function actionToolsFormatter(value, row, index, field) {
 
      let actionsDiv = document.createElement("div");
      actionsDiv.className = "table-actions";
 
-     // Info button
+     // Tool list button
+     let toolListButton = document.createElement("i");
+     toolListButton.className = "bi bi-list-ol action-button";
+     toolListButton.title = "Показать список инструментов";
+
+     toolListButton.addEventListener('click', async function () {
+        openModalRandomPlan(row);
+     });
+
+     actionsDiv.appendChild(toolListButton);
+
+     // Barcode button
      let barcodeButton = document.createElement("i");
      barcodeButton.className = "bi bi-qr-code action-button";
      barcodeButton.title = "Показать штрихкод";
@@ -430,3 +406,33 @@ var showBarcode = function (state) {
 }
 
 window.showBarcode = showBarcode;
+
+// Функция для открытия модального окна
+function openModalRandomPlan(data) {
+
+    console.log(data);
+    if (data.tools != undefined) {
+
+        $('#random_plan_id').text(data.designation);
+
+        show_random_plan('flex');  // Открываем модальное окно
+        $('#random_plan_table').bootstrapTable('showLoading');
+        $('#random_plan_table').bootstrapTable('refreshOptions', {'height': $("#random_plan_div").height()});
+        $('#random_plan_table').bootstrapTable('load', data.tools);
+        $('#random_plan_table').bootstrapTable('hideLoading');
+    }
+
+
+}
+
+function createTableRandomPlan(data) {
+    console.log(data);
+}
+
+// Функция для отображения модального окна
+var show_random_plan = function (state) {
+    document.getElementById('modal_window_details').style.display = state;
+    document.getElementById('membrane').style.display = state;
+}
+
+window.show_random_plan = show_random_plan;
