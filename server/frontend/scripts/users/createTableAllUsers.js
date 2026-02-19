@@ -45,12 +45,18 @@ window.addUser = function() {
 
 
 /**
- * Показывает или скрывает модалку.
+ * Показывает или скрывает модалку штрихкода (Bootstrap 5).
  * @param {'flex'|'none'} mode
  */
 export function showBarcode(mode) {
-  const overlay = document.getElementById('modal_window_barcode');
-  overlay.style.display = mode;
+  const el = document.getElementById('modal_window_barcode');
+  if (!el) return;
+  const modal = bootstrap.Modal.getOrCreateInstance(el);
+  if (mode === 'none') {
+    modal.hide();
+  } else {
+    modal.show();
+  }
 }
 
 
