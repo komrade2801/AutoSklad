@@ -16,13 +16,6 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
 
         # Устанавливаем политику фокуса для приема всех событий клавиатуры
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
-        
-        # Таймер для проверки видимости
-        self.visibility_timer = QtCore.QTimer(self)
-        self.visibility_timer.timeout.connect(self.check_visibility)
-        self.timeout_back = int(self.lbl_timeout_back.text())
-        self.__timeout_back = self.timeout_back
-        self.event_timeout_back = lambda *args, **kwargs: self.hide()
 
         # Атрибуты для обработки ввода штрих-кода
         self._barcode_buffer = ""
@@ -32,21 +25,9 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
         self._barcode_timer.timeout.connect(self._process_barcode)
         self.event_enter_barcode = lambda barcode: logger.debug("Получен штрих-код: %s", barcode)
 
-    def check_visibility(self):
-        if self.timeout_back > 1:
-            self.timeout_back -= 1
-            self.lbl_timeout_back.setText(str(self.timeout_back))
-        else:
-            self.timeout_back = self.__timeout_back
-            self.lbl_timeout_back.setText(str(self.timeout_back))
-            self.event_timeout_back("timeout_back")
-
     def showEvent(self, event):
         """Событие, которое срабатывает, когда виджет показывается."""
         super().showEvent(event)
-        self.timeout_back = self.__timeout_back
-        self.lbl_timeout_back.setText(str(self.timeout_back))
-        self.visibility_timer.start(1000)
         # Устанавливаем фокус на виджет для приема всех событий клавиатуры
         self.setFocus()
         # Отключаем фокус у всех кнопок, чтобы пробел не активировал их
@@ -58,9 +39,6 @@ class screen_6_user(BaseScreen, Ui_screen_6_user):
     def hideEvent(self, event):
         """Событие, которое срабатывает, когда виджет скрывается."""
         super().hideEvent(event)
-        self.visibility_timer.stop()
-        self.timeout_back = self.__timeout_back
-        # Остановка таймера для обработки ввода штрих-кода
         self._barcode_timer.stop()
 
     def keyPressEvent(self, event):

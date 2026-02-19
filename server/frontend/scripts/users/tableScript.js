@@ -3,7 +3,6 @@ function passwordFormatter(value, row, index, field) {
      let actionsDiv = document.createElement("div");
      actionsDiv.className = "table-actions";
 
-     // Info button
      let passwordButton = document.createElement("button");
      passwordButton.className = "btn btn_vending";
      passwordButton.title = "Посмотреть и редактировать пароль";
@@ -32,7 +31,6 @@ function actionToolsFormatter(value, row, index, field) {
      let actionsDiv = document.createElement("div");
      actionsDiv.className = "table-actions";
 
-     // Info button
      let barcodeButton = document.createElement("i");
      barcodeButton.className = "bi bi-qr-code action-button";
      barcodeButton.title = "Показать штрихкод";
@@ -43,7 +41,6 @@ function actionToolsFormatter(value, row, index, field) {
 
      actionsDiv.appendChild(barcodeButton);
 
-     // Edit button
      let editButton = document.createElement("i");
      editButton.className = "bi bi-pencil-fill action-button";
      editButton.title = "Редактировать пользователя";
@@ -54,7 +51,6 @@ function actionToolsFormatter(value, row, index, field) {
 
      actionsDiv.appendChild(editButton);
 
-     // Delete button
      let deleteButton = document.createElement("i");
      deleteButton.className = "bi bi-x-circle action-button";
      deleteButton.title = "Удалить пользователя";
@@ -68,73 +64,28 @@ function actionToolsFormatter(value, row, index, field) {
      return actionsDiv;
 }
 
-// Функция для отображения модального окна
-var show = function (state) {
-    document.getElementById('modal_window_cell').style.display = state;
-    document.getElementById('membrane').style.display = state;
+// --- Модальное окно редактирования пользователя (Bootstrap 5) ---
+function getEditModalInstance() {
+    const el = document.getElementById('modal_window_edit');
+    return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
 }
 
-window.show = show;
-
-// Функция для открытия модального окна
-function openModalConfirmation() {
-    show('flex');  // Открываем модальное окно
-}
-
-window.openModalConfirmation = openModalConfirmation
-
-//функции для работы с модальным окном подтверждения
-var show_conf = function (state) {
-    document.getElementById('modal_window_confirmation').style.display = state
-    document.getElementById('membrane').style.display = state
-}
-
-function openModalConf(index) {
-    window.userIndexToDelete = index; // сохраняем индекс глобально
-    show_conf('flex');  // Открываем модальное окно
-}
-
-window.openModalConf = openModalConf;
-window.show_conf = show_conf;
-
-
-//функции для работы с модальным окном пароля
-var show_password = function (state) {
-    document.getElementById('modal_window_password').style.display = state
-    document.getElementById('membrane').style.display = state
-}
-
-function openModalPassword(user) {
-  window.userIndexToDelete = user.index; // сохраняем индекс глобально
-
-  // Заполняем данные в модалке
-  document.getElementById('user').textContent = user.name || '';
-  document.getElementById('login').textContent = 'Логин: ' + (user.login || '');
-  document.getElementById('password_input').value = user.password || '';
-
-  show_password('flex'); // Открываем модальное окно
-}
-
-
-window.openModalPassword = openModalPassword;
-window.show_password = show_password;
-
-// Функция для отображения модального окна
-var show_edit = function (state) {
-    document.getElementById('modal_window_edit').style.display = state;
-    document.getElementById('membrane').style.display = state;
+function show_edit(state) {
+    const modal = getEditModalInstance();
+    if (!modal) return;
+    if (state === 'none') {
+        modal.hide();
+    } else {
+        modal.show();
+    }
 }
 
 window.show_edit = show_edit;
 
 function openModalEdit(user) {
     if (user) {
-        window.userIndexToEdit = user.index; // сохраняем индекс глобально
-        $('#modal_window_edit_title').text("Редактирование пользователя");
-        $('#btn-save-user').text("Сохранить");
+        window.userIndexToEdit = user.index;
     } else {
-        $('#modal_window_edit_title').text("Создание пользователя");
-        $('#btn-save-user').text("Создать");
         window.userIndexToEdit = 0;
         user = {
             index:    0,
@@ -145,38 +96,167 @@ function openModalEdit(user) {
             family:      '',
             password:    '',
             role_id:     6
-        }
+        };
     }
 
-  console.log(user);
-
-    // Заполнение ФИО
     document.getElementById("input-family").value = user.family || "";
     document.getElementById("input-first-name").value = user.first_name || "";
     document.getElementById("input-second-name").value = user.second_name || "";
-
-    // Заполнение роли
-    document.getElementById('input-role').value = user.role_id || 6;
-
-    // Заполнение штрихкода, логина и пароля
+    document.getElementById('input-role').value = String(user.role_id || 6);
     document.getElementById("input-barcode").value = user.barcode || "";
     document.getElementById("input-code").value = user.code || "";
     document.getElementById("input-password").value = user.password || "";
+    document.getElementById("input-password").type = "password";
+    const showCheck = document.getElementById("input-password-show");
+    if (showCheck) showCheck.checked = false;
 
-    console.log("функция автозаполнения сработала");
-
-
-
-  // Заполняем данные в модалке
-  document.getElementById('user').textContent = user.name || '';
-  document.getElementById('login').textContent = 'Логин: ' + (user.login || '');
-  document.getElementById('password_input').value = user.password || '';
-
-  show_edit('flex'); // Открываем модальное окно
+    show_edit('flex');
 }
 
 window.openModalEdit = openModalEdit;
 
+function togglePasswordVisibility(inputId, show) {
+    const input = document.getElementById(inputId);
+    if (input) input.type = show ? 'text' : 'password';
+}
+
+window.togglePasswordVisibility = togglePasswordVisibility;
+
+// Очистка формы редактирования (только поля модалки редактирования)
+function clearEditForm() {
+    const ids = ['input-family', 'input-first-name', 'input-second-name', 'input-barcode', 'input-code', 'input-password'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    const role = document.getElementById('input-role');
+    if (role) role.value = '6';
+    const showCheck = document.getElementById('input-password-show');
+    if (showCheck) showCheck.checked = false;
+    const pwd = document.getElementById('input-password');
+    if (pwd) pwd.type = 'password';
+    window.userIndexToEdit = 0;
+}
+
+// Кнопка «Очистить» в модалке — очищает только форму редактирования
+function clearAllForm() {
+    clearEditForm();
+}
+
+// --- Модальное окно подтверждения удаления (Bootstrap 5) ---
+function getConfModalInstance() {
+    const el = document.getElementById('modal_window_confirmation');
+    return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
+}
+
+function show_conf(state) {
+    const modal = getConfModalInstance();
+    if (!modal) return;
+    if (state === 'none') {
+        modal.hide();
+    } else {
+        modal.show();
+    }
+}
+
+function openModalConf(index) {
+    window.userIndexToDelete = index;
+    show_conf('flex');
+}
+
+window.openModalConf = openModalConf;
+window.show_conf = show_conf;
+
+// --- Модальное окно пароля (Bootstrap 5) ---
+function getPasswordModalInstance() {
+    const el = document.getElementById('modal_window_password');
+    return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
+}
+
+function show_password(state) {
+    const modal = getPasswordModalInstance();
+    if (!modal) return;
+    if (state === 'none') {
+        modal.hide();
+    } else {
+        modal.show();
+    }
+}
+
+function openModalPassword(user) {
+    window.userIndexToDelete = user.index;
+    document.getElementById('user').textContent = user.name || '';
+    document.getElementById('login').textContent = 'Логин: ' + (user.login || '');
+    document.getElementById('password_input').value = user.password || '';
+    show_password('flex');
+}
+
+window.openModalPassword = openModalPassword;
+window.show_password = show_password;
+
+function clearPasswordForm() {
+    const input = document.getElementById('password_input');
+    if (input) input.value = '';
+}
+
+function savePassword() {
+    const userIndex = window.userIndexToDelete;
+    const newPassword = document.getElementById('password_input').value.trim();
+    if (userIndex == null) return;
+    const user = window.jsonUsers && window.jsonUsers.find(u => u.index === userIndex);
+    if (!user) {
+        if (typeof showToast === 'function') showToast('Данные пользователя не найдены', 'danger');
+        return;
+    }
+    // Бэкенд PUT /update_user/{user_id} принимает полный UserUpdate (all_users.py)
+    const userObj = {
+        index:      user.index,
+        barcode:    Number(user.barcode) || 0,
+        code:       Number(user.code) || 0,
+        first_name: user.first_name || '',
+        second_name: user.second_name || '',
+        family:     user.family || '',
+        password:   newPassword,
+        role_id:    Number(user.role_id) || 6
+    };
+    const token = localStorage.getItem('token');
+    sendData('../backend/update_user/' + userIndex, token, 'PUT', userObj)
+        .then((data) => {
+            if (data != null) {
+                if (typeof showToast === 'function') showToast('Пароль сохранён', 'success');
+                show_password('none');
+                loadUsers();
+            } else {
+                if (typeof showToast === 'function') showToast('Ошибка при сохранении пароля', 'danger');
+            }
+        })
+        .catch(() => {
+            if (typeof showToast === 'function') showToast('Ошибка при сохранении пароля', 'danger');
+        });
+}
+
+window.savePassword = savePassword;
+
+// --- Инициализация: очистка при закрытии модалок ---
+function initUsersModalHandlers() {
+    const editEl = document.getElementById('modal_window_edit');
+    const confEl = document.getElementById('modal_window_confirmation');
+    const pwdEl = document.getElementById('modal_window_password');
+    if (editEl) {
+        editEl.addEventListener('hidden.bs.modal', clearEditForm);
+    }
+    if (pwdEl) {
+        pwdEl.addEventListener('hidden.bs.modal', clearPasswordForm);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUsersModalHandlers);
+} else {
+    initUsersModalHandlers();
+}
+
+// --- Сохранение пользователя ---
 function saveUser() {
     try {
         const inputFamily       = document.getElementById('input-family');
@@ -187,30 +267,43 @@ function saveUser() {
         const inputCode         = document.getElementById('input-code');
         const inputPassword     = document.getElementById('input-password');
 
-        // Собираем данные
+        const codeTrimmed = inputCode.value.trim();
+        const codeNum = codeTrimmed === '' ? NaN : parseInt(codeTrimmed, 10);
+        const codeValid = !isNaN(codeNum) && codeNum >= 0 && Number.isInteger(Number(codeTrimmed));
+        const code = codeValid ? codeNum : (Math.floor(Math.random() * 9000) + 1000);
+
         const userObj = {
-            index:    Number(window.userIndexToEdit),            // или другой логики генерации
-            barcode:  Number(inputBarcode.value),
-            code:     Number(inputCode.value),
-            first_name:  inputFirstName.value.trim(),
+            index:      Number(window.userIndexToEdit),
+            barcode:    Number(inputBarcode.value) || 0,
+            code:       code,
+            first_name: inputFirstName.value.trim(),
             second_name: inputSecondName.value.trim(),
-            family:      inputFamily.value.trim(),
-            password:    inputPassword.value,
-            role_id:     Number(inputRole.value)                // заменяем role на role_id
+            family:     inputFamily.value.trim(),
+            password:   inputPassword.value,
+            role_id:    Number(inputRole.value)
         };
 
-        // Валидация
         if (!userObj.family || !userObj.first_name || !userObj.second_name || !userObj.role_id) {
             showToast('Пожалуйста, заполните все поля и выберите должность', 'warning');
             return;
         }
 
-        // Отправляем на сервер
-        const created = saveUserData(userObj);
-        console.log(created);
+        if (codeTrimmed !== '' && !codeValid) {
+            showToast('Логин должен быть целым числом', 'warning');
+            inputCode.focus();
+            return;
+        }
 
-        loadUsers();
-        show_edit('none');
+        saveUserData(userObj).then((data) => {
+            if (data != null) {
+                loadUsers();
+                show_edit('none');
+            } else {
+                showToast('Ошибка при сохранении пользователя', 'danger');
+            }
+        }).catch(() => {
+            showToast('Ошибка при сохранении пользователя', 'danger');
+        });
     } catch (err) {
         console.error(err);
         showToast('Ошибка при сохранении пользователя', 'danger');
@@ -219,42 +312,29 @@ function saveUser() {
 
 async function saveUserData(userObj) {
     const token = localStorage.getItem('token');
-    console.log(window.userIndexToEdit);
-    console.log(userObj);
-    var response;
+    let response;
     if (window.userIndexToEdit == 0) {
         response = await sendData('../backend/create_user', token, 'POST', userObj);
     } else {
         response = await sendData('../backend/update_user/' + window.userIndexToEdit, token, 'PUT', userObj);
     }
-
     return response;
-  }
+}
 
-// Функция для получения JSON-данных через эндпоинт
 async function fetchSendData(url, payload) {
     try {
-        console.log('fetchData '+ url + ' ' + payload);
         const response = await fetch(url, payload);
-        console.log(response);
         if (!response.ok) {
-            throw new Error("Ошибка сети, статус: ${response.status}");
+            throw new Error("Ошибка сети, статус: " + response.status);
         }
-        const jsonData = await response.json();
-        console.log(jsonData);
-        return jsonData;
+        return await response.json();
     } catch (error) {
         console.error("Ошибка получения данных:", error);
         return null;
     }
 }
 
-/*
- * Функция загрузки и сохранения JSON.
- * Возвращает Promise, чтобы можно было ждать результата.
- */
 function sendData(url, token, method, userObj) {
-    console.log('sendData '+ url + ' ' + token + ' ' + method + ' ' + userObj);
     const payload = {
         method: method,
         headers: {
@@ -262,27 +342,7 @@ function sendData(url, token, method, userObj) {
             'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(userObj),
-    }
+    };
     url = url + '?token=' + token;
-    return fetchSendData(url, payload)
-    .then(data => {
-        console.log('sendData 1');
-        return data;
-    })
-    .catch(err => {
-        console.log('sendData 2');
-        console.error('Не удалось отправить данные', err);
-        return null;
-    });
-}
-
-// Функция для очистки полей ввода и сброса значений select
-function clearAllForm() {
-    document.querySelectorAll(".form-control").forEach(input => {
-        input.value = "";
-    });
-
-    document.querySelectorAll("#selection_tools select").forEach(select => {
-        select.value = "0";
-    });
+    return fetchSendData(url, payload);
 }

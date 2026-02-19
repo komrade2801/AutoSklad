@@ -13,12 +13,15 @@ from typing import Any
 import psutil
 from PyQt5 import QtWidgets, QtCore
 
+from PyQt5.QtWidgets import QApplication
+
 from Core import platforms
 from Core.app_logging import get_logger
 
 logger = get_logger(__name__)
 from EventsSystem.events import Hendlers
 from GUI.BaseScreen import BaseScreen
+from GUI.SessionIdleManager import SessionIdleManager
 from StateMachine.NavigationManager import NavigationManager
 from StateMachine.state_map import transitions
 from StateMachine.screens import screen
@@ -70,6 +73,8 @@ class MainWindow(QtWidgets.QWidget):
 
         # Создание экранов
         self.create_widgets()
+        self.session_manager = SessionIdleManager(self)
+        QApplication.instance().installEventFilter(self.session_manager)
         self.last_widget_value = {}
         self.open_widget(self.lump.state(), None, None)
         self.action_callback = None
@@ -115,9 +120,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def bind_button_signal(self, source, trigger, dest):
         """Привязывает сигнал кнопки к обработчику."""
-
-        if self.widgets[source].event_timeout_back:
-            self.widgets[source].event_timeout_back = (lambda checked, btn_name="timeout_back": self.button_clicked(btn_name, dest))
+        # event_timeout_back отключён — используется глобальный SessionIdleManager
 
         if self.widgets[source].event_input_name_code:
             self.widgets[source].event_input_name_code = (lambda checked, btn_name="input_name_code": self.button_clicked(btn_name, dest))
@@ -153,12 +156,13 @@ class MainWindow(QtWidgets.QWidget):
 
     def handle_controller_serial_response(self, response):
         """Обрабатываем полученный ответ"""
+        self.session_manager.reset_timer()
         logger.debug("MainWindow controller_serial получен: %s value=%s", response, self.last_widget_value)
         self.button_clicked(response, None)
 
-
     def handle_barcode_manager_response(self, response):
         """Обрабатываем полученный ответ"""
+        self.session_manager.reset_timer()
         logger.debug("MainWindow barcode_manager получен: %s value=%s", response, self.last_widget_value)
         self.value['barcode'] = response
         self.button_clicked('barcode', None)
@@ -255,6 +259,12 @@ class MainWindow(QtWidgets.QWidget):
                     self.current_value = self._handle_widget_data(widget, source, value)
 
         self.current_screen = widget_name
+
+        # Управление глобальным таймером сессии
+        if widget_name == "screen_1_welcome":
+            self.session_manager.stop()
+        else:
+            self.session_manager.start()
 
         # Если виджет не найден, возвращаемся к предыдущему состоянию
         if not widget_found and "cmd" not in widget_name:

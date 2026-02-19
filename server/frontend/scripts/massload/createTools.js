@@ -19,9 +19,53 @@ window.getTotalToolsToLoad = getTotalToolsToLoad;
 
 export function createTools() {
     if (window.appData.tools != undefined) {
-//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
-        $('#loadable_tools_table').bootstrapTable('load', window.appData.tools);
-        $('#loadable_tools_table').bootstrapTable('hideLoading');
+        const $table = $('#loadable_tools_table');
+
+        // --- 1. СОХРАНЕНИЕ СОСТОЯНИЯ (Скролл и Фокус) ---
+        // Находим контейнер скролла (обычно это .fixed-table-body в Bootstrap Table)
+        const $scrollContainer = $table.closest('.fixed-table-body');
+        const savedScrollTop = $scrollContainer.length ? $scrollContainer.scrollTop() : 0;
+        
+        // Сохраняем ID элемента, на котором сейчас фокус
+        const activeElementId = document.activeElement ? document.activeElement.id : null;
+        // ------------------------------------------------
+
+        // Заменяем "-" на символ бесконечности перед загрузкой в таблицу
+        const processedTools = window.appData.tools.map(tool => ({
+            ...tool,
+            sum: (tool.sum === '-' || tool.count === 0 || tool.count === '-') ? '∞' : (tool.sum || tool.count)
+        }));
+
+        // Загружаем данные (это перерисует DOM таблицы)
+        $table.bootstrapTable('load', processedTools);
+        $table.bootstrapTable('hideLoading');
+
+        // --- 2. ВОССТАНОВЛЕНИЕ СОСТОЯНИЯ ---
+        // Используем setTimeout, чтобы дождаться окончания отрисовки браузером
+        if (savedScrollTop > 0 || activeElementId) {
+            setTimeout(() => {
+                // Восстанавливаем скролл
+                if ($scrollContainer.length) {
+                    $scrollContainer.scrollTop(savedScrollTop);
+                }
+
+                // Восстанавливаем фокус
+                if (activeElementId) {
+                    const $element = $('#' + activeElementId);
+                    if ($element.length) {
+                        $element.focus();
+                        
+                        // Лайфхак: если это поле ввода, ставим курсор в конец текста
+                        // (иначе он может прыгнуть в начало)
+                        if ($element.is('input') || $element.is('textarea')) {
+                            const val = $element.val();
+                            $element.val('').val(val);
+                        }
+                    }
+                }
+            }, 1);
+        }
+        // -----------------------------------
     }
 }
 

@@ -40,24 +40,48 @@ function showDeleteConfirm(message) {
     });
 }
 
+// Функция для открытия модального окна списка инструментов
+function openPlanToolListModal(plan_name, plan_tools) {
+    document.getElementById('modal_plan_tools_id').textContent = plan_name;
+
+    const tool_list_element = document.getElementById('tool_list');
+    tool_list_element.innerHTML = '';
+
+    (plan_tools || []).forEach(tool => {
+        const tool_row = document.createElement('div');
+        tool_row.style.paddingTop = '12px';
+        tool_row.style.fontWeight = '400';
+        tool_row.innerHTML = tool.name + ' — ' + (tool.tool_types_count || tool.count || 0) + ' шт.';
+        tool_list_element.appendChild(tool_row);
+    });
+
+    showToolModal(true);
+}
+
+function toolListFormatter(value, row, index, field) {
+let toolListActionDiv = document.createElement("div");
+ toolListActionDiv.className = "table-actions";
+
+ let toolListButton = document.createElement("button");
+ toolListButton.style.width = "35px";
+ toolListButton.style.height = "35px";
+ toolListButton.innerHTML = "📋";
+ toolListButton.title = "Показать список инструментов";
+
+ toolListButton.addEventListener('click', async function() {openPlanToolListModal(row.designation, row.tools)});
+
+ toolListActionDiv.appendChild(toolListButton);
+
+ return toolListActionDiv;
+}
+
 
 function actionToolsFormatter(value, row, index, field) {
 
      let actionsDiv = document.createElement("div");
      actionsDiv.className = "table-actions";
 
-     // Tool list button
-     let toolListButton = document.createElement("i");
-     toolListButton.className = "bi bi-list-ol action-button";
-     toolListButton.title = "Показать список инструментов";
-
-     toolListButton.addEventListener('click', async function () {
-        openModalRandomPlan(row);
-     });
-
-     actionsDiv.appendChild(toolListButton);
-
-     // Barcode button
+     // Info button
      let barcodeButton = document.createElement("i");
      barcodeButton.className = "bi bi-qr-code action-button";
      barcodeButton.title = "Показать штрихкод";
@@ -82,7 +106,7 @@ function actionToolsFormatter(value, row, index, field) {
 
          // Проверяем, занят ли инструмент
          try {
-             const checkResponse = await fetch(`../backend/check_tool_busy/${toolTypeId}`);
+             const checkResponse = await fetch(`/backend/check_tool_busy/${toolTypeId}`);
              if (!checkResponse.ok) {
                  throw new Error("Ошибка проверки чертежа");
              }
@@ -120,35 +144,35 @@ function actionToolsFormatter(value, row, index, field) {
          }
 
          // Подтверждение удаления
-         const confirmed = await showDeleteConfirm("Вы уверены, что хотите удалить этот инструмент?");
+         const confirmed = await showDeleteConfirm("Вы уверены, что хотите удалить этот чертёж?");
          if (!confirmed) {
              return;
          }
 
          // Удаляем инструмент (endpoint сам проверит занятость)
          try {
-             const deleteResponse = await fetch(`../backend/delete_tool_type/${toolTypeId}`, {
+             const deleteResponse = await fetch(`/backend/delete_tool_type/${toolTypeId}`, {
                  method: 'DELETE'
              });
 
              if (!deleteResponse.ok) {
                  const errorData = await deleteResponse.json();
-                 showToast(errorData.detail || "Ошибка при удалении инструмента", 'danger');
+                 showToast(errorData.detail || "Ошибка при удалении чертежа", 'danger');
                  return;
              }
 
              const result = await deleteResponse.json();
-             showToast(result.message || "Инструмент успешно удален", 'success');
+             showToast(result.message || "Чертёж успешно удален", 'success');
 
              // Перезагружаем страницу для обновления таблицы
-             let url = '../screen_15_tool_library.html';
+             let url = './screen_7_plans.html';
              let targetUrl = new URL(url, window.location.origin).href;
              let token = localStorage.getItem('token');
              let full_url = targetUrl + "?token=" + token;
              window.location.href = full_url;
          } catch (error) {
-             console.error('Ошибка при удалении инструмента:', error);
-             showToast('Ошибка при удалении инструмента', 'danger');
+             console.error('Ошибка при удалении чертежа:', error);
+             showToast('Ошибка при удалении чертежа', 'danger');
          }
      });
 
@@ -157,282 +181,35 @@ function actionToolsFormatter(value, row, index, field) {
      return actionsDiv;
 }
 
-// Функция для отображения модального окна
-var show = function (state) {
-    document.getElementById('modal_window_cell').style.display = state;
-    document.getElementById('membrane').style.display = state;
-}
-
-window.show = show;
-
-// Функция для открытия модального окна
-function openModalConfirmation() {
-    show('flex');  // Открываем модальное окно
-}
-
-window.openModalConfirmation = openModalConfirmation
-
-//функции для работы с модальным окном подтверждения
-var show_conf = function (state) {
-    document.getElementById('modal_window_confirmation').style.display = state
-    document.getElementById('membrane').style.display = state
-}
-
-function openModalConf(index) {
-    window.userIndexToDelete = index; // сохраняем индекс глобально
-    show_conf('flex');  // Открываем модальное окно
-}
-
-window.openModalConf = openModalConf;
-window.show_conf = show_conf;
-
-
-//функции для работы с модальным окном пароля
-var show_password = function (state) {
-    document.getElementById('modal_window_password').style.display = state
-    document.getElementById('membrane').style.display = state
-}
-
-function openModalPassword(user) {
-  window.userIndexToDelete = user.index; // сохраняем индекс глобально
-
-  // Заполняем данные в модалке
-  document.getElementById('user').textContent = user.name || '';
-  document.getElementById('login').textContent = 'Логин: ' + (user.login || '');
-  document.getElementById('password_input').value = user.password || '';
-
-  show_password('flex'); // Открываем модальное окно
-}
-
-
-window.openModalPassword = openModalPassword;
-window.show_password = show_password;
-
-// Функция для отображения модального окна
-var show_edit = function (state) {
-    document.getElementById('modal_window_edit').style.display = state;
-    document.getElementById('membrane').style.display = state;
-}
-
-window.show_edit = show_edit;
-
-function openModalEdit(user) {
-    if (user) {
-        window.userIndexToEdit = user.index; // сохраняем индекс глобально
-    } else {
-        window.userIndexToEdit = 0;
-        user = {
-            index:    0,
-            barcode:  '',
-            code:     '',
-            first_name:  '',
-            second_name: '',
-            family:      '',
-            password:    '',
-            role_id:     6
-        }
-    }
-
-  console.log(user);
-
-    // Заполнение ФИО
-    document.getElementById("input-family").value = user.family || "";
-    document.getElementById("input-first-name").value = user.first_name || "";
-    document.getElementById("input-second-name").value = user.second_name || "";
-
-    // Заполнение роли
-    document.getElementById('input-role').value = user.role_id || 6;
-
-    // Заполнение штрихкода, логина и пароля
-    document.getElementById("input-barcode").value = user.barcode || "";
-    document.getElementById("input-code").value = user.code || "";
-    document.getElementById("input-password").value = user.password || "";
-
-    console.log("функция автозаполнения сработала");
-
-
-
-  // Заполняем данные в модалке
-  document.getElementById('user').textContent = user.name || '';
-  document.getElementById('login').textContent = 'Логин: ' + (user.login || '');
-  document.getElementById('password_input').value = user.password || '';
-
-  show_edit('flex'); // Открываем модальное окно
-}
-
-window.openModalEdit = openModalEdit;
-
-function saveUser() {
-    try {
-        const inputFamily       = document.getElementById('input-family');
-        const inputFirstName    = document.getElementById('input-first-name');
-        const inputSecondName   = document.getElementById('input-second-name');
-        const inputRole         = document.getElementById('input-role');
-        const inputBarcode      = document.getElementById('input-barcode');
-        const inputCode         = document.getElementById('input-code');
-        const inputPassword     = document.getElementById('input-password');
-
-        // Собираем данные
-        const userObj = {
-            index:    Number(window.userIndexToEdit),            // или другой логики генерации
-            barcode:  Number(inputBarcode.value),
-            code:     Number(inputCode.value),
-            first_name:  inputFirstName.value.trim(),
-            second_name: inputSecondName.value.trim(),
-            family:      inputFamily.value.trim(),
-            password:    inputPassword.value,
-            role_id:     Number(inputRole.value)                // заменяем role на role_id
-        };
-
-        // Валидация
-        if (!userObj.family || !userObj.first_name || !userObj.second_name || !userObj.role_id) {
-            showToast('Пожалуйста, заполните все поля и выберите должность', 'warning');
-            return;
-        }
-
-        // Отправляем на сервер
-        const created = saveUserData(userObj);
-        console.log(created);
-
-        loadUsers();
-        show_edit('none');
-    } catch (err) {
-        console.error(err);
-        showToast('Ошибка при сохранении пользователя', 'danger');
-    }
-}
-
-async function saveUserData(userObj) {
-    const token = localStorage.getItem('token');
-    console.log(window.userIndexToEdit);
-    console.log(userObj);
-    var response;
-    if (window.userIndexToEdit == 0) {
-        response = await sendData('../backend/create_user', token, 'POST', userObj);
-    } else {
-        response = await sendData('../backend/update_user/' + window.userIndexToEdit, token, 'PUT', userObj);
-    }
-
-    return response;
-  }
-
-// Функция для получения JSON-данных через эндпоинт
-async function fetchSendData(url, payload) {
-    try {
-        console.log('fetchData '+ url + ' ' + payload);
-        const response = await fetch(url, payload);
-        console.log(response);
-        if (!response.ok) {
-            throw new Error("Ошибка сети, статус: ${response.status}");
-        }
-        const jsonData = await response.json();
-        console.log(jsonData);
-        return jsonData;
-    } catch (error) {
-        console.error("Ошибка получения данных:", error);
-        return null;
-    }
-}
-
-/*
- * Функция загрузки и сохранения JSON.
- * Возвращает Promise, чтобы можно было ждать результата.
- */
-function sendData(url, token, method, userObj) {
-    console.log('sendData '+ url + ' ' + token + ' ' + method + ' ' + userObj);
-    const payload = {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(userObj),
-    }
-    url = url + '?token=' + token;
-    return fetchSendData(url, payload)
-    .then(data => {
-        console.log('sendData 1');
-        return data;
-    })
-    .catch(err => {
-        console.log('sendData 2');
-        console.error('Не удалось отправить данные', err);
-        return null;
-    });
-}
-
-// Функция для очистки полей ввода и сброса значений select
-function clearAllForm() {
-    document.querySelectorAll(".form-control").forEach(input => {
-        input.value = "";
-    });
-
-    document.querySelectorAll("#selection_tools select").forEach(select => {
-        select.value = "0";
-    });
-}
-
-
 /**
- * Устанавливает в модалку URL изображения и открывает её.
+ * Устанавливает в модалку URL изображения и открывает её (Bootstrap 5).
  * @param {number} planId
+ * @param {string} planDesignation
  */
 function openModalBarcode(planId, planDesignation) {
+    document.getElementById('modal_plan_id').textContent = planDesignation || '';
 
-    console.log(planId)
-  // Подставляем ID в текст
-  document.getElementById('modal_plan_id').textContent = planDesignation;
+    const img = document.getElementById('modal_barcode_img');
+    img.src = `/backend/plan_barcode?plan_index=${encodeURIComponent(planId)}`;
+    img.alt = 'Штрихкод чертежа';
+    img.onerror = () => {
+        console.error('Не удалось загрузить штрих‑код');
+        img.alt = 'Ошибка загрузки';
+    };
 
-  // Формируем URL к вашему эндпоинту
-  const img = document.getElementById('modal_barcode_img');
-  img.src = `/backend/plan_barcode?plan_index=${encodeURIComponent(planId)}`;
-  console.log(img.src);
-
-  // Очистим старое, если вдруг
-  img.onerror = () => {
-    console.error('Не удалось загрузить штрих‑код');
-    img.alt = 'Ошибка загрузки';
-  };
-
-  // Открываем модалку
-  showBarcode('flex');
+    showBarcodeModal(true);
 }
 
-
-// Функция для отображения модального окна Штрихкода
-var showBarcode = function (state) {
-    document.getElementById('modal_window_barcode').style.display = state
-    document.getElementById('membrane').style.display = state
-}
-
-window.showBarcode = showBarcode;
-
-// Функция для открытия модального окна
-function openModalRandomPlan(data) {
-
-    console.log(data);
-    if (data.tools != undefined) {
-
-        $('#random_plan_id').text(data.designation);
-
-        show_random_plan('flex');  // Открываем модальное окно
-        $('#random_plan_table').bootstrapTable('showLoading');
-        $('#random_plan_table').bootstrapTable('refreshOptions', {'height': $("#random_plan_div").height()});
-        $('#random_plan_table').bootstrapTable('load', data.tools);
-        $('#random_plan_table').bootstrapTable('hideLoading');
+// Функция для отображения модального окна штрихкода (Bootstrap 5)
+function showBarcodeModal(show) {
+    const modalEl = document.getElementById('modal_window_barcode');
+    if (!modalEl) return;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (show) {
+        modal.show();
+    } else {
+        modal.hide();
     }
-
-
 }
 
-function createTableRandomPlan(data) {
-    console.log(data);
-}
-
-// Функция для отображения модального окна
-var show_random_plan = function (state) {
-    document.getElementById('modal_window_details').style.display = state;
-    document.getElementById('membrane').style.display = state;
-}
-
-window.show_random_plan = show_random_plan;
+window.showBarcodeModal = showBarcodeModal;

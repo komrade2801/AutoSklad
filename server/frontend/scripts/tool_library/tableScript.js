@@ -66,13 +66,11 @@ async function loadToolData(toolTypeId) {
             groupSelect.value = 0;
         }
 
-        // Устанавливаем количество
+        // Устанавливаем количество (инвентарные номера не используются — только число в toolTypes)
         if (toolData.count && toolData.count > 0) {
             document.getElementById("useToolCount").checked = true;
             document.getElementById("tool_count").value = toolData.count;
             showToolCount(); // Показываем блок с количеством
-            // Обновляем таблицу с количеством инструментов
-            updateTable();
         } else {
             document.getElementById("useToolCount").checked = false;
             document.getElementById("tool_count").value = 1;
@@ -99,15 +97,59 @@ async function loadToolData(toolTypeId) {
 //    }
 //});
 
+// Показ/скрытие блока количества по состоянию чекбокса «Указать количество»
 function showToolCount() {
-    const elem = document.getElementById("ToolCountBlock");
-    console.log(elem);
+    const useToolCount = document.getElementById("useToolCount");
+    const block = document.getElementById("ToolCountBlock");
+    if (!block) return;
+    block.style.display = useToolCount && useToolCount.checked ? 'block' : 'none';
+}
 
-    if (elem.style.display == 'none') {
-        elem.style.display = 'block';
-    } else {
-        elem.style.display = 'none';
+// Сброс блока «Указать количество» при закрытии модального окна создания инструмента
+function resetToolCountBlockOnModalClose() {
+    const useToolCount = document.getElementById("useToolCount");
+    const toolCount = document.getElementById("tool_count");
+    const toolCountBlock = document.getElementById("ToolCountBlock");
+    const toolsTable = document.getElementById("tools_table");
+    const tableBody = document.getElementById("table_body");
+    if (useToolCount) {
+        useToolCount.checked = false;
     }
+    if (toolCount) {
+        toolCount.value = 1;
+    }
+    if (toolCountBlock) {
+        toolCountBlock.style.display = 'none';
+    }
+    if (toolsTable) {
+        toolsTable.style.display = 'none';
+    }
+    if (tableBody) {
+        tableBody.innerHTML = '';
+    }
+}
+
+// Полная очистка формы создания/редактирования инструмента при закрытии модалки
+function clearCreateToolForm() {
+    const selectGroup = document.getElementById("select_group");
+    const toolName = document.getElementById("tool_name");
+    const toolDescription = document.getElementById("tool_description");
+    if (selectGroup) { selectGroup.value = '0'; }
+    if (toolName) { toolName.value = ''; }
+    if (toolDescription) { toolDescription.value = ''; }
+    resetToolCountBlockOnModalClose();
+    if (window.currentToolTypeId != null) window.currentToolTypeId = null;
+}
+
+// Полная очистка формы создания/редактирования группы при закрытии модалки
+function clearCreateGroupForm() {
+    const groupName = document.getElementById("group_name");
+    const selectParentGroup = document.getElementById("select_parent_group");
+    const groupDescription = document.getElementById("group_description");
+    if (groupName) { groupName.value = ''; }
+    if (selectParentGroup) { selectParentGroup.value = '0'; }
+    if (groupDescription) { groupDescription.value = ''; }
+    if (window.currentGroupId != null) window.currentGroupId = null;
 }
 
 // Функция, собирающая данные из формы и таблицы, формирующая JSON и отправляющая его на сервер
@@ -198,28 +240,29 @@ function collectDataAndSend() {
     .then(response => {
         if (!response.ok) {
             return response.json().then(errData => {
-                throw new Error('Ошибка сети: ' + JSON.stringify(errData));
+                throw errData;
             });
         }
         return response.json();
     })
     .then(result => {
         console.log('Успешно:', result);
-//        let url = '../screen_15_tool_library.html';
-//        let targetUrl = new URL(url, window.location.origin).href;
-//        let token = localStorage.getItem('token');
-//        let full_url = targetUrl + "?token=" + token;
-//        window.location.href = full_url;
-
+        showToast(`Инструмент "${toolName}" создан`, 'success');
         show_create('none');
         let device_number = 1;
         loadToolLibraryTable(device_number);
-
-        // Дополнительные действия
     })
     .catch(error => {
         console.error('Ошибка при сохранении данных:', error);
-        // Обработка ошибок
+        let msg = 'Ошибка при сохранении инструмента';
+        if (error && error.detail != null) {
+            msg = Array.isArray(error.detail) ? (error.detail[0]?.msg || error.detail[0]?.loc?.join(' ') || JSON.stringify(error.detail)) : error.detail;
+        } else if (error && error.message) {
+            msg = error.message;
+        } else if (error && typeof error === 'string') {
+            msg = error;
+        }
+        showToast(msg, 'danger');
     });
 }
 
@@ -260,7 +303,7 @@ async function editTool(row) {
 //         window.location.href = full_url;
 
             loadToolData(parseInt(toolTypeId));
-            openModalCreate(1);
+            openModalCreate();
 
      } catch (error) {
          console.error('Ошибка при проверке инструмента:', error);
@@ -426,29 +469,29 @@ function collectDataAndSendGroup() {
     .then(response => {
         if (!response.ok) {
             return response.json().then(errData => {
-                throw new Error('Ошибка сети: ' + JSON.stringify(errData));
+                throw errData;
             });
         }
         return response.json();
     })
     .then(result => {
         console.log('Успешно:', result);
-
-        show_create('none');
+        showToast(`Группа "${groupName}" создана`, 'success');
+        show_create_group('none');
         let device_number = 1;
         loadToolLibraryTable(device_number);
-
-
-//        let url = '../screen_15_tool_library.html';
-//        let targetUrl = new URL(url, window.location.origin).href;
-//        let token = localStorage.getItem('token');
-//        let full_url = targetUrl + "?token=" + token;
-//        window.location.href = full_url;
-        // Дополнительные действия
     })
     .catch(error => {
         console.error('Ошибка при сохранении данных:', error);
-        // Обработка ошибок
+        let msg = 'Ошибка при сохранении группы';
+        if (error && error.detail != null) {
+            msg = Array.isArray(error.detail) ? (error.detail[0]?.msg || error.detail[0]?.loc?.join(' ') || JSON.stringify(error.detail)) : error.detail;
+        } else if (error && error.message) {
+            msg = error.message;
+        } else if (error && typeof error === 'string') {
+            msg = error;
+        }
+        showToast(msg, 'danger');
     });
 }
 
@@ -473,7 +516,7 @@ async function editGroup(row) {
          }
 
          loadGroupData(parseInt(groupId));
-         openModalCreateGroup(1);
+         openModalCreateGroup();
 
          // Переходим на страницу редактирования с параметром group_id
 //         let url = '../screen_23_add_group.html';
@@ -607,10 +650,12 @@ function openModalCell(toolId, toolName, toolSum) {
     show('flex');  // Открываем модальное окно
 }
 
-// Функция для отображения модального окна
+// Функция для отображения модального окна (мембрана — только для старых экранов с modal_window_cell)
 var show = function (state) {
-    document.getElementById('modal_window_cell').style.display = state;
-    document.getElementById('membrane').style.display = state;
+    const cell = document.getElementById('modal_window_cell');
+    const membrane = document.getElementById('membrane');
+    if (cell) cell.style.display = state;
+    if (membrane) membrane.style.display = state;
 }
 
 window.show = show;
@@ -622,38 +667,92 @@ function openModalConfirmation() {
 
 window.openModalConfirmation = openModalConfirmation
 
-var show_create = function (state) {
-    document.getElementById('modal_window_create').style.display = state
-    document.getElementById('membrane').style.display = state
+// Получение или создание экземпляра Bootstrap Modal для окна создания инструмента
+function getCreateModalInstance() {
+    const el = document.getElementById('modal_window_create');
+    return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
 }
 
-function openModalCreate(edit) {
-    if (edit == 1) {
-        $('#modal_window_create_title').text("Редактирование инструмента");
-        $('#saveToolBtn').text("Сохранить");
+// Показать/скрыть модальное окно создания инструмента (Bootstrap 5, свой backdrop)
+function show_create(state) {
+    const modal = getCreateModalInstance();
+    if (!modal) return;
+    if (state === 'none') {
+        modal.hide();
     } else {
-        $('#modal_window_create_title').text("Создание инструмента");
-        $('#saveToolBtn').text("Создать");
+        modal.show();
     }
-    show_create('flex');  // Открываем модальное окно
+}
+
+function openModalCreate() {
+    // Сброс режима редактирования при открытии для создания
+    if (window.currentToolTypeId != null) {
+        window.currentToolTypeId = null;
+    }
+    show_create('flex');
 }
 
 window.openModalCreate = openModalCreate;
+window.show_create = show_create;
 
-var show_create_group = function (state) {
-    document.getElementById('modal_window_create_group').style.display = state
-    document.getElementById('membrane').style.display = state
+// Очистка формы при закрытии модального окна (крестик, Отмена, сохранение, клик вне, Escape)
+function initCreateModalHandlers() {
+    const el = document.getElementById('modal_window_create');
+    if (!el) return;
+    el.addEventListener('hidden.bs.modal', function () {
+        clearCreateToolForm();
+    });
+}
+
+// --- Модальное окно создания группы ---
+
+// Получение или создание экземпляра Bootstrap Modal для окна создания группы
+function getCreateGroupModalInstance() {
+    const el = document.getElementById('modal_window_create_group');
+    return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
+}
+
+// Показать/скрыть модальное окно создания группы (Bootstrap 5, свой backdrop)
+function show_create_group(state) {
+    const modal = getCreateGroupModalInstance();
+    if (!modal) return;
+    if (state === 'none') {
+        modal.hide();
+    } else {
+        modal.show();
+    }
 }
 
 function openModalCreateGroup() {
-    if (edit == 1) {
-        $('#modal_window_create_title').text("Редактирование группы");
-        $('#saveGroupBtn').text("Сохранить");
-    } else {
-        $('#modal_window_create_title').text("Создание группы");
-        $('#saveGroupBtn').text("Создать");
+    // Сброс режима редактирования при открытии для создания
+    if (window.currentGroupId != null) {
+        window.currentGroupId = null;
     }
-    show_create_group('flex');  // Открываем модальное окно
+    show_create_group('flex');
 }
 
 window.openModalCreateGroup = openModalCreateGroup;
+window.show_create_group = show_create_group;
+
+// Очистка формы при закрытии модального окна группы (крестик, Отмена, сохранение, клик вне, Escape)
+function initCreateGroupModalHandlers() {
+    const el = document.getElementById('modal_window_create_group');
+    if (!el) return;
+    el.addEventListener('hidden.bs.modal', function () {
+        clearCreateGroupForm();
+    });
+}
+
+// Инициализация обработчиков модалок после загрузки DOM (скрипт в <head>, модалки в <body>)
+function initModalHandlersWhenReady() {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            initCreateModalHandlers();
+            initCreateGroupModalHandlers();
+        });
+    } else {
+        initCreateModalHandlers();
+        initCreateGroupModalHandlers();
+    }
+}
+initModalHandlersWhenReady();

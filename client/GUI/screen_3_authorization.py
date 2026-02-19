@@ -6,10 +6,6 @@ logger = get_logger(__name__)
 from .ui_classes.Ui_screen_3_authorization import Ui_screen_3_authorization
 from .helper.MyLineEdit import MyLineEdit
 from .widgets.widget_keyboard import WidgetKeyboard
-from PyQt5.QtCore import QEvent
-from PyQt5.QtCore import QTimer
-
-
 class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
     def __init__(self):
         super().__init__()
@@ -50,12 +46,8 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         self.keyboard.btn_number_7.clicked.connect(lambda: self.add_value_key('7'))
         self.keyboard.btn_number_8.clicked.connect(lambda: self.add_value_key('8'))
         self.keyboard.btn_number_9.clicked.connect(lambda: self.add_value_key('9'))
+        self.keyboard.btn_backspace.clicked.connect(self.delete_value_key)
 
-        self.visibility_timer = QTimer(self)
-        self.visibility_timer.timeout.connect(self.check_visibility)
-        self.timeout_back = int(self.lbl_timeout_back.text())
-        self.__timeout_back = self.timeout_back
-        self.event_timeout_back = lambda *args, **kwargs: self.hide()
         self.edit_psw.textChanged.connect(self.on_password_changed)
         self.psw = ""
         self.edit_login.textChanged.connect(self.on_login_changed)
@@ -70,9 +62,10 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             logger.debug("clear login text: %s", text)
             self.login = ''
             return
+       
         if ((len(text) >= self.trigger_length_login) and
                 (len(text) < self.trigger_max_length_login)):
-            self.login = text  # Обновляем переменную
+            self.login = text
             self.event_input_name_code(self.login)
             self.edit_login.setStyleSheet("color: #FFFFFF;\n"
                 "background-color: #2e4461;\n")
@@ -106,24 +99,11 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
 
                 # self.edit_login.setStyleSheet("color: rgb(0, 0, 174);")
 
-    def check_visibility(self):
-        if self.timeout_back > 1:
-            self.timeout_back = self.timeout_back - 1
-            self.lbl_timeout_back.setText(str(self.timeout_back))
-        else:
-            self.timeout_back = self.__timeout_back
-            self.lbl_timeout_back.setText(str(self.timeout_back))
-            self.hide_keyboard(self.objectName())
-            self.event_timeout_back("timeout_back")
-
     def showEvent(self, event):
         """Событие, которое срабатывает, когда виджет показывается."""
         super().showEvent(event)
         self.edit_login.setText("")
         self.edit_psw.setText("")
-        self.timeout_back = self.__timeout_back
-        self.lbl_timeout_back.setText(str(self.timeout_back))
-        self.visibility_timer.start(1000)
         # self.edit_login.setStyleSheet("color: rgb(0, 0, 0);")
         # self.edit_psw.setStyleSheet("color: rgb(0, 0, 0);")
         self.edit_login.setStyleSheet("color: #000000;\n"
@@ -143,20 +123,29 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
     def hideEvent(self, event):
         """Событие, которое срабатывает, когда виджет скрывается."""
         super().hideEvent(event)
-        self.visibility_timer.stop()
-        self.timeout_back = self.__timeout_back
-
 
     def add_value_key(self, value):
         edit = self.findChild(MyLineEdit, self.focus_object_name)
         edit.setText(edit.text() + value)
 
+    def delete_value_key(self):
+        """Удаление последнего символа в активном поле ввода."""
+        edit = self.findChild(MyLineEdit, self.focus_object_name)
+        if not edit:
+            return
+        if edit == self.edit_psw:
+            if len(self.psw) > 0:
+                self.psw = self.psw[:-1]
+                self.edit_psw.setText("*" * len(self.psw))
+        else:
+            text = edit.text()
+            if len(text) > 0:
+                edit.setText(text[:-1])
+
     def hide_keyboard(self, object_name):
         self.btn_keyboard.show()
         self.btn_authorization.show()
         self.btn_back.show()
-        self.lbl_timeout_back.show()
-        self.label_info_1.show()
         self.btn_authorization.setFocus()
         self.keyboard.hide()
         self.focus_object_name = ""
@@ -167,9 +156,6 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         self.btn_keyboard.hide()
         self.btn_authorization.hide()
         self.btn_back.hide()
-
-        self.lbl_timeout_back.hide()
-        self.label_info_1.hide()
 
         x, y, w, h = self.calculate_keyboard_position()
         self.keyboard.setGeometry(x, y, w, h)  # Устанавливаем положение клавиатуры
@@ -191,7 +177,6 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
     def on_focus_in(self, object_name):
         self.focus_object_name = object_name
         self.show_keyboard(object_name)
-        self.timeout_back = self.__timeout_back
 
     def on_focus_out(self, object_name):...
 

@@ -44,10 +44,19 @@ window.addUser = function() {
 }
 
 
-// Функция для отображения модального окна
-export function showBarcode(state) {
-    document.getElementById('modal_window_barcode').style.display = state;
-    document.getElementById('membrane').style.display = state;
+/**
+ * Показывает или скрывает модалку штрихкода (Bootstrap 5).
+ * @param {'flex'|'none'} mode
+ */
+export function showBarcode(mode) {
+  const el = document.getElementById('modal_window_barcode');
+  if (!el) return;
+  const modal = bootstrap.Modal.getOrCreateInstance(el);
+  if (mode === 'none') {
+    modal.hide();
+  } else {
+    modal.show();
+  }
 }
 
 
