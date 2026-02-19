@@ -71,9 +71,10 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             logger.debug("clear login text: %s", text)
             self.login = ''
             return
-        self.login = text
+       
         if ((len(text) >= self.trigger_length_login) and
                 (len(text) < self.trigger_max_length_login)):
+            self.login = text
             self.event_input_name_code(self.login)
             self.edit_login.setStyleSheet("color: #FFFFFF;\n"
                 "background-color: #2e4461;\n")
