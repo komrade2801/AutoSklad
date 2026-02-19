@@ -271,6 +271,26 @@
   margin-top: 30px;
 }
 
+/* Видимая полоса прокрутки в модалках при переполнении */
+.modal-dialog-scrollable .modal-body {
+    scrollbar-width: auto;
+    scrollbar-gutter: stable;
+}
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar {
+    width: 10px;
+}
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb {
+    background: #adb5bd;
+    border-radius: 5px;
+}
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #6c757d;
+}
+
 .form-control {
     --bs-secondary-color: #b3b3b3;
 }
