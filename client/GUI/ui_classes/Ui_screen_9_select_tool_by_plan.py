@@ -48,6 +48,8 @@ class Ui_screen_9_select_tool_by_plan(object):
         self.listWidget = QtWidgets.QListWidget(screen_9_select_tool_by_plan)
         self.listWidget.setEnabled(True)
         self.listWidget.setGeometry(QtCore.QRect(5, 130, 471, 531))
+        self.listWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.listWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.listWidget.setObjectName("listWidget")
         self.lbl_info_1 = QtWidgets.QLabel(screen_9_select_tool_by_plan)
         self.lbl_info_1.setEnabled(True)

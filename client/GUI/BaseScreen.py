@@ -1,5 +1,10 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QScroller, QAbstractScrollArea, QScrollerProperties
+from PyQt5.QtWidgets import (
+    QScroller,
+    QAbstractScrollArea,
+    QScrollerProperties,
+    QAbstractItemView,
+)
 from abc import ABC, ABCMeta, abstractmethod
 
 
@@ -41,24 +46,41 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
             self._enable_touch_scroll()
 
     def _enable_touch_scroll(self):
-        """Включает кинетический свайп-скролл для всех прокручиваемых областей."""
-        for scroll_area in self.findChildren(QAbstractScrollArea):
+        """Включает кинетический свайп-скролл для прокручиваемых областей (только «листовые», без вложенных)."""
+        all_scroll_areas = self.findChildren(QAbstractScrollArea)
+        # Только области без вложенных QAbstractScrollArea, чтобы не было двойного скролла и скачков
+        for scroll_area in all_scroll_areas:
+            has_nested = any(
+                scroll_area.isAncestorOf(other) and other != scroll_area
+                for other in all_scroll_areas
+            )
+            if has_nested:
+                continue
+
+            # Плавный скролл по пикселям (а не по целым карточкам/элементам) для списков и таблиц
+            if isinstance(scroll_area, QAbstractItemView):
+                scroll_area.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
+                scroll_area.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+                # Плавный скролл колесиком мыши: шаг в пикселях (20 ≈ как при тач-свайпе)
+                scroll_area.verticalScrollBar().setSingleStep(20)
+
             viewport = scroll_area.viewport()
             QScroller.grabGesture(viewport, QScroller.LeftMouseButtonGesture)
 
-            # Тонкая настройка параметров скролла для тачскрина
             scroller = QScroller.scroller(viewport)
             props = scroller.scrollerProperties()
 
-            # Минимальная дистанция для распознавания свайпа (метры, ~5мм)
-            props.setScrollMetric(QScrollerProperties.DragStartDistance, 0.005)
+            # Порог старта жеста: ~20 мм — чтобы 4 px не запускали скролл (Qt переводит в пиксели по DPI)
+            props.setScrollMetric(QScrollerProperties.DragStartDistance, 0.02)
+            # Минимальная скорость отпускания для старта кинетики (м/с) — мелкие «подёргивания» не дают полёт
+            props.setScrollMetric(QScrollerProperties.MinimumVelocity, 0.02)
+            # Блокировка оси: 0.9 — почти только вертикальный скролл при свайпе
+            props.setScrollMetric(QScrollerProperties.AxisLockThreshold, 0.9)
             # Сглаживание скорости при свайпе
-            props.setScrollMetric(QScrollerProperties.DragVelocitySmoothingFactor, 0.6)
-            # Замедление кинетического скролла (меньше = быстрее остановка)
-            props.setScrollMetric(QScrollerProperties.DecelerationFactor, 0.15)
-            # Максимальная скорость (м/с)
-            props.setScrollMetric(QScrollerProperties.MaximumVelocity, 0.5)
-            # Отключаем пружинящий эффект за границами списка
+            props.setScrollMetric(QScrollerProperties.DragVelocitySmoothingFactor, 0.05)
+            props.setScrollMetric(QScrollerProperties.DecelerationFactor, 0.08)
+            props.setScrollMetric(QScrollerProperties.MaximumVelocity, 0.0005)
+            # Без пружинящего эффекта за границами
             props.setScrollMetric(QScrollerProperties.OvershootDragResistanceFactor, 0.0)
             props.setScrollMetric(QScrollerProperties.OvershootScrollDistanceFactor, 0.0)
 

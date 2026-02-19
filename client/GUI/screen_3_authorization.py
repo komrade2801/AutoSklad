@@ -50,6 +50,7 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
         self.keyboard.btn_number_7.clicked.connect(lambda: self.add_value_key('7'))
         self.keyboard.btn_number_8.clicked.connect(lambda: self.add_value_key('8'))
         self.keyboard.btn_number_9.clicked.connect(lambda: self.add_value_key('9'))
+        self.keyboard.btn_backspace.clicked.connect(self.delete_value_key)
 
         self.visibility_timer = QTimer(self)
         self.visibility_timer.timeout.connect(self.check_visibility)
@@ -70,9 +71,9 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             logger.debug("clear login text: %s", text)
             self.login = ''
             return
+        self.login = text
         if ((len(text) >= self.trigger_length_login) and
                 (len(text) < self.trigger_max_length_login)):
-            self.login = text  # Обновляем переменную
             self.event_input_name_code(self.login)
             self.edit_login.setStyleSheet("color: #FFFFFF;\n"
                 "background-color: #2e4461;\n")
@@ -150,6 +151,20 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
     def add_value_key(self, value):
         edit = self.findChild(MyLineEdit, self.focus_object_name)
         edit.setText(edit.text() + value)
+
+    def delete_value_key(self):
+        """Удаление последнего символа в активном поле ввода."""
+        edit = self.findChild(MyLineEdit, self.focus_object_name)
+        if not edit:
+            return
+        if edit == self.edit_psw:
+            if len(self.psw) > 0:
+                self.psw = self.psw[:-1]
+                self.edit_psw.setText("*" * len(self.psw))
+        else:
+            text = edit.text()
+            if len(text) > 0:
+                edit.setText(text[:-1])
 
     def hide_keyboard(self, object_name):
         self.btn_keyboard.show()
