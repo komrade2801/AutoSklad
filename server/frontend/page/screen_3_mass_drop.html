@@ -43,18 +43,43 @@
 </head>
 <body onload="initialization('screen_3_mass_drop');"
       class="d-flex justify-content-center" id="body">
-<div id="membrane"></div>
-<div id="modal_window_cell">
-    <span class="cell_number" style="font-size: 24px;">Ячейка №</span>
-    <span class="tool_name"
-          style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент: </span>
-    <span class="tool_group" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Группа: </span>
-    <span class="plan_name" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Чертёж: </span>
-    <div style="display: flex; flex-direction: row; margin-top: 50px;">
-        <button class="btn_vending" onclick="show('none')" style="margin-right: 20px;">Назад</button>
-        <button class="btn_vending upload" onclick="handleUnloadModalClick(this)">Выгрузить</button>
+
+
+<!-- Информация о загрузке -->
+<div class="modal fade modal-dialog-scrollable vending-modal-window" id="modal_window_cell" tabindex="-1"
+     aria-labelledby="detailsModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; width: 100%;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0;">
+                        <i class="bi bi-key" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h5 class="modal-title" id="detailsModalLabel">Массовая загрузка №: <span
+                                id="modal_mass_load_id"></span></h5>
+                        <p style="margin: 0; margin-top: 4px;">Список загруженных инструментов</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" aria-label="Закрыть"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <span class="cell_number" style="font-size: 24px;">Ячейка №</span>
+                <span class="tool_name"
+                      style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент: </span>
+                <span class="tool_group" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Группа: </span>
+                <span class="plan_name" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Чертёж: </span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Назад</button>
+                <button class="btn_vending upload" onclick="handleUnloadModalClick(this)">Выгрузить</button>
+            </div>
+        </div>
     </div>
 </div>
+
+
 <div class="d-flex flex-column"
      style="height: 100%; width: 100%; position: static; margin-left: 0px;">
     <nav id="navbar"

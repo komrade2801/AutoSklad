@@ -3,16 +3,16 @@ function actionToolsFormatter(value, row, index, field) {
      let actionsDiv = document.createElement("div");
      actionsDiv.className = "table-actions";
 
-     // Info button
-     let infoButton = document.createElement("i");
-     infoButton.className = "bi bi-info-square action-button";
-     infoButton.title = "Информация об инструменте";
-
-     infoButton.addEventListener('click', async function () {
-        openModalCell(row.tool, row.group, row.number, row.cell, row.plan)
-     });
-
-     actionsDiv.appendChild(infoButton);
+//     // Info button
+//     let infoButton = document.createElement("i");
+//     infoButton.className = "bi bi-info-square action-button";
+//     infoButton.title = "Информация об инструменте";
+//
+//     infoButton.addEventListener('click', async function () {
+//        openModalCell(row.tool, row.group, row.number, row.cell, row.plan)
+//     });
+//
+//     actionsDiv.appendChild(infoButton);
 
      // Drop button
      let dropButton = document.createElement("i");

@@ -7,7 +7,7 @@
 
     <title>Массовая загрузка</title>
 
-<!--    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">-->
+    <!--    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">-->
     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
     <script type="module" src="../scripts/massload/init.js?v=2"></script>
     <script type="module" src="../scripts/massload/history_load.js?v=1"></script>
@@ -38,21 +38,47 @@
 </head>
 <body onload="initialization('screen_2_mass_load');"
       class="d-flex justify-content-center" id="body">
-<div id="membrane"></div>
-<div id="modal_window_cell">
-    <span class="tool_name"
-          style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент: </span>
-    <span class="tool_sum" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Количество: </span>
-    <div class="library-tool-row" style="display: flex; width: 80%; align-items: start; margin-top: 10px;" >
-        <div class="toolName library-tool-input-div">
-            <input id="modal_amount_input" type="number" min="0" step="1" pattern="[0-9]*" inputmode="numeric" max="99999999" class="library-tool-input">
+
+
+<!-- Информация о загрузке -->
+<div class="modal fade modal-dialog-scrollable vending-modal-window" id="modal_window_cell" tabindex="-1"
+     aria-labelledby="detailsModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; width: 100%;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0;">
+                        <i class="bi bi-key" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h5 class="modal-title" id="detailsModalLabel">Массовая загрузка №: <span
+                                id="modal_mass_load_id"></span></h5>
+                        <p style="margin: 0; margin-top: 4px;">Список загруженных инструментов</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" aria-label="Закрыть"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+
+            <span class="tool_name"
+                style="display: flex; width: 80%; align-items: start; margin-top: 15px; ">Инструмент: </span>
+                <span class="tool_sum" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">Количество: </span>
+                <div class="library-tool-row" style="display: flex; width: 80%; align-items: start; margin-top: 10px;">
+                    <div class="toolName library-tool-input-div">
+                        <input id="modal_amount_input" type="number" min="0" step="1" pattern="[0-9]*"
+                               inputmode="numeric" max="99999999" class="library-tool-input">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Назад</button>
+                <button id="modal_drop_button" class="btn btn_vending upload">Загрузить</button>
+            </div>
         </div>
     </div>
-    <div style="display: flex; flex-direction: row; margin-top: 50px;">
-        <button class="btn btn_vending" onclick="show('none')" style="margin-right: 20px;">Назад</button>
-        <button id="modal_drop_button" class="btn btn_vending upload">Загрузить</button>
-    </div>
 </div>
+
 <div class="d-flex flex-column"
      style="height: 100%; width: 100%; position: static; margin-left: 0px;">
     <nav id="navbar"
@@ -109,16 +135,18 @@
                             <th data-field='name' data-sortable='true'><span
                                     title="Инструмент">Инструмент</span>
                             </th>
-                            <th data-field='actions' data-width="50" data-formatter="actionToolsFormatter"><span
-                                    title="Информация">Инфо</span></th>
+                            <!--                            <th data-field='actions' data-width="50" data-formatter="actionToolsFormatter"><span-->
+                            <!--                                    title="Информация">Инфо</span></th>-->
                             <th data-field='sum' data-sortable='true' data-width="100" data-formatter="sumFormatter">
                                 <span title="В наличии">В наличии</span></th>
-                            <th data-field='load' data-sortable='true' data-width="200" data-formatter="sumToolsFormatter">
+                            <th data-field='load' data-sortable='true' data-width="200"
+                                data-formatter="sumToolsFormatter">
                                 <span title="Загрузка">Загрузка</span></th>
                         </tr>
                         </thead>
                     </table>
-                    <div id="loadableToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
+                    <div id="loadableToolsToolbar" class="custom-toolbar-content"
+                         style="display: flex; align-items: center; gap: 10px;">
                         <span style="color: #2E4461; font-size: 18px; font-weight: bold;">Аппарат: Вендинг №1</span>
                         <button class="btn btn-primary" style="width: 24px; height: 24px; padding: 0;">
                             <i class="bi bi-chevron-down"></i>
@@ -159,8 +187,11 @@
                         </tr>
                         </thead>
                     </table>
-                    <div id="customToolsToolbar" class="custom-toolbar-content" style="display: flex; align-items: center; gap: 10px;">
-                        <button id="saveLoad" class="btn btn_vending" type="button" onclick="saveHistoryAsMassLoad(1)">Сохранить загрузку</button>
+                    <div id="customToolsToolbar" class="custom-toolbar-content"
+                         style="display: flex; align-items: center; gap: 10px;">
+                        <button id="saveLoad" class="btn btn_vending" type="button" onclick="saveHistoryAsMassLoad(1)">
+                            Сохранить загрузку
+                        </button>
                     </div>
                 </div>
             </div>
