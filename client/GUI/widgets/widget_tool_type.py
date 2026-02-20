@@ -14,6 +14,8 @@ class WidgetToolType(BaseScreen, Ui_widget_tool_type):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.lbl_number_tool.setWordWrap(True)
+        self.lbl_number_tool.setMaximumHeight(40)
         self.name = ""
         self.tool_type_id = -1
         self.event_select_tool = lambda *args, **kwargs: logger.debug("event_select_tool %s %s", args, kwargs)

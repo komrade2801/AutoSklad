@@ -11,7 +11,8 @@ class WidgetCountTool(BaseScreen, Ui_widget_20_count_tool):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-
+        self.lbl_number_tool.setWordWrap(True)
+        self.lbl_number_tool.setMaximumHeight(40)
 
     def emit_key(self, key):
         """Вызывается при нажатии на кнопку."""

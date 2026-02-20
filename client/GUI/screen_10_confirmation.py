@@ -11,6 +11,7 @@ class screen_10_confirmation(BaseScreen, Ui_screen_10_confirmation):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.tool_number.setWordWrap(True)
         self.name = None
         self.tool_id = None
 

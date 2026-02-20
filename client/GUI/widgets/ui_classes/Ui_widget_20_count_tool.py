@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_widget_20_count_tool(object):
     def setupUi(self, widget_20_count_tool):
         widget_20_count_tool.setObjectName("widget_20_count_tool")
-        widget_20_count_tool.resize(467, 75)
+        widget_20_count_tool.resize(467, 95)
         widget_20_count_tool.setStyleSheet("QWidget{\n"
 "    background-color: #2e4461;\n"
 "}\n"
@@ -46,7 +46,7 @@ class Ui_widget_20_count_tool(object):
 "    font-family: \"Roboto\", Sans-serif;\n"
 "}")
         self.lbl_number_tool = QtWidgets.QLabel(widget_20_count_tool)
-        self.lbl_number_tool.setGeometry(QtCore.QRect(5, 5, 271, 30))
+        self.lbl_number_tool.setGeometry(QtCore.QRect(5, 5, 271, 40))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -170,7 +170,7 @@ class Ui_widget_20_count_tool(object):
         self.lbl_status.setObjectName("lbl_status")
         self.lbl_info = QtWidgets.QLabel(widget_20_count_tool)
         self.lbl_info.setEnabled(True)
-        self.lbl_info.setGeometry(QtCore.QRect(160, 40, 80, 30))
+        self.lbl_info.setGeometry(QtCore.QRect(160, 45, 80, 30))
         font = QtGui.QFont()
         font.setFamily("Roboto")
         font.setPointSize(16)
@@ -181,7 +181,7 @@ class Ui_widget_20_count_tool(object):
         self.lbl_info.setObjectName("lbl_info")
         self.lbl_count = QtWidgets.QLabel(widget_20_count_tool)
         self.lbl_count.setEnabled(True)
-        self.lbl_count.setGeometry(QtCore.QRect(245, 40, 61, 30))
+        self.lbl_count.setGeometry(QtCore.QRect(245, 45, 61, 30))
         font = QtGui.QFont()
         font.setFamily("Roboto")
         font.setPointSize(16)
@@ -191,7 +191,7 @@ class Ui_widget_20_count_tool(object):
         self.lbl_count.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.lbl_count.setObjectName("lbl_count")
         self.background = QtWidgets.QLabel(widget_20_count_tool)
-        self.background.setGeometry(QtCore.QRect(0, 0, 467, 75))
+        self.background.setGeometry(QtCore.QRect(0, 0, 467, 95))
         self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.background.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.background.setText("")

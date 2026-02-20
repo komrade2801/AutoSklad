@@ -14,6 +14,8 @@ class WidgetSelectTool(BaseScreen, Ui_widget_8_9_tool):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.lbl_number_tool.setWordWrap(True)
+        self.lbl_number_tool.setMaximumHeight(40)
         self.name = ""
         self.tool_description = ""
         self.status = -1
