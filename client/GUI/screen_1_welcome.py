@@ -42,5 +42,32 @@ class screen_1_welcome(BaseScreen, Ui_screen_1_welcome):
     def get_data(self):
         pass
 
+    def handle_callback_executor(self, *args, **kwargs):
+        """Определяет триггер перехода по (user, role) при авторизации по штрих-коду."""
+        triggers = args[0] if len(args) > 0 and isinstance(args[0], list) else []
+        user_and_role = args[1] if len(args) > 1 and isinstance(args[1], tuple) else ()
+        user = user_and_role[0] if len(user_and_role) > 0 else None
+        role = user_and_role[1] if len(user_and_role) > 1 else None
+
+        if not user or not role:
+            logger.debug("handle_callback_executor barcode: user or role missing -> err_barcode")
+            return 'err_barcode'
+
+        role_name = role.name.lower()
+        role_to_trigger = {
+            'stockman': 'type_storekeeper',
+            'user': 'test_user',
+            'admin': 'view_type_admin',
+            'developer': 'view_type_admin',
+            'engineer': 'test_user',
+            'manager': 'type_storekeeper',
+        }
+        if role_name in role_to_trigger:
+            trigger_name = role_to_trigger[role_name]
+            logger.debug("handle_callback_executor barcode: role=%s -> trigger=%s", role_name, trigger_name)
+            return trigger_name
+        logger.warning("handle_callback_executor barcode: no trigger for role=%s -> err_barcode", role_name)
+        return 'err_barcode'
+
     def handle_select_group(self, *args, **kwargs):
         self.event_enter_barcode(self.trigger)

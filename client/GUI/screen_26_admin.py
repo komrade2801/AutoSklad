@@ -25,8 +25,7 @@ class screen_26_admin(BaseScreen, Ui_screen_26_admin):
                 if isinstance(arg, tuple):
                     user = arg[0]
                     logger.debug("user: %s", user)
-                    self.lbl_name.setText(f"{user.second_name}")
-                    self.lbl_name_2.setText(f"{user.first_name[0]}.{user.family[0]}.")
+                    self.lbl_name.setText(self.format_fio_short(user))
                     continue
 
             except Exception:

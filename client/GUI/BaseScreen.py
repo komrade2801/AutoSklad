@@ -86,6 +86,21 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
 
             scroller.setScrollerProperties(props)
 
+    @staticmethod
+    def format_fio_short(user):
+        """
+        Форматирует ФИО в вид «Фамилия И.О.».
+        Если отчество пустое или состоит только из не-букв — выводится «Фамилия И.».
+        """
+        family = (getattr(user, 'family', None) or '').strip()
+        first = (getattr(user, 'first_name', None) or '').strip()
+        second = (getattr(user, 'second_name', None) or '').strip()
+        first_initial = f"{first[0]}." if first and first[0].isalpha() else ""
+        # Отчество: только если есть и первая буква — буква (не пустая строка и не символы)
+        second_initial = f"{second[0]}." if second and second[0].isalpha() else ""
+        parts = [family, first_initial, second_initial]
+        return " ".join(p for p in parts if p).strip()
+
     def is_read(self):
         return self.__is_read
 

@@ -23,7 +23,7 @@ function passwordFormatter(value, row, index, field) {
 }
 
 function fullNameFormatter(value, row, index, field) {
-     return row.family + ' ' + row.first_name + ' ' + row.second_name;
+     return [row.family, row.first_name, row.second_name].filter(Boolean).join(' ') || '';
 }
 
 function actionToolsFormatter(value, row, index, field) {
@@ -298,9 +298,9 @@ function saveUser() {
 
         const isCreate = window.userIndexToEdit == 0;
 
-        // Валидация обязательных полей
-        if (!familyTrimmed || !firstNameTrimmed || !secondNameTrimmed) {
-            showToast('Заполните фамилию, имя и отчество', 'warning');
+        // Валидация обязательных полей (отчество опционально)
+        if (!familyTrimmed || !firstNameTrimmed) {
+            showToast('Заполните фамилию и имя', 'warning');
             return;
         }
         if (!inputRole.value || !Number(inputRole.value)) {

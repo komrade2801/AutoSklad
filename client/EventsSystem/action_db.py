@@ -1768,7 +1768,7 @@ class ActionMapper:
         except Exception as e:
             logger.debug(f"Ошибка при получении пользователя по штрих-коду: {e}")
             logger.exception("")
-            return None, None
+            return {'trigger': 'err_barcode'}
 
     def read_db_authorization(self, login: int, password: int):
         """

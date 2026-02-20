@@ -163,7 +163,7 @@ class Ui_screen_1_welcome(object):
         self.lbl_info_1.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_info_1.setObjectName("lbl_info_1")
         self.lbl_info_2 = QtWidgets.QLabel(screen_1_welcome)
-        self.lbl_info_2.setGeometry(QtCore.QRect(112, 561, 253, 45))
+        self.lbl_info_2.setGeometry(QtCore.QRect(40, 561, 400, 45))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -446,7 +446,7 @@ class Ui_screen_1_welcome(object):
         _translate = QtCore.QCoreApplication.translate
         screen_1_welcome.setWindowTitle(_translate("screen_1_welcome", "screen_1_welcome"))
         self.lbl_info_1.setText(_translate("screen_1_welcome", "Отсканируйте"))
-        self.lbl_info_2.setText(_translate("screen_1_welcome", " штрихкод"))
+        self.lbl_info_2.setText(_translate("screen_1_welcome", " штрихкод пользователя"))
         self.btn_help.setText(_translate("screen_1_welcome", "Информация"))
         self.btn_authorization.setText(_translate("screen_1_welcome", "Войти"))
 from ..img import resources_rc

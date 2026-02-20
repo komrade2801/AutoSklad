@@ -1,7 +1,7 @@
 # import traceback
 import traceback
 from http.client import responses
-from typing import List
+from typing import List, Optional
 
 from Core.app_logging import get_logger
 
@@ -172,10 +172,10 @@ def all_users(db: Session = Depends(get_db)):
             index=user.id,
             barcode=user.barcode,
             code=user.code,
-            first_name=user.first_name,
+            first_name=user.first_name or '',
             password='****',  # user.password
             second_name=user.second_name,
-            family=user.family,
+            family=user.family or '',
             role_id=role.id,
             role=role.name
         )
@@ -249,10 +249,10 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
             index=created_user.id,
             barcode=created_user.barcode,
             code=created_user.code,
-            first_name=created_user.first_name,
+            first_name=created_user.first_name or '',
             password=created_user.password,
             second_name=created_user.second_name,
-            family=created_user.family,
+            family=created_user.family or '',
             role_id=role.id,
             role=role.name
         )
@@ -290,10 +290,10 @@ def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_d
         index=updated_user.id,
         barcode=updated_user.barcode,
         code=updated_user.code,
-        first_name=updated_user.first_name,
+        first_name=updated_user.first_name or '',
         password=updated_user.password,
         second_name=updated_user.second_name,
-        family=updated_user.family,
+        family=updated_user.family or '',
         role_id=role.id,
         role=role.name
     )
@@ -537,13 +537,13 @@ def delete_role(role_id: int, db: Session = Depends(get_db)):
     return {"detail": "Роль успешно удалена"}
 
 
-def generate_login_password(first_name: str, patronymic: str, last_name: str, barcode: str, exists_check=None):
+def generate_login_password(first_name: str, patronymic: Optional[str], last_name: str, barcode: str, exists_check=None):
     """
     Генерирует логин и пароль на основе переданных параметров с учетом уникальности логина.
 
     Параметры:
       - first_name (str): Имя.
-      - patronymic (str): Отчество.
+      - patronymic (str, optional): Отчество (при отсутствии используется пустая строка).
       - last_name (str): Фамилия.
       - barcode (str): Штрих-код в формате строки, например '2348615250945'.
       - exists_check (callable, optional): Функция для проверки уникальности логина.
@@ -561,14 +561,16 @@ def generate_login_password(first_name: str, patronymic: str, last_name: str, ba
       4. Результаты приводятся к 4-значному формату (с лидирующими нулями при необходимости).
     """
     try:
+        patronymic = patronymic or ""
         # Проверка корректности штрих-кода
         if len(barcode) < 4 or not barcode.isdigit():
             raise ValueError(
                 "Штрих-код должен состоять минимум из 4 цифр и содержать только числа.")
 
-        # Базовая генерация логина по первым символам имени, отчества и фамилии
+        # Базовая генерация логина по первым символам имени, отчества и фамилии (при пустом отчестве — пробел)
+        patronymic_first = patronymic[0] if patronymic else " "
         login_value = (
-            ord(first_name[0]) + ord(patronymic[0]) + ord(last_name[0])) % 10000
+            ord(first_name[0]) + ord(patronymic_first) + ord(last_name[0])) % 10000
 
         # Генерация пароля: сумма ASCII-кодов полного имени + последние 4 цифры штрих-кода
         full_name = first_name + patronymic + last_name
@@ -632,7 +634,7 @@ def generate_credentials(data: UserCredentialsInput, db: Session = Depends(get_d
     try:
         login, password = generate_login_password(
             data.first_name,
-            data.patronymic,
+            data.patronymic or "",
             data.last_name,
             data.barcode,
             exists_check=exists_check
