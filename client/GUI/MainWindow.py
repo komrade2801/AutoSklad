@@ -71,7 +71,9 @@ class MainWindow(QtWidgets.QWidget):
         self.ISSUE_BACK_SCREENS = ('screen_10_confirmation', 'screen_11_tool_issued', 'screen_12_no_tool')
         # Экраны с возвратом по запомненной роли: «Назад» — в меню роли (user, admin или stockman)
         self.last_role_screen = None
-        self.SUMMARY_BACK_SCREENS = ('screen_21_summary', 'screen_33_select_plan', 'screen_7_select_group', 'screen_9_select_tool_by_plan')
+        self.SUMMARY_BACK_SCREENS = ('screen_21_summary', 'screen_33_select_plan', 'screen_7_select_group')
+        # screen_9: «Назад» — на экран выбора чертежа (read_db_plan → screen_33), с сохранением роли
+        self.SCREEN_9_BACK_TO_PLAN = ('screen_9_select_tool_by_plan',)
         # # Наш навигационный менеджер
         # self.nav_manager = NavigationManager()
 
@@ -139,6 +141,14 @@ class MainWindow(QtWidgets.QWidget):
             if btn:
                 btn.clicked.connect(self._on_summary_back_clicked)
                 self.button_signals[btn.objectName()] = btn.clicked
+        # screen_9: «Назад» — на экран выбора чертежа (по last_role_screen вызывается read_db_plan → screen_33)
+        for source in self.SCREEN_9_BACK_TO_PLAN:
+            if source not in self.widgets:
+                continue
+            btn = self.widgets[source].findChild(QtWidgets.QPushButton, "btn_back")
+            if btn:
+                btn.clicked.connect(self._on_screen_9_back_to_plan_clicked)
+                self.button_signals[btn.objectName()] = btn.clicked
 
     def bind_button_signal(self, source, trigger, dest):
         """Привязывает сигнал кнопки к обработчику."""
@@ -163,13 +173,13 @@ class MainWindow(QtWidgets.QWidget):
             self.widgets[source].event_enter_barcode = (lambda barcode=0, btn_name="barcode": self.button_clicked(btn_name, dest, value=barcode))
 
         # На экранах выдачи триггеры btn_back_to_* привязаны к одной кнопке btn_back в bind_transitions
-        if source in self.ISSUE_BACK_SCREENS and trigger in ("btn_back_to_group", "btn_back_to_plan"):
+        if source in self.ISSUE_BACK_SCREENS and trigger in ("btn_back_to_group", "btn_back_to_plan", "btn_back_to_plan_selection"):
             return
         # На экранах сводки и выбора плана триггеры btn_back_to_* привязаны к btn_back в bind_transitions
         if source in self.SUMMARY_BACK_SCREENS and trigger in ("btn_back_to_admin", "btn_back_to_stockman", "btn_back_to_user"):
             return
-        # На screen_9 виртуальные триггеры btn_back_to_plan_list_* не ищут кнопку по имени
-        if source == "screen_9_select_tool_by_plan" and trigger in ("btn_back_to_plan_list_user", "btn_back_to_plan_list_stockman"):
+        # На screen_9 «Назад» привязан к _on_screen_9_back_to_plan_clicked; виртуальные триггеры не ищут кнопку
+        if source == "screen_9_select_tool_by_plan" and trigger in ("btn_back_to_plan_list_user", "btn_back_to_plan_list_stockman", "btn_back_to_user", "btn_back_to_stockman"):
             return
         button = self.widgets[source].findChild(QtWidgets.QPushButton, trigger)
         if button:
@@ -256,10 +266,13 @@ class MainWindow(QtWidgets.QWidget):
             logger.warning("История пуста. Нельзя вернуться назад.")
 
     def _on_issue_back_clicked(self):
-        """Обработчик «Назад» на экранах выдачи: выбор триггера по контексту (по группе или по чертежу)."""
+        """Обработчик «Назад» на экранах выдачи: по группе — к списку групп, по чертежу — на экран выбора чертежа."""
         if self.issue_context == "by_plan":
-            value = self.value.get("plan_context")
-            self.button_clicked("btn_back_to_plan", None, value=value)
+            # Возврат на экран выбора чертежа (read_db_plan → screen_33), список обновится при повторном входе в план
+            value = self.value.get("plan_list_context") or {"index": 1}
+            if not isinstance(value, dict) or "index" not in value:
+                value = {"index": 1} if not isinstance(value, dict) else {**value, "index": 1}
+            self.button_clicked("btn_back_to_plan_selection", None, value=value)
         else:
             self.button_clicked("btn_back_to_group", None)
 
@@ -271,6 +284,16 @@ class MainWindow(QtWidgets.QWidget):
             self.button_clicked("btn_back_to_user", None)
         elif self.last_role_screen == "screen_26_admin":
             self.button_clicked("btn_back_to_admin", None)
+
+    def _on_screen_9_back_to_plan_clicked(self):
+        """Обработчик «Назад» на screen_9: переход на экран выбора чертежа (screen_33) с сохранением роли."""
+        value = self.value.get("plan_list_context") or {"index": 1}
+        if not isinstance(value, dict) or "index" not in value:
+            value = {"index": 1} if not isinstance(value, dict) else {**value, "index": 1}
+        if self.last_role_screen == "screen_6_user":
+            self.button_clicked("btn_back_to_plan_list_user", None, value=value)
+        else:
+            self.button_clicked("btn_back_to_plan_list_stockman", None, value=value)
 
     def open_widget(self, widget_name: str, source: str = None, value: Any = None):
         logger.debug("open_widget widget_name=%s source=%s", widget_name, source)
@@ -379,10 +402,12 @@ class MainWindow(QtWidgets.QWidget):
         """
         if widget_name == "read_db_get_plan_tools" and self.value.get("plan_context"):
             value = self.value["plan_context"]
-        # При возврате с screen_9 на экран планов (user) read_db_plan нужен index для загрузки списка чертежей
-        if widget_name == "read_db_plan" and self.back_state == "screen_9_select_tool_by_plan":
-            if not isinstance(value, dict) or "index" not in value:
-                value = {"index": 1} if not isinstance(value, dict) else {**value, "index": 1}
+        # При возврате на экран выбора чертежа read_db_plan нужен index для загрузки списка
+        if widget_name == "read_db_plan" and self.back_state in (
+            "screen_9_select_tool_by_plan", "screen_10_confirmation", "screen_11_tool_issued", "screen_12_no_tool"
+        ):
+            if not value or not isinstance(value, dict) or "index" not in value:
+                value = {"index": 1} if not isinstance(value, dict) else {**(value or {}), "index": 1}
         if self.lump.machine.initial != widget_name and callable(self.action_callback):
             widget = self.widgets.get(self.back_state)
             if widget:
