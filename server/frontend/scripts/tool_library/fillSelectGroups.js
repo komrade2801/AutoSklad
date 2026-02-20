@@ -16,33 +16,41 @@ export async function fetchGroupsData(device_number) {
     }
 }
 
-// Функция для загрузки данных и создания таблицы
-export async function loadGroupsData(device_number) {
+/** Очищает выпадающие списки групп, оставляя только опцию "Нет" (value=0). */
+function clearGroupsSelects() {
+    const defaultOptionHtml = '<option value="0" selected>Нет</option>';
+    const element_tool_groups = document.getElementById('select_group');
+    const element_group_groups = document.getElementById("select_parent_group");
+    if (element_tool_groups) {
+        element_tool_groups.innerHTML = defaultOptionHtml;
+    }
+    if (element_group_groups) {
+        element_group_groups.innerHTML = defaultOptionHtml;
+    }
+}
 
+// Функция для загрузки данных и заполнения выпадающих списков групп (можно вызывать повторно при открытии модалок)
+export async function loadGroupsData(device_number) {
     const element_tool_groups = document.getElementById('select_group');
     const element_group_groups = document.getElementById("select_parent_group");
 
-    console.log(element_tool_groups);
-    console.log(element_group_groups);
+    if (!element_tool_groups || !element_group_groups) {
+        return;
+    }
+
+    clearGroupsSelects();
 
     const jsonGroups = await fetchGroupsData(device_number);
-    if (jsonGroups) {
-        console.log(jsonGroups);
-
+    if (jsonGroups && jsonGroups.groups) {
         Object.values(jsonGroups.groups).forEach(group => {
-            console.log(group);
-
             const group_opt = document.createElement('option');
             group_opt.value = group.id;
             group_opt.innerHTML = group.name;
 
             element_group_groups.appendChild(group_opt);
-
-            let group_opt_copy = group_opt.cloneNode(true);
-
-            element_tool_groups.appendChild(group_opt_copy);
+            element_tool_groups.appendChild(group_opt.cloneNode(true));
         });
     } else {
-        console.error("Не удалось загрузить данные для таблицы.");
+        console.error("Не удалось загрузить данные групп.");
     }
 }

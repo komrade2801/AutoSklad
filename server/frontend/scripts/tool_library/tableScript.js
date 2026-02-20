@@ -295,15 +295,12 @@ async function editTool(row) {
              return;
          }
 
-         // Переходим на страницу редактирования с параметром tool_type_id
-//         let url = '../screen_16_add_tool.html';
-//         let targetUrl = new URL(url, window.location.origin).href;
-//         let token = localStorage.getItem('token');
-//         let full_url = targetUrl + "?token=" + token + "&tool_type_id=" + toolTypeId;
-//         window.location.href = full_url;
-
-            loadToolData(parseInt(toolTypeId));
-            openModalCreate();
+         if (typeof window.loadGroupsData === 'function') {
+             await window.loadGroupsData(1);
+         }
+         await loadToolData(parseInt(toolTypeId));
+         window.currentToolTypeId = toolTypeId;
+         show_create('flex');
 
      } catch (error) {
          console.error('Ошибка при проверке инструмента:', error);
@@ -515,8 +512,12 @@ async function editGroup(row) {
              return;
          }
 
-         loadGroupData(parseInt(groupId));
-         openModalCreateGroup();
+         if (typeof window.loadGroupsData === 'function') {
+             await window.loadGroupsData(1);
+         }
+         await loadGroupData(parseInt(groupId));
+         window.currentGroupId = groupId;
+         show_create_group('flex');
 
          // Переходим на страницу редактирования с параметром group_id
 //         let url = '../screen_23_add_group.html';
@@ -684,7 +685,11 @@ function show_create(state) {
     }
 }
 
-function openModalCreate() {
+async function openModalCreate() {
+    // Обновляем список групп при открытии (актуально после импорта из Excel или добавления группы через модалку)
+    if (typeof window.loadGroupsData === 'function') {
+        await window.loadGroupsData(1);
+    }
     // Сброс режима редактирования при открытии для создания
     if (window.currentToolTypeId != null) {
         window.currentToolTypeId = null;
@@ -723,7 +728,11 @@ function show_create_group(state) {
     }
 }
 
-function openModalCreateGroup() {
+async function openModalCreateGroup() {
+    // Обновляем список групп при открытии (актуально после импорта из Excel или ручного добавления группы)
+    if (typeof window.loadGroupsData === 'function') {
+        await window.loadGroupsData(1);
+    }
     // Сброс режима редактирования при открытии для создания
     if (window.currentGroupId != null) {
         window.currentGroupId = null;

@@ -128,10 +128,11 @@ function moveCustomToolbar(tableSelector, toolbarSelector) {
     }
 }
 
-// Делаем функцию доступной глобально
+// Делаем функции доступными глобально (в т.ч. для обновления списков групп при открытии модалок)
 window.initialization = initialization;
 window.alignToolbar = alignToolbar;
 window.moveCustomToolbar = moveCustomToolbar;
+window.loadGroupsData = loadGroupsData;
 
 
 // Функция для загрузки данных и создания таблицы
