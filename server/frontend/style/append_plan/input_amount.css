@@ -302,3 +302,51 @@
 #selected_tools_div .fixed-table-body table {
     width: 100% !important;
 }
+
+#customToolsToolbar .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+/* Восстановление Bootstrap-стилей кнопок в модалках (button_style.css переопределяет все .btn) */
+#customToolsToolbar .btn-primary {
+    background-color: #2E4461;
+    border-color: #2E4461;
+    color: #fff;
+}
+
+#customToolsToolbar .btn-primary:hover {
+    background-color: #3d8ad4;
+    border-color: #3d8ad4;
+    color: #fff;
+}
+
+#customToolsToolbar .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+#customToolsToolbar .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: #fff;
+}
+
+#customToolsToolbar .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+}
+
+#customToolsToolbar .btn-danger:hover {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+    color: #fff;
+}
+
+#customToolsToolbar .btn {
+    padding-left: 30px;
+    padding-right: 30px;
+    margin: 0;
+}
