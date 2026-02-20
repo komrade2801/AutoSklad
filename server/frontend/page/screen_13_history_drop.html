@@ -6,19 +6,15 @@
     <link rel="icon" href="/favicon.png?v=1" type="image/png">
     <script type="module" src="../scripts/history_drop/init_13_history_drop.js"></script>
     <script src="../scripts/history_drop/tableScript.js"></script>
-    <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
     <title>История выгрузок</title>
-    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">
+    <!--    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css">-->
     <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
     <script src="../assets/moment/moment.js"></script>
 
     <link rel="stylesheet" href="../assets/bootstrap-icons/1.13.1/bootstrap-icons.css">
     <link href="../assets/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../assets/bootstrap-table/1.25.0/bootstrap-table.css">
-
     <script src="../assets/jquery/2.1.0/jquery.min.js"></script>
-    <!--    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>-->
-
+    <link rel="stylesheet" href="../assets/bootstrap-table/1.25.0/bootstrap-table.css">
     <script src="../assets/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
     <script src="../assets/bootstrap-table/1.25.0/bootstrap-table.js"></script>
     <script src="../assets/bootstrap-table/1.25.0/locale/bootstrap-table-ru-RU.js"></script>
@@ -34,41 +30,61 @@
     <link rel="stylesheet" href="../style/button_style.css">
     <link rel="stylesheet" href="../style/dropdown_list.css">
     <link rel="stylesheet" href="../style/style_modal_window.css">
+    <script src="../scripts/authorisation/navigate_token.js?v=1.11"></script>
 </head>
 <body onload="initialization('screen_13_history_drop')" class="d-flex justify-content-center bg-theme-gradient"
       id="body">
-<div id="membrane"></div>
-<div id="modal_window_details">
-    <div id="random_load_column" class="d-flex"
-         style="flex-direction: column; width: 100%; height: 100%; align-items: start; overflow: hidden; padding: 10px;">
 
-        <div id="random_drop_div" class="panel-body"
-             style="width: 100%; height: 100%; overflow-y: visible; display:block;">
-            <table
-                    id='random_drop_table'
-                    data-locale="ru-RU"
-                    data-search='true'
-                    data-show-export='true'
-                    data-export-types="['json', 'csv', 'xlsx', 'pdf']"
-                    data-pagination='false'
-            >
-                <thead>
-                <tr>
-                    <th data-field='cell' data-sortable='true'><span
-                            title="Ячейка">Ячейка</span></th>
-                    <th data-field='tool' data-sortable='true'>
-                        <span title="Инструмент">Инструмент</span></th>
-                    <th data-field='group'>
-                        <span title="Группа">Группа</span></th>
-                    <th data-field='plan'><span
-                            title="Чертёж">Чертёж</span></th>
-                </tr>
-                </thead>
-            </table>
+
+<!-- Информация о загрузке -->
+<div class="modal fade modal-dialog-scrollable vending-modal-window" id="modal_window_details" tabindex="-1"
+     aria-labelledby="detailsModalLabel" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; width: 100%;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0;">
+                        <i class="bi bi-key" style="color: white; font-size: 24px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h5 class="modal-title" id="detailsModalLabel">Массовая выгрузка №: <span
+                                id="modal_mass_drop_id"></span></h5>
+                        <p style="margin: 0; margin-top: 4px;">Список выгруженных инструментов</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" aria-label="Закрыть"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="random_drop_div" class="panel-body"
+                     style="width: 100%; height: 100%; overflow-y: visible; display:block;">
+                    <table
+                            id='random_drop_table'
+                            data-locale="ru-RU"
+                            data-search='true'
+                            data-show-export='true'
+                            data-export-types="['json', 'csv', 'xlsx', 'pdf']"
+                            data-pagination='false'
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field='cell' data-sortable='true'><span
+                                    title="Ячейка">Ячейка</span></th>
+                            <th data-field='tool' data-sortable='true'>
+                                <span title="Инструмент">Инструмент</span></th>
+                            <th data-field='group'>
+                                <span title="Группа">Группа</span></th>
+                            <th data-field='plan'><span
+                                    title="Чертёж">Чертёж</span></th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Назад</button>
+            </div>
         </div>
-    </div>
-    <div style="display: flex; flex-direction: row; margin-top: 50px;">
-        <button class="btn btn_vending" onclick="show('none')" style="margin-right: 20px;">Назад</button>
     </div>
 </div>
 <div class="d-flex flex-column"
@@ -121,7 +137,7 @@
                         </tr>
                         </thead>
                     </table>
-                    <div id="customToolsToolbar" style="display: flex;">
+                    <div id="customToolsToolbar" class="custom-toolbar-content" style="display: flex;">
                         <button id="printButton" class="btn btn_vending" type="button"
                                 onclick="printMassLoad(this);">
                             Печать

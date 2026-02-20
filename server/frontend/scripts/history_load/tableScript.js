@@ -48,7 +48,7 @@ function actionToolsFormatter(value, row, index, field) {
 
         console.log(row);
         console.log(row.mass_id);
-        openModalCell(row.mass_id)
+        openModalDetails(row.mass_id, row.date)
      });
 
      actionsDiv.appendChild(infoButton);
@@ -57,18 +57,17 @@ function actionToolsFormatter(value, row, index, field) {
 }
 
 // Функция для открытия модального окна
-function openModalCell(massLoadId) {
+function openModalDetails(massLoadId, massLoadDate) {
 
     if (isNaN(massLoadId)) {
       console.error("Не удалось извлечь номер загрузки");
       return;
     }
 
+    show_details('flex');  // Открываем модальное окно
+    $('#modal_mass_load_id').text(massLoadId + ' от ' + massLoadDate);
     $('#random_load_table').bootstrapTable('load', []);
-
-    show('flex');  // Открываем модальное окно
-
-    $('#random_load_table').bootstrapTable('refreshOptions', {'height': $("#random_load_div").height()});
+    $('#random_load_table').bootstrapTable('refreshOptions', {'height': 'undefined'});
     $('#random_load_table').bootstrapTable('showLoading');
 
     initData(`../backend/random_load?ID_load=${massLoadId}`)
@@ -85,16 +84,26 @@ function createTableRandomLoad(data) {
     console.log(data);
 
     if (data != undefined) {
-//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
         $('#random_load_table').bootstrapTable('load', data.operation);
+        $('#random_load_table').bootstrapTable('refreshOptions', {'height': $(".modal-body").height()});
         $('#random_load_table').bootstrapTable('hideLoading');
     }
 }
 
-// Функция для отображения модального окна
-var show = function (state) {
-    document.getElementById('modal_window_details').style.display = state;
-    document.getElementById('membrane').style.display = state;
+// --- Модальное окно редактирования пользователя (Bootstrap 5) ---
+function getDetailsModalInstance() {
+    const el = document.getElementById('modal_window_details');
+    return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
 }
 
-window.show = show;
+function show_details(state) {
+    const modal = getDetailsModalInstance();
+    if (!modal) return;
+    if (state === 'none') {
+        modal.hide();
+    } else {
+        modal.show();
+    }
+}
+
+window.show_details = show_details;

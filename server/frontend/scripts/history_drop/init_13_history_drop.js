@@ -74,7 +74,7 @@ function initialization(element_name) {
                 }
             }
         },
-        height: $("#random_drop_div").height()
+//        height: $("#random_drop_div").height()
     });
     $('#random_drop_table').bootstrapTable('showLoading');
 

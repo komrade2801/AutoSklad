@@ -1,225 +1,3 @@
-#modal_window_barcode {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 600px;
-    /*height: 400px;*/
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-#modal_window_edit {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 800px;
-    /*height: 400px;*/
-    background-color: #ffffff;
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-#modal_window_tool {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 500px;
-    /*height: 400px;*/
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-#modal_window_issuing {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 500px;
-    /*height: 400px;*/
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-#modal_window_cell {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 500px;
-    /*height: 400px;*/
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-#modal_window_details {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 800px;
-    height: 600px;
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-/* #modal_window_create и #modal_window_create_group — Bootstrap-модалки, стили в screen_15_tool_library.html */
-
-
-#modal_window_finish {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 500px;
-    /*height: 400px;*/
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-
-#modal_window_confirmation {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 500px;
-    /*height: 400px;*/
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: start;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-
-#modal_window_password{
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 150;
-    display: none;
-    width: 500px;
-    /*height: 400px;*/
-    background-color: rgb(131,149,174);
-    border-color: rgb(0,49,114);
-    border-radius: 15px;
-    border-width: 2px;
-    border-style: solid;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding-top: 35px;
-    padding-bottom: 40px;
-    color: rgb(0,49,114);
-    font-size: 18px;
-    font-family: Arial Black;
-}
-
-
 #membrane {
     background-color: rgba(0,0,0,0.7);
     position: fixed;
@@ -244,7 +22,6 @@
 /* Собственно окно — увеличили размеры */
 .modal-content {
   background-color: rgb(131, 149, 174);
-  padding: 30px;               /* чуть больше отступы */
   border-radius: 10px;
   max-width: 95%;              /* почти вся ширина экрана */
   /* width: 600px;                фиксированная большая ширина */
@@ -298,4 +75,221 @@
 .edit-input {
     margin-bottom: 20px;
     display: flex;
+}
+
+
+/* Сброс старых правил из style_modal_window.css: z-index выше backdrop (1050), убрать отступы/трансформ */
+.vending-modal-window.modal,
+#modal_window_edit.modal,
+#modal_window_confirmation.modal,
+#modal_window_password.modal,
+#modal_window_barcode.modal {
+    z-index: 1060;
+    padding: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    transform: none;
+    background-color: transparent;
+    border: none;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* Ширина диалогов */
+.vending-modal-window .modal-dialog,
+#modal_window_edit .modal-dialog {
+    max-width: 800px;
+}
+
+#modal_window_confirmation .modal-dialog,
+#modal_window_password .modal-dialog,
+#modal_window_barcode .modal-dialog {
+    max-width: 650px;
+}
+
+.vending-modal-window .modal-content,
+#modal_window_edit .modal-content,
+#modal_window_confirmation .modal-content,
+#modal_window_password .modal-content,
+#modal_window_barcode .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    background: #fff;
+    overflow: hidden;
+    max-height: 90vh;
+}
+
+.vending-modal-window .modal-header,
+#modal_window_edit .modal-header,
+#modal_window_confirmation .modal-header,
+#modal_window_password .modal-header,
+#modal_window_barcode .modal-header {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 16px 16px 0 0;
+    border-bottom: none;
+    padding: 16px 20px;
+    background: #2E4461;
+    color: white;
+}
+
+/* Шрифты как в библиотеке инструментов: менее жирные */
+.vending-modal-window .modal-title,
+#modal_window_edit .modal-title,
+#modal_window_confirmation .modal-title,
+#modal_window_password .modal-title,
+#modal_window_barcode .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.vending-modal-window .modal-header p,
+#modal_window_edit .modal-header p,
+#modal_window_confirmation .modal-header p,
+#modal_window_password .modal-header p,
+#modal_window_barcode .modal-header p {
+    font-weight: 400;
+    margin: 0;
+    margin-top: 4px;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.4;
+}
+
+/* Компактные отступы тела и футера, без лишнего margin */
+.vending-modal-window .modal-body,
+#modal_window_edit .modal-body,
+#modal_window_confirmation .modal-body,
+#modal_window_password .modal-body,
+#modal_window_barcode .modal-body {
+    background: #fff;
+    padding: 16px 20px;
+    min-width: 300px;
+    width: 100%;
+}
+
+.vending-modal-window .modal-footer,
+#modal_window_edit .modal-footer,
+#modal_window_confirmation .modal-footer,
+#modal_window_password .modal-footer,
+#modal_window_barcode .modal-footer {
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+    padding: 12px 20px;
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.vending-modal-window .form-label,
+#modal_window_edit .form-label,
+#modal_window_confirmation .form-label,
+#modal_window_password .form-label {
+    font-weight: 700;
+    color: #333;
+}
+
+.vending-modal-window .form-check-label,
+#modal_window_edit .form-check-label,
+#modal_window_password .form-check-label {
+    font-weight: 400;
+}
+
+.vending-modal-window .form-control::placeholder,
+#modal_window_edit .form-control::placeholder,
+#modal_window_password .form-control::placeholder {
+    font-weight: 400;
+    color: #6c757d;
+}
+
+.vending-modal-window .btn-close,
+#modal_window_edit .btn-close,
+#modal_window_confirmation .btn-close,
+#modal_window_password .btn-close,
+#modal_window_barcode .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.barcode-img {
+    max-width: 100%; height: auto; border-radius: 8px;
+}
+
+/* Восстановление Bootstrap-стилей кнопок в модалках (button_style.css переопределяет все .btn) */
+.vending-modal-window .btn-primary,
+#modal_window_edit .modal-footer .btn-primary,
+#modal_window_confirmation .modal-footer .btn-primary,
+#modal_window_password .modal-footer .btn-primary,
+#modal_window_barcode .modal-footer .btn-primary {
+    background-color: #2E4461;
+    border-color: #2E4461;
+    color: #fff;
+}
+
+.vending-modal-window .btn-primary:hover,
+#modal_window_edit .modal-footer .btn-primary:hover,
+#modal_window_confirmation .modal-footer .btn-primary:hover,
+#modal_window_password .modal-footer .btn-primary:hover,
+#modal_window_barcode .modal-footer .btn-primary:hover {
+    background-color: #3d8ad4;
+    border-color: #3d8ad4;
+    color: #fff;
+}
+
+.vending-modal-window .btn-secondary,
+#modal_window_edit .modal-footer .btn-secondary,
+#modal_window_confirmation .modal-footer .btn-secondary,
+#modal_window_password .modal-footer .btn-secondary,
+#modal_window_barcode .modal-footer .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: #fff;
+}
+
+.vending-modal-window .btn-secondary:hover,
+#modal_window_edit .modal-footer .btn-secondary:hover,
+#modal_window_confirmation .modal-footer .btn-secondary:hover,
+#modal_window_password .modal-footer .btn-secondary:hover,
+#modal_window_barcode .modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: #fff;
+}
+
+.vending-modal-window .btn-danger,
+#modal_window_edit .modal-footer .btn-danger,
+#modal_window_confirmation .modal-footer .btn-danger,
+#modal_window_password .modal-footer .btn-danger,
+#modal_window_barcode .modal-footer .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+}
+
+.vending-modal-window .btn-danger:hover,
+#modal_window_edit .modal-footer .btn-danger:hover,
+#modal_window_confirmation .modal-footer .btn-danger:hover,
+#modal_window_password .modal-footer .btn-danger:hover,
+#modal_window_barcode .modal-footer .btn-danger:hover {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+    color: #fff;
+}
+
+.modal-header-icon {
+    width: 48px; height: 48px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); display: flex; align-items: center; justify-content: center; margin-right: 16px; flex-shrink: 0;
 }

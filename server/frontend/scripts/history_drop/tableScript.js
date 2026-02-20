@@ -48,7 +48,7 @@ function actionToolsFormatter(value, row, index, field) {
 
         console.log(row);
         console.log(row.mass_id);
-        openModalCell(row.mass_id)
+        openModalDetails(row.mass_id, row.date)
      });
 
      actionsDiv.appendChild(infoButton);
@@ -57,24 +57,23 @@ function actionToolsFormatter(value, row, index, field) {
 }
 
 // Функция для открытия модального окна
-function openModalCell(massDropId) {
+function openModalDetails(massDropId, massDropDate) {
 
     if (isNaN(massDropId)) {
-      console.error("Не удалось извлечь номер загрузки");
+      console.error("Не удалось извлечь номер выгрузки");
       return;
     }
 
+    show_details('flex');  // Открываем модальное окно
+    $('#modal_mass_drop_id').text(massDropId + ' от ' + massDropDate);
     $('#random_drop_table').bootstrapTable('load', []);
-
-    show('flex');  // Открываем модальное окно
-
-    $('#random_drop_table').bootstrapTable('refreshOptions', {'height': $("#random_drop_div").height()});
+    $('#random_drop_table').bootstrapTable('refreshOptions', {'height': 'undefined'});
     $('#random_drop_table').bootstrapTable('showLoading');
 
     initData(`../backend/random_drop?ID_drop=${massDropId}`)
       .then(data => {
         if (data) {
-          window.jsonHistoryRandomdrop = data;
+          window.jsonHistoryRandomDrop = data;
           createTableRandomLoad(data);
         }
       })
@@ -85,16 +84,26 @@ function createTableRandomLoad(data) {
     console.log(data);
 
     if (data != undefined) {
-//        $('#droppable_tools_table').bootstrapTable('refreshOptions', {'height': $("#droppable_tools_div").height()});
         $('#random_drop_table').bootstrapTable('load', data.operation);
+        $('#random_drop_table').bootstrapTable('refreshOptions', {'height': $(".modal-body").height()});
         $('#random_drop_table').bootstrapTable('hideLoading');
     }
 }
 
-// Функция для отображения модального окна
-var show = function (state) {
-    document.getElementById('modal_window_details').style.display = state;
-    document.getElementById('membrane').style.display = state;
+// --- Модальное окно редактирования пользователя (Bootstrap 5) ---
+function getDetailsModalInstance() {
+    const el = document.getElementById('modal_window_details');
+    return el ? bootstrap.Modal.getOrCreateInstance(el) : null;
 }
 
-window.show = show;
+function show_details(state) {
+    const modal = getDetailsModalInstance();
+    if (!modal) return;
+    if (state === 'none') {
+        modal.hide();
+    } else {
+        modal.show();
+    }
+}
+
+window.show_details = show_details;
