@@ -23,7 +23,7 @@ function passwordFormatter(value, row, index, field) {
 }
 
 function fullNameFormatter(value, row, index, field) {
-     return row.family + ' ' + row.first_name + ' ' + row.second_name;
+     return [row.family, row.first_name, row.second_name].filter(Boolean).join(' ') || '';
 }
 
 function actionToolsFormatter(value, row, index, field) {
@@ -256,6 +256,21 @@ if (document.readyState === 'loading') {
     initUsersModalHandlers();
 }
 
+// --- Проверка уникальности логина и штрихкода по списку пользователей ---
+function checkUserUniqueness(code, barcode, excludeIndex) {
+    const users = window.jsonUsers;
+    if (!Array.isArray(users)) return { duplicate: false };
+    const others = users.filter(function (u) { return u.index !== excludeIndex; });
+    const codeNum = Number(code);
+    const barcodeNum = Number(barcode);
+    for (let i = 0; i < others.length; i++) {
+        const u = others[i];
+        if (Number(u.code) === codeNum) return { duplicate: true, field: 'code', value: code };
+        if (Number(u.barcode) === barcodeNum) return { duplicate: true, field: 'barcode', value: barcode };
+    }
+    return { duplicate: false };
+}
+
 // --- Сохранение пользователя ---
 function saveUser() {
     try {
@@ -267,41 +282,85 @@ function saveUser() {
         const inputCode         = document.getElementById('input-code');
         const inputPassword     = document.getElementById('input-password');
 
-        const codeTrimmed = inputCode.value.trim();
+        const familyTrimmed     = inputFamily.value.trim();
+        const firstNameTrimmed  = inputFirstName.value.trim();
+        const secondNameTrimmed = inputSecondName.value.trim();
+        const barcodeTrimmed    = inputBarcode.value.trim();
+        const codeTrimmed       = inputCode.value.trim();
+        const passwordVal       = inputPassword.value;
+
         const codeNum = codeTrimmed === '' ? NaN : parseInt(codeTrimmed, 10);
-        const codeValid = !isNaN(codeNum) && codeNum >= 0 && Number.isInteger(Number(codeTrimmed));
+        const codeValid = !isNaN(codeNum) && codeNum >= 0 && /^\d+$/.test(codeTrimmed);
         const code = codeValid ? codeNum : (Math.floor(Math.random() * 9000) + 1000);
 
-        const userObj = {
-            index:      Number(window.userIndexToEdit),
-            barcode:    Number(inputBarcode.value) || 0,
-            code:       code,
-            first_name: inputFirstName.value.trim(),
-            second_name: inputSecondName.value.trim(),
-            family:     inputFamily.value.trim(),
-            password:   inputPassword.value,
-            role_id:    Number(inputRole.value)
-        };
+        const barcodeNum = barcodeTrimmed === '' ? NaN : parseInt(barcodeTrimmed, 10);
+        const barcodeValid = barcodeTrimmed === '' ? false : !isNaN(barcodeNum) && barcodeNum >= 0 && /^\d+$/.test(barcodeTrimmed);
 
-        if (!userObj.family || !userObj.first_name || !userObj.second_name || !userObj.role_id) {
-            showToast('Пожалуйста, заполните все поля и выберите должность', 'warning');
+        const isCreate = window.userIndexToEdit == 0;
+
+        // Валидация обязательных полей (отчество опционально)
+        if (!familyTrimmed || !firstNameTrimmed) {
+            showToast('Заполните фамилию и имя', 'warning');
             return;
         }
-
+        if (!inputRole.value || !Number(inputRole.value)) {
+            showToast('Выберите должность', 'warning');
+            return;
+        }
+        if (!barcodeTrimmed) {
+            showToast('Введите штрихкод', 'warning');
+            inputBarcode.focus();
+            return;
+        }
+        if (!barcodeValid) {
+            showToast('Штрихкод должен быть целым неотрицательным числом', 'warning');
+            inputBarcode.focus();
+            return;
+        }
         if (codeTrimmed !== '' && !codeValid) {
-            showToast('Логин должен быть целым числом', 'warning');
+            showToast('Логин должен быть целым неотрицательным числом', 'warning');
             inputCode.focus();
             return;
         }
+        if (isCreate && (!passwordVal || !passwordVal.trim())) {
+            showToast('Введите пароль для нового пользователя', 'warning');
+            inputPassword.focus();
+            return;
+        }
 
-        saveUserData(userObj).then((data) => {
+        const userObj = {
+            index:      Number(window.userIndexToEdit),
+            barcode:    barcodeValid ? barcodeNum : 0,
+            code:       code,
+            first_name: firstNameTrimmed,
+            second_name: secondNameTrimmed,
+            family:     familyTrimmed,
+            password:   passwordVal,
+            role_id:    Number(inputRole.value)
+        };
+
+        // Проверка уникальности на клиенте
+        const uniqueness = checkUserUniqueness(userObj.code, userObj.barcode, window.userIndexToEdit);
+        if (uniqueness.duplicate) {
+            if (uniqueness.field === 'code') {
+                showToast('Такой логин уже используется другим пользователем', 'warning');
+                inputCode.focus();
+            } else {
+                showToast('Такой штрихкод уже используется другим пользователем', 'warning');
+                inputBarcode.focus();
+            }
+            return;
+        }
+
+        saveUserData(userObj).then(function (data) {
             if (data != null) {
-                loadUsers();
+                if (typeof loadUsers === 'function') loadUsers();
                 show_edit('none');
+                showToast(isCreate ? 'Пользователь создан' : 'Данные пользователя сохранены', 'success');
             } else {
                 showToast('Ошибка при сохранении пользователя', 'danger');
             }
-        }).catch(() => {
+        }).catch(function () {
             showToast('Ошибка при сохранении пользователя', 'danger');
         });
     } catch (err) {
@@ -310,15 +369,50 @@ function saveUser() {
     }
 }
 
-async function saveUserData(userObj) {
+function saveUserData(userObj) {
     const token = localStorage.getItem('token');
-    let response;
-    if (window.userIndexToEdit == 0) {
-        response = await sendData('../backend/create_user', token, 'POST', userObj);
-    } else {
-        response = await sendData('../backend/update_user/' + window.userIndexToEdit, token, 'PUT', userObj);
-    }
-    return response;
+    const url = window.userIndexToEdit == 0
+        ? '../backend/create_user?token=' + encodeURIComponent(token)
+        : '../backend/update_user/' + window.userIndexToEdit + '?token=' + encodeURIComponent(token);
+    const method = window.userIndexToEdit == 0 ? 'POST' : 'PUT';
+    const payload = {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
+        },
+        body: JSON.stringify(userObj),
+    };
+    return fetch(url, payload)
+        .then(function (response) {
+            if (response.status === 409) {
+                if (typeof showToast === 'function') {
+                    showToast('Логин или штрихкод уже заняты. Выберите другие значения.', 'warning');
+                }
+                return null;
+            }
+            if (!response.ok) {
+                return response.json().then(function (body) {
+                    if (typeof showToast === 'function' && body && body.detail) {
+                        showToast(body.detail, 'danger');
+                    }
+                    return null;
+                }).catch(function () {
+                    if (typeof showToast === 'function') {
+                        showToast('Ошибка сети, статус: ' + response.status, 'danger');
+                    }
+                    return null;
+                });
+            }
+            return response.json();
+        })
+        .catch(function (error) {
+            console.error('Ошибка сохранения пользователя:', error);
+            if (typeof showToast === 'function') {
+                showToast('Ошибка при сохранении пользователя', 'danger');
+            }
+            return null;
+        });
 }
 
 async function fetchSendData(url, payload) {

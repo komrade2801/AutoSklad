@@ -64,6 +64,14 @@ class MainWindow(QtWidgets.QWidget):
         self.widgets = {}
         self.button_signals = {}
         self.current_value = {}  # Состояние текущего экрана
+        self.back_state = None
+        self.value = {}
+        # Контекст выдачи: 'by_group' (свободная) или 'by_plan' (по чертежу) — для выбора триггера «Назад»
+        self.issue_context = None
+        self.ISSUE_BACK_SCREENS = ('screen_10_confirmation', 'screen_11_tool_issued', 'screen_12_no_tool')
+        # Экраны с возвратом по запомненной роли: «Назад» — в меню роли (user, admin или stockman)
+        self.last_role_screen = None
+        self.SUMMARY_BACK_SCREENS = ('screen_21_summary', 'screen_33_select_plan', 'screen_7_select_group', 'screen_9_select_tool_by_plan')
         # # Наш навигационный менеджер
         # self.nav_manager = NavigationManager()
 
@@ -80,8 +88,6 @@ class MainWindow(QtWidgets.QWidget):
         self.action_callback = None
         # self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
         self.setStyleSheet("background-color: #2e4461;")
-        self.back_state = None
-        self.value = {}
 
     def create_widgets(self):
         """Создает виджеты для всех экранов."""
@@ -117,6 +123,22 @@ class MainWindow(QtWidgets.QWidget):
             dest = transition['dest']
             if source in self.widgets:
                 self.bind_button_signal(source, trigger, dest)
+        # На экранах выдачи одна кнопка «Назад» вызывает контекстный триггер (по группе или по чертежу)
+        for source in self.ISSUE_BACK_SCREENS:
+            if source not in self.widgets:
+                continue
+            btn = self.widgets[source].findChild(QtWidgets.QPushButton, "btn_back")
+            if btn:
+                btn.clicked.connect(self._on_issue_back_clicked)
+                self.button_signals[btn.objectName()] = btn.clicked
+        # «Назад» — в меню роли (user, admin или stockman) по last_role_screen
+        for source in self.SUMMARY_BACK_SCREENS:
+            if source not in self.widgets:
+                continue
+            btn = self.widgets[source].findChild(QtWidgets.QPushButton, "btn_back")
+            if btn:
+                btn.clicked.connect(self._on_summary_back_clicked)
+                self.button_signals[btn.objectName()] = btn.clicked
 
     def bind_button_signal(self, source, trigger, dest):
         """Привязывает сигнал кнопки к обработчику."""
@@ -140,6 +162,15 @@ class MainWindow(QtWidgets.QWidget):
         if self.widgets[source].event_enter_barcode:
             self.widgets[source].event_enter_barcode = (lambda barcode=0, btn_name="barcode": self.button_clicked(btn_name, dest, value=barcode))
 
+        # На экранах выдачи триггеры btn_back_to_* привязаны к одной кнопке btn_back в bind_transitions
+        if source in self.ISSUE_BACK_SCREENS and trigger in ("btn_back_to_group", "btn_back_to_plan"):
+            return
+        # На экранах сводки и выбора плана триггеры btn_back_to_* привязаны к btn_back в bind_transitions
+        if source in self.SUMMARY_BACK_SCREENS and trigger in ("btn_back_to_admin", "btn_back_to_stockman", "btn_back_to_user"):
+            return
+        # На screen_9 виртуальные триггеры btn_back_to_plan_list_* не ищут кнопку по имени
+        if source == "screen_9_select_tool_by_plan" and trigger in ("btn_back_to_plan_list_user", "btn_back_to_plan_list_stockman"):
+            return
         button = self.widgets[source].findChild(QtWidgets.QPushButton, trigger)
         if button:
             self.button_signals[button.objectName()] = button.clicked
@@ -224,6 +255,22 @@ class MainWindow(QtWidgets.QWidget):
         else:
             logger.warning("История пуста. Нельзя вернуться назад.")
 
+    def _on_issue_back_clicked(self):
+        """Обработчик «Назад» на экранах выдачи: выбор триггера по контексту (по группе или по чертежу)."""
+        if self.issue_context == "by_plan":
+            value = self.value.get("plan_context")
+            self.button_clicked("btn_back_to_plan", None, value=value)
+        else:
+            self.button_clicked("btn_back_to_group", None)
+
+    def _on_summary_back_clicked(self):
+        """Обработчик «Назад» на экране сводки и выбора плана: возврат в меню роли (user, admin или stockman)."""
+        if self.last_role_screen == "screen_14_stockman":
+            self.button_clicked("btn_back_to_stockman", None)
+        elif self.last_role_screen == "screen_6_user":
+            self.button_clicked("btn_back_to_user", None)
+        elif self.last_role_screen == "screen_26_admin":
+            self.button_clicked("btn_back_to_admin", None)
 
     def open_widget(self, widget_name: str, source: str = None, value: Any = None):
         logger.debug("open_widget widget_name=%s source=%s", widget_name, source)
@@ -257,6 +304,24 @@ class MainWindow(QtWidgets.QWidget):
                     # value = self._handle_widget_data(widget, source, value)
                     # Передаем данные в виджет и сохраняем текущее состояние
                     self.current_value = self._handle_widget_data(widget, source, value)
+                    # Контекст выдачи для кнопки «Назад» на экранах подтверждения/успеха/ошибки
+                    if widget_name == "screen_7_select_group":
+                        self.issue_context = "by_group"
+                    elif widget_name == "screen_9_select_tool_by_plan" and self.last_widget_value:
+                        v = self.last_widget_value
+                        if isinstance(v, (tuple, list)) and len(v) >= 4:
+                            self.issue_context = "by_plan"
+                            self.value["plan_context"] = {
+                                "plan_id": v[3],
+                                "plan_designation": v[1],
+                                "plan_name": v[2],
+                            }
+                    # Запоминаем меню роли для возврата со сводки и выбора плана
+                    if widget_name in ("screen_6_user", "screen_26_admin", "screen_14_stockman"):
+                        self.last_role_screen = widget_name
+                    # Список планов для возврата с screen_9 в screen_33 (user)
+                    if widget_name == "screen_33_select_plan" and value:
+                        self.value["plan_list_context"] = value
 
         self.current_screen = widget_name
 
@@ -312,7 +377,12 @@ class MainWindow(QtWidgets.QWidget):
         :param widget_name: Имя несуществующего виджета.
         :param value: Данные для передачи следующему виджету.
         """
-        value = value
+        if widget_name == "read_db_get_plan_tools" and self.value.get("plan_context"):
+            value = self.value["plan_context"]
+        # При возврате с screen_9 на экран планов (user) read_db_plan нужен index для загрузки списка чертежей
+        if widget_name == "read_db_plan" and self.back_state == "screen_9_select_tool_by_plan":
+            if not isinstance(value, dict) or "index" not in value:
+                value = {"index": 1} if not isinstance(value, dict) else {**value, "index": 1}
         if self.lump.machine.initial != widget_name and callable(self.action_callback):
             widget = self.widgets.get(self.back_state)
             if widget:

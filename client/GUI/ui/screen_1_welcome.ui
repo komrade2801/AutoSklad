@@ -380,9 +380,9 @@ QPushButton {
   <widget class="QLabel" name="lbl_info_2">
    <property name="geometry">
     <rect>
-     <x>112</x>
+     <x>40</x>
      <y>561</y>
-     <width>253</width>
+     <width>400</width>
      <height>45</height>
     </rect>
    </property>
@@ -693,7 +693,7 @@ QPushButton {
     </font>
    </property>
    <property name="text">
-    <string> штрихкод</string>
+    <string> штрихкод пользователя</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>

@@ -438,7 +438,7 @@ class RoleResponse(BaseModel):
 
 class UserCredentialsInput(BaseModel):
     first_name: str
-    patronymic: str
+    patronymic: Optional[str] = None
     last_name: str
     barcode: str
 
@@ -454,7 +454,7 @@ class UserResponse(BaseModel):
     code: int
     first_name: str
     password: str
-    second_name: str
+    second_name: Optional[str] = None
     family: str
     role_id: int
     role: str
@@ -470,7 +470,7 @@ class UserUpdate(BaseModel):
     code: int
     first_name: str
     password: str
-    second_name: str
+    second_name: Optional[str] = None
     family: str
     role_id: int
 
@@ -518,7 +518,7 @@ class UserPartialUpdate(BaseModel):
     code: int
     first_name: str
     password: str
-    second_name: str
+    second_name: Optional[str] = None
     family: str
     role_id: int
 
@@ -529,7 +529,7 @@ class UserCreate(BaseModel):
     code: int
     first_name: str
     password: str
-    second_name: str
+    second_name: Optional[str] = None
     family: str
     role_id: int
 

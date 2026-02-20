@@ -43,7 +43,7 @@ def get_error_history(
             errors.append({
                 "date": error.timestamp.isoformat() if error.timestamp else "None",
                 "name_error": error.error_type,
-                "user": f"{user.first_name} {user.second_name}" if user else "None",
+                "user": f"{user.first_name or ''} {user.second_name or ''}".strip() if user else "None",
                 "device": device.name
             })
 

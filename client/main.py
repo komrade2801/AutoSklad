@@ -195,9 +195,12 @@ def main():
         #    Бери host/port из config.json, как в lifespan
         cfg = json.loads(
             (Path(__file__).parent / "config.json").read_text(encoding="utf-8"))
-        logger.info("Building state machine maps...")
-        map_builder()
-        logger.info("State machine maps built successfully")
+        # Карта состояний берётся из state_map.py. Регенерация из screen.mm отключена,
+        # чтобы не затирать правки в state_map.py. Чтобы пересобрать из .mm вручную:
+        #   python -m StateMachine.converter_xml_2
+        # logger.info("Building state machine maps...")
+        # map_builder()
+        # logger.info("State machine maps built successfully")
 
         # b) Запускаем Qt-приложение
         logger.info("Initializing Qt application...")

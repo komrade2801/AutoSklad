@@ -14,6 +14,8 @@ class WidgetMassLoadTool(BaseScreen, Ui):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.tools_name.setWordWrap(True)
+        self.tools_name.setMaximumHeight(40)
 
     def emit_key(self, key):
         """Вызывается при нажатии на кнопку."""

@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_widget_8_9_tool(object):
     def setupUi(self, widget_8_9_tool):
         widget_8_9_tool.setObjectName("widget_8_9_tool")
-        widget_8_9_tool.resize(467, 64)
+        widget_8_9_tool.resize(467, 85)
         widget_8_9_tool.setStyleSheet("QWidget{\n"
 "    background-color: #2e4461;\n"
 "}\n"
@@ -46,7 +46,7 @@ class Ui_widget_8_9_tool(object):
 "    font-family: \"Roboto\", Sans-serif;\n"
 "}")
         self.lbl_number_tool = QtWidgets.QLabel(widget_8_9_tool)
-        self.lbl_number_tool.setGeometry(QtCore.QRect(10, 5, 331, 30))
+        self.lbl_number_tool.setGeometry(QtCore.QRect(10, 5, 331, 40))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -168,7 +168,7 @@ class Ui_widget_8_9_tool(object):
         self.lbl_status.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.lbl_status.setObjectName("lbl_status")
         self.cell_number = QtWidgets.QLabel(widget_8_9_tool)
-        self.cell_number.setGeometry(QtCore.QRect(390, 30, 41, 30))
+        self.cell_number.setGeometry(QtCore.QRect(390, 45, 41, 30))
         font = QtGui.QFont()
         font.setFamily("Roboto")
         font.setPointSize(10)
@@ -178,7 +178,7 @@ class Ui_widget_8_9_tool(object):
         self.cell_number.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.cell_number.setObjectName("cell_number")
         self.lbl_info = QtWidgets.QLabel(widget_8_9_tool)
-        self.lbl_info.setGeometry(QtCore.QRect(290, 30, 60, 30))
+        self.lbl_info.setGeometry(QtCore.QRect(290, 45, 60, 30))
         font = QtGui.QFont()
         font.setFamily("Roboto")
         font.setPointSize(10)
@@ -188,7 +188,7 @@ class Ui_widget_8_9_tool(object):
         self.lbl_info.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.lbl_info.setObjectName("lbl_info")
         self.group_name = QtWidgets.QLabel(widget_8_9_tool)
-        self.group_name.setGeometry(QtCore.QRect(10, 30, 271, 30))
+        self.group_name.setGeometry(QtCore.QRect(10, 45, 271, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -299,7 +299,7 @@ class Ui_widget_8_9_tool(object):
         self.group_name.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.group_name.setObjectName("group_name")
         self.background = QtWidgets.QLabel(widget_8_9_tool)
-        self.background.setGeometry(QtCore.QRect(0, 0, 467, 64))
+        self.background.setGeometry(QtCore.QRect(0, 0, 467, 85))
         self.background.setStyleSheet("")
         self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.background.setFrameShadow(QtWidgets.QFrame.Sunken)

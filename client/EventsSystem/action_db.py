@@ -49,6 +49,7 @@ from DB.Models.Group import Group
 from DB.Models.User import User
 from sphinx.cmd.quickstart import valid_dir
 
+from Core.role_display import get_role_display_name
 from DB.Engine.PlanToolTypesCRUD import EnginePlanToolTypes
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
 
@@ -942,7 +943,7 @@ class ActionMapper:
                 "datetime": history.datetime,
                 "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
                 "user_family": self.e_user.get_user_by_id(history.user_id).family,
-                "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
+                "role_name": get_role_display_name(self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name),
                 "history_description": history.description,
                 "tools_name": self.e_tool_types.get_tool_type_by_id(history.tools_id).name,
                 "group_name": self.e_group.get_group_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).groups_id).name,
@@ -1028,7 +1029,7 @@ class ActionMapper:
                     "user_name": f"{user.family} {user.first_name} {user.second_name}",
                     # "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
                     # "user_family": self.e_user.get_user_by_id(history.user_id).family,
-                    "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
+                    "role_name": get_role_display_name(self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name),
                     # "history_description": history.description,
                     "tools_name": self.e_tool_types.get_tool_type_by_id(history.tools_id).name,
                     "group_name": self.e_group.get_group_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).groups_id).name,
@@ -1111,7 +1112,7 @@ class ActionMapper:
                 "datetime": history.datetime,
                 "user_name": self.e_user.get_user_by_id(history.user_id).first_name,
                 "user_family": self.e_user.get_user_by_id(history.user_id).family,
-                "role_name": self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name,
+                "role_name": get_role_display_name(self.e_role.get_role_by_id(self.e_user.get_user_by_id(history.user_id).role_id).name),
                 "history_description": history.description,
                 "tools_name": self.e_tool_types.get_tool_type_by_id(history.tools_id).name,
                 "group_name": self.e_group.get_group_by_id(self.e_tool_types.get_tool_type_by_id(history.tools_id).groups_id).name,
@@ -1768,7 +1769,7 @@ class ActionMapper:
         except Exception as e:
             logger.debug(f"Ошибка при получении пользователя по штрих-коду: {e}")
             logger.exception("")
-            return None, None
+            return {'trigger': 'err_barcode'}
 
     def read_db_authorization(self, login: int, password: int):
         """

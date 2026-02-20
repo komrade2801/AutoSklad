@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_widget_tool_type(object):
     def setupUi(self, widget_tool_type):
         widget_tool_type.setObjectName("widget_tool_type")
-        widget_tool_type.resize(467, 75)
+        widget_tool_type.resize(467, 95)
         widget_tool_type.setStyleSheet("QWidget{\n"
 "    background-color: #2e4461;\n"
 "}\n"
@@ -46,7 +46,7 @@ class Ui_widget_tool_type(object):
 "    font-family: \"Roboto\", Sans-serif;\n"
 "}")
         self.lbl_number_tool = QtWidgets.QLabel(widget_tool_type)
-        self.lbl_number_tool.setGeometry(QtCore.QRect(10, 10, 321, 31))
+        self.lbl_number_tool.setGeometry(QtCore.QRect(10, 10, 321, 40))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -168,7 +168,7 @@ class Ui_widget_tool_type(object):
         self.status.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.status.setObjectName("status")
         self.group_name = QtWidgets.QLabel(widget_tool_type)
-        self.group_name.setGeometry(QtCore.QRect(10, 40, 281, 30))
+        self.group_name.setGeometry(QtCore.QRect(10, 50, 281, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -281,7 +281,7 @@ class Ui_widget_tool_type(object):
         self.group_name.setIndent(-1)
         self.group_name.setObjectName("group_name")
         self.tool_description = QtWidgets.QLabel(widget_tool_type)
-        self.tool_description.setGeometry(QtCore.QRect(10, 30, 271, 30))
+        self.tool_description.setGeometry(QtCore.QRect(10, 50, 271, 30))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(255, 255, 255))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -393,7 +393,7 @@ class Ui_widget_tool_type(object):
         self.tool_description.setObjectName("tool_description")
         self.load_count = QtWidgets.QLabel(widget_tool_type)
         self.load_count.setEnabled(True)
-        self.load_count.setGeometry(QtCore.QRect(390, 40, 41, 30))
+        self.load_count.setGeometry(QtCore.QRect(390, 50, 41, 30))
         font = QtGui.QFont()
         font.setFamily("Roboto")
         font.setPointSize(10)
@@ -404,7 +404,7 @@ class Ui_widget_tool_type(object):
         self.load_count.setObjectName("load_count")
         self.lbl_load_count = QtWidgets.QLabel(widget_tool_type)
         self.lbl_load_count.setEnabled(True)
-        self.lbl_load_count.setGeometry(QtCore.QRect(300, 40, 91, 30))
+        self.lbl_load_count.setGeometry(QtCore.QRect(300, 50, 91, 30))
         font = QtGui.QFont()
         font.setFamily("Roboto")
         font.setPointSize(10)
@@ -414,7 +414,7 @@ class Ui_widget_tool_type(object):
         self.lbl_load_count.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.lbl_load_count.setObjectName("lbl_load_count")
         self.background = QtWidgets.QLabel(widget_tool_type)
-        self.background.setGeometry(QtCore.QRect(0, 0, 467, 75))
+        self.background.setGeometry(QtCore.QRect(0, 0, 467, 95))
         self.background.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.background.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.background.setText("")
