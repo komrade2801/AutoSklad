@@ -36,9 +36,22 @@
 
 /* Отступы и размер картинки */
 .barcode-img {
-   height: 200px;              /*увеличили высоту изображения */
-  margin: 20px 0;
-  border-radius: 5px;
+    margin: 20px 0;
+    height: auto;
+}
+
+.qrcode-img {
+    margin-top: 20px;
+    margin-bottom: 0px;
+    height: auto;
+}
+
+.qrcode-label {
+    font-family: "Roboto", sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-top: -1rem;
+    color: #000000;
 }
 
 /* Кнопки в ряд */
@@ -223,10 +236,6 @@
 #modal_window_barcode .btn-close {
     filter: invert(1);
     opacity: 0.8;
-}
-
-.barcode-img {
-    max-width: 100%; height: auto; border-radius: 8px;
 }
 
 /* Восстановление Bootstrap-стилей кнопок в модалках (button_style.css переопределяет все .btn) */

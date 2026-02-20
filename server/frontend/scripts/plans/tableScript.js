@@ -180,6 +180,7 @@ function actionToolsFormatter(value, row, index, field) {
  */
 function openModalBarcode(planId, planDesignation) {
     document.getElementById('modal_plan_id').textContent = planDesignation || '';
+    document.getElementById('modal_barcode_plan_title').textContent = planDesignation || '';
 
     const img = document.getElementById('modal_barcode_img');
     img.src = `/backend/plan_barcode?plan_index=${encodeURIComponent(planId)}`;
