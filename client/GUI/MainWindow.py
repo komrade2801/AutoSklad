@@ -167,7 +167,10 @@ class MainWindow(QtWidgets.QWidget):
             self.widgets[source].event_select_tool = (lambda checked, btn_name="btn_tool_name": self.button_clicked(btn_name, dest))
 
         if self.widgets[source].event_select_plan:
-            self.widgets[source].event_select_plan = (lambda checked, btn_name="btn_plan_name": self.button_clicked(btn_name, dest))
+            # checked здесь содержит payload от виджета (например выбранный plan_id/данные плана)
+            self.widgets[source].event_select_plan = (
+                lambda checked, btn_name="btn_plan_name": self.button_clicked(btn_name, dest, value=checked)
+            )
 
         if self.widgets[source].event_enter_barcode:
             self.widgets[source].event_enter_barcode = (lambda barcode=0, btn_name="barcode": self.button_clicked(btn_name, dest, value=barcode))
@@ -400,7 +403,7 @@ class MainWindow(QtWidgets.QWidget):
         :param widget_name: Имя несуществующего виджета.
         :param value: Данные для передачи следующему виджету.
         """
-        if widget_name == "read_db_get_plan_tools" and self.value.get("plan_context"):
+        if widget_name == "read_db_get_plan_tools" and not value and self.value.get("plan_context"):
             value = self.value["plan_context"]
         # При возврате на экран выбора чертежа read_db_plan нужен index для загрузки списка
         if widget_name == "read_db_plan" and self.back_state in (

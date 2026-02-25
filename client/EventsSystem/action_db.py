@@ -2251,11 +2251,41 @@ class ActionMapper:
             plans = self.e_plan.get_all_plans()
             logger.debug(f"plans {plans}")
 
+            # Статусы подтверждённой загрузки: только по именам
+            ready_status_ids = set()
+            load_ready = self.e_status.find_by_name("load_ready")
+            mass_load_ready = self.e_status.find_by_name("mass_load_ready")
+            if load_ready and getattr(load_ready, "id", None) is not None:
+                ready_status_ids.add(load_ready.id)
+            if mass_load_ready and getattr(mass_load_ready, "id", None) is not None:
+                ready_status_ids.add(mass_load_ready.id)
+
             # Формируем список словарей с данными о чертежах
             plans_data = []
             for plan in plans:
                 if plan.hidden:
                     continue
+
+                # Показываем только планы, у которых есть хотя бы один инструмент
+                # с подтверждённой загрузкой под этот план.
+                has_ready_tools = False
+                plan_tool_types = self.e_plan_tool_types.get_plan_tool_types_by_plan_id(plan.id)
+                for plan_tool_type in plan_tool_types:
+                    cells = self.e_cell.get_cells_by_tool(plan_tool_type.tool_types_id)
+                    for cell in cells:
+                        if cell.status_id not in ready_status_ids:
+                            continue
+                        loads = self.e_load.find_by_cell_id(cell.id)
+                        load = max(loads, key=lambda rec: rec.id) if loads else None
+                        if load and load.plan_id == plan.id:
+                            has_ready_tools = True
+                            break
+                    if has_ready_tools:
+                        break
+
+                if not has_ready_tools:
+                    continue
+
                 plans_data.append({
                     'id': plan.id,
                     'enterprise': plan.enterprise,
