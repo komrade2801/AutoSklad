@@ -14,7 +14,7 @@ from Core.app_logging import get_logger
 
 logger = get_logger(__name__)
 
-TOTAL_SECONDS = 300
+TOTAL_SECONDS = 60
 WARNING_THRESHOLD = 15
 
 
