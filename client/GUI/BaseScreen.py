@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import QEasingCurve
 from PyQt5.QtWidgets import (
     QScroller,
     QAbstractScrollArea,
@@ -70,16 +71,20 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
             scroller = QScroller.scroller(viewport)
             props = scroller.scrollerProperties()
 
-            # Порог старта жеста: ~20 мм — чтобы 4 px не запускали скролл (Qt переводит в пиксели по DPI)
-            props.setScrollMetric(QScrollerProperties.DragStartDistance, 0.02)
-            # Минимальная скорость отпускания для старта кинетики (м/с) — мелкие «подёргивания» не дают полёт
-            props.setScrollMetric(QScrollerProperties.MinimumVelocity, 0.02)
-            # Блокировка оси: 0.9 — почти только вертикальный скролл при свайпе
-            props.setScrollMetric(QScrollerProperties.AxisLockThreshold, 0.9)
-            # Сглаживание скорости при свайпе
-            props.setScrollMetric(QScrollerProperties.DragVelocitySmoothingFactor, 0.05)
-            props.setScrollMetric(QScrollerProperties.DecelerationFactor, 0.08)
-            props.setScrollMetric(QScrollerProperties.MaximumVelocity, 0.0005)
+            # Даём короткую задержку перед скроллом: быстрый тап по элементу не превращается в свайп
+            props.setScrollMetric(QScrollerProperties.MousePressEventDelay, 0.12)
+            # Порог старта жеста ~3.5 мм: удобно для маленьких экранов, но без ложных стартов от тапа
+            props.setScrollMetric(QScrollerProperties.DragStartDistance, 0.0035)
+            # Кинетика включается только при достаточно явном движении пальца
+            props.setScrollMetric(QScrollerProperties.MinimumVelocity, 0.05)
+            # Лимит скорости, чтобы флик был живым, но контролируемым
+            props.setScrollMetric(QScrollerProperties.MaximumVelocity, 0.6)
+            # Блокировка оси: почти вертикальный скролл, чтобы не «уводило» по горизонтали
+            props.setScrollMetric(QScrollerProperties.AxisLockThreshold, 0.82)
+            # Более естественное сглаживание и замедление как на телефоне
+            props.setScrollMetric(QScrollerProperties.DragVelocitySmoothingFactor, 0.18)
+            props.setScrollMetric(QScrollerProperties.DecelerationFactor, 0.14)
+            props.setScrollMetric(QScrollerProperties.ScrollingCurve, QEasingCurve.OutCubic)
             # Без пружинящего эффекта за границами
             props.setScrollMetric(QScrollerProperties.OvershootDragResistanceFactor, 0.0)
             props.setScrollMetric(QScrollerProperties.OvershootScrollDistanceFactor, 0.0)
