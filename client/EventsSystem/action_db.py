@@ -2328,15 +2328,37 @@ class ActionMapper:
             
             logger.debug(f"read_db_plan_id: парсинг строки: {repr(barcode_str)}")
             
-            # Парсим строку: разбиваем по табуляциям или пробелам
+            # Парсим строку: сначала по строкам (LF/CRLF), затем по табуляциям, затем fallback по пробелам
             # Примеры:
             # "5108\t01.11.2025 0:00:00\t12.11.2025 8:50:25\t\t39\t\t6\t\t0"
             # "5108  01.11.2025 0:00:00  12.11.2025 8:50:25  Производство  39  Вал  6  шт  0"
             
             designation = ""
             
-            # Вариант 1: Если есть табуляции, разбиваем по ним
-            if '\t' in barcode_str:
+            normalized = barcode_str.replace('\r\n', '\n').replace('\r', '\n')
+
+            # Вариант 1: Многострочный QR (блоки разделены LF/CRLF)
+            if '\n' in normalized:
+                parts = [part.strip() for part in normalized.split('\n') if part.strip()]
+                logger.debug(f"read_db_plan_id: разбито по LF, блоков: {len(parts)}")
+                for i, part in enumerate(parts):
+                    logger.debug(f"  Блок [{i}]: {repr(part)}")
+
+                # Блок 0 (первый) -> designation
+                if len(parts) > 0:
+                    designation = parts[0]
+
+                # Блок 4 (индекс 4) -> добавляется к designation через дефис
+                if len(parts) > 4 and parts[4]:
+                    block_4 = parts[4]
+                    if designation:
+                        designation = f"{designation}-{block_4}"
+                    else:
+                        designation = block_4
+                    logger.debug(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
+
+            # Вариант 2: Если есть табуляции, разбиваем по ним
+            elif '\t' in barcode_str:
                 parts = barcode_str.split('\t')
                 logger.debug(f"read_db_plan_id: разбито по табуляциям, блоков: {len(parts)}")
                 for i, part in enumerate(parts):
@@ -2355,7 +2377,7 @@ class ActionMapper:
                         designation = block_4
                     logger.debug(f"read_db_plan_id: добавлен блок 4, designation: {repr(designation)}")
             else:
-                # Вариант 2: Разбиваем по пробелам (множественным)
+                # Вариант 3 (fallback): Разбиваем по пробелам (множественным)
                 # Используем split() без аргументов для разбиения по любым пробелам
                 parts = barcode_str.split()
                 logger.debug(f"read_db_plan_id: разбито по пробелам, блоков: {len(parts)}")

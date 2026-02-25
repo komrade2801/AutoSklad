@@ -21,6 +21,9 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         self.value = None
         self.trigger = None
         self.tool_list = {}
+        # Не показываем UI-плейсхолдеры до получения валидных данных по чертежу.
+        self.plan_number.setText("")
+        self.plan_name.setText("")
 
     def set_data(self, *args, **kwargs):
         logger.debug("screen_9_select_tool_by_plan set_data args=%s kwargs=%s", args, kwargs)
@@ -33,10 +36,20 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         # self.tool_list = {}
 
         try:
-            source = args[1]
+            source = args[1] if len(args) > 1 else None
             if source == 'btn_back':
                 logger.debug('data restored')
             else:
+                if not args or not isinstance(args[0], (tuple, list)) or len(args[0]) < 4:
+                    logger.warning("screen_9_select_tool_by_plan: invalid payload: %s", args[0] if args else None)
+                    self.plan_number.setText("")
+                    self.plan_name.setText("")
+                    self.plan_id_val = -1
+                    self.listWidget.clear()
+                    self.setOkButtonState(False)
+                    self.setCompleteButtonState(False)
+                    return
+
                 data = args[0]
 
                 self.plan_number.setText(data[1])
@@ -45,16 +58,16 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
                 self.plan_id_val = data[3]
 
                 tools = data[0]
-                if not tools:
-                    return
                 self.listWidget.clear()  # Очищаем список перед добавлением новых данных
+                if not tools:
+                    self.setOkButtonState(False)
+                    self.setCompleteButtonState(False)
+                    return
 
                 can_be_completed = False
 
                 for tool_data in tools:
                     logger.debug("tool_data: %s", tool_data)
-
-                    has_tools = tool_data['has_tools']
 
                     # Создаём кастомный виджет
                     widget = WidgetPlanTool()
