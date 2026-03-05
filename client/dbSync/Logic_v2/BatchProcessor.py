@@ -16,7 +16,7 @@ class Operation(TypedDict, total=False):
     """
     command_id: int  # ID команды из журнала синхронизации
     table: str  # целевая таблица
-    operation: str  # "insert" | "update" | "delete"
+    operation: str  # "add" | "update" | "delete"
     data: Dict[str, Any]  # полезная нагрузка (локальный формат)
     id: Optional[int]  # существующий PK (для update/delete)
 

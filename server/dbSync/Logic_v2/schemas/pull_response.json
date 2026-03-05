@@ -26,7 +26,7 @@
           },
           "operation": {
             "type": "string",
-            "enum": ["INSERT", "UPDATE", "DELETE"],
+            "enum": ["ADD", "UPDATE", "DELETE"],
             "description": "Тип операции (верхний регистр)"
           },
           "data": {

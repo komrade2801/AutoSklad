@@ -106,7 +106,7 @@ class SyncManager:
         # self._parse_dates(data)
         self._parse_incoming_datetimes(table, data)
 
-        if op_lower in ("insert", "add"):
+        if op_lower == "add":
             return self._handle_insert(crud, table, data, rec_id, sync_context=False)
         elif op_lower == "update":
             return self._handle_update(crud, data, rec_id)
@@ -129,7 +129,7 @@ class SyncManager:
         # self._parse_dates(data)
         self._parse_incoming_datetimes(table, data)
 
-        if op_lower in ("insert", "add"):
+        if op_lower == "add":
             return self._handle_insert(crud, table, data, rec_id, sync_context=sync_context)
         elif op_lower == "update":
             return self._handle_update(crud, data, rec_id)
@@ -184,7 +184,7 @@ class SyncManager:
 
     def _handle_insert(self, crud, table, data, rec_id, sync_context=False):
         """
-        Handle INSERT/ADD operations.
+        Handle ADD operations.
 
         :param crud: CRUD instance for table
         :param table: Table name
@@ -210,7 +210,7 @@ class SyncManager:
         if rec_id is not None and crud.get(rec_id):
             return self._upsert_update(crud, rec_id, data, sync_context=sync_context)
 
-        # 3) Чистый INSERT
+        # 3) Добавление записи (ADD)
         # Удаляем id и другие невалидные поля
         # Получаем список валидных колонок модели
         valid_columns = {col.name for col in crud.model.__table__.columns}

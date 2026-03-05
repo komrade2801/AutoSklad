@@ -3,6 +3,9 @@ function doImportTools() {
     const useCount = document.getElementById("getToolCount").checked;
     const endpointUrl = "../backend/upload";
     const formData = new FormData();
+    const btnImport = document.getElementById("importTools");
+    const fileInput = document.getElementById("importToolsFile");
+    const form = document.getElementById("importToolsForm");
 
     if (!selectedFile) {
         return;
@@ -11,33 +14,123 @@ function doImportTools() {
     formData.append("file", selectedFile);
     formData.append("use_count", useCount);
 
+    // Блокировка UI до конца загрузки/обработки
+    const lockUi = () => {
+        if (btnImport) {
+            btnImport.disabled = true;
+            btnImport.textContent = "Загрузка…";
+        }
+        if (fileInput) fileInput.disabled = true;
+        if (form) form.style.pointerEvents = "none";
+    };
+    const unlockUi = () => {
+        if (btnImport) {
+            btnImport.disabled = false;
+            btnImport.textContent = "Загрузить xlsx";
+        }
+        if (fileInput) fileInput.disabled = false;
+        if (form) form.style.pointerEvents = "";
+    };
+
+    lockUi();
+
+    console.log("[Импорт Excel] Отправка файла:", selectedFile.name, "| Учитывать количество:", useCount);
+
+    var uploadTimeoutMs = 10 * 60 * 1000;
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, uploadTimeoutMs);
+    var unlockInFinally = true;
+
+    function showResultToast(result) {
+        var errorsTotal = result.errors_total ?? (Array.isArray(result.errors) ? result.errors.length : 0);
+        var added = (result.processed || 0) - (result.repeated || 0);
+        var repeated = result.repeated || 0;
+        var ignored = errorsTotal;
+        var msg = "Импорт завершён. ";
+        if (added > 0) msg += "Добавлено: " + added + ". ";
+        if (repeated > 0) msg += "Повторов (уже существовали): " + repeated + ". ";
+        if (ignored > 0) msg += "Пропущено (ошибки/нет полей): " + ignored + ".";
+        if (added === 0 && repeated === 0 && ignored === 0) msg += "Нет данных для импорта.";
+        var toastType = ignored > 0 && (added > 0 || repeated > 0) ? "info" : (ignored > 0 ? "warning" : "success");
+        if (typeof showToast === "function") showToast(msg.trim(), toastType);
+    }
+
+    function pollStatus(jobId) {
+        var statusUrl = "../backend/upload/status/" + jobId;
+        var pollInterval = 2000;
+        var deadline = Date.now() + uploadTimeoutMs;
+        function poll() {
+            if (Date.now() > deadline) {
+                if (typeof showToast === "function") showToast("Импорт отменён по таймауту (10 мин).", "danger");
+                unlockUi();
+                return;
+            }
+            fetch(statusUrl)
+                .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error(r.status)); })
+                .then(function (st) {
+                    if (st.status === "completed") {
+                        console.log("[Импорт Excel] Фоновый импорт завершён:", st.result);
+                        showResultToast(st.result || {});
+                        if (typeof loadToolLibraryTable === "function") loadToolLibraryTable(1);
+                        unlockUi();
+                        return;
+                    }
+                    if (st.status === "failed") {
+                        var errMsg = st.error || "Импорт завершился с ошибкой.";
+                        if (typeof showToast === "function") showToast(errMsg, "danger");
+                        unlockUi();
+                        return;
+                    }
+                    setTimeout(poll, pollInterval);
+                })
+                .catch(function (err) {
+                    console.error("Ошибка опроса статуса:", err);
+                    if (typeof showToast === "function") showToast("Ошибка при проверке статуса импорта.", "danger");
+                    unlockUi();
+                });
+        }
+        poll();
+    }
+
     fetch(endpointUrl, {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal
     })
-    .then(response => {
+    .then(function (response) {
+        if (response.status === 202) {
+            return response.json().then(function (data) {
+                var jobId = data.job_id;
+                if (jobId) {
+                    unlockInFinally = false;
+                    console.log("[Импорт Excel] Запущен в фоне, job_id:", jobId);
+                    pollStatus(jobId);
+                } else {
+                    unlockUi();
+                }
+            });
+        }
         if (!response.ok) {
-            return response.json().then(errData => {
-                throw new Error('Ошибка сети: ' + JSON.stringify(errData));
+            return response.json().then(function (errData) {
+                throw new Error(errData.detail || 'Ошибка сети: ' + response.status);
             });
         }
         return response.json();
     })
-    .then(result => {
-
-
-        let device_number = 1;
-        loadToolLibraryTable(device_number);
-//        let url = '../screen_15_tool_library.html';
-//        let targetUrl = new URL(url, window.location.origin).href;
-//        let token = localStorage.getItem('token');
-//        let full_url = targetUrl + "?token=" + token;
-//        window.location.href = full_url;
+    .then(function (result) {
+        if (!result) return;
+        if (result.job_id) return;
+        showResultToast(result);
+        if (typeof loadToolLibraryTable === "function") loadToolLibraryTable(1);
     })
-    .catch(error => {
-        console.error('Ошибка при сохранении данных:', error);
-        showToast('Неизвестная ошибка при импорте', 'danger');
-        // Обработка ошибок
+    .catch(function (error) {
+        console.error("Ошибка при импорте:", error);
+        var msg = error.name === "AbortError" ? "Импорт отменён по таймауту (10 мин)." : (error.message || "Неизвестная ошибка при импорте");
+        if (typeof showToast === "function") showToast(msg, "danger");
+    })
+    .finally(function () {
+        clearTimeout(timeoutId);
+        if (unlockInFinally && typeof unlockUi === "function") unlockUi();
     });
 }
 

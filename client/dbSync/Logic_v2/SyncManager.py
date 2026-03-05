@@ -123,7 +123,7 @@ class SyncManager:
         # self._parse_dates(data)
         self._parse_incoming_datetimes(table, data)
 
-        if op_lower in ("insert", "add"):
+        if op_lower == "add":
             return self._handle_insert(crud, table, data, rec_id, sync_context=False)
         elif op_lower == "update":
             return self._handle_update(crud, data, rec_id)
@@ -146,7 +146,7 @@ class SyncManager:
         # self._parse_dates(data)
         self._parse_incoming_datetimes(table, data)
 
-        if op_lower in ("insert", "add"):
+        if op_lower == "add":
             return self._handle_insert(crud, table, data, rec_id, sync_context=sync_context)
         elif op_lower == "update":
             return self._handle_update(crud, data, rec_id)
@@ -201,7 +201,7 @@ class SyncManager:
 
     def _handle_insert(self, crud, table, data, rec_id, sync_context=False):
         """
-        Handle INSERT/ADD operations.
+        Handle ADD operations.
 
         :param crud: CRUD instance for table
         :param table: Table name

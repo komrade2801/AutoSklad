@@ -120,7 +120,6 @@ class CommandOrderer:
         "DELETE": 0,  # Сначала удаляем (освобождаем FK)
         "UPDATE": 1,  # Потом обновляем
         "ADD": 2,     # В конце добавляем (требуют существования FK)
-        "INSERT": 2,  # Синоним ADD
     }
     
     # Критические таблицы, для которых НЕЛЬЗЯ сжимать множественные UPDATE
@@ -343,7 +342,7 @@ class CommandOrderer:
                 )
             
             # Проверка 2: Повторный ADD (после DELETE)
-            if operation in ("ADD", "INSERT"):
+            if operation == "ADD":
                 if key in created_records and key not in deleted_records:
                     warnings.append(
                         f"Record {table}:{rec_id} - Duplicate ADD operation in batch. "
@@ -464,7 +463,7 @@ class CommandOrderer:
             
             key = (table, rec_id)
             
-            if operation in ("ADD", "INSERT"):
+            if operation == "ADD":
                 created.add(key)
                 
                 # Проверка: ADD дочерней записи - существуют ли родители?
@@ -482,7 +481,7 @@ class CommandOrderer:
                             parent_will_be_created = any(
                                 cmd.get("table") == "Group" and 
                                 (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == groups_id and
-                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                cmd.get("operation", "").upper() == "ADD"
                                 for cmd in commands
                             )
                             if not parent_will_be_created:
@@ -505,7 +504,7 @@ class CommandOrderer:
                             parent_will_be_created = any(
                                 cmd.get("table") == "ToolTypes" and 
                                 (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == tools_id and
-                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                cmd.get("operation", "").upper() == "ADD"
                                 for cmd in commands
                             )
                             if not parent_will_be_created:
@@ -535,7 +534,7 @@ class CommandOrderer:
                             history_will_be_created = any(
                                 cmd.get("table") == "History" and 
                                 (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == history_id and
-                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                cmd.get("operation", "").upper() == "ADD"
                                 for cmd in commands
                             )
                             if not history_will_be_created:
@@ -584,7 +583,7 @@ class CommandOrderer:
                             history_will_be_created = any(
                                 cmd.get("table") == "History" and 
                                 (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == history_id and
-                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                cmd.get("operation", "").upper() == "ADD"
                                 for cmd in commands
                             )
                             if not history_will_be_created:
@@ -608,7 +607,7 @@ class CommandOrderer:
                             history_will_be_created = any(
                                 cmd.get("table") == "History" and 
                                 (cmd.get("data", {}).get("id") or cmd.get("data", {}).get("index")) == history_id and
-                                cmd.get("operation", "").upper() in ("ADD", "INSERT")
+                                cmd.get("operation", "").upper() == "ADD"
                                 for cmd in commands
                             )
                             if not history_will_be_created:

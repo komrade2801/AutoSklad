@@ -16,7 +16,7 @@ class Operation(TypedDict, total=False):
     """
     command_id: int  # ID команды из журнала синхронизации
     table: str  # целевая таблица
-    operation: str  # "insert" | "update" | "delete"
+    operation: str  # "add" | "update" | "delete"
     data: Dict[str, Any]  # полезная нагрузка (локальный формат)
     id: Optional[int]  # существующий PK (для update/delete)
 
@@ -27,7 +27,7 @@ class OperationResult(TypedDict, total=False):
     """
     command_id: int
     success: bool
-    new_id: Optional[int]  # для insert — созданный PK
+    new_id: Optional[int]  # для add — созданный PK
     error: Optional[str]  # текст ошибки при неуспехе
 
 
@@ -104,7 +104,7 @@ class BatchProcessor:
                         res = self._apply_single(op)
                         new_id = None
                         if isinstance(res, dict):
-                            # INSERT вернёт {'id': ...}, UPDATE/DELETE — {} → safe get
+                            # ADD вернёт {'id': ...}, UPDATE/DELETE — {} → safe get
                             new_id = res.get('id', None)
                         else:
                             new_id = getattr(res, 'id', None)
@@ -140,7 +140,7 @@ class BatchProcessor:
     def _apply_single(self, op: Operation) -> Dict[str, Any]:
         """
         Обёртка для SyncManager.process_sync_command() for sync operations.
-        Позволяет обработать возвращаемое значение (например, новый PK при insert).
+        Позволяет обработать возвращаемое значение (например, новый PK при add).
 
         :param op: Operation
         :return: Словарь с дополнительными данными, например {"new_id": int}
@@ -211,7 +211,7 @@ class BatchProcessor:
         # Собираем все History команды из батча
         history_commands = {}
         for op in operations:
-            if op.get("table") == "History" and op.get("operation", "").lower() in ("add", "insert"):
+            if op.get("table") == "History" and op.get("operation", "").lower() == "add":
                 history_id = op.get("data", {}).get("id") or op.get("data", {}).get("index")
                 tools_id = op.get("data", {}).get("tools_id")
                 if history_id and tools_id:
@@ -221,7 +221,7 @@ class BatchProcessor:
         
         # Обновляем Consumption команды, добавляя history_id
         for op in operations:
-            if op.get("table") == "Consumption" and op.get("operation", "").lower() in ("add", "insert"):
+            if op.get("table") == "Consumption" and op.get("operation", "").lower() == "add":
                 data = op.get("data", {})
                 if "history_id" not in data or data.get("history_id") is None:
                     tools_id = data.get("tools_id")

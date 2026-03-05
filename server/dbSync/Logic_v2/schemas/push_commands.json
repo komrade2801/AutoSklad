@@ -24,10 +24,9 @@
           "operation": {
             "type": "string",
             "enum": [
-              "insert", "INSERT",
+              "add",    "ADD",
               "update", "UPDATE",
-              "delete", "DELETE",
-              "add",    "ADD"
+              "delete", "DELETE"
             ]
           },
           "data": {

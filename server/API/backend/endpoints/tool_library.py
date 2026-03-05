@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import threading
+import uuid
 from io import BytesIO
 # from fastapi.responses import JSONResponse
 from Core.app_logging import get_logger
@@ -16,14 +18,16 @@ from API.backend.request_models import (
     ToolLibraryResponse,  # Pydantic-модель для ответа: { "groups": { ... } }
     ToolLibrary,  # Модель инструмента (ответ при создании/обновлении)
     ToolLibraryCreate,  # Модель для создания записи
-    ToolLibraryUpdate, ToolsImportResponse  # Модель для обновления записи
+    ToolLibraryUpdate, ToolsImportResponse,
+    UploadAcceptedResponse, ImportStatusResponse,
 )
 # , DEFAULT_FIELD_MAP
 from API.backend.upload.config import update_field_map, load_field_map
-from API.backend.upload.mappers import normalize_record  # , ColumnsMapModel
+from API.backend.upload.mappers import normalize_record, is_empty_row
+from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES, PRIORITY_QUEUES
 
 # from DB.Data.db_depends import get_db
-from DB.session import get_db
+from DB.session import get_db, get_db_session
 from DB.Engine.DeviceCRUD import EngineDevice
 from DB.Engine.ToolTypesCRUD import EngineToolTypes
 from DB.Engine.ToolsCRUD import EngineTools
@@ -41,178 +45,254 @@ REQUIRED = [
     "tool_types_name"
 ]
 
+# Импорт в потоке синхронизации: хранилище задач и лок
+_import_jobs: Dict[str, Dict[str, Any]] = {}
+_import_jobs_lock = threading.Lock()
+
+IMPORT_BATCH_SIZE = 100  # батчинг: yield каждые N строк для обработки очереди "local" и _save_queue
+
+
+def set_import_job_failed(job_id: str, error: str) -> None:
+    """Устанавливает статус задачи импорта в failed (вызов из Runner при исключении)."""
+    with _import_jobs_lock:
+        if job_id in _import_jobs:
+            _import_jobs[job_id]["status"] = "failed"
+            _import_jobs[job_id]["error"] = error
+
+
+def run_import_sync(
+    job_id: str,
+    data: bytes,
+    use_count: bool,
+    columns_map: Optional[str],
+    total_sheets: int,
+):
+    """
+    Генератор: выполняет импорт Excel в потоке Runner.
+    Yield каждые IMPORT_BATCH_SIZE обработанных строк — Runner обрабатывает батч "local" и вызывает _save_queue.
+    По завершении обновляет _import_jobs[job_id].
+    """
+    with _import_jobs_lock:
+        if job_id not in _import_jobs:
+            return
+        _import_jobs[job_id]["status"] = "running"
+    db = get_db_session()
+    try:
+        field_map = load_field_map()
+        if columns_map:
+            try:
+                cm_dict = json.loads(columns_map)
+                if isinstance(cm_dict, dict):
+                    update_field_map(cm_dict)
+                    field_map = load_field_map()
+            except json.JSONDecodeError:
+                pass
+
+        xl = pd.ExcelFile(BytesIO(data))
+        e_group = EngineGroup(session=db)
+        e_tool_types = EngineToolTypes(session=db)
+
+        processed = 0
+        repeated = 0
+        errors = []
+        tool_type_counts = {}
+        last_seen = {k: None for k in field_map.keys()}
+        row_idx = 0
+        batch_count = 0
+
+        for sheet_name in xl.sheet_names:
+            queue_in = INBOUND_QUEUES.get(1)
+            if queue_in:
+                try:
+                    queue_in.put({"type": "sheet_batch_start"})
+                except Exception as ex:
+                    logger.warning("upload_xlsx sheet_batch_start: %s", ex)
+
+            df = pd.read_excel(xl, sheet_name=sheet_name, keep_default_na=False)
+            df = df.replace({pd.NA: ''})
+            sheet_records = df.to_dict(orient="records")
+            del df
+
+            grp = e_group.find(name=sheet_name, description="")
+            if grp is None:
+                errors.append({"sheet": sheet_name, "error": "Группа по имени листа не найдена"})
+                logger.warning("upload_xlsx sheet %s: group not found", sheet_name)
+                if queue_in:
+                    try:
+                        queue_in.put({"type": "sheet_batch_end"})
+                    except Exception as ex:
+                        logger.warning("upload_xlsx sheet_batch_end: %s", ex)
+                continue
+            grp_id = grp.id
+
+            for rec in sheet_records:
+                rec["Название группы"] = sheet_name
+                if is_empty_row(rec, field_map):
+                    continue
+                row_idx += 1
+                idx = row_idx
+                try:
+                    norm, last_seen = normalize_record(rec, REQUIRED, field_map, last_seen)
+                    tool_types_name = norm.get("tool_types_name")
+                    if not tool_types_name or (isinstance(tool_types_name, str) and not tool_types_name.strip()):
+                        errors.append({"row": idx, "error": "Отсутствует название инструмента (номенклатура)"})
+                        continue
+                    tt = e_tool_types.find_by_name(name=tool_types_name)
+                    tool_type = None
+                    if not tt:
+                        tool_type_id = max(e_tool_types.get_all_ids(), default=0) + 1
+                        ok = e_tool_types.add_tool_type(
+                            tool_type_id=tool_type_id,
+                            name=tool_types_name,
+                            description=norm.get("tool_types_description") or "",
+                            count=0,
+                            img=norm.get("tool_types_img") or "",
+                            groups_id=grp_id
+                        )
+                        tool_type = e_tool_types.get_tool_type_by_id(tool_type_id) if ok else None
+                    else:
+                        tool_type = tt[0]
+                        repeated += 1
+                    if tool_type is None:
+                        errors.append({"row": idx, "error": "Не удалось создать или найти тип инструмента (номенклатуру)"})
+                        continue
+                    count = 0
+                    if use_count:
+                        count = norm.get("tool_types_count") or 1
+                    if tool_type.id in tool_type_counts:
+                        tool_type_counts[tool_type.id] = tool_type_counts[tool_type.id] + count
+                    else:
+                        tool_type_counts[tool_type.id] = count
+                    processed += 1
+                    batch_count += 1
+                    if batch_count >= IMPORT_BATCH_SIZE:
+                        batch_count = 0
+                        yield
+                except (ValueError, SQLAlchemyError, AttributeError) as e:
+                    db.rollback()
+                    errors.append({"row": idx, "error": str(e)})
+
+            if queue_in:
+                try:
+                    queue_in.put({"type": "sheet_batch_end"})
+                except Exception as ex:
+                    logger.warning("upload_xlsx sheet_batch_end: %s", ex)
+
+        errors_total = len(errors)
+        if tool_type_counts:
+            for id, count in tool_type_counts.items():
+                tool_type = e_tool_types.get_tool_type_by_id(id)
+                if tool_type:
+                    e_tool_types.update_tool_type(
+                        id=tool_type.id,
+                        name=tool_type.name,
+                        description=tool_type.description,
+                        count=tool_type.count + count,
+                        img=tool_type.img,
+                        groups_id=tool_type.groups_id,
+                    )
+
+        result = {
+            "processed": processed,
+            "repeated": repeated,
+            "errors": errors[:10],
+            "errors_total": errors_total,
+            "field_map": field_map,
+            "total_sheets": total_sheets,
+            "total_records": row_idx,
+        }
+        with _import_jobs_lock:
+            if job_id in _import_jobs:
+                _import_jobs[job_id]["status"] = "completed"
+                _import_jobs[job_id]["result"] = result
+        logger.info("upload_xlsx (sync thread): записей: %s, обработано: %s, повторов: %s, ошибок: %s",
+                    row_idx, processed, repeated, errors_total)
+    except Exception as e:
+        logger.exception("upload_xlsx (sync thread) failed: %s", e)
+        with _import_jobs_lock:
+            if job_id in _import_jobs:
+                _import_jobs[job_id]["status"] = "failed"
+                _import_jobs[job_id]["error"] = str(e)
+    finally:
+        db.close()
+
 
 @tool_library_router.post(
     "/upload",
-    response_model=ToolsImportResponse,
-    status_code=status.HTTP_200_OK,
-    responses={400: {"description": "Ошибка при добавлении инструментов"}})
+    response_model=None,
+    status_code=status.HTTP_202_ACCEPTED,
+    responses={
+        202: {"description": "Импорт запущен в фоне"},
+        422: {"description": "Ошибка валидации файла"},
+    })
 async def upload_xlsx(
         file: UploadFile = File(...),
         use_count: bool = False,
         columns_map: Optional[str] = Form(
             None, description="JSON‑строка с дополнительным маппингом"),
-        db: Session = Depends(get_db)
 ):
-    # 1) Попытаться распарсить columns_map, но не падать, если оно не JSON
-    field_map = load_field_map()
-    if columns_map:
-        try:
-            cm_dict = json.loads(columns_map)
-            if isinstance(cm_dict, dict):
-                update_field_map(cm_dict)
-                field_map = load_field_map()
-            # иначе — это не dict, игнорируем
-        except json.JSONDecodeError:
-            # просто пропускаем, не обновляем маппинг
-            pass
-
-    records = []
-
-    # 2) Считываем Excel
+    """Принимает файл, ставит импорт в приоритетную очередь потока синхронизации, возвращает job_id для опроса статуса."""
     try:
         data = await file.read()
-
-        # sheet_names = pd.read_excel(BytesIO(data), sheet_name=None)
-
-        xl = pd.read_excel(BytesIO(data), keep_default_na=False, sheet_name=None)
-        # df = df.replace({pd.NA: None})
-
-
-        for sheet_name in xl.keys():
-            df = xl.get(sheet_name)
-            df = df.replace({pd.NA: ''})
-            for record in df.to_dict(orient="records"):
-                record["Название группы"] = sheet_name
-                records.append(record)
-
-        logger.debug("records: %s", records)
-        # records = df.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(422, f"Cannot read file: {e}")
+    try:
+        xl = pd.ExcelFile(BytesIO(data))
     except Exception as e:
         raise HTTPException(422, f"Cannot parse Excel: {e}")
+    total_sheets = len(xl.sheet_names)
+    logger.info("upload_xlsx: файл принят, листов: %s, постановка в приоритетную очередь", total_sheets)
 
-    # 3) Инстансы CRUD
-    e_group = EngineGroup()
-    e_tool_types = EngineToolTypes()
-    tools_crud = EngineTools()
+    job_id = str(uuid.uuid4())
+    with _import_jobs_lock:
+        _import_jobs[job_id] = {"status": "pending", "result": None, "error": None}
 
-    processed = 0
-    errors = []
-    # seen_inv = set()
-
-    tool_type_counts = {}
-
-    last_seen = {k: None for k in field_map.keys()}
-    logger.debug("last_seen: %s", last_seen)
-    # 4) Обрабатываем построчно
-    for idx, rec in enumerate(records, start=1):
-        logger.debug("%s / %s", idx, len(records))
+    queue_in = PRIORITY_QUEUES.get(1) or INBOUND_QUEUES.get(1)
+    if queue_in:
         try:
-            norm, last_seen = normalize_record(
-                rec, REQUIRED, field_map, last_seen)
-            logger.debug("norm: %s", norm)
-            # inv = norm["tool_inventory_number"]
+            queue_in.put({
+                "type": "import_start",
+                "job_id": job_id,
+                "data": data,
+                "use_count": use_count,
+                "columns_map": columns_map,
+                "total_sheets": total_sheets,
+            })
+        except Exception as ex:
+            logger.warning("upload_xlsx: не удалось поставить import_start: %s", ex)
+            with _import_jobs_lock:
+                if job_id in _import_jobs:
+                    _import_jobs[job_id]["status"] = "failed"
+                    _import_jobs[job_id]["error"] = str(ex)
+            raise HTTPException(503, "Очередь синхронизации недоступна")
+    else:
+        with _import_jobs_lock:
+            if job_id in _import_jobs:
+                _import_jobs[job_id]["status"] = "failed"
+                _import_jobs[job_id]["error"] = "Очередь синхронизации не создана"
+        raise HTTPException(503, "Синхронизация не запущена")
 
-            # if inv and inv in seen_inv:
-            #     raise ValueError(f"Duplicate inventory_number: {inv}")
-            # seen_inv.add(inv)
+    return UploadAcceptedResponse(job_id=job_id, message="Импорт поставлен в очередь (приоритет)")
 
-            # Group
-            grp_id = norm.get("group_id")
-            if not grp_id:
-                grp = e_group.find(name=norm.get("group_name") or "Default",
-                                   description=norm.get("group_description") or "")
-                grp_id = grp.id
 
-            # ToolTypes
-            if not norm["tool_types_name"]:
-                raise ValueError(f"Tool type name is empty")
+@tool_library_router.get(
+    "/upload/status/{job_id}",
+    response_model=ImportStatusResponse,
+    status_code=status.HTTP_200_OK,
+    responses={404: {"description": "Задача не найдена"}},
+)
+def upload_status(job_id: str):
+    """Возвращает статус фонового импорта по job_id."""
+    with _import_jobs_lock:
+        job = _import_jobs.get(job_id)
+    if not job:
+        raise HTTPException(404, "Задача импорта не найдена")
+    return ImportStatusResponse(
+        status=job["status"],
+        result=job.get("result"),
+        error=job.get("error"),
+    )
 
-            tt = e_tool_types.find_by_name(
-                name=norm["tool_types_name"],
-                # groups_id=grp_id
-            )
-            logger.debug("tt: %s", tt)
-            tool_type = None
-            if not tt:
-                tool_type_id = max(e_tool_types.get_all_ids(), default=0) + 1
-                e_tool_types.add_tool_type(
-                    tool_type_id=tool_type_id,
-                    name=norm["tool_types_name"],
-                    description=norm.get("tool_types_description") or "",
-                    count=0,
-                    img=norm.get("tool_types_img") or "",
-                    groups_id=grp_id
-                )
-                tool_type = e_tool_types.get_tool_type_by_id(tool_type_id)
-            else:
-                tool_type = tt[0]
-
-            count = 0
-            if use_count:
-                if norm["tool_types_count"]:
-                    count = norm["tool_types_count"]
-                else:
-                    count = 1
-
-            if tool_type.id in tool_type_counts:
-                tool_type_counts[tool_type.id] = tool_type_counts[tool_type.id] + count
-            else:
-                tool_type_counts[tool_type.id] = count
-
-            # # Tools
-            # tl = tools_crud.get_by_inventory_number(inv)
-            # if not tl:
-            #     tool_id = max(tools_crud.get_all_ids(), default=0) + 1
-            #     tools_crud.add_tool(
-            #         tool_id=tool_id,
-            #         inventory_number=inv,
-            #         plan_id=norm.get("tool_plan_id"),
-            #         tool_type_id=tool_type.id,
-            #         name=tool_type.name,
-            #         description=tool_type.description,
-            #         count=1,
-            #         img=tool_type.img,
-            #         groups_id=tool_type.groups_id,
-            #     )
-            # else:
-            #     # for i in range(0, tool_type.count):
-            #     tool_id = max(tools_crud.get_all_ids(), default=0) + 1
-            #     tools_crud.add_tool(
-            #         tool_id=tool_id,
-            #         inventory_number=tool_type.count + tool_type_counts[tool_type.id],
-            #         plan_id=norm.get("tool_plan_id"),
-            #         tool_type_id=tool_type.id,
-            #         name=tool_type.name,
-            #         description=tool_type.description,
-            #         count=1,
-            #         img=tool_type.img,
-            #         groups_id=tool_type.groups_id,
-            #     )
-            processed += 1
-
-        except (ValueError, SQLAlchemyError) as e:
-            db.rollback()
-            errors.append({"row": idx, "error": str(e)})
-
-            logger.warning("upload_xlsx row %s: %s", idx, e)
-
-    logger.debug("found tool type counts: %s", tool_type_counts)
-    if tool_type_counts:
-        for id, count in tool_type_counts.items():
-            tool_type = e_tool_types.get_tool_type_by_id(id)
-            logger.debug("tool_type: %s", tool_type)
-
-            e_tool_types.update_tool_type(
-                id=tool_type.id,
-                name=tool_type.name,
-                description=tool_type.description,
-                count=tool_type.count + count,
-                img=tool_type.img,
-                groups_id=tool_type.groups_id,
-            )
-
-    return ToolsImportResponse(processed=processed, errors=errors, field_map=field_map)
 
 # @tool_library_router.post("/upload")
 # async def upload_xlsx(file: UploadFile = File(...)):

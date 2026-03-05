@@ -113,10 +113,11 @@ def sync_aware(func):
                 data[k] = v
 
         if queue_in:
+            op = "add" if method_name == "insert" else method_name  # единообразно ADD
             queue_in.put({
                 "type":      "local",
                 "table":     table_name,
-                "operation": method_name,
+                "operation": op,
                 "data":      data,    # ровно те ключи, что пришли в функцию
             })
 

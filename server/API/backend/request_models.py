@@ -242,8 +242,25 @@ class ToolsAddResponse(BaseModel):
 
 class ToolsImportResponse(BaseModel):
     processed: int
+    repeated: int = 0  # строк с уже существующей номенклатурой (только обновлено количество)
     errors: Any
+    errors_total: int = 0  # общее число записей с ошибками (в ответе отдаётся только errors[:10])
     field_map: Any
+    total_sheets: int = 0   # количество листов в файле
+    total_records: int = 0  # всего строк по всем листам
+
+
+class UploadAcceptedResponse(BaseModel):
+    """Ответ 202 при запуске импорта в фоне."""
+    job_id: str
+    message: str = "Импорт запущен в фоне"
+
+
+class ImportStatusResponse(BaseModel):
+    """Статус фонового импорта."""
+    status: str  # pending | running | completed | failed
+    result: Optional[Any] = None  # ToolsImportResponse при status=completed
+    error: Optional[str] = None   # при status=failed
 
 # Модели для библиотеки инструментов
 class ToolLibraryResponse(BaseModel):

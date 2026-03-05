@@ -42,13 +42,13 @@ class ServerCommand(TypedDict):
     Атрибуты:
         id (str): UUID локальной команды.
         table (str): Имя таблицы.
-        operation (Literal['INSERT','UPDATE','DELETE']): Тип операции.
+        operation (Literal['ADD','UPDATE','DELETE']): Тип операции.
         data (Dict[str, Any]): Полезная нагрузка.
         last_modified (str): Момент локального изменения в ISO-формате UTC.
     """
     id: str
     table: str
-    operation: Literal['INSERT', 'UPDATE', 'DELETE']
+    operation: Literal['ADD', 'UPDATE', 'DELETE']
     data: Dict[str, Any]
     last_modified: str
 

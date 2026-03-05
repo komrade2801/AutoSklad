@@ -16,7 +16,7 @@ class ChangeEvent(TypedDict):
         table (str):
             Имя таблицы, где произошло изменение.
         operation (str):
-            Тип операции: "insert", "update" или "delete".
+            Тип операции: "add", "update" или "delete".
         record_id (int):
             Первичный ключ изменённой записи.
         data (Dict[str, Any]):
@@ -99,11 +99,11 @@ class CDCService:
         Создаёт фоновый поток для рассылки события слушателям.
 
         :param event: ChangeEvent — описание произошедшего изменения.
-        :raises ValueError: если у event.operation не один из "insert", "update", "delete".
+        :raises ValueError: если у event.operation не один из "add", "update", "delete".
         """
         print(f'[ПОТОК][{threading.current_thread().name}][CDCService][emit_change_event][INFO] - command_id: {event}. [{datetime.now()}]')
         op = event["operation"].lower()
-        if op not in ("insert", "update", "delete"):
+        if op not in ("add", "update", "delete"):
             raise ValueError(f"Unsupported operation '{event['operation']}' in ChangeEvent")
         # Дата-время в ISO, если передана иначе — нормализуем
         try:

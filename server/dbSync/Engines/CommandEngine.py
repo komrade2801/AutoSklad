@@ -193,13 +193,11 @@ class CommandCRUD(BaseCRUD):
             raise ValueError(f"Недопустимый статус: {new_status}")
 
         try:
-            # Используем метод add из CoreEngine
-            self.add(
-                command_id=cmd_id,
-                status=new_status,
-                updated_at=datetime.utcnow()
-            )
+            # Добавляем запись в CommandStatus через status_crud (Command model не имеет поля status)
+            status_crud = CommandStatusCRUD(session=self.session)
+            status_crud.add_status(cmd_id, new_status)
             print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][acknowledge][INFO] - статус обновлен. [{datetime.now()}]")
+            self._cache.clear()
             return True
 
         except IntegrityError as e:
@@ -257,6 +255,15 @@ class CommandCRUD(BaseCRUD):
             # Откатываем транзакцию и пробрасываем ошибку
             self.session.rollback()
             raise RuntimeError(f"Database error: {e}") from e
+
+    def invalidate_pending_for_device(self, device_number: int) -> None:
+        """
+        Инвалидирует кэш списка pending-команд для устройства, чтобы следующий
+        get_pending_for_device() заново запросил данные из БД (после смены статусов на COMPLETED).
+        """
+        cache_key = self._make_key("pending_for_device", device_number)
+        self._cache.pop(cache_key, None)
+        print(f"[ПОТОК][{threading.current_thread().name}][CommandEngine][invalidate_pending_for_device] - device={device_number}, кэш очищен. [{datetime.now()}]")
 
     def get_command_details(self, cmd_id: int) -> Optional[Dict[str, Any]]:
         """

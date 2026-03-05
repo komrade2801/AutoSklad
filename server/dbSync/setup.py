@@ -310,7 +310,7 @@ def on_new_history(record: Dict[str, Any], processor) -> None:
 
 def init_processor(queue,sender, db_session, retry_manager, cmd_crud, record_crud, status_crud, sync_cfg, schema_cache, schema_analyzer,
                    mapping_config, diagnostic_logger, data_mapper, data_transformer, sync_monitor, json_validator, batch_processor,
-                   conflict_manager, sync_manager) -> SyncProcessor | None:
+                   conflict_manager, sync_manager, import_push_lock) -> SyncProcessor | None:
     try:
 
         init_sync_config_table(db_session)
@@ -341,7 +341,8 @@ def init_processor(queue,sender, db_session, retry_manager, cmd_crud, record_cru
             retry_attempts=5,  # настраиваемые параметры
             retry_delay=30,
             emulate_server=False,
-            work_session=get_db_session()
+            work_session=get_db_session(),
+            import_push_lock=import_push_lock,
         )
         print('[setup]init_processor')
 

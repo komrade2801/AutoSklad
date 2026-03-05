@@ -15,6 +15,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 INBOUND_QUEUES: Dict[int, Queue] = {}
+# Приоритетная очередь: сообщения обрабатываются раньше основной (импорт Excel)
+PRIORITY_QUEUES: Dict[int, Queue] = {}
 
 
 class Command(TypedDict):
@@ -24,14 +26,14 @@ class Command(TypedDict):
     Атрибуты:
         id (str): Уникальный UUID команды.
         table (str): Имя таблицы, к которой применяется команда.
-        operation (Literal["insert", "update", "delete"]): Тип операции.
+        operation (Literal["add", "update", "delete"]): Тип операции.
         data (dict): Полезная нагрузка с изменёнными или новыми полями.
         status (Literal["pending", "retrying", "failed", "done"]): Текущий статус команды.
         timestamp (str): Метка времени в ISO-формате (UTC), когда была создана команда.
     """
     id: str
     table: str
-    operation: Literal["insert", "update", "delete"]
+    operation: Literal["add", "update", "delete"]
     data: Dict
     status: Literal["pending", "retrying", "failed", "done"]
     timestamp: str
@@ -121,12 +123,13 @@ class CommandQueue:
                 if os.path.exists(tmp_path):
                     os.remove(tmp_path)
 
-    def add_command(self, table: str, operation: str, data: dict) -> str:
+    def add_command(self, table: str, operation: str, data: dict, save: bool = True) -> str:
         """
         Добавляет новую команду в очередь.
         :param table: Название таблицы (например, "Tools").
-        :param operation: Операция ("insert"/"update"/"delete").
+        :param operation: Операция ("add"/"update"/"delete").
         :param data: Данные для синхронизации.
+        :param save: Если True (по умолчанию), сразу вызывать _save_queue(); при False только append (батчинг по листам при импорте).
         :return: Сгенерированный UUID команды.
         """
         command_id = str(uuid.uuid4())
@@ -140,8 +143,9 @@ class CommandQueue:
             "last_retry_timestamp": None
         }
         self.queue.append(command)
-        self._save_queue()
-        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][add_command] Команда добавлена в очередь. [{datetime.now()}]')
+        if save:
+            self._save_queue()
+        print(f'[ПОТОК][{threading.current_thread().name}][CommandQueue][add_command] Команда добавлена в очередь. save={save} [{datetime.now()}]')
         return command_id
 
     def get_pending_commands(self) -> List[Dict]:
@@ -292,7 +296,7 @@ class CommandQueue:
 #  Список изменений:
 # Типизация через TypedDict (Command) — строгая структура команд.
 #
-# Явная валидация операций (insert, update, delete) в add_command.
+# Явная валидация операций (add, update, delete) в add_command.
 #
 # Улучшенные докстринги класса и методов — описывают место в архитектуре, зависимости, поток вызовов.
 #

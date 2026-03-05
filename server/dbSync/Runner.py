@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 # from DB.session import SessionLocal
 from dbSync.Logic_v2.SyncManager import SyncManager
-from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES
+from dbSync.Logic_v2.CommandQueue import INBOUND_QUEUES, PRIORITY_QUEUES
 
 from .Model.base import sync_base
 from .setup import *
@@ -96,9 +96,11 @@ def start_sync(
         return
     # до запуска потока
     queue_in = Queue()
+    priority_queue = Queue()
     INBOUND_QUEUES[device_id] = queue_in
+    PRIORITY_QUEUES[device_id] = priority_queue
     logging.getLogger("sync.startup").debug(
-        f"[QUEUE] Created queue id={id(queue_in)} for device={device_id}")
+        f"[QUEUE] Created queue id={id(queue_in)} and priority queue for device={device_id}")
 
     def runner():
         time_start = datetime.datetime.now()
@@ -148,12 +150,15 @@ def start_sync(
             f"[STARTED] Sync for device={device_id}")
         # print(f'[ПОТОК][{threading.current_thread().name}][runner] scheduler_start - Успешно. {time_start}')
 
-        # создаём очередь для сообщений от HTTP
+        # создаём очередь для сообщений от HTTP и приоритетную (импорт)
         queue_in_thread = INBOUND_QUEUES[device_id]
+        priority_queue_thread = PRIORITY_QUEUES.get(device_id)
         logging.getLogger("sync.runner").info(
             f"[runner start] sees queue_id={id(queue_in_thread)} for device={device_id}")
 
         iteration_step = 0
+        local_batch_count = 0  # батчинг: _save_queue каждые IMPORT_BATCH_SIZE "local"
+        IMPORT_BATCH_SIZE = 100
         # print(f'[ПОТОК][{threading.current_thread().name}][runner] количество active_schedulers: {len(_active_schedulers)}. {time_start}')
 
         while device_id in _active_schedulers:
@@ -162,17 +167,75 @@ def start_sync(
             iteration_step += 1
             try:
                 try:
-                    msg = queue_in_thread.get(timeout=10)
-                    # logging.getLogger("sync.runner").info(f"[runner] got msg: {msg!r}")
+                    if priority_queue_thread is not None:
+                        msg = priority_queue_thread.get_nowait()
+                    else:
+                        msg = None
+                except Empty:
+                    msg = None
+                if msg is None:
+                    try:
+                        msg = queue_in_thread.get(timeout=10)
+                    except Empty:
+                        continue
                     logging.getLogger("sync.runner").debug(
                         "queue empty, next iteration")
-                except Empty:
-                    # print(f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации, время на данный момент {datetime.datetime.now()}, итерация цикла: {iteration_step} очередь пуста')
-                    continue
 
                 msg_type = msg.get("type")
                 # Обязательно получаем очередь-ответчик, если она есть
                 reply_queue: Queue = msg.get("reply_queue")
+
+                if msg_type == "import_start":
+                    # Импорт Excel в том же потоке; lock исключает одновременный process_push (в т.ч. из job_fetch)
+                    job_id = msg.get("job_id")
+                    if job_id:
+                        with processor.import_push_lock:
+                            try:
+                                from API.backend.endpoints.tool_library import run_import_sync
+                                gen = run_import_sync(
+                                    job_id,
+                                    msg.get("data"),
+                                    msg.get("use_count", False),
+                                    msg.get("columns_map"),
+                                    msg.get("total_sheets", 0),
+                                )
+                                for _ in gen:
+                                    # Обработка батча: до 100 "local" и sheet_batch_* из очереди, затем _save_queue
+                                    for _ in range(IMPORT_BATCH_SIZE):
+                                        try:
+                                            m = queue_in_thread.get_nowait()
+                                        except Empty:
+                                            break
+                                        mt = m.get("type")
+                                        if mt == "local":
+                                            processor.current_device_id = device_id
+                                            try:
+                                                processor.enqueue_local_command(m)
+                                            except Exception as ex:
+                                                diagnostic_logger.info("Error enqueuing local command (import batch): %s", ex)
+                                        elif mt == "sheet_batch_start":
+                                            processor.batch_mode = True
+                                        elif mt == "sheet_batch_end":
+                                            processor.batch_mode = False
+                                            try:
+                                                processor.queue._save_queue()
+                                            except Exception as ex:
+                                                diagnostic_logger.info("sheet_batch_end _save_queue (import): %s", ex)
+                                        else:
+                                            queue_in_thread.put(m)
+                                            break
+                                    try:
+                                        processor.queue._save_queue()
+                                    except Exception as ex:
+                                        diagnostic_logger.info("import batch _save_queue: %s", ex)
+                            except Exception as e:
+                                logging.getLogger("sync.runner").exception("Import job %s failed", job_id)
+                                try:
+                                    from API.backend.endpoints.tool_library import set_import_job_failed
+                                    set_import_job_failed(job_id, str(e))
+                                except Exception:
+                                    pass
+                    continue
 
                 if msg_type == "handshake":
                     schema = msg["payload"]
@@ -246,23 +309,39 @@ def start_sync(
                           ', '.join(f"{k}: {v}" for k, v in msg.items()))
                     logging.getLogger("sync.runner").info(
                         f"[runner] handling pull: since={msg['since']!r}, hash={msg.get('hash')!r}")
-                    # Сначала обрабатываем все накопившиеся "local" команды (Plan, PlanToolTypes и т.д.),
-                    # чтобы они попали в таблицу Command до prepare_pull — иначе pull не вернёт их клиенту.
-                    while True:
-                        try:
-                            m = queue_in_thread.get_nowait()
-                        except Empty:
-                            break
-                        if m.get("type") == "local":
-                            processor.current_device_id = device_id
+                    # Сначала обрабатываем накопившиеся "local" команды батчами по IMPORT_BATCH_SIZE
+                    with processor.import_push_lock:
+                        while True:
                             try:
-                                processor.enqueue_local_command(m)
-                            except Exception as ex:
-                                diagnostic_logger.info(
-                                    f"Error enqueuing local command before pull: {ex}")
-                        else:
-                            queue_in_thread.put(m)
-                            break
+                                m = queue_in_thread.get_nowait()
+                            except Empty:
+                                break
+                            mt = m.get("type")
+                            if mt == "local":
+                                processor.current_device_id = device_id
+                                try:
+                                    processor.enqueue_local_command(m)
+                                    local_batch_count += 1
+                                    if local_batch_count >= IMPORT_BATCH_SIZE:
+                                        try:
+                                            processor.queue._save_queue()
+                                        except Exception as ex:
+                                            diagnostic_logger.info("local batch _save_queue before pull: %s", ex)
+                                        local_batch_count = 0
+                                except Exception as ex:
+                                    diagnostic_logger.info(
+                                        f"Error enqueuing local command before pull: {ex}")
+                            elif mt == "sheet_batch_start":
+                                processor.batch_mode = True
+                            elif mt == "sheet_batch_end":
+                                processor.batch_mode = False
+                                try:
+                                    processor.queue._save_queue()
+                                except Exception as ex:
+                                    diagnostic_logger.info("sheet_batch_end _save_queue before pull: %s", ex)
+                            else:
+                                queue_in_thread.put(m)
+                                break
                     try:
                         data = msg.get("hash", "")
                         print(
@@ -289,21 +368,37 @@ def start_sync(
                         msg["reply_queue"].put(result)
                         logging.getLogger("sync.runner").info(
                             "[runner] reply_queue.put() done")
+                elif msg_type == "sheet_batch_start":
+                    # Импорт Excel: начало батча по листу — откладываем _save_queue до sheet_batch_end
+                    processor.batch_mode = True
+                    logging.getLogger("sync.runner").debug("[runner] sheet_batch_start: batch_mode=True")
+                elif msg_type == "sheet_batch_end":
+                    # Импорт Excel: конец листа — один раз сохраняем очередь команд
+                    with processor.import_push_lock:
+                        processor.batch_mode = False
+                        try:
+                            processor.queue._save_queue()
+                        except Exception as ex:
+                            logging.getLogger("sync.runner").exception("[runner] sheet_batch_end _save_queue: %s", ex)
+                    logging.getLogger("sync.runner").debug("[runner] sheet_batch_end: batch_mode=False, queue saved")
                 elif msg_type == "local":
-                    # print(f'[ПОТОК][{threading.current_thread().name}][runner] msg_type: {msg_type}, msg: {json.dumps(msg, ensure_ascii=False)}')
                     cmd = msg  # содержит table, operation, data
-                    try:
-                        # Устанавливаем current_device_id для правильной синхронизации
-                        processor.current_device_id = device_id
-                        # Здесь SyncProcessor должен иметь метод enqueue_local_command
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации попытка запустить процессор')
-                        processor.enqueue_local_command(cmd)
-                    except Exception as ex:
-                        diagnostic_logger.info(
-                            f"Error enqueuing local command: {ex}")
-                        print(
-                            f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации ошибка в {time_start} причина: {ex} подробности: {traceback.format_exc()}')
+                    with processor.import_push_lock:
+                        try:
+                            processor.current_device_id = device_id
+                            processor.enqueue_local_command(cmd)
+                            local_batch_count += 1
+                            if local_batch_count >= IMPORT_BATCH_SIZE:
+                                try:
+                                    processor.queue._save_queue()
+                                except Exception as ex:
+                                    diagnostic_logger.info("local batch _save_queue: %s", ex)
+                                local_batch_count = 0
+                        except Exception as ex:
+                            diagnostic_logger.info(
+                                f"Error enqueuing local command: {ex}")
+                            print(
+                                f'[ПОТОК][{threading.current_thread().name}][runner] процесс синхронизации ошибка в {time_start} причина: {ex} подробности: {traceback.format_exc()}')
 
             except Exception as e:
                 logging.getLogger("sync.runner").exception(
@@ -318,6 +413,7 @@ def start_sync(
         print(f'[ПОТОК][{threading.current_thread().name}][runner] Стоп цикла. Времся останова: {datetime.datetime.now()}, всего итераций цикла: {iteration_step}')
 
         INBOUND_QUEUES.pop(device_id, None)
+        PRIORITY_QUEUES.pop(device_id, None)
         _active_schedulers.pop(device_id, None)
         logging.getLogger("sync.startup").info(
             f"[STOPPED] Sync for device={device_id}")
@@ -389,6 +485,9 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port=""):
         scheduler=scheduler, queue=queue, sender=None, diagnostic_logger=diagnostic_logger)
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_retry_manager - Успешно.')
 
+    import threading as _threading
+    import_push_lock = _threading.Lock()
+
     processor = init_processor(
         queue=queue,
         sender=None,
@@ -408,7 +507,8 @@ def create_sync_components(device_id: int, host, token, secret, aes, Port=""):
         record_crud=record_crud,
         status_crud=status_crud,
         sync_cfg=sync_cfg,
-        sync_manager=sync_manager
+        sync_manager=sync_manager,
+        import_push_lock=import_push_lock,
     )
     # print(f'[ПОТОК][{threading.current_thread().name}][runner] init_processor - Успешно.')
     # Если init_processor вернул None — сразу падаем с ошибкой:

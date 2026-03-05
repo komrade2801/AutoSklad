@@ -24,14 +24,14 @@ class Command(TypedDict):
     Атрибуты:
         id (str): Уникальный UUID команды.
         table (str): Имя таблицы, к которой применяется команда.
-        operation (Literal["insert", "update", "delete"]): Тип операции.
+        operation (Literal["add", "update", "delete"]): Тип операции.
         data (dict): Полезная нагрузка с изменёнными или новыми полями.
         status (Literal["pending", "retrying", "failed", "done"]): Текущий статус команды.
         timestamp (str): Метка времени в ISO-формате (UTC), когда была создана команда.
     """
     id: str
     table: str
-    operation: Literal["insert", "update", "delete"]
+    operation: Literal["add", "update", "delete"]
     data: Dict
     status: Literal["pending", "retrying", "failed", "done"]
     timestamp: str
@@ -96,7 +96,7 @@ class CommandQueue:
         """
         Добавляет новую команду в очередь.
         :param table: Название таблицы (например, "Tools").
-        :param operation: Операция ("insert"/"update"/"delete").
+        :param operation: Операция ("add"/"update"/"delete").
         :param data: Данные для синхронизации.
         :return: Сгенерированный UUID команды.
         """

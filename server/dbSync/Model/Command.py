@@ -11,7 +11,7 @@ class Command(sync_base):
 
     id = Column(Integer, primary_key=True)
     table_name = Column(String, nullable=False)  # имя таблицы, к которой относится команда
-    operation = Column(String, nullable=False)   # CREATE, UPDATE или DELETE
+    operation = Column(String, nullable=False)   # ADD, UPDATE или DELETE
     record_id = Column(Integer)                  # ID затронутой записи
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     device_number = Column(Integer, nullable=False)  # номер вендинга
@@ -30,7 +30,7 @@ class Command(sync_base):
 
     __table_args__ = (
         CheckConstraint(
-            "operation IN ('CREATE','UPDATE','DELETE')",
+            "operation IN ('ADD','UPDATE','DELETE')",
             name="chk_command_operation"
         ),
     )

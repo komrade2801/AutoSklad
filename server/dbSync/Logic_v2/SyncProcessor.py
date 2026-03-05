@@ -32,6 +32,7 @@ import logging
 
 from ..Engines.CommandEngine import CommandCRUD
 from ..Engines.RecordEngine import RecordCRUD
+from ..Engines.CommandStatusEngine import CommandStatusCRUD
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +143,8 @@ class SyncProcessor:
             retry_attempts: int = 3,
             retry_delay: int = 60,
             emulate_server: bool = False,
-            work_session=None
+            work_session=None,
+            import_push_lock: Optional[threading.Lock] = None,
     ) -> None:
         """
         Инициализация SyncProcessor со всеми необходимыми зависимостями.
@@ -167,7 +169,9 @@ class SyncProcessor:
         :param retry_attempts:    Число попыток для неудач (по умолчанию 3).
         :param retry_delay:       Задержка между попытками в секундах (по умолчанию 60).
         :param emulate_server:    Флаг dev-режима эмуляции server-side.
+        :param import_push_lock: Lock для сериализации импорта Excel и process_push (один поток в момент времени).
         """
+        self.import_push_lock = import_push_lock or threading.Lock()
         # Основные компоненты
         # вместо единой сессии заводим фабрику сессий
         # 1) заводим фабрику новых сессий на основе переданной сессии
@@ -182,6 +186,7 @@ class SyncProcessor:
         db: Session = Depends(get_db)
         # 3) дальше всё как прежде, но без единого db_session
         self.queue = queue
+        self.batch_mode = False  # при True enqueue_local_command не вызывает _save_queue до sheet_batch_end (импорт по листам)
         self.sender = sender
         self.schema_cache = schema_cache
         self.schema_analyzer = schema_analyzer
@@ -340,6 +345,14 @@ class SyncProcessor:
                         "last_modified": lm
                     })
 
+                # Помечаем выданные команды как COMPLETED, чтобы они не крутились в следующем pull
+                status_crud = CommandStatusCRUD(session=sync_session)
+                for cmd in pending:
+                    status_crud.add_status(cmd.id, "COMPLETED")
+
+            # Инвалидация кэша pending для этого устройства — следующий get_pending_for_device заново пойдёт в БД
+            cmd_crud.invalidate_pending_for_device(device)
+
             # 4) Закрываем сессию сразу после работы с БД
             return_data = {"schema_hash": client_schema_hash, "commands": commands}
             self.json_validator.validate(return_data, "pull_response")
@@ -390,131 +403,132 @@ class SyncProcessor:
         :return: Список статусов {'id': ..., 'status': ..., 'error'?: ...}
         :raises: Exception при критических ошибках
         """
-        start = time.time()
-        try:
-            # сохраняем текущий device
-            self.current_device_id = device
+        with self.import_push_lock:
+            start = time.time()
+            try:
+                # сохраняем текущий device
+                self.current_device_id = device
 
-            # 1. Начало и лог
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Начало push-этапа. Устройство: {device}, Команд: {len(commands)}. [{datetime.now()}]')
-            self.diagnostic_logger.log_info("Push start", {"device": device, "count": len(commands)})
+                # 1. Начало и лог
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Начало push-этапа. Устройство: {device}, Команд: {len(commands)}. [{datetime.now()}]')
+                self.diagnostic_logger.log_info("Push start", {"device": device, "count": len(commands)})
 
-            # 2. Валидация JSON
-            self.json_validator.validate({"commands": commands}, "push_commands")
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Валидация JSON завершена. [{datetime.now()}]')
-            
-            # 2.5. ═══ ВАЛИДАЦИЯ И УПОРЯДОЧИВАНИЕ КОМАНД ═══
-            original_count = len(commands)
-            ordered_commands, orderer_warnings = self.command_orderer.order_and_validate(commands)
+                # 2. Валидация JSON
+                self.json_validator.validate({"commands": commands}, "push_commands")
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Валидация JSON завершена. [{datetime.now()}]')
+                
+                # 2.5. ═══ ВАЛИДАЦИЯ И УПОРЯДОЧИВАНИЕ КОМАНД ═══
+                original_count = len(commands)
+                ordered_commands, orderer_warnings = self.command_orderer.order_and_validate(commands)
 
-            if orderer_warnings:
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'CommandOrderer validation warnings ({len(orderer_warnings)}):')
-                for i, warn in enumerate(orderer_warnings[:10], 1):
-                    print(f'  {i}. ⚠️  {warn}')
-                if len(orderer_warnings) > 10:
-                    print(f'  ... и ещё {len(orderer_warnings) - 10} warnings')
+                if orderer_warnings:
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                          f'CommandOrderer validation warnings ({len(orderer_warnings)}):')
+                    for i, warn in enumerate(orderer_warnings[:10], 1):
+                        print(f'  {i}. ⚠️  {warn}')
+                    if len(orderer_warnings) > 10:
+                        print(f'  ... и ещё {len(orderer_warnings) - 10} warnings')
 
-                self.diagnostic_logger.log_warning("Command order validation", {
-                    "warnings_count": len(orderer_warnings),
-                    "warnings": orderer_warnings[:5]
+                    self.diagnostic_logger.log_warning("Command order validation", {
+                        "warnings_count": len(orderer_warnings),
+                        "warnings": orderer_warnings[:5]
+                    })
+
+                if len(ordered_commands) < original_count:
+                    compressed_count = original_count - len(ordered_commands)
+                    compression_ratio = compressed_count / original_count if original_count > 0 else 0
+
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                          f'CommandOrderer оптимизировал команды: {original_count} → {len(ordered_commands)} '
+                          f'(удалено {compressed_count}, сжатие {compression_ratio:.1%})')
+
+                    self.diagnostic_logger.log_info("Commands optimized by CommandOrderer", {
+                        "original_count": original_count,
+                        "optimized_count": len(ordered_commands),
+                        "compressed_count": compressed_count,
+                        "compression_ratio": f"{compression_ratio:.1%}"
+                    })
+
+                commands = ordered_commands
+
+                if not commands:
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
+                          f'Нет команд после оптимизации CommandOrderer, выходим.')
+                    return []
+                # ═══════════════════════════════════════════
+
+                # 3. Основная транзакция по командам
+                with self._schema_lock, self.cmd_crud.transaction(), self.status_crud.transaction():
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ' f'Транзакция начата. Устройство: {device}. [{datetime.now()}]')
+                    mapping = self._get_mapping(client_schema_hash)
+                    ops, failed = [], []
+
+                    # 5. Подготовка операций
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ' f'Начало обработки {len(commands)} команд. [{datetime.now()}]')
+                    for cmd in commands:
+                        if not self.sync_config_crud.get_status(cmd["table"]):
+                            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ' f'Таблица {cmd["table"]} отключена - пропуск. [{datetime.now()}]')
+                            continue
+
+                        # 5a-b. Препроцессинг и валидация
+                        cleaned = self.data_transformer.preprocess(cmd["table"], cmd.get("data", {}))
+                        if not self.data_transformer.validate(cmd["table"], cleaned):
+                            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Ошибка валидации в таблице {cmd["table"]}. [{datetime.now()}]')
+                            failed.append(cmd)
+                            continue
+
+                        # 5c-f. Обработка команды
+                        op_result = self._process_single(cmd, mapping)
+                        if not op_result["success"]:
+                            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Конфликт/ошибка в команде {cmd.get("id")}. [{datetime.now()}]')
+                            failed.append(op_result)
+                        else:
+                            ops.append(op_result)
+
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Подготовлено операций: {len(ops)}, неудач: {len(failed)}. [{datetime.now()}]')
+
+                    # 6. Пакетное выполнение
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Запуск пакетной обработки. [{datetime.now()}]')
+                    results = self.batch_processor.execute_batch(ops)
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Пакетная обработка завершена. Результатов: {len(results)}. [{datetime.now()}]')
+
+                    # 7. Обновление статусов
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Обновление статусов команд. [{datetime.now()}]')
+                    statuses = self._update_command_statuses(results)
+
+                    # 8. Планирование повторов
+                    if failed:
+                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Планирование {len(failed)} повторов. [{datetime.now()}]')
+                        for cmd in failed:
+                            retry_cmd: RetryCommand = {
+                                "id": cmd["id"],
+                                "table": cmd["table"],
+                                "operation": cmd["operation"],
+                                "data": cmd["data"],
+                                "status": "failed",
+                                "timestamp": datetime.utcnow().isoformat(),
+                                "retry_count": 0
+                            }
+                            self.retry_manager.schedule_retry(retry_cmd, self.retry_delay)
+
+                    # 9. Фиксация транзакции
+                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Фиксация изменений. Устройство: {device}. [{datetime.now()}]')
+
+                # 10. Успешный лог и возврат
+                self.sync_monitor.record_success(time.time() - start)
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Push завершен успешно. Время: {time.time() - start:.2f}с. [{datetime.now()}]')
+                self.diagnostic_logger.log_info("Push completed", {"statuses": statuses})
+                return statuses
+
+            except Exception as ex:
+                # общий обработчик ошибок
+                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'ОШИБКА PUSH: {str(ex)}. [{datetime.now()}]')
+                self.diagnostic_logger.log_error("Push failed", {
+                    "error": str(ex),
+                    "traceback": traceback.format_exc()
                 })
-
-            if len(ordered_commands) < original_count:
-                compressed_count = original_count - len(ordered_commands)
-                compression_ratio = compressed_count / original_count if original_count > 0 else 0
-
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'CommandOrderer оптимизировал команды: {original_count} → {len(ordered_commands)} '
-                      f'(удалено {compressed_count}, сжатие {compression_ratio:.1%})')
-
-                self.diagnostic_logger.log_info("Commands optimized by CommandOrderer", {
-                    "original_count": original_count,
-                    "optimized_count": len(ordered_commands),
-                    "compressed_count": compressed_count,
-                    "compression_ratio": f"{compression_ratio:.1%}"
-                })
-
-            commands = ordered_commands
-
-            if not commands:
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] '
-                      f'Нет команд после оптимизации CommandOrderer, выходим.')
-                return []
-            # ═══════════════════════════════════════════
-
-            # 3. Основная транзакция по командам
-            with self._schema_lock, self.cmd_crud.transaction(), self.status_crud.transaction():
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ' f'Транзакция начата. Устройство: {device}. [{datetime.now()}]')
-                mapping = self._get_mapping(client_schema_hash)
-                ops, failed = [], []
-
-                # 5. Подготовка операций
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ' f'Начало обработки {len(commands)} команд. [{datetime.now()}]')
-                for cmd in commands:
-                    if not self.sync_config_crud.get_status(cmd["table"]):
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] ' f'Таблица {cmd["table"]} отключена - пропуск. [{datetime.now()}]')
-                        continue
-
-                    # 5a-b. Препроцессинг и валидация
-                    cleaned = self.data_transformer.preprocess(cmd["table"], cmd.get("data", {}))
-                    if not self.data_transformer.validate(cmd["table"], cleaned):
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Ошибка валидации в таблице {cmd["table"]}. [{datetime.now()}]')
-                        failed.append(cmd)
-                        continue
-
-                    # 5c-f. Обработка команды
-                    op_result = self._process_single(cmd, mapping)
-                    if not op_result["success"]:
-                        print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Конфликт/ошибка в команде {cmd.get("id")}. [{datetime.now()}]')
-                        failed.append(op_result)
-                    else:
-                        ops.append(op_result)
-
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Подготовлено операций: {len(ops)}, неудач: {len(failed)}. [{datetime.now()}]')
-
-                # 6. Пакетное выполнение
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Запуск пакетной обработки. [{datetime.now()}]')
-                results = self.batch_processor.execute_batch(ops)
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Пакетная обработка завершена. Результатов: {len(results)}. [{datetime.now()}]')
-
-                # 7. Обновление статусов
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Обновление статусов команд. [{datetime.now()}]')
-                statuses = self._update_command_statuses(results)
-
-                # 8. Планирование повторов
-                if failed:
-                    print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Планирование {len(failed)} повторов. [{datetime.now()}]')
-                    for cmd in failed:
-                        retry_cmd: RetryCommand = {
-                            "id": cmd["id"],
-                            "table": cmd["table"],
-                            "operation": cmd["operation"],
-                            "data": cmd["data"],
-                            "status": "failed",
-                            "timestamp": datetime.utcnow().isoformat(),
-                            "retry_count": 0
-                        }
-                        self.retry_manager.schedule_retry(retry_cmd, self.retry_delay)
-
-                # 9. Фиксация транзакции
-                print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Фиксация изменений. Устройство: {device}. [{datetime.now()}]')
-
-            # 10. Успешный лог и возврат
-            self.sync_monitor.record_success(time.time() - start)
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'Push завершен успешно. Время: {time.time() - start:.2f}с. [{datetime.now()}]')
-            self.diagnostic_logger.log_info("Push completed", {"statuses": statuses})
-            return statuses
-
-        except Exception as ex:
-            # общий обработчик ошибок
-            print(f'[ПОТОК][{threading.current_thread().name}][SyncProcessor] 'f'ОШИБКА PUSH: {str(ex)}. [{datetime.now()}]')
-            self.diagnostic_logger.log_error("Push failed", {
-                "error": str(ex),
-                "traceback": traceback.format_exc()
-            })
-            self.sync_monitor.record_failure(time.time() - start)
-            raise
+                self.sync_monitor.record_failure(time.time() - start)
+                raise
 
     # ——————————————————————————————————————————————————————————————————————————————
 
@@ -672,13 +686,16 @@ class SyncProcessor:
         Получает одну локальную команду от декоратора и кладёт её
         в очередь CommandQueue, чтобы позже отправить на сервер.
         Также создаёт запись в таблице Command для синхронизации с клиентом.
+        При batch_mode=True (импорт по листам) запись в файл очереди откладывается до sheet_batch_end.
         """
         try:
+            save = not getattr(self, "batch_mode", False)
             # Добавляем команду в локальную очередь для отправки на сервер
             self.queue.add_command(
                 table=cmd["table"],
                 operation=cmd["operation"],
-                data=cmd["data"]
+                data=cmd["data"],
+                save=save
             )
             
             # Создаём запись в таблице Command для синхронизации с клиентом
@@ -688,14 +705,7 @@ class SyncProcessor:
                 import json
                 try:
                     data_json = json.dumps(cmd["data"], ensure_ascii=False)
-                    operation = cmd["operation"].upper()
-                    if operation == "UPDATE":
-                        operation = "UPDATE"
-                    elif operation in ("ADD", "INSERT"):
-                        operation = "ADD"
-                    elif operation == "DELETE":
-                        operation = "DELETE"
-                    
+                    operation = cmd["operation"].upper()  # ADD | UPDATE | DELETE
                     self.cmd_crud.add_command(
                         table_name=cmd["table"],
                         operation=operation,

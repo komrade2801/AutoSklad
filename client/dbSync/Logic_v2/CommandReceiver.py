@@ -16,7 +16,7 @@ class ServerCommand(TypedDict):
     Атрибуты:
         id (Any): Уникальный идентификатор команды на сервере.
         table (str): Имя таблицы для обработки.
-        operation (str): Тип операции: "insert", "update" или "delete" (независимо от регистра).
+        operation (str): Тип операции: "add", "update" или "delete" (независимо от регистра).
         data (Dict[str, Any]): Полезная нагрузка команды.
         last_modified (str): ISO-8601 метка времени изменения на сервере.
     """

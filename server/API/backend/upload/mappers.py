@@ -44,6 +44,14 @@ def get_field(rec: Dict[str, Any],
     return None
 
 
+def is_empty_row(rec: Dict[str, Any], field_map: Dict[str, List[str]]) -> bool:
+    """Пустая строка: ни один столбец из маппинга не заполнен."""
+    for key in field_map:
+        if get_field(rec, key, field_map) is not None:
+            return False
+    return True
+
+
 def ___normalize_record(
         rec: Dict[str, Any],
         required: List[str],
