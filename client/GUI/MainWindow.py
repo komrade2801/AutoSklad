@@ -319,11 +319,6 @@ class MainWindow(QtWidgets.QWidget):
                 widget.setFocus()
                 if visible:
                     widget_found = True
-                    if not value and hasattr(self, "value") and self.value:
-                        key = (lambda name: name.split("_")[-1])(widget_name)
-
-                        if key in self.value:
-                            value = {key: self.value[key]}
                     # value = self._handle_widget_data(widget, source, value)
                     # Передаем данные в виджет и сохраняем текущее состояние
                     self.current_value = self._handle_widget_data(widget, source, value)
@@ -400,25 +395,11 @@ class MainWindow(QtWidgets.QWidget):
         :param widget_name: Имя несуществующего виджета.
         :param value: Данные для передачи следующему виджету.
         """
-        if widget_name == "read_db_get_plan_tools" and not value and self.value.get("plan_context"):
-            value = self.value["plan_context"]
-        # При возврате на экран выбора чертежа read_db_plan нужен index для загрузки списка
-        if widget_name == "read_db_plan" and self.back_state in (
-            "screen_9_select_tool_by_plan", "screen_10_confirmation", "screen_11_tool_issued", "screen_12_no_tool"
-        ):
-            if not value or not isinstance(value, dict) or "index" not in value:
-                value = {"index": 1} if not isinstance(value, dict) else {**(value or {}), "index": 1}
         if self.lump.machine.initial != widget_name and callable(self.action_callback):
             widget = self.widgets.get(self.back_state)
             if widget:
                 if not value:
                     value = widget.get_data()
-                if not value:
-                    # key = widget_name.split("_")
-                    # key = key[len(key)-1]
-                    key = (lambda name: name.split("_")[-1])(widget_name)
-                    if key in self.value:
-                        value = {key: self.value[key]}
                 value, transition = self.action_callback(
                     self.back_state, widget_name, self.lump, value, widget.handle_callback_executor
                 )
