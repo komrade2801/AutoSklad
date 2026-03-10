@@ -13,6 +13,7 @@ from .widgets.widget_select_group import WidgetSelectGroup
 class screen_19_management_group(BaseScreen, Ui_screen_19_management_group):
     def __init__(self):
         super().__init__()
+        self.enable_touch_scroll = True
         self.setupUi(self)
         self.event_select_group = lambda *args, **kwargs: logger.debug("screen_19_management_group %s %s", args, kwargs)
 

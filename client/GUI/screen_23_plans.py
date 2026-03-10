@@ -6,6 +6,7 @@ from PyQt5.QtCore import QEvent
 class screen_23_plans(BaseScreen, Ui_screen_23_plans):
     def __init__(self):
         super().__init__()
+        self.enable_touch_scroll = True
         self.setupUi(self)
 
     def set_data(self, *args, **kwargs):

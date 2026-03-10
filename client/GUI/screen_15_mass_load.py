@@ -18,6 +18,7 @@ class screen_15_mass_load(BaseScreen, Ui_screen_15_mass_load):
 
     def __init__(self):
         super().__init__()
+        self.enable_touch_scroll = True
         self.setupUi(self)
         # self.event_select_tool = lambda *args, **kwargs: print("screen_8_select_tool", *args, **kwargs)
 

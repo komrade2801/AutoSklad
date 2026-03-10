@@ -20,6 +20,9 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
         super().__init__(*args, **kwargs)
         self.__is_read = False
         self.__is_write = False
+        # Флаг: включать ли тач-скролл для данного экрана
+        # По умолчанию отключён и явно включается в нужных подклассах.
+        self.enable_touch_scroll = False
         self._touch_scroll_initialized = False
         # self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
         self.setStyleSheet("background-color: #2e4461;")
@@ -42,7 +45,7 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
     # ------------------------------------------------------------------
     def showEvent(self, event):
         super().showEvent(event)
-        if not self._touch_scroll_initialized:
+        if self.enable_touch_scroll and not self._touch_scroll_initialized:
             self._touch_scroll_initialized = True
             self._enable_touch_scroll()
 
@@ -71,10 +74,10 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
             scroller = QScroller.scroller(viewport)
             props = scroller.scrollerProperties()
 
-            # Даём короткую задержку перед скроллом: быстрый тап по элементу не превращается в свайп
-            props.setScrollMetric(QScrollerProperties.MousePressEventDelay, 0.12)
-            # Порог старта жеста ~3.5 мм: удобно для маленьких экранов, но без ложных стартов от тапа
-            props.setScrollMetric(QScrollerProperties.DragStartDistance, 0.0035)
+            # Даём более короткую задержку перед скроллом: быстрый тап по элементу не превращается в свайп
+            props.setScrollMetric(QScrollerProperties.MousePressEventDelay, 0.05)
+            # Увеличенный порог старта жеста: ещё меньше ложных свайпов при лёгком дрожании пальца
+            props.setScrollMetric(QScrollerProperties.DragStartDistance, 0.005)
             # Кинетика включается только при достаточно явном движении пальца
             props.setScrollMetric(QScrollerProperties.MinimumVelocity, 0.05)
             # Лимит скорости, чтобы флик был живым, но контролируемым

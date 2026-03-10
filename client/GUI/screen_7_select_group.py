@@ -15,6 +15,7 @@ from DB.Models.Group import Group
 class screen_7_select_group(BaseScreen, Ui_screen_7_select_group):
     def __init__(self):
         super().__init__()
+        self.enable_touch_scroll = True
         self.setupUi(self)
         self.event_select_group = lambda *args, **kwargs: logger.debug("screen_7_select_group %s %s", args, kwargs)
         self.trigger_name = "btn_select_group_names"

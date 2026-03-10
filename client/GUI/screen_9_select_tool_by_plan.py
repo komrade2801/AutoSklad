@@ -14,6 +14,7 @@ from .widgets.widget_plan_tool import WidgetPlanTool
 class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
     def __init__(self):
         super().__init__()
+        self.enable_touch_scroll = True
         self.setupUi(self)
         self.event_select_tool = lambda *args, **kwargs: logger.debug("screen_9_select_tool_by_plan %s %s", args, kwargs)
 

@@ -15,6 +15,7 @@ from .widgets.widget_select_tool import WidgetSelectTool
 class screen_20_management_tool(BaseScreen, Ui_screen_20_management_tool):
     def __init__(self):
         super().__init__()
+        self.enable_touch_scroll = True
         self.setupUi(self)
         self.event_select_management_group = lambda *args, **kwargs: logger.debug("screen_19_management_group %s %s", args, kwargs)
 
