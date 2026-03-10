@@ -1,9 +1,6 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QEasingCurve
 from PyQt5.QtWidgets import (
-    QScroller,
     QAbstractScrollArea,
-    QScrollerProperties,
     QAbstractItemView,
 )
 from abc import ABC, ABCMeta, abstractmethod
@@ -50,7 +47,7 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
             self._enable_touch_scroll()
 
     def _enable_touch_scroll(self):
-        """Включает кинетический свайп-скролл для прокручиваемых областей (только «листовые», без вложенных)."""
+        """Включает плавный скролл по пикселям для прокручиваемых областей (только «листовые», без вложенных)."""
         all_scroll_areas = self.findChildren(QAbstractScrollArea)
         # Только области без вложенных QAbstractScrollArea, чтобы не было двойного скролла и скачков
         for scroll_area in all_scroll_areas:
@@ -67,32 +64,6 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
                 scroll_area.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
                 # Плавный скролл колесиком мыши: шаг в пикселях (20 ≈ как при тач-свайпе)
                 scroll_area.verticalScrollBar().setSingleStep(20)
-
-            viewport = scroll_area.viewport()
-            QScroller.grabGesture(viewport, QScroller.LeftMouseButtonGesture)
-
-            scroller = QScroller.scroller(viewport)
-            props = scroller.scrollerProperties()
-
-            # Даём более короткую задержку перед скроллом: быстрый тап по элементу не превращается в свайп
-            props.setScrollMetric(QScrollerProperties.MousePressEventDelay, 0.05)
-            # Увеличенный порог старта жеста: ещё меньше ложных свайпов при лёгком дрожании пальца
-            props.setScrollMetric(QScrollerProperties.DragStartDistance, 0.005)
-            # Кинетика включается только при достаточно явном движении пальца
-            props.setScrollMetric(QScrollerProperties.MinimumVelocity, 0.05)
-            # Лимит скорости, чтобы флик был живым, но контролируемым
-            props.setScrollMetric(QScrollerProperties.MaximumVelocity, 0.6)
-            # Блокировка оси: почти вертикальный скролл, чтобы не «уводило» по горизонтали
-            props.setScrollMetric(QScrollerProperties.AxisLockThreshold, 0.82)
-            # Более естественное сглаживание и замедление как на телефоне
-            props.setScrollMetric(QScrollerProperties.DragVelocitySmoothingFactor, 0.18)
-            props.setScrollMetric(QScrollerProperties.DecelerationFactor, 0.14)
-            props.setScrollMetric(QScrollerProperties.ScrollingCurve, QEasingCurve.OutCubic)
-            # Без пружинящего эффекта за границами
-            props.setScrollMetric(QScrollerProperties.OvershootDragResistanceFactor, 0.0)
-            props.setScrollMetric(QScrollerProperties.OvershootScrollDistanceFactor, 0.0)
-
-            scroller.setScrollerProperties(props)
 
     @staticmethod
     def format_fio_short(user):
