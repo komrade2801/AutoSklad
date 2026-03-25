@@ -368,6 +368,8 @@ CREATE TABLE CommandStatus (
 
 Physical device interfaces for vending machine and barcode scanner integration.
 
+For a detailed Russian-language guide (two serial ports, FMS dispensing flow, relay vs. mechanics, Arduino protocol), see [hardware_barcode_relay_dispensing.md](hardware_barcode_relay_dispensing.md).
+
 ### Serial Manager (`BarcodeScanner/SerialManager.py`):
 - **Arduino Communication**: RS-232 serial protocol for mechanical control
 - **Command Format**: `$<command_number>\r\n` protocol
