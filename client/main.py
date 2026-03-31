@@ -4,7 +4,7 @@ import traceback
 import ast
 from pathlib import Path
 from contextlib import asynccontextmanager
-from typing import List
+from typing import List, Tuple
 import os
 import logging
 
@@ -15,6 +15,9 @@ from fastapi import FastAPI
 
 from BarcodeScanner.serial_manager import SerialManager
 from BarcodeScanner.MockSerialManager import MockSerialManager
+from BarcodeScanner.vending_serial_manager import VendingSerialManager
+from BarcodeScanner.MockVendingSerialManager import MockVendingSerialManager
+from BarcodeScanner.dispense_command_gate import DispenseCommandGate
 from Core import platforms
 from Core.sync_config import SyncConfig
 from Core.app_logging import setup_app_logging, get_logger
@@ -179,6 +182,34 @@ def run_database_setup():
         dbSync.set_skip_sync_enqueue(False)
 
 
+def _hal_default_is_long(command: str) -> bool:
+    c = (command or "").strip()
+    if c.startswith("$"):
+        c = c[1:].strip()
+    u = c.upper()
+    if u.startswith("LOCK,"):
+        return True
+    return c.startswith("MOT") or u == "ZERO"
+
+
+def load_hal_test_scenario_steps(scenario_path: Path) -> List[Tuple[str, bool]]:
+    payload = json.loads(scenario_path.read_text(encoding="utf-8"))
+    raw_steps = payload.get("steps") or []
+    out: List[Tuple[str, bool]] = []
+    for entry in raw_steps:
+        if not isinstance(entry, dict):
+            continue
+        cmd = (entry.get("command") or "").strip()
+        if not cmd:
+            continue
+        if "is_long" in entry and entry["is_long"] is not None:
+            is_long = bool(entry["is_long"])
+        else:
+            is_long = _hal_default_is_long(cmd)
+        out.append((cmd, is_long))
+    return out
+
+
 # 4) Точка входа для GUI-приложения
 # ------------------------------------------------------------
 def main():
@@ -209,24 +240,51 @@ def main():
         # c) Настраиваем SerialManager/BarcodeManager
         use_mocks = os.getenv("AUTOSKLAD_USE_MOCKS", "0") == "1"
         current_platform = platforms.detect()
-        logger.info(f"Platform: {current_platform}, Mock mode: {use_mocks}")
-        
+        hw_cfg = cfg.get("hardware") or {}
+        controller_protocol = (hw_cfg.get("protocol") or "legacy").strip().lower()
+        hal_baud = int(hw_cfg.get("baudrate") or cfg.get("serial", {}).get("baudrate") or 9600)
+        logger.info(
+            "Platform: %s, Mock mode: %s, controller protocol: %s",
+            current_platform,
+            use_mocks,
+            controller_protocol,
+        )
+
         if use_mocks:
-            serial_manager = MockSerialManager(port=None)
+            if controller_protocol == "atmega_hal":
+                serial_manager = MockVendingSerialManager(port=None, baudrate=hal_baud)
+                logger.info("Using MockVendingSerialManager (atmega HAL)")
+            else:
+                serial_manager = MockSerialManager(port=None)
+                logger.info("Using MockSerialManager (legacy cell number)")
             barcode_manager = MockSerialManager(port=None)
-            logger.info("Using mock serial managers")
+            logger.info("Barcode: mock serial manager")
         else:
-            if current_platform == platforms.Windows:
+            if controller_protocol == "atmega_hal":
+                if current_platform == platforms.Windows:
+                    ctrl_port = cfg["serial"]["port"]
+                    logger.info("Windows: HAL controller port=%s baud=%s", ctrl_port, hal_baud)
+                else:
+                    ctrl_port = cfg["dev"]["ttyUSB"]
+                    logger.info("Linux/RPi: HAL controller port=%s baud=%s", ctrl_port, hal_baud)
+                serial_manager = VendingSerialManager(port=ctrl_port, baudrate=hal_baud)
+            elif current_platform == platforms.Windows:
                 serial = cfg["serial"]
                 serial_manager = SerialManager(port=serial["port"])
-                barcode = cfg["barcode"]
-                barcode_manager = SerialManager(port=barcode["port"])
-                logger.info(f"Windows: Serial port={serial['port']}, Barcode port={barcode['port']}")
-            else:  # Raspberry Pi и др.
+                logger.info("Windows: legacy controller port=%s", serial["port"])
+            else:
                 ports = cfg["dev"]
                 serial_manager = SerialManager(port=ports["ttyUSB"])
+                logger.info("Linux/RPi: legacy controller port=%s", ports["ttyUSB"])
+
+            if current_platform == platforms.Windows:
+                barcode = cfg["barcode"]
+                barcode_manager = SerialManager(port=barcode["port"])
+                logger.info(f"Windows: Barcode port={barcode['port']}")
+            else:
+                ports = cfg["dev"]
                 barcode_manager = SerialManager(port=ports["serial"])
-                logger.info(f"Linux/RPi: Serial port={ports['ttyUSB']}, Barcode port={ports['serial']}")
+                logger.info(f"Linux/RPi: Barcode port={ports['serial']}")
 
         serial_manager.start()
         barcode_manager.start()
@@ -276,6 +334,84 @@ def main():
         logger.info("Клиентское приложение готово к работе")
         logger.info("=" * 60)
         window.show()
+
+        scenario_rel = (cfg.get("hal_test_scenario_path") or "").strip()
+        if scenario_rel and controller_protocol == "atmega_hal":
+            scenario_path = Path(scenario_rel)
+            if not scenario_path.is_absolute():
+                scenario_path = Path(__file__).resolve().parent / scenario_path
+            if not scenario_path.is_file():
+                logger.warning("HAL test: файл сценария не найден: %s", scenario_path)
+            else:
+                try:
+                    hal_steps = load_hal_test_scenario_steps(scenario_path)
+                except Exception as exc:
+                    logger.error(
+                        "HAL test: не удалось прочитать сценарий %s: %s",
+                        scenario_path,
+                        exc,
+                        exc_info=True,
+                    )
+                    hal_steps = []
+
+                if hal_steps:
+                    hal_gate = DispenseCommandGate(serial_manager, parent=window)
+
+                    def _hal_step_started(idx: int, cmd: str) -> None:
+                        logger.info("[HAL test] шаг %s: отправка %r", idx, cmd)
+
+                    def _hal_step_completed(idx: int, cmd: str, outcome: str) -> None:
+                        logger.info(
+                            "[HAL test] шаг %s: завершено %r исход=%s",
+                            idx,
+                            cmd,
+                            outcome,
+                        )
+
+                    def _hal_sequence_finished() -> None:
+                        logger.info("[HAL test] цепочка успешно завершена (%s шагов)", len(hal_steps))
+
+                    def _hal_sequence_failed(idx: int, cmd: str, reason: str) -> None:
+                        logger.error(
+                            "[HAL test] сбой на шаге %s cmd=%r: %s",
+                            idx,
+                            cmd,
+                            reason,
+                        )
+
+                    def _hal_sequence_aborted() -> None:
+                        logger.warning("[HAL test] цепочка прервана (abort)")
+
+                    def _hal_raw_line(line: str) -> None:
+                        logger.debug("[HAL test] RX: %s", line)
+
+                    hal_gate.step_started.connect(_hal_step_started)
+                    hal_gate.step_completed.connect(_hal_step_completed)
+                    hal_gate.sequence_finished.connect(_hal_sequence_finished)
+                    hal_gate.sequence_failed.connect(_hal_sequence_failed)
+                    hal_gate.sequence_aborted.connect(_hal_sequence_aborted)
+                    serial_manager.raw_line.connect(_hal_raw_line)
+
+                    def _run_hal_test_scenario() -> None:
+                        logger.info(
+                            "[HAL test] старт через 10 с: %s (%s шагов)",
+                            scenario_path,
+                            len(hal_steps),
+                        )
+                        if not hal_gate.run_sequence(hal_steps):
+                            logger.warning(
+                                "[HAL test] run_sequence отклонён (уже выполняется?)",
+                            )
+
+                    QTimer.singleShot(10_000, _run_hal_test_scenario)
+                else:
+                    logger.warning("HAL test: в файле нет шагов: %s", scenario_path)
+        elif scenario_rel and controller_protocol != "atmega_hal":
+            logger.info(
+                "HAL test: путь задан, но сценарий не запускается "
+                "(hardware.protocol не atmega_hal)",
+            )
+
         sys.exit(qt_app.exec_())
     except Exception as e:
         logger.critical(f"Критическая ошибка при запуске приложения: {e}", exc_info=True)

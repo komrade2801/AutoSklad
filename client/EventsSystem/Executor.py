@@ -76,9 +76,14 @@ class Executor:
             return result, map.state()
 
     def attach_serial_manager(self, serial_manager):
-        """Подключаем уже запущенный SerialManager"""
+        """Подключаем уже запущенный SerialManager или VendingSerialManager / mock HAL."""
         self.controller_serial_manager = serial_manager
-        self.controller_serial_manager.signal_received.connect(self.handle_controller_serial_response)
+        if hasattr(serial_manager, "fsm_trigger"):
+            serial_manager.fsm_trigger.connect(self.handle_controller_serial_response)
+        else:
+            self.controller_serial_manager.signal_received.connect(
+                self.handle_controller_serial_response
+            )
 
     def handle_controller_serial_response(self, response):
         """Обрабатываем полученный ответ"""
@@ -94,7 +99,13 @@ class Executor:
         """Отправка команды в очередь SerialManager"""
         if self.controller_serial_manager:
             logger.debug("Отправка: %s | Инструмент: %s", number, tool_name)
-            self.controller_serial_manager.command_queue.put(f"send:{number}")
+            mgr = self.controller_serial_manager
+            if hasattr(mgr, "enqueue_command"):
+                mgr.enqueue_command(str(number))
+            elif hasattr(mgr, "command_queue"):
+                mgr.command_queue.put(f"send:{number}")
+            else:
+                logger.warning("Контроллер не поддерживает enqueue_command/command_queue")
         else:
             logger.warning("SerialManager не запущен!")
 

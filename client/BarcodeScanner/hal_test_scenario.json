@@ -1,0 +1,46 @@
+{
+  "comment": "Сценарий по Vending_NEW.ino + логика цикла выдачи. Важно: (1) UART шлёт команды строго по одной — «одновременно Z и X» на шине = последовательные MOT*. (2) В .ino zero() крутит только моторы 1–4; MOT5 в ноль — отдельными MOT5,n при доработке прошивки. (3) Сейчас LED,x — один ШИМ (не RGB WS2812 из комментария в .ino); подставьте свои уровни под стенд. (4) Координаты MOT* в мм из примера — замените на ячейку.",
+  "steps": [
+    { "command": "LOCK1", "is_long": false, "note": "Соленоид закрыт; дверь заблокирована" },
+    { "command": "LED,200", "is_long": false, "note": "Подсветка дверцы: заглушка под «красный»/дефолт (1 канал ШИМ)" },
+
+    { "command": "MOT1_SPEED,400", "is_long": false },
+    { "command": "MOT1_BOOST,800", "is_long": false },
+    { "command": "MOT2_SPEED,400", "is_long": false },
+    { "command": "MOT2_BOOST,800", "is_long": false },
+    { "command": "MOT3_SPEED,400", "is_long": false },
+    { "command": "MOT3_BOOST,800", "is_long": false },
+    { "command": "MOT4_SPEED,300", "is_long": false },
+    { "command": "MOT4_BOOST,600", "is_long": false },
+    { "command": "MOT5_SPEED,300", "is_long": false },
+    { "command": "MOT5_BOOST,600", "is_long": false },
+
+    { "command": "ZERO", "is_long": true, "note": "После ВКЛ: портал/каретки к концевикам как в zero() прошивки; затем инкрементально X=Y=Z=0" },
+
+    { "command": "SENS1", "is_long": false },
+    { "command": "SENS2", "is_long": false },
+    { "command": "SENS3", "is_long": false },
+    { "command": "SENS4", "is_long": false },
+
+    { "command": "MOT5,0", "is_long": true, "note": "Мотор ячеек в условный 0 (шаги); при другом нуле — подстроить" },
+
+    { "command": "LED,128", "is_long": false, "note": "Начало выдачи: «оранжевый» — для 1-канального ШИМ подберите значение" },
+
+    { "command": "MOT1,80", "is_long": true, "note": "Подъём портала по Z (мм), пример — заменить на высоту ячейки" },
+    { "command": "MOT2,40", "is_long": true, "note": "Левая каретка по X, мм" },
+    { "command": "MOT3,40", "is_long": true, "note": "Правая каретка по X, мм" },
+
+    { "command": "MOT4,25", "is_long": true, "note": "Задняя каретка Y — подъём ячейки (макс ~55 мм по прошивке)" },
+    { "command": "MOT4,0", "is_long": true, "note": "Зажим Y обратно" },
+
+    { "command": "ZERO", "is_long": true, "note": "Вниз/к концевикам и снова нули, если были пропуски шагов" },
+
+    { "command": "LOCK0", "is_long": false, "note": "Отпереть дверь (соленоид включён)" },
+    { "command": "LED,255", "is_long": false, "note": "«Зелёный» / яркая выдача — подстроить под ленту" },
+
+    { "command": "LOCK,15000", "note": "15 с удержание открытия (OK + delay + DONE в прошивке)" },
+
+    { "command": "LOCK1", "is_long": false, "note": "Закрыть замок после импульса" },
+    { "command": "LED,200", "is_long": false, "note": "Возврат к дефолтной подсветке ожидания" }
+  ]
+}
