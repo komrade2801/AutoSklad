@@ -45,11 +45,29 @@ class EngineHistoryOperation:
         name_operation = record.description or "None"
         plan = self.plan_crud.get_plan_by_id(record.plan_id) if record.plan_id else None
 
-        # Получаем имя пользователя
+        # Получаем имя пользователя (отчество опционально)
         if record.user_id:
             user = self.user_crud.get(record.user_id)
             if user:
-                user_name = f"{user.family} {user.first_name[0]}. {user.second_name[0]}."
+                family = (user.family or "").strip()
+                first_name = (user.first_name or "").strip()
+                second_name = (user.second_name or "").strip()
+
+                initials = []
+                if first_name:
+                    initials.append(f"{first_name[0]}.")
+                if second_name:
+                    initials.append(f"{second_name[0]}.")
+
+                short_name = " ".join(initials).strip()
+                if family and short_name:
+                    user_name = f"{family} {short_name}"
+                elif family:
+                    user_name = family
+                elif short_name:
+                    user_name = short_name
+                else:
+                    user_name = "Unknown"
             else:
                 user_name = "Unknown"
         else:
