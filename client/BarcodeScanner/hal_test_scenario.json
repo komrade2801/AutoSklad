@@ -21,26 +21,17 @@
     { "command": "SENS2", "is_long": false },
     { "command": "SENS3", "is_long": false },
     { "command": "SENS4", "is_long": false },
-
-    { "command": "MOT5,0", "is_long": true, "note": "Мотор ячеек в условный 0 (шаги); при другом нуле — подстроить" },
-
     { "command": "LED,128", "is_long": false, "note": "Начало выдачи: «оранжевый» — для 1-канального ШИМ подберите значение" },
+    { "command": "MOT1,1000", "is_long": false },
+    { "command": "MOT2,1000", "is_long": false },
+    { "command": "MOT3,1000", "is_long": false },
+    { "command": "MOT4,1000", "is_long": false },
+    { "command": "MOT5,1000", "is_long": false },
+    { "command": "MOT1,0", "is_long": false },
+    { "command": "MOT2,0", "is_long": false },
+    { "command": "MOT3,0", "is_long": false },
+    { "command": "MOT4,0", "is_long": false },
+    { "command": "MOT5,0", "is_long": false }
 
-    { "command": "MOT1,80", "is_long": true, "note": "Подъём портала по Z (мм), пример — заменить на высоту ячейки" },
-    { "command": "MOT2,40", "is_long": true, "note": "Левая каретка по X, мм" },
-    { "command": "MOT3,40", "is_long": true, "note": "Правая каретка по X, мм" },
-
-    { "command": "MOT4,25", "is_long": true, "note": "Задняя каретка Y — подъём ячейки (макс ~55 мм по прошивке)" },
-    { "command": "MOT4,0", "is_long": true, "note": "Зажим Y обратно" },
-
-    { "command": "ZERO", "is_long": true, "note": "Вниз/к концевикам и снова нули, если были пропуски шагов" },
-
-    { "command": "LOCK0", "is_long": false, "note": "Отпереть дверь (соленоид включён)" },
-    { "command": "LED,255", "is_long": false, "note": "«Зелёный» / яркая выдача — подстроить под ленту" },
-
-    { "command": "LOCK,15000", "note": "15 с удержание открытия (OK + delay + DONE в прошивке)" },
-
-    { "command": "LOCK1", "is_long": false, "note": "Закрыть замок после импульса" },
-    { "command": "LED,200", "is_long": false, "note": "Возврат к дефолтной подсветке ожидания" }
   ]
 }
