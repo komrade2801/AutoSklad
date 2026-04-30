@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from DB.Data.base import Base
 from sqlalchemy.engine import create_engine
+from DB.crud_registry import crud_registry
 
 
 # --- Шаг 1: силой импортируем все модули из папки DB.Models ---
@@ -43,10 +44,15 @@ def init_sync_config_table(session: Session) -> None:
     """
     sync_crud = SyncConfigCRUD(session)
 
-    for table_name in SERVER_SCHEMA:
-        if "_has_" in table_name:
-            continue
+    # Берём только таблицы, реально поддержанные SyncManager/CRUD-реестром.
+    # Это предотвращает автовключение служебных/новых локальных таблиц,
+    # которые пока не синхронизируются (например DeviceConfig/HardwareConfig).
+    sync_enabled_tables = {
+        table_name for table_name in SERVER_SCHEMA.keys()
+        if "_has_" not in table_name and crud_registry.get(table_name) is not None
+    }
 
+    for table_name in sorted(sync_enabled_tables):
         current_status = sync_crud.get_status(table_name)
         if current_status is None:
             # Записи нет — создаём с enabled=True

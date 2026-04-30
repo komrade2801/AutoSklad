@@ -44,11 +44,22 @@ def exception_hook(exctype, value, tb):
 sys.excepthook = exception_hook
 
 
+# Триггеры FMS с HAL-драйвера (fsm_signal → MainWindow), не сырые строки UART
+_HAL_FSM_TO_UI = frozenset(
+    (
+        "command_is_send",
+        "command_ok",
+        "err_devices",
+    )
+)
+
+
 # Главное окно приложения
 class MainWindow(QtWidgets.QWidget):
-    def __init__(self, maps=None, handler=None):
+    def __init__(self, maps=None, handler=None, controller_protocol: str = "legacy"):
         super().__init__()
 
+        self.controller_protocol = (controller_protocol or "legacy").strip().lower()
         self.handler = handler or Hendlers()
         self.lump = maps or Maps("screen_1_welcome")
         logger.debug("Initial state: %s", self.lump.state())
@@ -86,8 +97,8 @@ class MainWindow(QtWidgets.QWidget):
         self.session_manager = SessionIdleManager(self)
         QApplication.instance().installEventFilter(self.session_manager)
         self.last_widget_value = {}
-        self.open_widget(self.lump.state(), None, None)
         self.action_callback = None
+        self.open_widget(self.lump.state(), None, None)
         # self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
         self.setStyleSheet("background-color: #2e4461;")
 
@@ -199,6 +210,9 @@ class MainWindow(QtWidgets.QWidget):
         """Обрабатываем полученный ответ"""
         self.session_manager.reset_timer()
         logger.debug("MainWindow controller_serial получен: %s value=%s", response, self.last_widget_value)
+        if self.controller_protocol == "atmega_hal" and response not in _HAL_FSM_TO_UI:
+            logger.debug("HAL: ответ вне моста FSM, в автомат не передаём: %r", response)
+            return
         self.button_clicked(response, None)
 
     def handle_barcode_manager_response(self, response):
@@ -237,21 +251,18 @@ class MainWindow(QtWidgets.QWidget):
         :param button_name: Имя нажатой кнопки.
         :param dest: Целевое состояние (опционально).
         """
-        # try:
         if 'timer' in button_name and self.lump.state() != self.lump.machine.initial:
             return
 
-        self.back_state = self.lump.state()
-        self.lump.trigger(button_name)
-        state = self.lump.state()
-        logger.debug("button_clicked button_name=%s state=%s value=%s", button_name, state, self.last_widget_value)
-        if state != self.back_state:
-            # if 'btn_back' in button_name and self.lump.state() != self.lump.machine.initial:
-            #     self.open_back_widget()
-            # else:
-            self.open_widget(state, button_name, value)
-        # except (MachineError, TypeError, AttributeError) as e:
-        #     self._handle_button_click_error(e)
+        try:
+            self.back_state = self.lump.state()
+            self.lump.trigger(button_name)
+            state = self.lump.state()
+            logger.debug("button_clicked button_name=%s state=%s value=%s", button_name, state, self.last_widget_value)
+            if state != self.back_state:
+                self.open_widget(state, button_name, value)
+        except (MachineError, TypeError, AttributeError) as e:
+            self._handle_button_click_error(e)
 
     def open_back_widget(self, value: Any = None):
         logger.debug("open_back_widget value=%s last_widget_value=%s", value, self.last_widget_value)
@@ -382,8 +393,9 @@ class MainWindow(QtWidgets.QWidget):
         :param widget_name: Имя несуществующего виджета.
         :param value: Данные для передачи следующему виджету.
         """
-        if self.lump.machine.initial != widget_name and callable(self.action_callback):
-            value, transition = self.action_callback(self.back_state, widget_name, self.lump, value, None)
+        if callable(self.action_callback):
+            start_state = self.back_state if self.back_state is not None else widget_name
+            value, transition = self.action_callback(start_state, widget_name, self.lump, value, None)
             if transition:
                 self.open_widget(transition, source, value=value)
 
@@ -397,11 +409,12 @@ class MainWindow(QtWidgets.QWidget):
         """
         if self.lump.machine.initial != widget_name and callable(self.action_callback):
             widget = self.widgets.get(self.back_state)
+            start_state = self.back_state if self.back_state is not None else widget_name
             if widget:
                 if not value:
                     value = widget.get_data()
                 value, transition = self.action_callback(
-                    self.back_state, widget_name, self.lump, value, widget.handle_callback_executor
+                    start_state, widget_name, self.lump, value, widget.handle_callback_executor
                 )
                 if transition:
                     self.open_widget(transition, source, value=value)

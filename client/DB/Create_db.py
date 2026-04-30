@@ -22,6 +22,8 @@ from DB.Engine.LoadOperationsCRUD import EngineLoadOperations
 from DB.Engine.MassDropCRUD import EngineMassDrop
 from DB.Engine.MassLoadCRUD import EngineMassLoad
 from DB.Engine.OperationsConsumptionCRUD import EngineOperationsConsumption
+from DB.Engine.DeviceConfigCRUD import EngineDeviceConfig
+from DB.Engine.HardwareConfigCRUD import EngineHardwareConfig
 from DB.Engine.PlanCRUD import EnginePlan
 from DB.Engine.RightsCRUD import EngineRights
 from DB.Engine.RoleCRUD import EngineRole
@@ -49,6 +51,8 @@ from DB.Models.DropOperations import DropOperations  # --------------- 18
 from DB.Models.OperationsConsumption import OperationsConsumption  # - 19
 from DB.Models.LoadOperations import LoadOperations  # --------------- 20
 from DB.Models.ToolTypes import ToolTypes  # ---------------- 21
+from DB.Models.DeviceConfig import DeviceConfig  # -------------------- 22
+from DB.Models.HardwareConfig import HardwareConfig  # ---------------- 23
 from sqlalchemy import create_engine
 from DB.Data.base import Base
 import os
@@ -163,6 +167,8 @@ def execute():
         e_mass_load = EngineMassLoad(SessionLocal(engine()))
         e_operations_consumption = EngineOperationsConsumption(
             SessionLocal(engine()))
+        e_device_config = EngineDeviceConfig(SessionLocal(engine()))
+        e_hardware_config = EngineHardwareConfig(SessionLocal(engine()))
         e_plan = EnginePlan(SessionLocal(engine()))
         e_plan_tool_types = EnginePlanToolTypes(SessionLocal(engine()))
         e_rights = EngineRights(SessionLocal(engine()))
@@ -184,6 +190,8 @@ def execute():
         e_mass_drop.delete_all()
         e_mass_load.delete_all()
         e_operations_consumption.delete_all()
+        e_hardware_config.delete_all()
+        e_device_config.delete_all()
         e_plan.delete_all()
         e_plan_tool_types.delete_all()
         e_rights.delete_all()
@@ -205,6 +213,31 @@ def execute():
 
         logger.info("Устройство добавлено")
         update_progress("Устройство добавлено!", "complete", 12)
+        # Базовая конфигурация устройства и аппаратного профиля.
+        e_device_config.add_device_config(
+            name="main_device",
+            protocol="legacy",
+            serial_port=None,
+            baudrate=9600,
+            ack_timeout_ms=2000,
+            done_timeout_ms=90000,
+            require_zero_on_start=True,
+            enabled=True,
+        )
+        device_cfg = e_device_config.get_active()
+        if device_cfg:
+            e_hardware_config.add_hardware_config(
+                device_config_id=device_cfg.id,
+                x_axis_motor=1,
+                z_axis_motor=3,
+                push_motor=5,
+                led_default=180,
+                lock_ms_default=15000,
+                push_down_default=900,
+                push_up_default=0,
+                park_x_default=0,
+                park_z_default=0,
+            )
         status_names = [
             "start_system",
             "mass_drop_ready",

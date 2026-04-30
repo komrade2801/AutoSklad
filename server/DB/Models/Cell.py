@@ -22,6 +22,8 @@ class Cell(Base, Model):
     groups_id = Column(Integer, ForeignKey("Group.id"), nullable=True, comment="Внешний ключ на таблицу Group")
     tools_id = Column(Integer, ForeignKey("ToolTypes.id"), nullable=True)
     status_id = Column(Integer, ForeignKey("Status.id"), nullable=True, comment="Внешний ключ на таблицу Status")
+    hal_x = Column(Integer, nullable=True, comment="Целевая координата X для HAL-сценария")
+    hal_z = Column(Integer, nullable=True, comment="Целевая координата Z для HAL-сценария")
 
     @property
     def devices(self):
@@ -77,7 +79,9 @@ class Cell(Base, Model):
                 f"description={self.description}, "
                 f"groups_id={self.groups_id}, "
                 f"tools_id={self.tools_id}, "
-                f"status_id={self.status_id}"
+                f"status_id={self.status_id}, "
+                f"hal_x={self.hal_x}, "
+                f"hal_z={self.hal_z}"
                 f")>")
 
 

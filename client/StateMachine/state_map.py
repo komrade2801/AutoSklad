@@ -131,6 +131,7 @@ states = [
     {'name': 'screen_20_management_tool'},
     {'name': 'read_db_plan'},
     {'name': 'screen_33_select_plan'},
+    {'name': 'screen_36_hardware_err'},
 ]
 
 transitions = [
@@ -212,6 +213,7 @@ transitions = [
     {'trigger': 'system_start', 'source': 'cmd_start', 'dest': 'cmd_test_self'},
     {'trigger': 'ok', 'source': 'cmd_test_self', 'dest': 'cmd_run_timer_event'},
     {'trigger': 'err_critical', 'source': 'cmd_test_self', 'dest': 'write_log_critical_err'},
+    {'trigger': 'err_devices', 'source': 'cmd_test_self', 'dest': 'write_db_err_devices'},
     {'trigger': 'command_is_send', 'source': 'screen_32_wait', 'dest': 'screen_32_wait'},
     {'trigger': 'err_devices', 'source': 'screen_32_wait', 'dest': 'write_db_err_devices'},
     {'trigger': 'command_ok', 'source': 'screen_32_wait', 'dest': 'write_db_tool_consumption'},
@@ -236,9 +238,9 @@ transitions = [
     {'trigger': 'btn_back_to_plan_selection', 'source': 'screen_11_tool_issued', 'dest': 'read_db_plan'},
     {'trigger': 'timeout_back', 'source': 'screen_11_tool_issued', 'dest': 'screen_1_welcome'},
     {'trigger': 'command_is_send', 'source': 'screen_11_tool_issued', 'dest': 'screen_11_tool_issued'},
-    {'trigger': 'view_err', 'source': 'write_db_err_devices', 'dest': 'screen_12_no_tool'},
+    {'trigger': 'view_err_hardware', 'source': 'write_db_err_devices', 'dest': 'screen_36_hardware_err'},
     {'trigger': 'ready_to_use', 'source': 'cmd_run_timer_event', 'dest': 'screen_1_welcome'},
-    {'trigger': 'view_err', 'source': 'write_db_err_timeout', 'dest': 'screen_12_no_tool'},
+    {'trigger': 'view_err_hardware', 'source': 'write_db_err_timeout', 'dest': 'screen_36_hardware_err'},
     {'trigger': 'get_token', 'source': 'read_cnf_signature', 'dest': 'http_get_request_take_command'},
     {'trigger': 'send_number', 'source': 'read_db_get_cell', 'dest': 'cmd_send'},
     {'trigger': 'err_data', 'source': 'read_db_get_cell', 'dest': 'write_db_err_rights'},
@@ -247,7 +249,8 @@ transitions = [
     {'trigger': 'btn_back_to_plan_selection', 'source': 'screen_12_no_tool', 'dest': 'read_db_plan'},
     {'trigger': 'timeout_back', 'source': 'screen_12_no_tool', 'dest': 'screen_1_welcome'},
     {'trigger': 'system_stop', 'source': 'write_log_critical_err', 'dest': 'cmd_stop'},
-    {'trigger': 'view_err', 'source': 'write_db_err_devices', 'dest': 'screen_12_no_tool'},
+    {'trigger': 'view_err_hardware', 'source': 'write_db_err_devices', 'dest': 'screen_36_hardware_err'},
+    {'trigger': 'err_devices', 'source': 'screen_11_tool_issued', 'dest': 'write_db_err_devices'},
     {'trigger': 'btn_back_to_group', 'source': 'screen_10_confirmation', 'dest': 'read_db_groups'},
     {'trigger': 'btn_back_to_plan', 'source': 'screen_10_confirmation', 'dest': 'read_db_get_plan_tools'},
     {'trigger': 'btn_back_to_plan_selection', 'source': 'screen_10_confirmation', 'dest': 'read_db_plan'},
@@ -437,4 +440,6 @@ transitions = [
     {'trigger': 'btn_plan_name', 'source': 'screen_33_select_plan', 'dest': 'read_db_get_plan_tools'},
     {'trigger': 'btn_back_to_user', 'source': 'screen_33_select_plan', 'dest': 'screen_6_user'},
     {'trigger': 'btn_back_to_stockman', 'source': 'screen_33_select_plan', 'dest': 'screen_14_stockman'},
+    {'trigger': 'btn_back', 'source': 'screen_36_hardware_err', 'dest': 'screen_1_welcome'},
+    {'trigger': 'timeout_back', 'source': 'screen_36_hardware_err', 'dest': 'screen_1_welcome'},
 ]

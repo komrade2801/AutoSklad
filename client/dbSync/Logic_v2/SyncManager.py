@@ -91,13 +91,14 @@ class SyncManager:
 
     def get_local_schema(self) -> Dict[str, Dict[str, str]]:
         """
-        Собирает схему из всех таблиц, для которых есть CRUD в реестре.
+        Собирает схему только из таблиц, для которых есть CRUD в реестре.
         Возвращает структуру {table_name: {column_name: type_name}}.
         """
         from DB.Data.base import Base
-        # from DB.Data.sqlite_db import engine
         schema: Dict[str, Dict[str, str]] = {}
         for tbl in Base.metadata.sorted_tables:
+            if self.crud_registry.get(tbl.name) is None:
+                continue
             cols: Dict[str, str] = {
                 col.name: col.type.__class__.__name__.lower()
                 for col in tbl.columns

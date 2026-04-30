@@ -32,7 +32,9 @@ class EngineCell(BaseCRUD):
                  status_id: int,
                  tools_id: Optional[int] = None,
                  groups_id: Optional[int] = None,
-                 description: Optional[str] = None
+                 description: Optional[str] = None,
+                 hal_x: Optional[int] = None,
+                 hal_z: Optional[int] = None,
                  ) -> bool:
         """
         Добавляет новую ячейку в таблицу Cell.
@@ -50,7 +52,9 @@ class EngineCell(BaseCRUD):
             groups_id=groups_id,
             tools_id=tools_id,
             description=description,
-            status_id=status_id
+            status_id=status_id,
+            hal_x=hal_x,
+            hal_z=hal_z,
         )
 
     def get_cell_by_id(self, cell_id: int) -> Optional[Cell]:
@@ -124,6 +128,8 @@ class EngineCell(BaseCRUD):
                     groups_id=None,
                     tools_id=None,
                     status_id=None,
+                    hal_x=None,
+                    hal_z=None,
                     ) -> bool:
         """
             Обновляет параметры ячейки по её уникальному идентификатору.
@@ -135,7 +141,10 @@ class EngineCell(BaseCRUD):
             :param index: Уникальный идентификатор ячейки.
             :return: True, если запись успешно обновлена, иначе False.
         """
-        logger.debug("update_cell %s, %s, %s, %s, %s, %s", cell_id, number, description, groups_id, tools_id, status_id)
+        logger.debug(
+            "update_cell %s, %s, %s, %s, %s, %s, %s, %s",
+            cell_id, number, description, groups_id, tools_id, status_id, hal_x, hal_z
+        )
 
         # 1) Загружаем из БД текущее состояние
         instance = self.session.query(self.model).get(cell_id)
@@ -154,6 +163,10 @@ class EngineCell(BaseCRUD):
         updates['tools_id'] = tools_id
         # if status_id is not None and instance.status_id != status_id:
         updates['status_id'] = status_id
+        if hal_x is not None and instance.hal_x != hal_x:
+            updates['hal_x'] = hal_x
+        if hal_z is not None and instance.hal_z != hal_z:
+            updates['hal_z'] = hal_z
 
         # 3) Если нечего менять — вернём True, потому что ошибок нет
         if not updates:
@@ -162,6 +175,36 @@ class EngineCell(BaseCRUD):
         logger.debug("updates %s, %s", cell_id, updates)
         # 4) Иначе передаём только изменившиеся поля
         return self.update(index=cell_id, **updates)
+
+    def update_cell_hal_profile(
+        self,
+        cell_id: int,
+        *,
+        hal_x: Optional[int] = None,
+        hal_z: Optional[int] = None,
+    ) -> bool:
+        """
+        Обновляет только HAL-профиль ячейки.
+        """
+        return self.update_cell(
+            cell_id=cell_id,
+            hal_x=hal_x,
+            hal_z=hal_z,
+        )
+
+    def get_cell_hal_profile(self, cell_id: int) -> Optional[dict]:
+        """
+        Возвращает HAL-профиль ячейки как словарь.
+        """
+        cell = self.get_cell_by_id(cell_id)
+        if not cell:
+            return None
+        return {
+            "cell_id": cell.id,
+            "number": cell.number,
+            "hal_x": cell.hal_x,
+            "hal_z": cell.hal_z,
+        }
 
     def delete_cell(self, cell_id: int) -> bool:
         """

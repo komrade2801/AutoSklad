@@ -191,6 +191,8 @@ class Cell(BaseModel):
     groups_id: Optional[int]
     tools_id: Optional[int]
     status_id: int
+    hal_x: Optional[int] = None
+    hal_z: Optional[int] = None
 
 
 class CellCreate(BaseModel):
@@ -199,6 +201,8 @@ class CellCreate(BaseModel):
     groups_id: Optional[int]
     tools_id: Optional[int]
     status_id: int
+    hal_x: Optional[int] = None
+    hal_z: Optional[int] = None
 
 
 class CellUpdate(BaseModel):
@@ -207,6 +211,8 @@ class CellUpdate(BaseModel):
     groups_id: Optional[int]
     tools_id: Optional[int]
     status_id: Optional[int]
+    hal_x: Optional[int]
+    hal_z: Optional[int]
 
 class GroupsCreate(BaseModel):
     group_name: str

@@ -41,6 +41,9 @@ class MockVendingSerialManager(threading.Thread, QObject):
         timeout: float = 0.05,
         long_op_delay_s: float = 1.2,
         sens_default: int = 1,
+        bridge_ok_to_fsm: bool = False,
+        bridge_done_to_fsm: bool = False,
+        bridge_error_to_fsm: bool = True,
     ):
         threading.Thread.__init__(self, daemon=True)
         QObject.__init__(self)
@@ -48,12 +51,22 @@ class MockVendingSerialManager(threading.Thread, QObject):
         self.baudrate = baudrate
         self.timeout = timeout
         self._long_delay = long_op_delay_s
+        self.bridge_ok_to_fsm = bridge_ok_to_fsm
+        self.bridge_done_to_fsm = bridge_done_to_fsm
+        self.bridge_error_to_fsm = bridge_error_to_fsm
         self._sensor_values: Dict[int, int] = {}
         for i in range(1, 7):
             self._sensor_values[i] = sens_default
 
         self._tx_queue: "queue.Queue[str]" = queue.Queue()
         self.running = True
+        self._lock_is_on = False
+        # Совместимость с проверками в startup-контракте (mgr.serial_conn.is_open).
+        self.serial_conn = None
+
+    class _MockSerialConnection:
+        def __init__(self) -> None:
+            self.is_open = True
 
     # --- public API (aligned with VendingSerialManager) ---
 
@@ -78,10 +91,27 @@ class MockVendingSerialManager(threading.Thread, QObject):
         self.enqueue_command(str(data))
 
     def open_port(self) -> None:
+        self.serial_conn = self._MockSerialConnection()
         self.debug_log.emit("[MockVending] виртуальный порт открыт")
 
     def close_port(self) -> None:
+        if self.serial_conn is not None:
+            self.serial_conn.is_open = False
         self.debug_log.emit("[MockVending] виртуальный порт закрыт")
+
+    def check_connection(self) -> bool:
+        conn = self.serial_conn
+        return conn is not None and bool(getattr(conn, "is_open", False))
+
+    def initialize_mock(self) -> None:
+        """
+        Явная реинициализация mock-состояния перед startup-контрактом.
+        """
+        for i in range(1, 7):
+            if i not in self._sensor_values:
+                self._sensor_values[i] = 1
+        self._lock_is_on = True
+        self.debug_log.emit("[MockVending] mock инициализирован")
 
     def stop(self) -> None:
         self.running = False
@@ -121,6 +151,7 @@ class MockVendingSerialManager(threading.Thread, QObject):
             time.sleep(0.02)
             self.raw_line.emit("LOCK OFF")
             self.event_lock_state.emit(False)
+            self._lock_is_on = False
             self.debug_log.emit("MockVending: LOCK0 -> LOCK OFF")
             return
 
@@ -129,7 +160,17 @@ class MockVendingSerialManager(threading.Thread, QObject):
             time.sleep(0.02)
             self.raw_line.emit("LOCK ON")
             self.event_lock_state.emit(True)
+            self._lock_is_on = True
             self.debug_log.emit("MockVending: LOCK1 -> LOCK ON")
+            return
+
+        if u in ("PING", "HELLO"):
+            self._emit_short_ok(c)
+            return
+
+        if u == "INIT":
+            self.initialize_mock()
+            self._emit_short_ok(c)
             return
 
         m_sens = re.fullmatch(r"SENS([1-6])", u)
@@ -176,22 +217,26 @@ class MockVendingSerialManager(threading.Thread, QObject):
     def _emit_short_ok(self, cmd: str) -> None:
         self.raw_line.emit("OK")
         self.event_ok.emit()
-        self.fsm_trigger.emit("command_is_send")
+        if self.bridge_ok_to_fsm:
+            self.fsm_trigger.emit("command_is_send")
         self.command_finished.emit(cmd, "ok_short")
 
     def _emit_long_ack(self, cmd: str) -> None:
         self.raw_line.emit("OK")
         self.event_ok.emit()
-        self.fsm_trigger.emit("command_is_send")
+        if self.bridge_ok_to_fsm:
+            self.fsm_trigger.emit("command_is_send")
 
     def _emit_long_done(self, cmd: str) -> None:
         self.raw_line.emit("DONE")
         self.event_done.emit()
-        self.fsm_trigger.emit("command_ok")
+        if self.bridge_done_to_fsm:
+            self.fsm_trigger.emit("command_ok")
         self.command_finished.emit(cmd, "done")
 
     def _emit_error(self, cmd: str) -> None:
         self.raw_line.emit("ERROR")
         self.event_error.emit("device_error")
-        self.fsm_trigger.emit("err_devices")
+        if self.bridge_error_to_fsm:
+            self.fsm_trigger.emit("err_devices")
         self.command_finished.emit(cmd, "error")

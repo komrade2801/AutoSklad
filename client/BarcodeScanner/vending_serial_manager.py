@@ -60,6 +60,9 @@ class VendingSerialManager(threading.Thread, QObject):
         timeout: float = 0.05,
         ack_timeout_s: float = 2.0,
         done_timeout_s: float = 90.0,
+        bridge_ok_to_fsm: bool = False,
+        bridge_done_to_fsm: bool = False,
+        bridge_error_to_fsm: bool = True,
     ):
         threading.Thread.__init__(self, daemon=True)
         QObject.__init__(self)
@@ -69,6 +72,11 @@ class VendingSerialManager(threading.Thread, QObject):
         self.timeout = timeout
         self.ack_timeout_s = ack_timeout_s
         self.done_timeout_s = done_timeout_s
+        self.bridge_ok_to_fsm = bridge_ok_to_fsm
+        # Для нового HAL-сценария command_ok в FMS шлётся после LOCK по QTimer,
+        # поэтому DONE→command_ok в bridge по умолчанию отключён.
+        self.bridge_done_to_fsm = bridge_done_to_fsm
+        self.bridge_error_to_fsm = bridge_error_to_fsm
 
         self.serial_conn: Optional[serial.Serial] = None
         self.running = False
@@ -197,19 +205,22 @@ class VendingSerialManager(threading.Thread, QObject):
     def _handle_line(self, line: str) -> None:
         if line == "OK":
             self.event_ok.emit()
-            self.fsm_trigger.emit("command_is_send")
+            if self.bridge_ok_to_fsm:
+                self.fsm_trigger.emit("command_is_send")
             self._on_ok()
             return
 
         if line == "DONE":
             self.event_done.emit()
-            self.fsm_trigger.emit("command_ok")
+            if self.bridge_done_to_fsm:
+                self.fsm_trigger.emit("command_ok")
             self._on_done()
             return
 
         if line == "ERROR":
             self.event_error.emit("device_error")
-            self.fsm_trigger.emit("err_devices")
+            if self.bridge_error_to_fsm:
+                self.fsm_trigger.emit("err_devices")
             self._clear_inflight("error")
             return
 
@@ -293,7 +304,8 @@ class VendingSerialManager(threading.Thread, QObject):
         if not self._ctx.acked and now > self._ctx.ack_deadline:
             self.event_timeout.emit("timeout_ack")
             self.event_error.emit("timeout_ack")
-            self.fsm_trigger.emit("err_devices")
+            if self.bridge_error_to_fsm:
+                self.fsm_trigger.emit("err_devices")
             self._clear_inflight("timeout_ack")
             return
 
@@ -301,5 +313,6 @@ class VendingSerialManager(threading.Thread, QObject):
             if now > self._ctx.done_deadline:
                 self.event_timeout.emit("timeout_done")
                 self.event_error.emit("timeout_done")
-                self.fsm_trigger.emit("err_devices")
+                if self.bridge_error_to_fsm:
+                    self.fsm_trigger.emit("err_devices")
                 self._clear_inflight("timeout_done")

@@ -31,7 +31,9 @@ class EngineCell(BaseCRUD):
                  status_id: int,
                  tools_id: Optional[int] = None,
                  groups_id: Optional[int] = None,
-                 description: Optional[str] = None
+                 description: Optional[str] = None,
+                 hal_x: Optional[int] = None,
+                 hal_z: Optional[int] = None
                  ) -> bool:
         """
         Добавляет новую ячейку в таблицу Cell.
@@ -44,7 +46,9 @@ class EngineCell(BaseCRUD):
             groups_id=groups_id,
             tools_id=tools_id,
             description=description,
-            status_id=status_id
+            status_id=status_id,
+            hal_x=hal_x,
+            hal_z=hal_z,
         )
 
     def get_cell_by_id(self, cell_id: int) -> Optional[Cell]:
@@ -89,6 +93,8 @@ class EngineCell(BaseCRUD):
                     groups_id=None,
                     tools_id=None,
                     status_id=None,
+                    hal_x=None,
+                    hal_z=None,
                     ) -> bool:
         """
             Обновляет параметры ячейки по её уникальному идентификатору.
@@ -100,7 +106,10 @@ class EngineCell(BaseCRUD):
             :param cell_id: Уникальный идентификатор ячейки.
             :return: True, если запись успешно обновлена, иначе False.
         """
-        logger.debug("update_cell %s, %s, %s, %s, %s, %s", cell_id, number, description, groups_id, tools_id, status_id)
+        logger.debug(
+            "update_cell %s, %s, %s, %s, %s, %s, %s, %s",
+            cell_id, number, description, groups_id, tools_id, status_id, hal_x, hal_z
+        )
 
         # 1) Загружаем из БД текущее состояние
         instance = self.session.query(self.model).get(cell_id)
@@ -123,6 +132,10 @@ class EngineCell(BaseCRUD):
             updates['tools_id'] = tools_id
         if status_id is not None:
             updates['status_id'] = status_id
+        if hal_x is not None:
+            updates['hal_x'] = hal_x
+        if hal_z is not None:
+            updates['hal_z'] = hal_z
 
         # 3) Если нечего менять — вернём True, потому что ошибок нет
         if not updates:
@@ -232,3 +245,30 @@ class EngineCell(BaseCRUD):
             return False
         update_data = {k: v for k, v in cell_data.items() if hasattr(cell, k)}
         return self.update(cell_id, **update_data)
+
+    def update_cell_hal_profile(
+        self,
+        cell_id: int,
+        *,
+        hal_x: Optional[int] = None,
+        hal_z: Optional[int] = None,
+    ) -> bool:
+        updates = {}
+        if hal_x is not None:
+            updates["hal_x"] = hal_x
+        if hal_z is not None:
+            updates["hal_z"] = hal_z
+        if not updates:
+            return True
+        return self.update(index=cell_id, **updates)
+
+    def get_cell_hal_profile(self, cell_id: int) -> Optional[dict]:
+        cell = self.get_cell_by_id(cell_id)
+        if not cell:
+            return None
+        return {
+            "cell_id": cell.id,
+            "number": cell.number,
+            "hal_x": cell.hal_x,
+            "hal_z": cell.hal_z,
+        }

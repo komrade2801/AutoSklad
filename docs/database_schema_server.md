@@ -239,6 +239,8 @@
 - `groups_id` (Integer, FK → Group.id) - Группа
 - `tools_id` (Integer, FK → ToolTypes.id) - Тип инструмента в ячейке
 - `status_id` (Integer, FK → Status.id) - Статус ячейки
+- `hal_x` (Integer, nullable) - Координата X для HAL-сценария выдачи
+- `hal_z` (Integer, nullable) - Координата Z для HAL-сценария выдачи
 
 **Связи:**
 - Group (многие-к-одному) - Группа

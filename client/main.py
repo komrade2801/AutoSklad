@@ -252,7 +252,13 @@ def main():
 
         if use_mocks:
             if controller_protocol == "atmega_hal":
-                serial_manager = MockVendingSerialManager(port=None, baudrate=hal_baud)
+                serial_manager = MockVendingSerialManager(
+                    port=None,
+                    baudrate=hal_baud,
+                    bridge_ok_to_fsm=False,
+                    bridge_done_to_fsm=False,
+                    bridge_error_to_fsm=False,
+                )
                 logger.info("Using MockVendingSerialManager (atmega HAL)")
             else:
                 serial_manager = MockSerialManager(port=None)
@@ -267,7 +273,13 @@ def main():
                 else:
                     ctrl_port = cfg["dev"]["ttyUSB"]
                     logger.info("Linux/RPi: HAL controller port=%s baud=%s", ctrl_port, hal_baud)
-                serial_manager = VendingSerialManager(port=ctrl_port, baudrate=hal_baud)
+                serial_manager = VendingSerialManager(
+                    port=ctrl_port,
+                    baudrate=hal_baud,
+                    bridge_ok_to_fsm=False,
+                    bridge_done_to_fsm=False,
+                    bridge_error_to_fsm=False,
+                )
             elif current_platform == platforms.Windows:
                 serial = cfg["serial"]
                 serial_manager = SerialManager(port=serial["port"])
@@ -301,14 +313,19 @@ def main():
 
         # e) Основная логика GUI
         logger.info("Initializing GUI components...")
-        maps = Maps('screen_1_welcome')
-        window = MainWindow(maps)
+        # Стартуем с cmd_start: проверка готовности железа (HAL контракт) до допуска в UI.
+        maps = Maps('cmd_start')
+        window = MainWindow(maps, controller_protocol=controller_protocol)
         executor = Executor()
+        executor.controller_protocol = controller_protocol
         executor.attach_serial_manager(serial_manager)
         executor.attach_barcode_manager(barcode_manager)
         window.action_callback = executor.handle_widget_executor
         executor.handle_serial_controller = window.handle_controller_serial_response
         executor.handle_barcode_manager = window.handle_barcode_manager_response
+        # Повторно инициируем текущее стартовое состояние после подключения action_callback,
+        # иначе cmd_start может остаться "немым" (открыт до подключения executor).
+        window.open_widget(window.lump.state(), None, None)
         logger.info("GUI components initialized")
 
         # f) Таймер для обновления GUI
@@ -336,7 +353,8 @@ def main():
         window.show()
 
         scenario_rel = (cfg.get("hal_test_scenario_path") or "").strip()
-        if scenario_rel and controller_protocol == "atmega_hal":
+        hal_test_autorun = bool(cfg.get("hal_test_autorun", False)) or (os.getenv("AUTOSKLAD_HAL_TEST_AUTORUN", "0") == "1")
+        if scenario_rel and controller_protocol == "atmega_hal" and hal_test_autorun:
             scenario_path = Path(scenario_rel)
             if not scenario_path.is_absolute():
                 scenario_path = Path(__file__).resolve().parent / scenario_path
@@ -410,6 +428,11 @@ def main():
             logger.info(
                 "HAL test: путь задан, но сценарий не запускается "
                 "(hardware.protocol не atmega_hal)",
+            )
+        elif scenario_rel and controller_protocol == "atmega_hal" and not hal_test_autorun:
+            logger.info(
+                "HAL test: путь задан, но автостарт отключён "
+                "(включите hal_test_autorun=true или AUTOSKLAD_HAL_TEST_AUTORUN=1)",
             )
 
         sys.exit(qt_app.exec_())

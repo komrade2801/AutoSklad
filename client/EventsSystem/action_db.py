@@ -242,8 +242,8 @@ class ActionMapper:
             'write_db_err_barcode_user': lambda *args, **kwargs: logger.debug("write_db_err_barcode_user"),
             'write_db_err_barcode_plan': lambda *args, **kwargs: logger.debug("write_db_err_barcode_plan"),
             'write_db_err_request': lambda *args, **kwargs: logger.debug("write_db_err_request"),
-            'write_db_err_devices': lambda tool_id, tool_name: logger.debug("write_db_err_devices %s %s".format( tool_id, tool_name)),
-            'write_db_err_timeout': lambda *args, **kwargs: logger.debug("write_db_err_timeout"),
+            'write_db_err_devices': lambda *args, **kwargs: self.write_db_err_devices(*args, **kwargs),
+            'write_db_err_timeout': lambda *args, **kwargs: self.write_db_err_timeout(*args, **kwargs),
             'write_db_err_rights': lambda *args, **kwargs: self.write_db_err_rights(*args, **kwargs),
             'write_db_err_login': lambda *args, **kwargs: logger.debug("write_db_err_login"),
             'read_db_err_history': lambda *args, **kwargs: self.read_db_err_history(),
@@ -279,6 +279,48 @@ class ActionMapper:
         # Объединяем все аргументы в одну строку с разделением
         output = ' '.join(filter(None, [args_str, kwargs_str]))
         logger.debug("write_db_err_rights: %s".format( output))
+
+    def write_db_err_devices(self, *args, **kwargs):
+        """
+        Запись ошибки оборудования и переход на экран аппаратной ошибки.
+        """
+        args_str = " ".join(map(str, args)).strip()
+        kwargs_str = " ".join(f"{k}={v}" for k, v in kwargs.items()).strip()
+        payload = " ".join(filter(None, [args_str, kwargs_str])).strip()
+
+        ctx_reason = getattr(self.__executor, "hardware_last_error", "") or ""
+        message = " ".join(filter(None, [ctx_reason, payload])).strip()
+        if not message:
+            message = "device_error"
+
+        try:
+            self.e_error.add_error("Device Error", message[:500])
+        except Exception as e:
+            logger.exception("write_db_err_devices add_error failed: %s", e)
+
+        logger.error("write_db_err_devices: %s", message)
+        return {"trigger": "view_err_hardware"}
+
+    def write_db_err_timeout(self, *args, **kwargs):
+        """
+        Запись timeout-ошибки контроллера и переход на экран аппаратной ошибки.
+        """
+        args_str = " ".join(map(str, args)).strip()
+        kwargs_str = " ".join(f"{k}={v}" for k, v in kwargs.items()).strip()
+        payload = " ".join(filter(None, [args_str, kwargs_str])).strip()
+
+        ctx_reason = getattr(self.__executor, "hardware_last_error", "") or ""
+        message = " ".join(filter(None, [ctx_reason, payload])).strip()
+        if not message:
+            message = "device_timeout"
+
+        try:
+            self.e_error.add_error("Timeout", message[:500])
+        except Exception as e:
+            logger.exception("write_db_err_timeout add_error failed: %s", e)
+
+        logger.error("write_db_err_timeout: %s", message)
+        return {"trigger": "view_err_hardware"}
 
     def read_db_err_history(self):
         """
@@ -328,7 +370,12 @@ class ActionMapper:
 
         # Предполагается, что инструмент связан с одной ячейкой
         # Возвращаем номер первой найденной ячейки
-        return {"trigger": "send_number", "number": selected_cell.number, "tool_name": tool_name} if selected_cell else None
+        return {
+            "trigger": "send_number",
+            "number": selected_cell.number,
+            "cell_id": selected_cell.id,
+            "tool_name": tool_name,
+        } if selected_cell else None
 
     def read_db_get_cells(self, tool_list):
         logger.debug("read_db_get_cells %s".format( tool_list))
@@ -414,7 +461,12 @@ class ActionMapper:
 
             # Ячейка доступна для выдачи
             self.select_cell = self.plan_cell_list.pop(0)
-            return {"trigger": "send_number", "number": self.select_cell.number, "tool_name": "Инструмент"}
+            return {
+                "trigger": "send_number",
+                "number": self.select_cell.number,
+                "cell_id": self.select_cell.id,
+                "tool_name": "Инструмент",
+            }
         
         # Если все ячейки уже были выданы
         return {"trigger": "view_ok"}
