@@ -271,7 +271,8 @@ def main():
                     ctrl_port = cfg["serial"]["port"]
                     logger.info("Windows: HAL controller port=%s baud=%s", ctrl_port, hal_baud)
                 else:
-                    ctrl_port = cfg["dev"]["ttyUSB"]
+                    dev_ports = cfg.get("dev") or {}
+                    ctrl_port = dev_ports.get("hal_uart") or dev_ports.get("serial") or dev_ports.get("ttyUSB")
                     logger.info("Linux/RPi: HAL controller port=%s baud=%s", ctrl_port, hal_baud)
                 serial_manager = VendingSerialManager(
                     port=ctrl_port,

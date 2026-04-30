@@ -36,11 +36,12 @@
   },
   "dev": {
     "ttyUSB": "/dev/ttyUSB0",
-    "serial": "/dev/serial0"
+    "serial": "/dev/serial0",
+    "hal_uart": "/dev/serial0"
   },
   "hal_test_scenario_path": "BarcodeScanner/hal_test_scenario.json",
   "hardware": {
-    "protocol": "legacy",
+    "protocol": "atmega_hal",
     "comment_protocol": "legacy = номер ячейки ($n); atmega_hal = новый HAL (OK/DONE/MOTn,...)",
     "baudrate": 9600
   },
