@@ -21,7 +21,7 @@ class HardwareConfig(Base, Model):
     push_motor = Column(Integer, nullable=False, default=5)
 
     # Дефолты сценария выдачи
-    led_default = Column(Integer, nullable=False, default=180)
+    led_default = Column(Integer, nullable=False, default=1)
     lock_ms_default = Column(Integer, nullable=False, default=15000)
     push_down_default = Column(Integer, nullable=False, default=900)
     push_up_default = Column(Integer, nullable=False, default=0)

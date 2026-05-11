@@ -231,7 +231,7 @@ def execute():
                 x_axis_motor=1,
                 z_axis_motor=3,
                 push_motor=5,
-                led_default=180,
+                led_default=1,
                 lock_ms_default=15000,
                 push_down_default=900,
                 push_up_default=0,

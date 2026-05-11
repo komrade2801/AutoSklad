@@ -163,7 +163,11 @@ class DispenseCommandGate(QObject):
                 fail_reason = f"correlation_mismatch: got {cmd!r} expected {exp!r} ({outcome})"
             else:
                 want_done = self._expected_long
-                success = (outcome == "done") if want_done else (outcome == "ok_short")
+                if want_done:
+                    success = outcome == "done"
+                else:
+                    # HAL no_block_plata: LED/RGB/LOCK/SOL завершаются одной строкой DONE без OK.
+                    success = outcome in ("ok_short", "done")
                 idx = self._index
                 cur_cmd = cmd
                 if not success:

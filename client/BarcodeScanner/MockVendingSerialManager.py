@@ -1,8 +1,8 @@
 """
 Mock ATmega HAL serial device for development and tests.
 
-Imitates line-based responses: OK, DONE, ERROR, LOCK ON/OFF, SENSx_y.
-Compatible API with VendingSerialManager (enqueue_command, send_data, Thread+QObject, same signals).
+С `emulate_no_block_plata=True` повторяет строки no_block_plata.ino: WAIT+DONE для ZERO/MOT,
+только DONE для LED/RGB, пауза по ms затем DONE для LOCK,/SOL,. Иначе — старый эталон OK+DONE.
 
 Special command MOCKFAIL — emits ERROR (сценарий «механика сломалась»).
 """
@@ -44,6 +44,8 @@ class MockVendingSerialManager(threading.Thread, QObject):
         bridge_ok_to_fsm: bool = False,
         bridge_done_to_fsm: bool = False,
         bridge_error_to_fsm: bool = True,
+        emulate_no_block_plata: bool = False,
+        blocking_reply_cap_s: float = 5.0,
     ):
         threading.Thread.__init__(self, daemon=True)
         QObject.__init__(self)
@@ -54,6 +56,8 @@ class MockVendingSerialManager(threading.Thread, QObject):
         self.bridge_ok_to_fsm = bridge_ok_to_fsm
         self.bridge_done_to_fsm = bridge_done_to_fsm
         self.bridge_error_to_fsm = bridge_error_to_fsm
+        self._emulate_firmware = emulate_no_block_plata
+        self._blocking_cap = blocking_reply_cap_s
         self._sensor_values: Dict[int, int] = {}
         for i in range(1, 7):
             self._sensor_values[i] = sens_default
@@ -61,14 +65,11 @@ class MockVendingSerialManager(threading.Thread, QObject):
         self._tx_queue: "queue.Queue[str]" = queue.Queue()
         self.running = True
         self._lock_is_on = False
-        # Совместимость с проверками в startup-контракте (mgr.serial_conn.is_open).
         self.serial_conn = None
 
     class _MockSerialConnection:
         def __init__(self) -> None:
             self.is_open = True
-
-    # --- public API (aligned with VendingSerialManager) ---
 
     def enqueue_command(self, command: str, is_long: Optional[bool] = None) -> None:
         cmd = (command or "").strip()
@@ -81,7 +82,12 @@ class MockVendingSerialManager(threading.Thread, QObject):
             cmd = cmd[1:].strip()
 
         if is_long is None:
-            is_long = cmd.startswith("MOT") or cmd == "ZERO"
+            cu = cmd.upper()
+            is_long = (
+                cu == "ZERO"
+                or cu.startswith("MOT,")
+                or (cu.startswith("MOT") and "," in cmd)
+            )
 
         self.debug_log.emit(f"MockVending queue {'LONG' if is_long else 'SHORT'}: {cmd}")
         self._tx_queue.put(f"{int(is_long)}|{cmd}")
@@ -104,9 +110,6 @@ class MockVendingSerialManager(threading.Thread, QObject):
         return conn is not None and bool(getattr(conn, "is_open", False))
 
     def initialize_mock(self) -> None:
-        """
-        Явная реинициализация mock-состояния перед startup-контрактом.
-        """
         for i in range(1, 7):
             if i not in self._sensor_values:
                 self._sensor_values[i] = 1
@@ -136,7 +139,83 @@ class MockVendingSerialManager(threading.Thread, QObject):
 
         self.close_port()
 
-    # --- simulation ---
+    @staticmethod
+    def _parse_blocking_ms(u: str) -> int:
+        if "," not in u:
+            return 0
+        try:
+            return max(0, int(u.split(",", 1)[1]))
+        except ValueError:
+            return 0
+
+    def _mot_csv_five_valid(self, c: str) -> bool:
+        if "," not in c:
+            return False
+        rest = c.split(",", 1)[1]
+        vals = [x.strip() for x in rest.split(",")]
+        if len(vals) != 5:
+            return False
+        try:
+            for x in vals:
+                v = int(x)
+                if v > 999999:
+                    return False
+        except ValueError:
+            return False
+        return True
+
+    def _simulate_firmware(self, is_long: bool, c: str, u: str) -> bool:
+        if u.startswith("LED,"):
+            try:
+                pwm = int(c.split(",", 1)[1])
+            except (ValueError, IndexError):
+                self._emit_error(c)
+                return True
+            if 0 <= pwm <= 255:
+                self._emit_done_only(c)
+            else:
+                self._emit_error(c)
+            return True
+
+        if u.startswith("RGB,"):
+            parts = c.split(",", 3)
+            if len(parts) < 4:
+                self._emit_error(c)
+                return True
+            try:
+                for p in parts[1:4]:
+                    v = int(p.strip())
+                    if not 0 <= v <= 255:
+                        raise ValueError
+            except ValueError:
+                self._emit_error(c)
+                return True
+            self._emit_done_only(c)
+            return True
+
+        if u.startswith("LOCK,") or u.startswith("SOL,"):
+            ms = self._parse_blocking_ms(u)
+            delay = min(ms / 1000.0 + 0.05, self._blocking_cap)
+            time.sleep(delay)
+            self._emit_done_only(c)
+            return True
+
+        if u == "ZERO":
+            self._emit_firmware_two_phase(c)
+            return True
+
+        if u.startswith("MOT,"):
+            if not self._mot_csv_five_valid(c):
+                self._emit_error(c)
+                return True
+            self._emit_firmware_two_phase(c)
+            return True
+
+        if is_long and u.startswith("MOT") and "," in c:
+            self._emit_firmware_two_phase(c)
+            return True
+
+        return False
 
     def _simulate(self, is_long: bool, cmd: str) -> None:
         c = cmd.strip()
@@ -162,6 +241,9 @@ class MockVendingSerialManager(threading.Thread, QObject):
             self.event_lock_state.emit(True)
             self._lock_is_on = True
             self.debug_log.emit("MockVending: LOCK1 -> LOCK ON")
+            return
+
+        if self._emulate_firmware and self._simulate_firmware(is_long, c, u):
             return
 
         if u in ("PING", "HELLO"):
@@ -220,6 +302,25 @@ class MockVendingSerialManager(threading.Thread, QObject):
         if self.bridge_ok_to_fsm:
             self.fsm_trigger.emit("command_is_send")
         self.command_finished.emit(cmd, "ok_short")
+
+    def _emit_done_only(self, cmd: str) -> None:
+        self.raw_line.emit("DONE")
+        self.event_done.emit()
+        if self.bridge_done_to_fsm:
+            self.fsm_trigger.emit("command_ok")
+        self.command_finished.emit(cmd, "done")
+
+    def _emit_firmware_two_phase(self, cmd: str) -> None:
+        self.raw_line.emit("WAIT")
+        self.event_ok.emit()
+        if self.bridge_ok_to_fsm:
+            self.fsm_trigger.emit("command_is_send")
+        time.sleep(self._long_delay)
+        self.raw_line.emit("DONE")
+        self.event_done.emit()
+        if self.bridge_done_to_fsm:
+            self.fsm_trigger.emit("command_ok")
+        self.command_finished.emit(cmd, "done")
 
     def _emit_long_ack(self, cmd: str) -> None:
         self.raw_line.emit("OK")

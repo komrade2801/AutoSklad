@@ -18,7 +18,7 @@ class Executor:
         self.selector = ActionSelector(self)
         self.router = StateRouter(self.selector.mappers)
         self.controller_serial_manager = None
-        # `legacy` = номер ячейки ($n); `atmega_hal` = VendingSerialManager (очередь OK/DONE)
+        # `legacy` = номер ячейки ($n); `atmega_hal` = VendingSerialManager (WAIT/DONE, MOT,p1..p5)
         self.controller_protocol: str = "legacy"
         # Глобальный контекст состояния железа для startup-проверки и экрана аппаратной ошибки.
         self.hardware_ready: bool = False

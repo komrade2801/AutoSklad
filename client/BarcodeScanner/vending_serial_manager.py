@@ -8,10 +8,15 @@ import serial
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
+# no_block_plata.ino: ZERO / MOT,* → WAIT then DONE; LED/RGB → DONE only;
+# LOCK,SOL → blocking delay then DONE (no line until then).
+
+
 @dataclass
 class CommandContext:
     command: str
-    is_long: bool
+    """two_phase | done_only | blocking_done | ok_ack (legacy short OK)."""
+    mode: str
     sent_at: float
     ack_deadline: float
     done_deadline: Optional[float] = None
@@ -20,15 +25,13 @@ class CommandContext:
 
 class VendingSerialManager(threading.Thread, QObject):
     """
-    v0 line-based serial manager for new ATmega firmware.
+    Line-based UART HAL for no_block_plata.ino.
 
-    It is intentionally standalone and not wired into the app yet.
-    Expected line responses:
-    - OK
-    - DONE
-    - ERROR
-    - SENSx_0 / SENSx_1
-    - LOCK ON / LOCK OFF
+    Responses (text + \\n):
+    - ZERO / MOT,* : WAIT (ack) then DONE or ERROR
+    - LED,* / RGB,* : DONE (or ERROR) immediately, no WAIT/OK
+    - LOCK,ms / SOL,ms : silence until delay(ms) on MCU, then DONE
+    - Optional legacy: OK as ack for long ops; LOCK0/LOCK1 → LOCK OFF/ON lines
     """
 
     # Raw diagnostics
@@ -72,9 +75,9 @@ class VendingSerialManager(threading.Thread, QObject):
         self.timeout = timeout
         self.ack_timeout_s = ack_timeout_s
         self.done_timeout_s = done_timeout_s
+        self.blocking_margin_s = 2.0
         self.bridge_ok_to_fsm = bridge_ok_to_fsm
-        # Для нового HAL-сценария command_ok в FMS шлётся после LOCK по QTimer,
-        # поэтому DONE→command_ok в bridge по умолчанию отключён.
+        # command_ok в FMS для выдачи шлёт action_cmd после цепочки UART (не bridge DONE).
         self.bridge_done_to_fsm = bridge_done_to_fsm
         self.bridge_error_to_fsm = bridge_error_to_fsm
 
@@ -102,9 +105,13 @@ class VendingSerialManager(threading.Thread, QObject):
         if cmd.startswith("$"):
             cmd = cmd[1:].strip()
 
-        # v0 heuristic: MOT*, ZERO, and LOCK,ms need OK then DONE (Sketch: OK, delay, DONE).
+        # Queue flag: long two-phase motion (ZERO, MOT,, legacy MOTn when caller marks long).
         if is_long is None:
-            is_long = cmd.startswith("MOT") or cmd == "ZERO" or cmd.startswith("LOCK,")
+            is_long = (
+                cmd == "ZERO"
+                or cmd.upper().startswith("MOT,")
+                or (cmd.upper().startswith("MOT") and "," in cmd)
+            )
 
         marker = "LONG" if is_long else "SHORT"
         self.debug_log.emit(f"Queue {marker}: {cmd}")
@@ -170,12 +177,7 @@ class VendingSerialManager(threading.Thread, QObject):
         self.serial_conn.write(payload)
 
         now = time.monotonic()
-        self._ctx = CommandContext(
-            command=cmd,
-            is_long=is_long,
-            sent_at=now,
-            ack_deadline=now + self.ack_timeout_s,
-        )
+        self._ctx = self._build_command_context(cmd, is_long, now)
         self.debug_log.emit(f"Sent: {payload!r}")
 
     def _pump_inbound(self) -> None:
@@ -202,19 +204,51 @@ class VendingSerialManager(threading.Thread, QObject):
     # -----------------------------
     # Protocol handling
     # -----------------------------
+    def _parse_blocking_ms(self, cmd_upper: str) -> int:
+        if "," not in cmd_upper:
+            return 0
+        try:
+            return max(0, int(cmd_upper.split(",", 1)[1]))
+        except ValueError:
+            return 0
+
+    def _build_command_context(self, cmd: str, is_long_flag: bool, now: float) -> CommandContext:
+        u = (cmd or "").strip().upper()
+        if u.startswith("LED,") or u.startswith("RGB,"):
+            ddl = now + self.done_timeout_s
+            return CommandContext(
+                command=cmd, mode="done_only", sent_at=now, ack_deadline=ddl, done_deadline=ddl
+            )
+        if u.startswith("LOCK,") or u.startswith("SOL,"):
+            ms = self._parse_blocking_ms(u)
+            ddl = now + max(self.ack_timeout_s, ms / 1000.0 + self.blocking_margin_s)
+            return CommandContext(
+                command=cmd, mode="blocking_done", sent_at=now, ack_deadline=ddl, done_deadline=ddl
+            )
+        if u in ("LOCK0", "LOCK1"):
+            return CommandContext(
+                command=cmd, mode="ok_ack", sent_at=now, ack_deadline=now + self.ack_timeout_s
+            )
+        if u == "ZERO" or u.startswith("MOT,") or (is_long_flag and u.startswith("MOT")):
+            return CommandContext(
+                command=cmd, mode="two_phase", sent_at=now, ack_deadline=now + self.ack_timeout_s
+            )
+        return CommandContext(
+            command=cmd, mode="ok_ack", sent_at=now, ack_deadline=now + self.ack_timeout_s
+        )
+
     def _handle_line(self, line: str) -> None:
+        if line == "WAIT":
+            self._on_wait_or_ok("WAIT")
+            return
+
         if line == "OK":
-            self.event_ok.emit()
-            if self.bridge_ok_to_fsm:
-                self.fsm_trigger.emit("command_is_send")
-            self._on_ok()
+            self._on_wait_or_ok("OK")
             return
 
         if line == "DONE":
             self.event_done.emit()
-            if self.bridge_done_to_fsm:
-                self.fsm_trigger.emit("command_ok")
-            self._on_done()
+            self._on_done_line()
             return
 
         if line == "ERROR":
@@ -224,7 +258,7 @@ class VendingSerialManager(threading.Thread, QObject):
             self._clear_inflight("error")
             return
 
-        # LOCK0/LOCK1: прошивка шлёт только LOCK OFF / LOCK ON без OK — завершаем полёт команды здесь.
+        # LOCK0/LOCK1: mock / эталон может слать LOCK OFF / LOCK ON без предварительного OK.
         if line == "LOCK OFF":
             self.event_lock_state.emit(False)
             self.debug_log.emit("Lock state: OFF")
@@ -269,23 +303,45 @@ class VendingSerialManager(threading.Thread, QObject):
     # -----------------------------
     # In-flight lifecycle
     # -----------------------------
-    def _on_ok(self) -> None:
+    def _on_wait_or_ok(self, line: str) -> None:
         if self._ctx is None:
-            # OK can be emitted by commands initiated elsewhere; ignore safely.
-            self.debug_log.emit("OK without active context")
+            self.debug_log.emit(f"{line} without active context")
             return
-
-        self._ctx.acked = True
-        if self._ctx.is_long:
+        mode = self._ctx.mode
+        if mode == "two_phase":
+            self._ctx.acked = True
             self._ctx.done_deadline = time.monotonic() + self.done_timeout_s
-        else:
+            self.event_ok.emit()
+            if self.bridge_ok_to_fsm:
+                self.fsm_trigger.emit("command_is_send")
+            return
+        if mode == "ok_ack" and line == "OK":
+            self.event_ok.emit()
+            if self.bridge_ok_to_fsm:
+                self.fsm_trigger.emit("command_is_send")
             self._clear_inflight("ok_short")
+            return
+        self.debug_log.emit(f"Ignored {line!r} for mode={mode} cmd={self._ctx.command!r}")
 
-    def _on_done(self) -> None:
+    def _on_done_line(self) -> None:
         if self._ctx is None:
             self.debug_log.emit("DONE without active context")
             return
-        self._clear_inflight("done")
+        mode = self._ctx.mode
+        if mode == "two_phase":
+            if not self._ctx.acked:
+                self.debug_log.emit("DONE before WAIT/OK — ignored")
+                return
+            if self.bridge_done_to_fsm:
+                self.fsm_trigger.emit("command_ok")
+            self._clear_inflight("done")
+            return
+        if mode in ("done_only", "blocking_done"):
+            if self.bridge_done_to_fsm:
+                self.fsm_trigger.emit("command_ok")
+            self._clear_inflight("done")
+            return
+        self.debug_log.emit(f"Unexpected DONE in mode={mode}")
 
     def _clear_inflight(self, reason: str) -> None:
         old_cmd = self._ctx.command if self._ctx else ""
@@ -300,19 +356,37 @@ class VendingSerialManager(threading.Thread, QObject):
             return
 
         now = time.monotonic()
+        ctx = self._ctx
 
-        if not self._ctx.acked and now > self._ctx.ack_deadline:
-            self.event_timeout.emit("timeout_ack")
-            self.event_error.emit("timeout_ack")
-            if self.bridge_error_to_fsm:
-                self.fsm_trigger.emit("err_devices")
-            self._clear_inflight("timeout_ack")
-            return
-
-        if self._ctx.is_long and self._ctx.acked and self._ctx.done_deadline is not None:
-            if now > self._ctx.done_deadline:
+        if ctx.mode == "two_phase":
+            if not ctx.acked and now > ctx.ack_deadline:
+                self.event_timeout.emit("timeout_ack")
+                self.event_error.emit("timeout_ack")
+                if self.bridge_error_to_fsm:
+                    self.fsm_trigger.emit("err_devices")
+                self._clear_inflight("timeout_ack")
+                return
+            if ctx.acked and ctx.done_deadline is not None and now > ctx.done_deadline:
                 self.event_timeout.emit("timeout_done")
                 self.event_error.emit("timeout_done")
                 if self.bridge_error_to_fsm:
                     self.fsm_trigger.emit("err_devices")
                 self._clear_inflight("timeout_done")
+            return
+
+        if ctx.mode in ("done_only", "blocking_done"):
+            if ctx.done_deadline is not None and now > ctx.done_deadline:
+                self.event_timeout.emit("timeout_done")
+                self.event_error.emit("timeout_done")
+                if self.bridge_error_to_fsm:
+                    self.fsm_trigger.emit("err_devices")
+                self._clear_inflight("timeout_done")
+            return
+
+        if ctx.mode == "ok_ack":
+            if not ctx.acked and now > ctx.ack_deadline:
+                self.event_timeout.emit("timeout_ack")
+                self.event_error.emit("timeout_ack")
+                if self.bridge_error_to_fsm:
+                    self.fsm_trigger.emit("err_devices")
+                self._clear_inflight("timeout_ack")

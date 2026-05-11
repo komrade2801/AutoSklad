@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QEventLoop, QTimer, QThread
+import json
 import traceback
 import subprocess
 import sys
@@ -7,6 +8,7 @@ import time
 import serial
 import serial.tools.list_ports
 import logging
+from pathlib import Path
 from Core.platforms import detect
 from BarcodeScanner.dispense_command_gate import DispenseCommandGate
 from DB.Data.sqlite_db import SessionLocal, engine
@@ -16,6 +18,63 @@ from DB.Engine.HardwareConfigCRUD import EngineHardwareConfig
 # from BarcodeScanner.SerialWorker import SerialWorker  # Используем потоковый класс!
 
 logger = logging.getLogger(__name__)
+
+_CONFIG_JSON = Path(__file__).resolve().parent.parent / "config.json"
+
+_HAL_JSON_MERGE_KEYS = frozenset(
+    {
+        "led",
+        "lock_ms",
+        "push_down",
+        "push_up",
+        "park_x",
+        "park_z",
+        "x_axis_motor",
+        "z_axis_motor",
+        "push_motor",
+        "park_m1",
+        "park_m2",
+        "park_m3",
+        "park_m4",
+        "park_m5",
+        "rear_safe_m3",
+        "rear_safe_m4",
+        "rear_safe_first",
+        "rgb_issue_r",
+        "rgb_issue_g",
+        "rgb_issue_b",
+    }
+)
+
+
+def _clamp_mot_coord(value: int) -> int:
+    v = int(value)
+    if v < 0:
+        return 0
+    if v > 999999:
+        return 999999
+    return v
+
+
+def _clamp_rgb_byte(value: int) -> int:
+    v = int(value)
+    if v < 0:
+        return 0
+    if v > 255:
+        return 255
+    return v
+
+
+def _fmt_mot5(pos):
+    """Одна команда $MOT,p1..p5 для no_block_plata (без ведущего $)."""
+    return "MOT," + ",".join(str(_clamp_mot_coord(p)) for p in pos)
+
+
+def _motor_index(motor_1_to_5: int, label: str) -> int:
+    idx = int(motor_1_to_5) - 1
+    if idx < 0 or idx > 4:
+        raise ValueError(f"Номер мотора {label} вне 1..5: {motor_1_to_5!r}")
+    return idx
 
 
 class ActionMapper:
@@ -56,9 +115,24 @@ class ActionMapper:
         logger.info("cmd_start: trigger system_start")
         return {"trigger": "system_start"}
 
+    def _merge_hal_motion_profile_from_json(self, defaults: dict) -> None:
+        """Доп. поля из hardware.hal_motion_profile в client/config.json (необязательно)."""
+        try:
+            if not _CONFIG_JSON.is_file():
+                return
+            cfg = json.loads(_CONFIG_JSON.read_text(encoding="utf-8"))
+            blob = (cfg.get("hardware") or {}).get("hal_motion_profile")
+            if not isinstance(blob, dict):
+                return
+            for k, v in blob.items():
+                if k in _HAL_JSON_MERGE_KEYS and v is not None:
+                    defaults[k] = v
+        except Exception as e:
+            logger.warning("hal_motion_profile из config.json не применён: %s", e)
+
     def _load_hal_motion_profile(self):
         defaults = {
-            "led": 180,
+            "led": 1,
             "lock_ms": 15000,
             "push_down": 900,
             "push_up": 0,
@@ -67,6 +141,9 @@ class ActionMapper:
             "x_axis_motor": 1,
             "z_axis_motor": 3,
             "push_motor": 5,
+            "rear_safe_first": False,
+            "rear_safe_m3": 0,
+            "rear_safe_m4": 0,
         }
         try:
             device_cfg = self._e_device_cfg.get_active()
@@ -88,9 +165,48 @@ class ActionMapper:
                     )
         except Exception as e:
             logger.warning("HAL profile DB fallback to defaults: %s", e)
+        self._merge_hal_motion_profile_from_json(defaults)
         return defaults
 
+    def _park_vector_five(self, profile: dict) -> list:
+        """Парковочные шаги p1..p5: либо park_m1..park_m5 из профиля, либо park_x/park_z/push_up по осям."""
+        park = [0, 0, 0, 0, 0]
+        explicit = any(f"park_m{i}" in profile for i in range(1, 6))
+        if explicit:
+            for i in range(5):
+                key = f"park_m{i + 1}"
+                if key in profile:
+                    park[i] = int(profile[key])
+            return park
+        ix = _motor_index(profile["x_axis_motor"], "x_axis_motor")
+        iz = _motor_index(profile["z_axis_motor"], "z_axis_motor")
+        ip = _motor_index(profile["push_motor"], "push_motor")
+        park[ix] = int(profile["park_x"])
+        park[iz] = int(profile["park_z"])
+        park[ip] = int(profile["push_up"])
+        return park
+
+    def _illumination_step(self, profile: dict):
+        """
+        Прошивка: только $LED,0|1. Ненулевой led из БД трактуем как «вкл» (1).
+        Если заданы rgb_issue_r/g/b — шаг $RGB,r,g,b.
+        """
+        if all(
+            profile.get(k) is not None
+            for k in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b")
+        ):
+            r = _clamp_rgb_byte(int(profile["rgb_issue_r"]))
+            g = _clamp_rgb_byte(int(profile["rgb_issue_g"]))
+            b = _clamp_rgb_byte(int(profile["rgb_issue_b"]))
+            return f"RGB,{r},{g},{b}", False
+        led_on = 1 if int(profile.get("led", 0)) != 0 else 0
+        return f"LED,{led_on}", False
+
     def _build_hal_dispense_steps(self, number: int, cell_id=None):
+        """
+        Цепочка под no_block_plata: кадры MOT,p1..p5 (параллель осей в одном кадре),
+        порядок — задняя «безопасная» (опц.) → передняя к ячейке → штырь → парковка → LOCK.
+        """
         defaults = self._load_hal_motion_profile()
         try:
             cell_profile = self._e_cell.get_cell_hal_profile(cell_id) if cell_id else None
@@ -102,28 +218,37 @@ class ActionMapper:
 
         push_down = int(defaults["push_down"])
         push_up = int(defaults["push_up"])
-        park_x = int(defaults["park_x"])
-        park_z = int(defaults["park_z"])
-        led = int(defaults["led"])
         lock_ms = int(defaults["lock_ms"])
 
-        mot_x = int(defaults["x_axis_motor"])
-        mot_z = int(defaults["z_axis_motor"])
-        mot_push = int(defaults["push_motor"])
+        ix = _motor_index(defaults["x_axis_motor"], "x_axis_motor")
+        iz = _motor_index(defaults["z_axis_motor"], "z_axis_motor")
+        ip = _motor_index(defaults["push_motor"], "push_motor")
 
-        # Свет -> X/Z -> толкатель вниз/вверх -> парковка -> LOCK,ms
-        steps = [
-            (f"LED,{led}", False),
-            (f"MOT{mot_x},{x}", True),
-            (f"MOT{mot_z},{z}", True),
-            (f"MOT{mot_push},{push_down}", True),
-            (f"MOT{mot_push},{push_up}", True),
-            (f"MOT{mot_x},{park_x}", True),
-            (f"MOT{mot_z},{park_z}", True),
-            # В текущей прошивке LOCK,ms подтверждается OK без DONE:
-            # оставляем short и списываем по QTimer lock_ms.
-            (f"LOCK,{lock_ms}", False),
-        ]
+        park = self._park_vector_five(defaults)
+        steps = [self._illumination_step(defaults)]
+
+        pos = list(park)
+        if bool(defaults.get("rear_safe_first")):
+            pos[2] = int(defaults.get("rear_safe_m3", pos[2]))
+            pos[3] = int(defaults.get("rear_safe_m4", pos[3]))
+            steps.append((_fmt_mot5(pos), True))
+
+        pos[ix] = _clamp_mot_coord(x)
+        pos[iz] = _clamp_mot_coord(z)
+        steps.append((_fmt_mot5(pos), True))
+
+        pos = list(pos)
+        pos[ip] = _clamp_mot_coord(push_down)
+        steps.append((_fmt_mot5(pos), True))
+
+        pos = list(pos)
+        pos[ip] = _clamp_mot_coord(push_up)
+        steps.append((_fmt_mot5(pos), True))
+
+        steps.append((_fmt_mot5(list(park)), True))
+
+        # $LOCK,ms: на ATmega delay(lock_ms), затем одна строка DONE — второго QTimer(lock_ms) на клиенте нет.
+        steps.append((f"LOCK,{lock_ms}", False))
         return steps, lock_ms
 
     def _ensure_hal_gate(self):
@@ -147,10 +272,8 @@ class ActionMapper:
 
         def _on_sequence_finished():
             self._hal_sequence_in_progress = False
-            lock_ms = int(self._hal_lock_ms_pending or 0)
-            if lock_ms < 0:
-                lock_ms = 0
-            QTimer.singleShot(lock_ms, lambda: self.__executor.handle_controller_serial_response("command_ok"))
+            # Люк уже удержан на MCU внутри $LOCK,ms до DONE; списание сразу по command_ok.
+            self.__executor.handle_controller_serial_response("command_ok")
 
         gate.sequence_failed.connect(_on_sequence_failed)
         gate.sequence_aborted.connect(_on_sequence_aborted)
@@ -256,13 +379,10 @@ class ActionMapper:
             self.__executor.hardware_last_error = "serial_port_not_ready"
             return {"trigger": "err_devices"}
 
-        defaults = self._load_hal_motion_profile()
+        # no_block_plata: только $ZERO и $MOT,p1..p5 (нет LOCK0/LOCK1 на прошивке).
         startup_sequence = [
-            ("ZERO", True, 120_000),   # калибровка
-            (f"MOT{int(defaults['x_axis_motor'])},0", True, 30_000),  # парковка осей
-            (f"MOT{int(defaults['z_axis_motor'])},0", True, 30_000),
-            (f"MOT{int(defaults['push_motor'])},0", True, 30_000),
-            ("LOCK1", False, 5_000),   # держим люк/замок в закрытом состоянии
+            ("ZERO", True, 120_000),
+            ("MOT,0,0,0,0,0", True, 90_000),
         ]
 
         for cmd, is_long, timeout_ms in startup_sequence:
@@ -311,7 +431,7 @@ class ActionMapper:
             return {"trigger": "err_devices"}
 
         self._hal_sequence_in_progress = True
-        # Сразу переводим FSM в wait-экран; завершение сценария придёт как command_ok после QTimer(lock_ms).
+        # FSM: wait по command_is_send; command_ok после цепочки (без доп. задержки lock_ms на клиенте).
         return {"trigger": "command_is_send"}
 
 

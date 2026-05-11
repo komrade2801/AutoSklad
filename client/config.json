@@ -37,13 +37,18 @@
   "dev": {
     "ttyUSB": "/dev/ttyUSB0",
     "serial": "/dev/serial0",
-    "hal_uart": "/dev/serial0"
+    "hal_uart": "/dev/serial0",
+    "barcode_uart": "/dev/serial1"
   },
   "hal_test_scenario_path": "BarcodeScanner/hal_test_scenario.json",
   "hardware": {
     "protocol": "atmega_hal",
-    "comment_protocol": "legacy = номер ячейки ($n); atmega_hal = новый HAL (OK/DONE/MOTn,...)",
-    "baudrate": 9600
+    "comment_protocol": "legacy = номер ячейки ($n); atmega_hal = HAL no_block_plata (MOT,p1..p5, LED 0/1, RGB)",
+    "baudrate": 9600,
+    "hal_motion_profile": {
+      "comment": "Опционально: rear_safe_first, rear_safe_m3/m4, park_m1..park_m5, rgb_issue_r/g/b",
+      "rear_safe_first": false
+    }
   },
   "locks": {
     "load_locked": 0,

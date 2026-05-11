@@ -187,9 +187,9 @@ def _hal_default_is_long(command: str) -> bool:
     if c.startswith("$"):
         c = c[1:].strip()
     u = c.upper()
-    if u.startswith("LOCK,"):
+    if u.startswith("LOCK,") or u.startswith("SOL,"):
         return True
-    return c.startswith("MOT") or u == "ZERO"
+    return u == "ZERO" or u.startswith("MOT,") or (c.upper().startswith("MOT") and "," in c)
 
 
 def load_hal_test_scenario_steps(scenario_path: Path) -> List[Tuple[str, bool]]:
@@ -258,6 +258,7 @@ def main():
                     bridge_ok_to_fsm=False,
                     bridge_done_to_fsm=False,
                     bridge_error_to_fsm=False,
+                    emulate_no_block_plata=True,
                 )
                 logger.info("Using MockVendingSerialManager (atmega HAL)")
             else:
@@ -290,14 +291,35 @@ def main():
                 serial_manager = SerialManager(port=ports["ttyUSB"])
                 logger.info("Linux/RPi: legacy controller port=%s", ports["ttyUSB"])
 
+            barcode_cfg = cfg.get("barcode") or {}
+            bc_baud = int(barcode_cfg.get("baudrate") or 9600)
             if current_platform == platforms.Windows:
-                barcode = cfg["barcode"]
-                barcode_manager = SerialManager(port=barcode["port"])
-                logger.info(f"Windows: Barcode port={barcode['port']}")
+                bc_port = barcode_cfg.get("port") or "COM1"
+                barcode_manager = SerialManager(port=bc_port, baudrate=bc_baud)
+                logger.info("Windows: Barcode port=%s baud=%s", bc_port, bc_baud)
             else:
-                ports = cfg["dev"]
-                barcode_manager = SerialManager(port=ports["serial"])
-                logger.info(f"Linux/RPi: Barcode port={ports['serial']}")
+                ports = cfg.get("dev") or {}
+                # Linux: Windows/моки не трогаем. На Raspberry сканер по GPIO — /dev/serial1,
+                # если в dev не заданы barcode_uart / barcode_serial (не откатываемся на dev.serial = HAL).
+                if current_platform == platforms.Raspberry_Pi:
+                    bc_port = (
+                        ports.get("barcode_uart")
+                        or ports.get("barcode_serial")
+                        or "/dev/serial1"
+                    )
+                else:
+                    bc_port = (
+                        ports.get("barcode_uart")
+                        or ports.get("barcode_serial")
+                        or ports.get("serial")
+                    )
+                barcode_manager = SerialManager(port=bc_port, baudrate=bc_baud)
+                logger.info(
+                    "Linux: Barcode port=%s baud=%s (RPi=%s)",
+                    bc_port,
+                    bc_baud,
+                    current_platform == platforms.Raspberry_Pi,
+                )
 
         serial_manager.start()
         barcode_manager.start()
@@ -413,7 +435,7 @@ def main():
 
                     def _run_hal_test_scenario() -> None:
                         logger.info(
-                            "[HAL test] старт через 10 с: %s (%s шагов)",
+                            "[HAL test] старт через 15 с: %s (%s шагов)",
                             scenario_path,
                             len(hal_steps),
                         )
@@ -422,7 +444,7 @@ def main():
                                 "[HAL test] run_sequence отклонён (уже выполняется?)",
                             )
 
-                    QTimer.singleShot(10_000, _run_hal_test_scenario)
+                    QTimer.singleShot(15_000, _run_hal_test_scenario)
                 else:
                     logger.warning("HAL test: в файле нет шагов: %s", scenario_path)
         elif scenario_rel and controller_protocol != "atmega_hal":

@@ -1,37 +1,15 @@
 {
-  "comment": "Сценарий по Vending_NEW.ino + логика цикла выдачи. Важно: (1) UART шлёт команды строго по одной — «одновременно Z и X» на шине = последовательные MOT*. (2) В .ino zero() крутит только моторы 1–4; MOT5 в ноль — отдельными MOT5,n при доработке прошивки. (3) Сейчас LED,x — один ШИМ (не RGB WS2812 из комментария в .ino); подставьте свои уровни под стенд. (4) Координаты MOT* в мм из примера — замените на ячейку.",
+  "comment": "Smoke-тест для MegaHardware/no_block_plata.ino: $LED 0|1, $RGB, $ZERO, кадры $MOT,p1..p5, $LOCK,ms. Без LOCK0/1, MOTn_SPEED и отдельных MOTn,x — их нет в этой прошивке. Координаты подберите на стенде (≤999999).",
   "steps": [
-    { "command": "LOCK1", "is_long": false, "note": "Соленоид закрыт; дверь заблокирована" },
-    { "command": "LED,1", "is_long": false, "note": "Подсветка дверцы: заглушка под «красный»/дефолт (1 канал ШИМ)" },
-    { "command": "RGB,20,128,255", "is_long": false, "note": "Подсветка дверцы: RGB WS2812 (3 канала ШИМ)" },
-    { "command": "MOT1_SPEED,400", "is_long": false },
-    { "command": "MOT1_BOOST,800", "is_long": false },
-    { "command": "MOT2_SPEED,400", "is_long": false },
-    { "command": "MOT2_BOOST,800", "is_long": false },
-    { "command": "MOT3_SPEED,400", "is_long": false },
-    { "command": "MOT3_BOOST,800", "is_long": false },
-    { "command": "MOT4_SPEED,300", "is_long": false },
-    { "command": "MOT4_BOOST,600", "is_long": false },
-    { "command": "MOT5_SPEED,300", "is_long": false },
-    { "command": "MOT5_BOOST,600", "is_long": false },
-
-    { "command": "ZERO", "is_long": true, "note": "После ВКЛ: портал/каретки к концевикам как в zero() прошивки; затем инкрементально X=Y=Z=0" },
-
-    { "command": "SENS1", "is_long": false },
-    { "command": "SENS2", "is_long": false },
-    { "command": "SENS3", "is_long": false },
-    { "command": "SENS4", "is_long": false },
-    { "command": "LED,128", "is_long": false, "note": "Начало выдачи: «оранжевый» — для 1-канального ШИМ подберите значение" },
-    { "command": "MOT1,1000", "is_long": false },
-    { "command": "MOT2,1000", "is_long": false },
-    { "command": "MOT3,1000", "is_long": false },
-    { "command": "MOT4,1000", "is_long": false },
-    { "command": "MOT5,1000", "is_long": false },
-    { "command": "MOT1,0", "is_long": false },
-    { "command": "MOT2,0", "is_long": false },
-    { "command": "MOT3,0", "is_long": false },
-    { "command": "MOT4,0", "is_long": false },
-    { "command": "MOT5,0", "is_long": false }
-
+    { "command": "LED,1", "is_long": false, "note": "Подсветка вкл (ШИМ 0|1)" },
+    { "command": "RGB,64,64,255", "is_long": false, "note": "Адресная лента, опционально" },
+    { "command": "ZERO", "is_long": true, "note": "WAIT→DONE, долго" },
+    { "command": "MOT,0,0,0,0,0", "is_long": true, "note": "Парковка всех осей одним кадром" },
+    { "command": "MOT,1000,1000,1000,1000,0", "is_long": true, "note": "Пример кадра; замените на безопасные шаги" },
+    { "command": "MOT,1000,1000,1000,1000,50", "is_long": true, "note": "Пример кадра; замените на безопасные шаги" },
+    { "command": "MOT,1000,1000,1000,1000,0", "is_long": true, "note": "Пример кадра; замените на безопасные шаги" },
+    { "command": "MOT,0,0,0,0,0", "is_long": true, "note": "Возврат в парковку" },
+    { "command": "LOCK,500", "is_long": false, "note": "Импульс люка, задержка на MCU до DONE" },
+    { "command": "LED,0", "is_long": false, "note": "Подсветка выкл" }
   ]
 }

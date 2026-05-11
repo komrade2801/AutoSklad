@@ -17,7 +17,7 @@ class EngineHardwareConfig(BaseCRUD):
         x_axis_motor: int = 1,
         z_axis_motor: int = 3,
         push_motor: int = 5,
-        led_default: int = 180,
+        led_default: int = 1,
         lock_ms_default: int = 15000,
         push_down_default: int = 900,
         push_up_default: int = 0,

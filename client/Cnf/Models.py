@@ -70,6 +70,9 @@ class KeyConfig(BaseModel):
 class DevConfig(BaseModel):
     ttyUSB: Optional[str] = None
     serial: Optional[str] = None
+    hal_uart: Optional[str] = None
+    barcode_uart: Optional[str] = None
+    barcode_serial: Optional[str] = None
 
 
 class AppConfig(BaseModel):
