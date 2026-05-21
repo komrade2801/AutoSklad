@@ -19,9 +19,9 @@ from EventsSystem.hal_coords import (
     HAL_JOG_Z_INDICES,
     HAL_MOT_PUSH_INDEX,
     format_hal_coords_error,
+    clamp_mot_vector,
     hal_dispense_target_mot5,
     hal_project_hal_xz_from_motors,
-    normalize_mot_vector,
     validate_hal_cell_coords,
 )
 from DB.Data.sqlite_db import SessionLocal, engine
@@ -319,7 +319,7 @@ class ActionMapper:
         defaults = self._load_hal_motion_profile()
 
         park = self._park_vector_five(defaults)
-        cell_target = normalize_mot_vector(hal_dispense_target_mot5(x, z))
+        cell_target = list(hal_dispense_target_mot5(x, z))
         steps = [
             self._illumination_step(defaults),
             ("ZERO", True),
@@ -335,11 +335,11 @@ class ActionMapper:
 
         pos = list(cell_target)
         pos[HAL_MOT_PUSH_INDEX] = _clamp_mot_coord(HAL_DISPENSE_PUSH_DOWN)
-        steps.append((_fmt_mot5(normalize_mot_vector(pos)), True))
+        steps.append((_fmt_mot5(clamp_mot_vector(pos)), True))
 
         pos = list(cell_target)
         pos[HAL_MOT_PUSH_INDEX] = _clamp_mot_coord(HAL_DISPENSE_PUSH_UP)
-        steps.append((_fmt_mot5(normalize_mot_vector(pos)), True))
+        steps.append((_fmt_mot5(clamp_mot_vector(pos)), True))
 
         steps.append((_fmt_mot5(list(park)), True))
 
@@ -607,7 +607,7 @@ class ActionMapper:
         pos = list(self._hal_motor_positions)
         for idx in indices:
             pos[idx] = _clamp_mot_coord(int(pos[idx]) + delta)
-        pos = normalize_mot_vector(pos)
+        pos = clamp_mot_vector(pos)
 
         cmd = _fmt_mot5(pos)
         ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
@@ -655,7 +655,7 @@ class ActionMapper:
                 "hal_motor_positions": list(self._hal_motor_positions),
             }
 
-        pos = normalize_mot_vector(pos_list[:5])
+        pos = clamp_mot_vector(pos_list[:5])
         cmd = _fmt_mot5(pos)
         ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
         if not ok:

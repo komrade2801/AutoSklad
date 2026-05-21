@@ -6,6 +6,7 @@ from EventsSystem.hal_coords import (
     CELL_NUMBER_MIN,
     MOT_STEP_MAX,
     MOT_STEP_MIN,
+    hal_mot4_from_hal_x,
     message_for_reason,
     validate_cell_number_text,
     validate_hal_cell_coords,
@@ -34,16 +35,17 @@ def _motor_index_from_jog_trigger(trigger_name: str):
 
 class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
     _KEYBOARD_CLOSE_MS = 350
-    JOG_STEP_OPTIONS = (10, 50, 100, 500, 1000)
+    JOG_STEP_OPTIONS = (1, 5, 10, 50, 100)
     DEFAULT_JOG_STEP = 50
     _EDIT_CELL_OK = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 22px; }"
+        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 18px; }"
     )
     _EDIT_CELL_ERR = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 2px solid #e04040; border-radius: 6px; font-size: 22px; }"
+        "border: 2px solid #e04040; border-radius: 6px; font-size: 18px; }"
     )
+    _LBL_CELL_MOT_DEFAULT = "(0, 0, 0)"
     _BTN_SAVE_OK = (
         "QPushButton { color: #FFFFFF; background-color: #2d7a3e;"
         "border-radius: 8px; font-size: 20px; font-weight: 600; min-height: 48px; }"
@@ -65,14 +67,14 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         self._zero_ok_timer = None
         self.hal_jog_step = self.DEFAULT_JOG_STEP
         self.setupUi(self)
-        self._btn_save_style_normal = self.btn_hal_save_coords.styleSheet()
         self._btn_park_style_normal = self.btn_hal_park.styleSheet()
         self._btn_zero_style_normal = self.btn_hal_zero.styleSheet()
         self.lbl_cell.setFixedWidth(_LABEL_WIDTH)
         self.lbl_cell.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.layout_cell_row.setSpacing(8)
-        stretch_idx = self.layout_cell_row.indexOf(self.edit_cell_number)
-        self.layout_cell_row.setStretch(stretch_idx, 1)
+        mot_lbl_idx = self.layout_cell_row.indexOf(self.lbl_cell_mot_coords)
+        self.layout_cell_row.setStretch(mot_lbl_idx, 1)
+        self.lbl_cell_mot_coords.setText(self._LBL_CELL_MOT_DEFAULT)
         self.lbl_input_error.setText("")
         self.lbl_input_error.hide()
         self.edit_cell_number.setValidator(
@@ -81,15 +83,52 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         self.edit_cell_number.setStyleSheet(self._EDIT_CELL_OK)
         self._setup_jog_step_selector()
         self._setup_jog_panel()
+        self.btn_hal_save_coords = self.jog_panel.btn_hal_save_coords
+        self._btn_save_style_normal = self.btn_hal_save_coords.styleSheet()
         self._setup_keyboard()
         self.edit_cell_number.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.edit_cell_number.installEventFilter(self)
         self._bind_error_dismiss_handlers()
         self.normalize_screen_geometry()
 
+    @staticmethod
+    def _format_cell_mot_coords_label(
+        hal_x, hal_z
+    ) -> str:
+        """M1–M2=hal_z, M3=hal_x, M4=hal_x−25 для подписи рядом с номером ячейки."""
+        z_txt = "NULL" if hal_z is None else str(int(hal_z))
+        x_txt = "NULL" if hal_x is None else str(int(hal_x))
+        if hal_x is None:
+            m4_txt = "NULL"
+        else:
+            m4_txt = str(hal_mot4_from_hal_x(int(hal_x)))
+        return f"({z_txt}, {x_txt}, {m4_txt})"
+
+    def _refresh_cell_mot_coords_label(self) -> None:
+        """Подставить MOT-координаты ячейки из БД по введённому номеру."""
+        number, reason = validate_cell_number_text(self.edit_cell_number.text())
+        if reason:
+            self.lbl_cell_mot_coords.setText(self._LBL_CELL_MOT_DEFAULT)
+            return
+        try:
+            from DB.Data.sqlite_db import SessionLocal, engine
+            from DB.Engine.CellCRUD import EngineCell
+
+            session = SessionLocal(engine())
+            cell = EngineCell(session).get_cell_by_number(int(number))
+        except Exception as e:
+            logger.warning("cell mot coords lookup: %s", e)
+            cell = None
+        if not cell:
+            self.lbl_cell_mot_coords.setText(self._LBL_CELL_MOT_DEFAULT)
+            return
+        self.lbl_cell_mot_coords.setText(
+            self._format_cell_mot_coords_label(cell.hal_x, cell.hal_z)
+        )
+
     def _bind_error_dismiss_handlers(self) -> None:
         """Сброс сообщения об ошибке при действиях на экране."""
-        for name in ("btn_hal_park", "btn_hal_zero", "btn_back"):
+        for name in ("btn_hal_park", "btn_hal_zero", "btn_hal_save_coords", "btn_back"):
             btn = getattr(self, name, None)
             if btn is not None:
                 btn.clicked.connect(self._clear_input_error)
@@ -320,6 +359,12 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
             ):
                 return True
             if (
+                obj is self.edit_cell_number
+                and event.type() == QtCore.QEvent.FocusOut
+                and not self._keyboard_closing
+            ):
+                self._refresh_cell_mot_coords_label()
+            if (
                 event.type() == QtCore.QEvent.MouseButtonPress
                 and event.button() == QtCore.Qt.LeftButton
                 and not self._motion_busy
@@ -344,14 +389,13 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         for name in (
             "btn_hal_park",
             "btn_hal_zero",
-            "btn_hal_save_coords",
             "btn_back",
             "edit_cell_number",
+            "btn_jog_step_1",
+            "btn_jog_step_5",
             "btn_jog_step_10",
             "btn_jog_step_50",
             "btn_jog_step_100",
-            "btn_jog_step_500",
-            "btn_jog_step_1000",
         ):
             w = getattr(self, name, None)
             if w is not None:
@@ -463,6 +507,8 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
             self._keyboard_target is not None
             and self._keyboard_target is not target
         ):
+            if self._keyboard_target is self.edit_cell_number:
+                self._refresh_cell_mot_coords_label()
             self._normalize_coord_edit_if_empty(self._keyboard_target)
         if self._is_coord_input(target):
             target.blockSignals(True)
@@ -480,6 +526,8 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
 
     def _hide_keyboard(self):
         self._keyboard_closing = True
+        if self._keyboard_target is self.edit_cell_number:
+            self._refresh_cell_mot_coords_label()
         self._normalize_coord_edit_if_empty(self._keyboard_target)
         self.keyboard.setVisible(False)
         self.btn_back.show()
@@ -558,6 +606,7 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
 
         if save_ok:
             self._flash_save_button_success()
+            self._refresh_cell_mot_coords_label()
         if park_ok:
             self._flash_button_success(
                 self.btn_hal_park,
@@ -580,6 +629,7 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
             self.edit_cell_number.blockSignals(True)
             self.edit_cell_number.setText(str(int(prefill)))
             self.edit_cell_number.blockSignals(False)
+        self._refresh_cell_mot_coords_label()
         self.edit_cell_number.clearFocus()
 
     def get_data(self):

@@ -218,10 +218,6 @@ class MainWindow(QtWidgets.QWidget):
                 btn = s38.findChild(QtWidgets.QPushButton, btn_name)
                 if btn is not None:
                     btn.clicked.connect(lambda checked=False, h=handler: h())
-        s41 = self.widgets.get("screen_41_hal_cells_table")
-        if s41 is not None:
-            s41.event_hal_cell_row = self._on_hal_cell_row_clicked
-
     def _on_hal_jog_clicked(self, trigger_name: str):
         if self.executor is not None:
             self.executor.last_hal_jog_trigger = trigger_name
@@ -238,11 +234,6 @@ class MainWindow(QtWidgets.QWidget):
 
     def _on_hal_zero_clicked(self):
         self.button_clicked("btn_hal_zero", "cmd_hal_zero")
-
-    def _on_hal_cell_row_clicked(self, cell_number: int):
-        if self.executor is not None:
-            self.executor.engineer_cell_number = int(cell_number)
-        self.button_clicked("hal_cell_row_select", "screen_38_hal_coords")
 
     def _capture_engineer_cell_number_from_widget(self):
         widget = self.widgets.get(self.lump.state())

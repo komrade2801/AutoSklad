@@ -14,7 +14,6 @@ class screen_41_hal_cells_table(BaseScreen, Ui_screen_41_hal_cells_table):
         super().__init__()
         self.setupUi(self)
         self.enable_touch_scroll = True
-        self.event_hal_cell_row = None
         self._table_header = WidgetCellHalHeader()
         header_layout = self.widget_table_header.layout()
         if header_layout is None:
@@ -70,7 +69,6 @@ class screen_41_hal_cells_table(BaseScreen, Ui_screen_41_hal_cells_table):
                 continue
             widget = WidgetCellHalRow()
             widget.set_data(**row)
-            widget.event_select_row = self._on_row_selected
             if width > 0:
                 widget.setFixedWidth(width)
                 widget.apply_column_widths(width)
@@ -79,10 +77,6 @@ class screen_41_hal_cells_table(BaseScreen, Ui_screen_41_hal_cells_table):
             self.listWidget.addItem(item)
             self.listWidget.setItemWidget(item, widget)
         self._sync_table_geometry()
-
-    def _on_row_selected(self, number: int):
-        if callable(self.event_hal_cell_row):
-            self.event_hal_cell_row(number)
 
     def get_data(self):
         return None

@@ -491,7 +491,6 @@ transitions = [
     {'trigger': 'err_devices', 'source': 'read_db_engineer_get_cell', 'dest': 'write_db_err_devices'},
     {'trigger': 'view_hal_coords', 'source': 'read_db_engineer_command_ok', 'dest': 'screen_38_hal_coords'},
     {'trigger': 'view_hal_dispense', 'source': 'read_db_engineer_command_ok', 'dest': 'screen_40_hal_dispense'},
-    {'trigger': 'hal_cell_row_select', 'source': 'screen_41_hal_cells_table', 'dest': 'screen_38_hal_coords'},
     {'trigger': 'hal_jog_z_minus', 'source': 'screen_38_hal_coords', 'dest': 'cmd_hal_jog'},
     {'trigger': 'hal_jog_z_plus', 'source': 'screen_38_hal_coords', 'dest': 'cmd_hal_jog'},
     {'trigger': 'hal_jog_m3_minus', 'source': 'screen_38_hal_coords', 'dest': 'cmd_hal_jog'},

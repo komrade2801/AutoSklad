@@ -151,6 +151,11 @@ class WidgetHalJogPanel(QtWidgets.QWidget):
         self.btn_hal_mot_send.clicked.connect(self._on_send_clicked)
         root.addWidget(self.btn_hal_mot_send)
 
+        self.btn_hal_save_coords = QtWidgets.QPushButton("Сохранить координаты", self)
+        self.btn_hal_save_coords.setObjectName("btn_hal_save_coords")
+        self.btn_hal_save_coords.setStyleSheet(self._SEND_BTN_STYLE)
+        root.addWidget(self.btn_hal_save_coords)
+
     def _on_jog(self, trigger_name: str):
         if callable(self.event_hal_jog):
             self.event_hal_jog(trigger_name)

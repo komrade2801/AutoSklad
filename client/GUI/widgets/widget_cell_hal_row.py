@@ -27,7 +27,6 @@ class WidgetCellHalRow(BaseScreen):
         self.setObjectName("widget_cell_hal_row")
         self.cell_id = None
         self.cell_number = None
-        self.event_select_row = None
 
         root = QtWidgets.QHBoxLayout(self)
         root.setContentsMargins(8, 6, 8, 6)
@@ -65,8 +64,3 @@ class WidgetCellHalRow(BaseScreen):
 
     def sizeHint(self):
         return QtCore.QSize(self.width(), 52)
-
-    def mousePressEvent(self, event):
-        super().mousePressEvent(event)
-        if callable(self.event_select_row) and self.cell_number is not None:
-            self.event_select_row(int(self.cell_number))

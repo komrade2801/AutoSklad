@@ -405,9 +405,11 @@ Event-driven architecture connecting GUI actions to business logic and hardware.
 - **UI State Updates**: Changes screen content in response to events
 
 ### HAL coordinates (`hal_coords.py`, `action_cmd.py`):
-- Cell targets **`hal_x`** / **`hal_z`** map to `$MOT,p1..p5` as: **M1=M2=hal_z**, **M3=hal_x**, **M4=hal_x−25**, **M5=0** at approach; dispense stroke **M5=60** then **M5=0**
-- JOG: Z moves M1+M2, X moves M3+M4 (offset preserved), Y moves M5 only
-- Save to `Cell`: read **hal_x** from M3, **hal_z** from M1
+- **Dispense only:** cell **`hal_x`** / **`hal_z`** → **M1=M2=hal_z**, **M3=hal_x**, **M4=hal_x−25**, **M5=0**; stroke **M5=60** then **M5=0** (`hal_dispense_target_mot5`)
+- Engineer screen: **Отправка** / JOG send entered motor coords as-is (`clamp_mot_vector`)
+- JOG: Z → M1+M2; M3, M4, M5 independently
+- Save to `Cell`: **hal_x** from M3, **hal_z** from M1
+- Cell number row: compact edit + **`lbl_cell_mot_coords`** `(hal_z, hal_x, hal_x−25)` loaded from DB on focus out / keyboard close
 
 ## 6. Local Database System (`DB/`)
 

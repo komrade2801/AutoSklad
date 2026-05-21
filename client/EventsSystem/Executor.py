@@ -39,7 +39,7 @@ class Executor:
         self.engineer_cell_number: Optional[int] = None
         # Последний триггер JOG (hal_jog_x_plus и т.д.)
         self.last_hal_jog_trigger: str = ""
-        # Шаг JOG с screen_38 (10 / 50 / 100 / 500 / 1000), по умолчанию 50
+        # Шаг JOG с screen_38 (1 / 5 / 10 / 50 / 100), по умолчанию 50
         self.hal_jog_step: int = 50
         # Целевой вектор MOT для кнопки «Отправка» на screen_38
         self.hal_mot_goto_positions: Optional[list] = None

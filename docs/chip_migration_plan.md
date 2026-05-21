@@ -195,9 +195,10 @@ flowchart TB
 |------------|-----------|
 | Лейбл **M1…M5** | Текущие координаты (после каждого `command_finished`; до появления `$POS` на прошивке — последние подтверждённые/отправленные шаги с пометкой в UI) |
 | **Парковка** (`btn_hal_park`) | FSM: `cmd_hal_zero` (цепочка как в startup: `$ZERO`, затем `$MOT,0,0,0,0,0`) → `command_is_send` → **`screen_32_wait`** (подпись через `set_data`, напр. «Парковка…»). По `command_ok` — **возврат на `screen_38_hal_coords`**, без `write_db_tool_consumption` |
-| Поле **номер ячейки** | `QLineEdit` + кнопка клавиатуры → overlay **`WidgetKeyboard`** (как `screen_3`) или выбор из всплывающего диалога |
-| **Сохранить координаты** | `write_db_cell_hal_coords`: **hal_z** ← MOT1, **hal_x** ← MOT3 (M2=M1, M4=M3−25 на шине) |
-| **JOG** (виджет `WidgetHalJogPanel`) | **Z** — MOT1+MOT2; **X** — MOT3+MOT4 (с сохранением смещения −25); **Y** — MOT5. Команды → `cmd_hal_jog` |
+| Поле **номер ячейки** | Узкий `QLineEdit` + overlay **`WidgetKeyboard`**; справа **`lbl_cell_mot_coords`**: `(M1–M2, M3, M4)` = `(hal_z, hal_x, hal_x−25)` из БД при уходе фокуса / закрытии клавиатуры |
+| **Сохранить координаты** | `write_db_cell_hal_coords`: **hal_z** ← MOT1, **hal_x** ← MOT3 |
+| **Отправка** / **JOG** | Кадр `MOT` с введёнными/сдвинутыми координатами осей (`clamp_mot_vector`), без пересчёта M4 от M3 |
+| **JOG** (виджет `WidgetHalJogPanel`) | **Z** — MOT1+MOT2; **M3**, **M4**, **M5** — по отдельности. Команды → `cmd_hal_jog` |
 | `btn_back` | → `screen_37_engineer_hub` |
 
 **Важно для FSM:** сейчас `screen_32_wait` + `command_ok` ведёт в `write_db_tool_consumption` (сценарий пользовательской выдачи). Для инженера нужна **ветка контекста** (флаг сессии / отдельный триггер `command_ok_engineer`): парковка и тестовая выдача с `screen_40` не должны списывать `Consumption`.
@@ -221,7 +222,7 @@ flowchart TB
 |---------|-----------|
 | Список | `QListWidget` + строковый виджет **`WidgetCellHalRow`** (номер, `hal_x`, `hal_z`, метка NULL / (0,0)); `enable_touch_scroll = True` |
 | Данные | `read_db_cells_hal_list` в `action_db` |
-| Тап по строке (опц.) | Переход на `screen_38_hal_coords` с подставленным номером ячейки |
+| Тап по строке | Нет — только просмотр списка; редактирование на `screen_38_hal_coords` |
 | `btn_back` | → `screen_37_engineer_hub` |
 
 ### Слой логики (новые состояния FSM / actions)
