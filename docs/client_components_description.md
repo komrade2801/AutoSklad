@@ -404,6 +404,11 @@ Event-driven architecture connecting GUI actions to business logic and hardware.
 - **Database Integration**: Executes CRUD operations based on events
 - **UI State Updates**: Changes screen content in response to events
 
+### HAL coordinates (`hal_coords.py`, `action_cmd.py`):
+- Cell targets **`hal_x`** / **`hal_z`** map to `$MOT,p1..p5` as: **M1=M2=hal_z**, **M3=hal_x**, **M4=hal_x−25**, **M5=0** at approach; dispense stroke **M5=60** then **M5=0**
+- JOG: Z moves M1+M2, X moves M3+M4 (offset preserved), Y moves M5 only
+- Save to `Cell`: read **hal_x** from M3, **hal_z** from M1
+
 ## 6. Local Database System (`DB/`)
 
 SQLite-based local data storage for offline operation and caching.

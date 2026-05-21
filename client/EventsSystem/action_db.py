@@ -3125,7 +3125,7 @@ class ActionMapper:
             return {"trigger": "view_err"}
 
     def write_db_cell_hal_coords(self, *args, **kwargs):
-        """Запись hal_x/hal_z из полей M1/M3 (screen_38) в ячейку по номеру."""
+        """Запись hal_x/hal_z из MOT3/M1 (screen_38) в ячейку по номеру."""
         from EventsSystem.hal_coords import (
             message_for_reason,
             validate_cell_number_text,

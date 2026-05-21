@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 from Core.app_logging import get_logger
 from GUI.BaseScreen import BaseScreen
 
@@ -52,6 +52,13 @@ class screen_32_wait(BaseScreen, Ui_screen_32_wait):
             self.lbl_info_1.setText(str(message))
         else:
             self.lbl_info_1.setText("Выдача инструмента")
+
+        loading = str(message or "").strip() == "Загрузка"
+        for name in ("btn_help", "btn_ico_info", "btn_ico_login", "btn_login"):
+            btn = self.findChild(QtWidgets.QPushButton, name)
+            if btn is not None:
+                btn.setVisible(not loading)
+                btn.setEnabled(not loading)
 
     def get_data(self):
         return None

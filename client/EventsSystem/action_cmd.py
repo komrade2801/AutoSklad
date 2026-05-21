@@ -13,8 +13,15 @@ from pathlib import Path
 from Core.platforms import detect
 from BarcodeScanner.dispense_command_gate import DispenseCommandGate
 from EventsSystem.hal_coords import (
+    HAL_DISPENSE_PUSH_DOWN,
+    HAL_DISPENSE_PUSH_UP,
+    HAL_JOG_X_INDICES,
+    HAL_JOG_Z_INDICES,
+    HAL_MOT_PUSH_INDEX,
     format_hal_coords_error,
     hal_dispense_target_mot5,
+    hal_project_hal_xz_from_motors,
+    normalize_mot_vector,
     validate_hal_cell_coords,
 )
 from DB.Data.sqlite_db import SessionLocal, engine
@@ -104,7 +111,7 @@ class ActionMapper:
             'cmd_hal_park': lambda *args, **kwargs: self.cmd_hal_park(*args, **kwargs),
             'cmd_hal_jog': lambda *args, **kwargs: self.cmd_hal_jog(*args, **kwargs),
             'cmd_hal_mot_goto': lambda *args, **kwargs: self.cmd_hal_mot_goto(*args, **kwargs),
-            'cmd_run_timer_event': lambda *args, **kwargs: logger.debug("cmd_run_timer_event %s %s", args, kwargs),
+            'cmd_run_timer_event': lambda *args, **kwargs: self.cmd_run_timer_event(*args, **kwargs),
             'cmd_keyboard_toggle': lambda index: logger.debug("cmd_keyboard_toggle %s", index),
         }
         self._hal_motor_positions = [0, 0, 0, 0, 0]
@@ -127,6 +134,11 @@ class ActionMapper:
         """
         logger.info("cmd_start: trigger system_start")
         return {"trigger": "system_start"}
+
+    def cmd_run_timer_event(self, *args, **kwargs):
+        """После фоновых таймеров/инициализации — допуск в основной UI."""
+        logger.debug("cmd_run_timer_event: ready_to_use")
+        return {"trigger": "ready_to_use"}
 
     def _merge_hal_motion_profile_from_json(self, defaults: dict) -> None:
         """Доп. поля из hardware.hal_motion_profile в client/config.json (необязательно)."""
@@ -161,8 +173,8 @@ class ActionMapper:
             "park_m3": 0,
             "park_m4": 0,
             "park_m5": 0,
-            "x_axis_motor": 1,
-            "z_axis_motor": 3,
+            "x_axis_motor": 3,
+            "z_axis_motor": 1,
             "push_motor": 5,
             "rear_safe_first": False,
             "rear_safe_m3": 0,
@@ -229,27 +241,19 @@ class ActionMapper:
         return None, 0
 
     def _jog_motor_indices(self, axis: str, profile: dict) -> list:
-        ix = _motor_index(profile["x_axis_motor"], "x_axis_motor")
-        iz = _motor_index(profile["z_axis_motor"], "z_axis_motor")
-        ip = _motor_index(profile["push_motor"], "push_motor")
         if axis == "x":
-            rear = ix + 2
-            return [ix] if rear > 4 else [ix, rear]
+            return list(HAL_JOG_X_INDICES)
         if axis == "z":
-            rear = iz + 1
-            return [iz] if rear > 4 else [iz, rear]
+            return list(HAL_JOG_Z_INDICES)
         if axis == "y":
-            return [ip]
+            return [HAL_MOT_PUSH_INDEX]
         if axis in ("m1", "m2", "m3", "m4", "m5"):
             return [int(axis[1]) - 1]
         return []
 
     def _project_hal_xz_from_motors(self, profile: dict) -> tuple:
-        """Проекция M1..M5 в hal_x/hal_z по профилю осей."""
-        pos = self._hal_motor_positions
-        ix = _motor_index(profile["x_axis_motor"], "x_axis_motor")
-        iz = _motor_index(profile["z_axis_motor"], "z_axis_motor")
-        return int(pos[ix]), int(pos[iz])
+        """Проекция M1..M5 в hal_x (M3) и hal_z (M1)."""
+        return hal_project_hal_xz_from_motors(self._hal_motor_positions)
 
     def _park_vector_five(self, profile: dict) -> list:
         """Парковочный кадр MOT,p1..p5 из park_m1..park_m5 профиля."""
@@ -305,7 +309,7 @@ class ActionMapper:
         Цепочка под no_block_plata: кадры MOT,p1..p5 (параллель осей в одном кадре),
         порядок — подсветка (LED/RGB) → ZERO → задняя «безопасная» (опц.) → к ячейке → штырь → парковка.
 
-        Подъезд к ячейке из hal_x/hal_z БД: M1=M3=hal_x, M2=M4=hal_z, M5=0.
+        Подъезд к ячейке: M1=M2=hal_z, M3=hal_x, M4=hal_x−25, M5=0; штырь M5: 60 → 0.
         """
         coords, coord_err = self._resolve_hal_target_coords(number, cell_id=cell_id)
         if coord_err:
@@ -314,15 +318,8 @@ class ActionMapper:
 
         defaults = self._load_hal_motion_profile()
 
-        push_down = int(defaults["push_down"])
-        push_up = int(defaults["push_up"])
-
-        ip = _motor_index(defaults["push_motor"], "push_motor")
-
         park = self._park_vector_five(defaults)
-        cell_target = [
-            _clamp_mot_coord(v) for v in hal_dispense_target_mot5(x, z)
-        ]
+        cell_target = normalize_mot_vector(hal_dispense_target_mot5(x, z))
         steps = [
             self._illumination_step(defaults),
             ("ZERO", True),
@@ -337,12 +334,12 @@ class ActionMapper:
         steps.append((_fmt_mot5(list(cell_target)), True))
 
         pos = list(cell_target)
-        pos[ip] = _clamp_mot_coord(push_down)
-        steps.append((_fmt_mot5(pos), True))
+        pos[HAL_MOT_PUSH_INDEX] = _clamp_mot_coord(HAL_DISPENSE_PUSH_DOWN)
+        steps.append((_fmt_mot5(normalize_mot_vector(pos)), True))
 
         pos = list(cell_target)
-        pos[ip] = _clamp_mot_coord(push_up)
-        steps.append((_fmt_mot5(pos), True))
+        pos[HAL_MOT_PUSH_INDEX] = _clamp_mot_coord(HAL_DISPENSE_PUSH_UP)
+        steps.append((_fmt_mot5(normalize_mot_vector(pos)), True))
 
         steps.append((_fmt_mot5(list(park)), True))
 
@@ -467,12 +464,19 @@ class ActionMapper:
         if protocol != "atmega_hal":
             logger.info("cmd_test_self: legacy mode, skipping HAL startup contract")
             self.__executor.hardware_ready = True
+            self.__executor.wait_screen_message = ""
+            self.__executor.engineer_wait_context = None
             return {"trigger": "ok"}
+
+        def _fail_startup(err_key: str):
+            self.__executor.hardware_last_error = err_key
+            self.__executor.wait_screen_message = ""
+            self.__executor.engineer_wait_context = None
+            return {"trigger": "err_devices"}
 
         mgr = self.__executor.controller_serial_manager
         if not mgr:
-            self.__executor.hardware_last_error = "controller_manager_missing"
-            return {"trigger": "err_devices"}
+            return _fail_startup("controller_manager_missing")
 
         if hasattr(mgr, "initialize_mock"):
             try:
@@ -483,8 +487,7 @@ class ActionMapper:
         if hasattr(mgr, "check_connection"):
             try:
                 if not bool(mgr.check_connection()):
-                    self.__executor.hardware_last_error = "serial_port_not_ready"
-                    return {"trigger": "err_devices"}
+                    return _fail_startup("serial_port_not_ready")
             except Exception as e:
                 logger.warning("cmd_test_self: check_connection failed, fallback to serial_conn check: %s", e)
 
@@ -496,8 +499,7 @@ class ActionMapper:
                 break
             QThread.msleep(50)
         else:
-            self.__executor.hardware_last_error = "serial_port_not_ready"
-            return {"trigger": "err_devices"}
+            return _fail_startup("serial_port_not_ready")
 
         # no_block_plata: только $ZERO и $MOT,p1..p5 (нет LOCK0/LOCK1 на прошивке).
         startup_sequence = [
@@ -508,14 +510,13 @@ class ActionMapper:
         for cmd, is_long, timeout_ms in startup_sequence:
             ok, reason = self._wait_hal_command_finished(cmd, is_long, timeout_ms)
             if not ok:
-                self.__executor.hardware_last_error = f"{cmd}:{reason}"
                 logger.error(
                     "cmd_test_self failed at %s: %s recent_rx=%s",
                     cmd,
                     reason,
                     self.__executor.format_hal_rx_snapshot(),
                 )
-                return {"trigger": "err_devices"}
+                return _fail_startup(f"{cmd}:{reason}")
 
         self.__executor.hardware_ready = True
         self._hal_motor_positions = [0, 0, 0, 0, 0]
@@ -524,6 +525,8 @@ class ActionMapper:
             "cmd_test_self: hardware ready recent_rx=%s",
             self.__executor.format_hal_rx_snapshot(),
         )
+        self.__executor.wait_screen_message = ""
+        self.__executor.engineer_wait_context = None
         return {"trigger": "ok"}
 
     def cmd_hal_zero(self, *args, **kwargs):
@@ -604,6 +607,7 @@ class ActionMapper:
         pos = list(self._hal_motor_positions)
         for idx in indices:
             pos[idx] = _clamp_mot_coord(int(pos[idx]) + delta)
+        pos = normalize_mot_vector(pos)
 
         cmd = _fmt_mot5(pos)
         ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
@@ -651,7 +655,7 @@ class ActionMapper:
                 "hal_motor_positions": list(self._hal_motor_positions),
             }
 
-        pos = [_clamp_mot_coord(int(v)) for v in pos_list[:5]]
+        pos = normalize_mot_vector(pos_list[:5])
         cmd = _fmt_mot5(pos)
         ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
         if not ok:

@@ -44,7 +44,7 @@ screen = {
     'screen_37_engineer_hub': ['btn_back', 'btn_hal_coords', 'btn_hal_dispense', 'btn_hal_cells_table'],
     'screen_38_hal_coords': [
         'btn_back', 'btn_hal_park', 'btn_hal_zero', 'btn_hal_save_coords', 'btn_hal_mot_send',
-        'hal_jog_m1_minus', 'hal_jog_m1_plus', 'hal_jog_m2_minus', 'hal_jog_m2_plus',
+        'hal_jog_z_minus', 'hal_jog_z_plus',
         'hal_jog_m3_minus', 'hal_jog_m3_plus', 'hal_jog_m4_minus', 'hal_jog_m4_plus',
         'hal_jog_m5_minus', 'hal_jog_m5_plus',
     ],

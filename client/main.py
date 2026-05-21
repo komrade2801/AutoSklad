@@ -336,8 +336,8 @@ def main():
 
         # e) Основная логика GUI
         logger.info("Initializing GUI components...")
-        # Стартуем с cmd_start: проверка готовности железа (HAL контракт) до допуска в UI.
-        maps = Maps('cmd_start')
+        # Старт: экран ожидания «Загрузка», затем HAL-проверка → screen_1_welcome.
+        maps = Maps('screen_32_wait')
         window = MainWindow(maps, controller_protocol=controller_protocol)
         executor = Executor()
         executor.controller_protocol = controller_protocol
@@ -347,9 +347,13 @@ def main():
         window.executor = executor
         executor.handle_serial_controller = window.handle_controller_serial_response
         executor.handle_barcode_manager = window.handle_barcode_manager_response
-        # Повторно инициируем текущее стартовое состояние после подключения action_callback,
-        # иначе cmd_start может остаться "немым" (открыт до подключения executor).
-        window.open_widget(window.lump.state(), None, None)
+        executor.wait_screen_message = "Загрузка"
+        executor.engineer_wait_context = "startup"
+        window.open_widget(
+            "screen_32_wait",
+            None,
+            {"wait_screen_message": "Загрузка"},
+        )
         logger.info("GUI components initialized")
 
         # f) Таймер для обновления GUI
@@ -375,6 +379,8 @@ def main():
         logger.info("Клиентское приложение готово к работе")
         logger.info("=" * 60)
         window.show()
+        # HAL-проверка на экране «Загрузка» (screen_32_wait), затем welcome.
+        QTimer.singleShot(150, window.run_startup_hardware_check)
 
         scenario_rel = (cfg.get("hal_test_scenario_path") or "").strip()
         hal_test_autorun = bool(cfg.get("hal_test_autorun", False)) or (os.getenv("AUTOSKLAD_HAL_TEST_AUTORUN", "0") == "1")

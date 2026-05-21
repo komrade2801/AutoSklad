@@ -106,7 +106,7 @@ class Ui_screen_40_hal_dispense(object):
         self.lbl_title.setText(_translate("screen_40_hal_dispense", "Тестовая выдача"))
         self.lbl_hint.setText(_translate("screen_40_hal_dispense", "Введите номер ячейки. Расход не списывается."))
         self.lbl_cell.setText(_translate("screen_40_hal_dispense", "Ячейка №"))
-        self.lbl_park_title.setText(_translate("screen_40_hal_dispense", "Парковка MOT"))
+        self.lbl_park_title.setText(_translate("screen_40_hal_dispense", "Парковка MOT (M1–M2 общие)"))
         self.btn_hal_park_save.setText(_translate("screen_40_hal_dispense", "Сохранить парковку"))
         self.btn_hal_dispense_run.setText(_translate("screen_40_hal_dispense", "Выдать"))
 from ..img import resources_rc

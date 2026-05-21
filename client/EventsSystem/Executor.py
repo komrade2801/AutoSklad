@@ -30,7 +30,7 @@ class Executor:
         self.hal_motor_positions: list = [0, 0, 0, 0, 0]
         self.hal_projected_x: int = 0
         self.hal_projected_z: int = 0
-        # hal_x/hal_z для «Сохранить координаты» (из полей M1/M3 на screen_38)
+        # hal_x/hal_z для «Сохранить координаты» (M3→hal_x, M1→hal_z на screen_38)
         self.hal_save_hal_x: Optional[int] = None
         self.hal_save_hal_z: Optional[int] = None
         # Подпись на screen_32_wait («Парковка…», «Тестовая выдача…»)

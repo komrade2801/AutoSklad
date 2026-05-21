@@ -77,22 +77,41 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         layout.setSpacing(4)
         mot_validator = QtGui.QIntValidator(MOT_STEP_MIN, MOT_STEP_MAX, self)
         label_style = "color: #FFFFFF; font-size: 13px; font-weight: 600;"
-        for i in range(1, 6):
+        park_rows = (
+            ("M1–M2", "edit_park_m12"),
+            ("M3", "edit_park_m3"),
+            ("M4", "edit_park_m4"),
+            ("M5", "edit_park_m5"),
+        )
+        for label, obj_name in park_rows:
             row = QtWidgets.QHBoxLayout()
             row.setSpacing(8)
-            lbl = QtWidgets.QLabel(f"M{i}", self.widget_park_rows)
-            lbl.setMinimumWidth(36)
+            lbl = QtWidgets.QLabel(label, self.widget_park_rows)
+            lbl.setMinimumWidth(48)
             lbl.setStyleSheet(label_style)
             edit = QtWidgets.QLineEdit(self.widget_park_rows)
             edit.setAlignment(QtCore.Qt.AlignCenter)
             edit.setMinimumHeight(35)
             edit.setStyleSheet(self._EDIT_PARK_OK)
             edit.setValidator(mot_validator)
-            edit.setObjectName(f"edit_park_m{i}")
+            edit.setObjectName(obj_name)
             row.addWidget(lbl)
             row.addWidget(edit, 1)
             layout.addLayout(row)
             self._park_edits.append(edit)
+
+    def _park_five_texts(self):
+        """Пять значений парковки: M1–M2 → park_m1 и park_m2."""
+        if len(self._park_edits) < 4:
+            return ["0"] * 5
+        z_text = (self._park_edits[0].text() or "").strip()
+        return [
+            z_text,
+            z_text,
+            (self._park_edits[1].text() or "").strip(),
+            (self._park_edits[2].text() or "").strip(),
+            (self._park_edits[3].text() or "").strip(),
+        ]
 
     def _setup_keyboard(self):
         self.keyboard = WidgetKeyboard()
@@ -258,9 +277,13 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             _, reason = validate_cell_number_text(self.edit_cell_number.text())
             if reason is not None:
                 return
-        elif any(x in err_lower for x in ("m1", "m2", "m3", "m4", "m5", "допустимо", "поле")):
-            texts = [e.text() for e in self._park_edits]
-            _, bad_index, reason = validate_motor_position_texts(texts)
+        elif any(
+            x in err_lower
+            for x in ("m1", "m2", "m3", "m4", "m5", "m1–m2", "допустимо", "поле")
+        ):
+            _, bad_index, reason = validate_motor_position_texts(
+                self._park_five_texts()
+            )
             if reason is not None:
                 return
         self._clear_input_error()
@@ -295,19 +318,30 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
     def _load_park_current_values(self) -> None:
         profile = self._park_values_from_db()
-        for i, edit in enumerate(self._park_edits, start=1):
+        row_values = [
+            int(profile.get("park_m1", profile.get("park_m2", 0))),
+            int(profile.get("park_m3", 0)),
+            int(profile.get("park_m4", 0)),
+            int(profile.get("park_m5", 0)),
+        ]
+        for edit, val in zip(self._park_edits, row_values):
             edit.blockSignals(True)
-            edit.setText(str(int(profile.get(f"park_m{i}", 0))))
+            edit.setText(str(val))
             edit.setStyleSheet(self._EDIT_PARK_OK)
             edit.blockSignals(False)
 
     def _apply_park_values(self, data: dict) -> None:
-        for i, edit in enumerate(self._park_edits, start=1):
-            key = f"park_m{i}"
-            if key not in data:
-                continue
+        if not data:
+            return
+        row_values = [
+            int(data.get("park_m1", data.get("park_m2", 0))),
+            int(data.get("park_m3", 0)),
+            int(data.get("park_m4", 0)),
+            int(data.get("park_m5", 0)),
+        ]
+        for edit, val in zip(self._park_edits, row_values):
             edit.blockSignals(True)
-            edit.setText(str(int(data[key])))
+            edit.setText(str(val))
             edit.setStyleSheet(self._EDIT_PARK_OK)
             edit.blockSignals(False)
 
@@ -354,9 +388,10 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         if err_msg:
             bad_park = None
             err_lower = str(err_msg).lower()
+            _mot_to_park_row = {0: 0, 1: 0, 2: 1, 3: 2, 4: 3}
             for i in range(1, 6):
                 if f"m{i}" in err_lower:
-                    bad_park = i - 1
+                    bad_park = _mot_to_park_row.get(i - 1)
                     break
             self._show_input_error(str(err_msg), bad_park_index=bad_park)
         else:
@@ -396,8 +431,9 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
     def get_data(self):
         number, _reason = validate_cell_number_text(self.edit_cell_number.text())
-        texts = [e.text() for e in self._park_edits]
-        positions, _bad_index, _reason = validate_motor_position_texts(texts)
+        positions, _bad_index, _reason = validate_motor_position_texts(
+            self._park_five_texts()
+        )
         data = {"engineer_cell_number": number, "number": number}
         if positions is not None:
             for i, val in enumerate(positions, start=1):

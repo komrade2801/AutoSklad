@@ -54,6 +54,16 @@ _HAL_FSM_TO_UI = frozenset(
     )
 )
 
+# Состояния FSM без Qt-экрана: выполняются через Executor (как cmd_*).
+_FSM_ACTION_PREFIXES = (
+    "read_db",
+    "write_db",
+    "read_cnf",
+    "write_cnf",
+    "http_",
+    "write_log_",
+)
+
 
 # Главное окно приложения
 class MainWindow(QtWidgets.QWidget):
@@ -108,7 +118,15 @@ class MainWindow(QtWidgets.QWidget):
         self.last_widget_value = {}
         self.action_callback = None
         self.executor = None
-        self.open_widget(self.lump.state(), None, None)
+        self._startup_hardware_done = False
+        if self.lump.state() == "screen_32_wait":
+            self.open_widget(
+                "screen_32_wait",
+                None,
+                {"wait_screen_message": "Загрузка"},
+            )
+        else:
+            self.open_widget(self.lump.state(), None, None)
         # self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
         self.setStyleSheet("background-color: #2e4461;")
 
@@ -126,6 +144,14 @@ class MainWindow(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
         self.bind_transitions()
+        welcome = self.widgets.get("screen_1_welcome")
+        if welcome is not None:
+            self._screen_stack.setCurrentWidget(welcome)
+
+    def _is_fsm_action_state(self, widget_name: str) -> bool:
+        if "cmd" in widget_name:
+            return True
+        return widget_name.startswith(_FSM_ACTION_PREFIXES)
 
     def create_widget(self, screen_name):
         """Создаёт и настраивает виджет для конкретного экрана."""
@@ -339,6 +365,17 @@ class MainWindow(QtWidgets.QWidget):
         if 'timer' in button_name and self.lump.state() != self.lump.machine.initial:
             return
 
+        if (
+            self.executor is not None
+            and getattr(self.executor, "engineer_wait_context", None) == "startup"
+            and self.lump.state() in ("screen_32_wait", "cmd_test_self")
+        ):
+            logger.debug(
+                "button_clicked ignored during startup HAL check: %s",
+                button_name,
+            )
+            return
+
         try:
             self._capture_engineer_cell_number_from_widget()
             self.back_state = self.lump.state()
@@ -449,11 +486,10 @@ class MainWindow(QtWidgets.QWidget):
         else:
             self.session_manager.start()
 
-        # Если виджет не найден, возвращаемся к предыдущему состоянию
-        if not widget_found and "cmd" not in widget_name:
+        if not widget_found and self._is_fsm_action_state(widget_name):
+            self._run_fsm_action(widget_name, source, value)
+        elif not widget_found:
             self._handle_widget_not_found(widget_name, source, value)
-        elif "cmd" in widget_name:
-            self._handle_cmd(widget_name, source, value)
 
     def _handle_widget_data(self, widget, source: str = None, *value: Any):
         """
@@ -480,39 +516,67 @@ class MainWindow(QtWidgets.QWidget):
         self.widget_back = widget
         return data
 
-    def _handle_cmd(self, widget_name: str, source: str = None, value: Any = None):
-        logger.debug("_handle_cmd widget_name=%s value=%s", widget_name, self.last_widget_value)
-        """
-        Обрабатывает случай, когда виджет не найден.
+    def _run_fsm_action(self, widget_name: str, source: str = None, value: Any = None):
+        """Выполняет служебное состояние FSM (cmd/read_db/write_db/…) и открывает следующий экран."""
+        logger.debug("_run_fsm_action widget_name=%s value=%s", widget_name, value)
+        if not callable(self.action_callback):
+            return
+        start_state = self.back_state if self.back_state is not None else widget_name
+        widget = self.widgets.get(self.back_state) if self.back_state else None
+        callback = widget.handle_callback_executor if widget else None
+        if widget and not value:
+            value = widget.get_data()
+        result, transition = self.action_callback(
+            start_state, widget_name, self.lump, value, callback
+        )
+        if transition:
+            # В open_widget — результат action (ФИО, кортеж плана и т.д.), не входной value с экрана.
+            self.open_widget(transition, source, value=result)
 
-        :param widget_name: Имя несуществующего виджета.
-        :param value: Данные для передачи следующему виджету.
+    def run_startup_hardware_check(self):
         """
-        if callable(self.action_callback):
-            start_state = self.back_state if self.back_state is not None else widget_name
-            value, transition = self.action_callback(start_state, widget_name, self.lump, value, None)
-            if transition:
-                self.open_widget(transition, source, value=value)
+        Стартовая проверка HAL: экран screen_32_wait («Загрузка») → cmd_test_self.
+        Успех (ok) → screen_1_welcome; ошибка → screen_36_hardware_err.
+        """
+        if self._startup_hardware_done:
+            return
+        self._startup_hardware_done = True
+        if not callable(self.action_callback):
+            logger.warning("run_startup_hardware_check: action_callback не задан")
+            return
+        if self.lump.state() != "screen_32_wait":
+            logger.debug(
+                "run_startup_hardware_check: пропуск, FSM=%s",
+                self.lump.state(),
+            )
+            return
+        if self.executor is not None:
+            self.executor.wait_screen_message = "Загрузка"
+            self.executor.engineer_wait_context = "startup"
+        self.session_manager.stop()
+        self.open_widget(
+            "screen_32_wait",
+            None,
+            {"wait_screen_message": "Загрузка"},
+        )
+        self.back_state = "screen_32_wait"
+        try:
+            self.lump.trigger("hardware_check")
+        except MachineError as e:
+            logger.warning("run_startup_hardware_check: %s", e)
+            return
+        state = self.lump.state()
+        if state != "screen_32_wait":
+            logger.info("run_startup_hardware_check: FSM=%s, запуск cmd_test_self", state)
+            self._run_fsm_action(state, None, value={"trigger": "hardware_check"})
 
     def _handle_widget_not_found(self, widget_name: str, source: str = None, value: Any = None):
         logger.debug("_handle_widget_not_found widget_name=%s source=%s value=%s", widget_name, source, self.last_widget_value)
-        """
-        Обрабатывает случай, когда виджет не найден.
-
-        :param widget_name: Имя несуществующего виджета.
-        :param value: Данные для передачи следующему виджету.
-        """
+        if self._is_fsm_action_state(widget_name):
+            self._run_fsm_action(widget_name, source, value)
+            return
         if self.lump.machine.initial != widget_name and callable(self.action_callback):
-            widget = self.widgets.get(self.back_state)
-            start_state = self.back_state if self.back_state is not None else widget_name
-            if widget:
-                if not value:
-                    value = widget.get_data()
-                value, transition = self.action_callback(
-                    start_state, widget_name, self.lump, value, widget.handle_callback_executor
-                )
-                if transition:
-                    self.open_widget(transition, source, value=value)
+            self._run_fsm_action(widget_name, source, value)
         else:
             logger.warning("Виджет '%s' не найден.", widget_name)
 

@@ -12,7 +12,7 @@ from EventsSystem.hal_coords import (
 )
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_38_hal_coords import Ui_screen_38_hal_coords
-from GUI.widgets.widget_hal_jog_panel import WidgetHalJogPanel
+from GUI.widgets.widget_hal_jog_panel import WidgetHalJogPanel, _LABEL_WIDTH
 from GUI.widgets.widget_keyboard import WidgetKeyboard
 
 logger = get_logger(__name__)
@@ -20,6 +20,8 @@ logger = get_logger(__name__)
 
 def _motor_index_from_jog_trigger(trigger_name: str):
     name = (trigger_name or "").strip().lower()
+    if name.startswith("hal_jog_z"):
+        return 0
     if not name.startswith("hal_jog_m"):
         return None
     body = name[len("hal_jog_m") :]
@@ -66,6 +68,9 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         self._btn_save_style_normal = self.btn_hal_save_coords.styleSheet()
         self._btn_park_style_normal = self.btn_hal_park.styleSheet()
         self._btn_zero_style_normal = self.btn_hal_zero.styleSheet()
+        self.lbl_cell.setFixedWidth(_LABEL_WIDTH)
+        self.lbl_cell.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.layout_cell_row.setSpacing(8)
         stretch_idx = self.layout_cell_row.indexOf(self.edit_cell_number)
         self.layout_cell_row.setStretch(stretch_idx, 1)
         self.lbl_input_error.setText("")
@@ -166,10 +171,9 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         positions, bad_index, reason = self.jog_panel.parse_motor_positions()
         if bad_index is not None:
             self.jog_panel.set_field_error(bad_index, True)
-            label = f"M{bad_index + 1}"
-            msg = message_for_reason(
+            msg = self.jog_panel.validation_error_message() or message_for_reason(
                 reason,
-                motor_label=label,
+                motor_label=f"M{bad_index + 1}",
                 min_v=MOT_STEP_MIN,
                 max_v=MOT_STEP_MAX,
             )
@@ -208,15 +212,13 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         hal_x, hal_z, bad_index, mot_reason = self.jog_panel.get_mot13_hal_xz()
         if bad_index is not None:
             self.jog_panel.set_field_error(bad_index, True)
-            label = f"M{bad_index + 1}"
-            self._show_input_error(
-                message_for_reason(
-                    mot_reason,
-                    motor_label=label,
-                    min_v=MOT_STEP_MIN,
-                    max_v=MOT_STEP_MAX,
-                )
+            msg = self.jog_panel.validation_error_message() or message_for_reason(
+                mot_reason,
+                motor_label=f"M{bad_index + 1}",
+                min_v=MOT_STEP_MIN,
+                max_v=MOT_STEP_MAX,
             )
+            self._show_input_error(msg)
             return False
 
         ok, reason = validate_hal_cell_coords(hal_x, hal_z)
