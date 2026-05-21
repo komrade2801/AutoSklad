@@ -40,5 +40,14 @@ screen = {
     'screen_9_select_tool_by_plan': ['btn_ico_up', 'btn_back', 'btn_ico_back', 'btn_down', 'btn_up', 'btn_ico_down'],
     'screen_33_select_plan': ['btn_back'],
     'screen_35_plan_complete_confirmation': ['btn_ok', 'btn_back'],
-    'screen_36_hardware_err': ['btn_back']
+    'screen_36_hardware_err': ['btn_back'],
+    'screen_37_engineer_hub': ['btn_back', 'btn_hal_coords', 'btn_hal_dispense', 'btn_hal_cells_table'],
+    'screen_38_hal_coords': [
+        'btn_back', 'btn_hal_park', 'btn_hal_zero', 'btn_hal_save_coords', 'btn_hal_mot_send',
+        'hal_jog_m1_minus', 'hal_jog_m1_plus', 'hal_jog_m2_minus', 'hal_jog_m2_plus',
+        'hal_jog_m3_minus', 'hal_jog_m3_plus', 'hal_jog_m4_minus', 'hal_jog_m4_plus',
+        'hal_jog_m5_minus', 'hal_jog_m5_plus',
+    ],
+    'screen_40_hal_dispense': ['btn_back', 'btn_hal_dispense_run', 'btn_hal_park_save'],
+    'screen_41_hal_cells_table': ['btn_back'],
 }

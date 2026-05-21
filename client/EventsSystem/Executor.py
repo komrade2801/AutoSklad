@@ -1,5 +1,6 @@
 import logging
 import traceback
+from collections import deque
 from typing import Optional
 
 from BarcodeScanner.serial_manager import SerialManager
@@ -23,6 +24,27 @@ class Executor:
         # Глобальный контекст состояния железа для startup-проверки и экрана аппаратной ошибки.
         self.hardware_ready: bool = False
         self.hardware_last_error: str = ""
+        # Контекст ожидания screen_32_wait для инженера: None | 'park' | 'dispense'
+        self.engineer_wait_context: Optional[str] = None
+        # Текущий вектор шагов M1..M5 (последние отправленные/подтверждённые)
+        self.hal_motor_positions: list = [0, 0, 0, 0, 0]
+        self.hal_projected_x: int = 0
+        self.hal_projected_z: int = 0
+        # hal_x/hal_z для «Сохранить координаты» (из полей M1/M3 на screen_38)
+        self.hal_save_hal_x: Optional[int] = None
+        self.hal_save_hal_z: Optional[int] = None
+        # Подпись на screen_32_wait («Парковка…», «Тестовая выдача…»)
+        self.wait_screen_message: str = ""
+        # Номер ячейки для инженерных экранов (ввод / выбор из таблицы)
+        self.engineer_cell_number: Optional[int] = None
+        # Последний триггер JOG (hal_jog_x_plus и т.д.)
+        self.last_hal_jog_trigger: str = ""
+        # Шаг JOG с screen_38 (10 / 50 / 100 / 500 / 1000), по умолчанию 50
+        self.hal_jog_step: int = 50
+        # Целевой вектор MOT для кнопки «Отправка» на screen_38
+        self.hal_mot_goto_positions: Optional[list] = None
+        # Последние строки UART (HAL) для диагностики при command_finished / FSM.
+        self._hal_rx_recent: deque[str] = deque(maxlen=48)
         self.handle_barcode_manager = lambda response: logger.debug("Ответ получен: %s", response)
         self.barcode_manager = lambda response: logger.debug("Ответ получен: %s", response)
         self.handle_serial_controller = lambda response: logger.debug("Ответ получен: %s", response)
@@ -81,12 +103,58 @@ class Executor:
             map.lump.trigger(trigger)
             return result, map.state()
 
+    def format_hal_rx_snapshot(self) -> str:
+        """Сжатый журнал последних принятых строк UART (HAL), для логов при ошибках/успехе."""
+        if not self._hal_rx_recent:
+            return "(empty)"
+        return " | ".join(self._hal_rx_recent)
+
+    def _on_hal_raw_line(self, line: str) -> None:
+        text = (line or "").strip()
+        if text:
+            self._hal_rx_recent.append(text)
+
+    def _on_hal_command_finished_log(self, cmd: str, outcome: str) -> None:
+        snap = self.format_hal_rx_snapshot()
+        if outcome in ("timeout_ack", "timeout_done"):
+            logger.warning(
+                "HAL UART command_finished cmd=%r outcome=%s recent_rx=%s",
+                cmd,
+                outcome,
+                snap,
+            )
+        elif outcome == "error":
+            logger.error(
+                "HAL UART command_finished cmd=%r outcome=%s recent_rx=%s",
+                cmd,
+                outcome,
+                snap,
+            )
+        elif outcome in ("done", "ok_short"):
+            logger.info(
+                "HAL UART command_finished cmd=%r outcome=%s recent_rx=%s",
+                cmd,
+                outcome,
+                snap,
+            )
+        else:
+            logger.info(
+                "HAL UART command_finished cmd=%r outcome=%s recent_rx=%s",
+                cmd,
+                outcome,
+                snap,
+            )
+
     def attach_serial_manager(self, serial_manager):
         """Подключаем уже запущенный SerialManager или VendingSerialManager / mock HAL."""
         self.controller_serial_manager = serial_manager
         # Для HAL не вешаем низкоуровневый fsm_trigger напрямую на GUI/FSM:
         # переходы управляются action-слоем (cmd_send/cmd_test_self + gate).
         if self.controller_protocol == "atmega_hal":
+            if hasattr(serial_manager, "raw_line"):
+                serial_manager.raw_line.connect(self._on_hal_raw_line)
+            if hasattr(serial_manager, "command_finished"):
+                serial_manager.command_finished.connect(self._on_hal_command_finished_log)
             return
         if hasattr(serial_manager, "fsm_trigger"):
             serial_manager.fsm_trigger.connect(self.handle_controller_serial_response)

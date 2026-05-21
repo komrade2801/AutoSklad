@@ -1,4 +1,5 @@
 from PyQt5.QtCore import QEventLoop, QTimer, QThread
+from PyQt5.QtWidgets import QApplication
 import json
 import traceback
 import subprocess
@@ -11,6 +12,11 @@ import logging
 from pathlib import Path
 from Core.platforms import detect
 from BarcodeScanner.dispense_command_gate import DispenseCommandGate
+from EventsSystem.hal_coords import (
+    format_hal_coords_error,
+    hal_dispense_target_mot5,
+    validate_hal_cell_coords,
+)
 from DB.Data.sqlite_db import SessionLocal, engine
 from DB.Engine.CellCRUD import EngineCell
 from DB.Engine.DeviceConfigCRUD import EngineDeviceConfig
@@ -27,8 +33,6 @@ _HAL_JSON_MERGE_KEYS = frozenset(
         "lock_ms",
         "push_down",
         "push_up",
-        "park_x",
-        "park_z",
         "x_axis_motor",
         "z_axis_motor",
         "push_motor",
@@ -96,13 +100,22 @@ class ActionMapper:
             'cmd_ping': lambda *args, **kwargs: self.cmd_ping(*args, **kwargs),
             'cmd_stop': lambda *args, **kwargs: self.cmd_stop(*args, **kwargs),
             'cmd_send': lambda *args, **kwargs: self.cmd_send(*args, **kwargs),
+            'cmd_hal_zero': lambda *args, **kwargs: self.cmd_hal_zero(*args, **kwargs),
+            'cmd_hal_park': lambda *args, **kwargs: self.cmd_hal_park(*args, **kwargs),
+            'cmd_hal_jog': lambda *args, **kwargs: self.cmd_hal_jog(*args, **kwargs),
+            'cmd_hal_mot_goto': lambda *args, **kwargs: self.cmd_hal_mot_goto(*args, **kwargs),
             'cmd_run_timer_event': lambda *args, **kwargs: logger.debug("cmd_run_timer_event %s %s", args, kwargs),
             'cmd_keyboard_toggle': lambda index: logger.debug("cmd_keyboard_toggle %s", index),
         }
+        self._hal_motor_positions = [0, 0, 0, 0, 0]
         self._hal_gate = None
         self._hal_lock_ms_pending = 0
         self._hal_sequence_in_progress = False
-        self._db_session = SessionLocal(engine())
+        from DB.hardware_config_migrate import migrate_hardware_config_park_motors
+
+        eng = engine()
+        migrate_hardware_config_park_motors(eng)
+        self._db_session = SessionLocal(eng)
         self._e_cell = EngineCell(self._db_session)
         self._e_device_cfg = EngineDeviceConfig(self._db_session)
         self._e_hw_cfg = EngineHardwareConfig(self._db_session)
@@ -130,14 +143,24 @@ class ActionMapper:
         except Exception as e:
             logger.warning("hal_motion_profile из config.json не применён: %s", e)
 
+    def _park_motors_from_hw_cfg(self, hw_cfg) -> dict:
+        """Парковка M1..M5 из HardwareConfig."""
+        return {
+            f"park_m{i}": int(getattr(hw_cfg, f"park_m{i}_default", 0))
+            for i in range(1, 6)
+        }
+
     def _load_hal_motion_profile(self):
         defaults = {
             "led": 1,
             "lock_ms": 15000,
             "push_down": 900,
             "push_up": 0,
-            "park_x": 0,
-            "park_z": 0,
+            "park_m1": 0,
+            "park_m2": 0,
+            "park_m3": 0,
+            "park_m4": 0,
+            "park_m5": 0,
             "x_axis_motor": 1,
             "z_axis_motor": 3,
             "push_motor": 5,
@@ -156,35 +179,84 @@ class ActionMapper:
                             "lock_ms": hw_cfg.lock_ms_default,
                             "push_down": hw_cfg.push_down_default,
                             "push_up": hw_cfg.push_up_default,
-                            "park_x": hw_cfg.park_x_default,
-                            "park_z": hw_cfg.park_z_default,
                             "x_axis_motor": hw_cfg.x_axis_motor,
                             "z_axis_motor": hw_cfg.z_axis_motor,
                             "push_motor": hw_cfg.push_motor,
+                            **self._park_motors_from_hw_cfg(hw_cfg),
                         }
                     )
         except Exception as e:
             logger.warning("HAL profile DB fallback to defaults: %s", e)
         self._merge_hal_motion_profile_from_json(defaults)
+        if "jog_step" not in defaults:
+            defaults["jog_step"] = 100
         return defaults
 
-    def _park_vector_five(self, profile: dict) -> list:
-        """Парковочные шаги p1..p5: либо park_m1..park_m5 из профиля, либо park_x/park_z/push_up по осям."""
-        park = [0, 0, 0, 0, 0]
-        explicit = any(f"park_m{i}" in profile for i in range(1, 6))
-        if explicit:
-            for i in range(5):
-                key = f"park_m{i + 1}"
-                if key in profile:
-                    park[i] = int(profile[key])
-            return park
+    def _hal_view_coords_payload(self) -> dict:
+        return {
+            "trigger": "view_hal_coords",
+            "hal_motor_positions": list(self._hal_motor_positions),
+        }
+
+    def _sync_motor_positions_to_executor(self) -> None:
+        self.__executor.hal_motor_positions = list(self._hal_motor_positions)
+        try:
+            profile = self._load_hal_motion_profile()
+            hx, hz = self._project_hal_xz_from_motors(profile)
+            self.__executor.hal_projected_x = hx
+            self.__executor.hal_projected_z = hz
+        except Exception as e:
+            logger.warning("HAL projection failed: %s", e)
+
+    def _parse_hal_jog_trigger(self, trigger: str):
+        """hal_jog_x_plus -> ('x', +1)."""
+        name = (trigger or "").strip().lower()
+        if not name.startswith("hal_jog_"):
+            return None, 0
+        body = name[len("hal_jog_") :]
+        if body.endswith("_plus"):
+            axis = body[: -len("_plus")]
+            sign = 1
+        elif body.endswith("_minus"):
+            axis = body[: -len("_minus")]
+            sign = -1
+        else:
+            return None, 0
+        if axis in ("x", "z", "y"):
+            return axis, sign
+        if axis in ("m1", "m2", "m3", "m4", "m5"):
+            return axis, sign
+        return None, 0
+
+    def _jog_motor_indices(self, axis: str, profile: dict) -> list:
         ix = _motor_index(profile["x_axis_motor"], "x_axis_motor")
         iz = _motor_index(profile["z_axis_motor"], "z_axis_motor")
         ip = _motor_index(profile["push_motor"], "push_motor")
-        park[ix] = int(profile["park_x"])
-        park[iz] = int(profile["park_z"])
-        park[ip] = int(profile["push_up"])
-        return park
+        if axis == "x":
+            rear = ix + 2
+            return [ix] if rear > 4 else [ix, rear]
+        if axis == "z":
+            rear = iz + 1
+            return [iz] if rear > 4 else [iz, rear]
+        if axis == "y":
+            return [ip]
+        if axis in ("m1", "m2", "m3", "m4", "m5"):
+            return [int(axis[1]) - 1]
+        return []
+
+    def _project_hal_xz_from_motors(self, profile: dict) -> tuple:
+        """Проекция M1..M5 в hal_x/hal_z по профилю осей."""
+        pos = self._hal_motor_positions
+        ix = _motor_index(profile["x_axis_motor"], "x_axis_motor")
+        iz = _motor_index(profile["z_axis_motor"], "z_axis_motor")
+        return int(pos[ix]), int(pos[iz])
+
+    def _park_vector_five(self, profile: dict) -> list:
+        """Парковочный кадр MOT,p1..p5 из park_m1..park_m5 профиля."""
+        return [
+            _clamp_mot_coord(int(profile.get(f"park_m{i}", 0)))
+            for i in range(1, 6)
+        ]
 
     def _illumination_step(self, profile: dict):
         """
@@ -202,30 +274,59 @@ class ActionMapper:
         led_on = 1 if int(profile.get("led", 0)) != 0 else 0
         return f"LED,{led_on}", False
 
-    def _build_hal_dispense_steps(self, number: int, cell_id=None):
+    def _resolve_hal_target_coords(self, number: int, cell_id=None):
         """
-        Цепочка под no_block_plata: кадры MOT,p1..p5 (параллель осей в одном кадре),
-        порядок — задняя «безопасная» (опц.) → передняя к ячейке → штырь → парковка → LOCK.
+        Целевые hal_x/hal_z только из БД; без fallback на Cell.number / 0.
+
+        Контракт: (coords, coord_err).
+        coords — кортеж (hal_x, hal_z) при успехе, иначе None.
+        coord_err — строка ошибки или None.
         """
-        defaults = self._load_hal_motion_profile()
         try:
             cell_profile = self._e_cell.get_cell_hal_profile(cell_id) if cell_id else None
         except Exception as e:
-            logger.warning("Cell HAL profile fallback for cell_id=%s: %s", cell_id, e)
+            logger.warning("Cell HAL profile load failed for cell_id=%s: %s", cell_id, e)
             cell_profile = None
-        x = int((cell_profile or {}).get("hal_x") if (cell_profile or {}).get("hal_x") is not None else number)
-        z = int((cell_profile or {}).get("hal_z") if (cell_profile or {}).get("hal_z") is not None else 0)
+
+        hal_x = (cell_profile or {}).get("hal_x")
+        hal_z = (cell_profile or {}).get("hal_z")
+        ok, reason = validate_hal_cell_coords(hal_x, hal_z)
+        if not ok:
+            err = format_hal_coords_error(
+                reason,
+                cell_id=(cell_profile or {}).get("cell_id", cell_id),
+                number=(cell_profile or {}).get("number", number),
+            )
+            return None, err
+        return (int(hal_x), int(hal_z)), None
+
+    def _build_hal_dispense_steps(self, number: int, cell_id=None):
+        """
+        Цепочка под no_block_plata: кадры MOT,p1..p5 (параллель осей в одном кадре),
+        порядок — подсветка (LED/RGB) → ZERO → задняя «безопасная» (опц.) → к ячейке → штырь → парковка.
+
+        Подъезд к ячейке из hal_x/hal_z БД: M1=M3=hal_x, M2=M4=hal_z, M5=0.
+        """
+        coords, coord_err = self._resolve_hal_target_coords(number, cell_id=cell_id)
+        if coord_err:
+            raise ValueError(coord_err)
+        x, z = coords
+
+        defaults = self._load_hal_motion_profile()
 
         push_down = int(defaults["push_down"])
         push_up = int(defaults["push_up"])
-        lock_ms = int(defaults["lock_ms"])
 
-        ix = _motor_index(defaults["x_axis_motor"], "x_axis_motor")
-        iz = _motor_index(defaults["z_axis_motor"], "z_axis_motor")
         ip = _motor_index(defaults["push_motor"], "push_motor")
 
         park = self._park_vector_five(defaults)
-        steps = [self._illumination_step(defaults)]
+        cell_target = [
+            _clamp_mot_coord(v) for v in hal_dispense_target_mot5(x, z)
+        ]
+        steps = [
+            self._illumination_step(defaults),
+            ("ZERO", True),
+        ]
 
         pos = list(park)
         if bool(defaults.get("rear_safe_first")):
@@ -233,23 +334,19 @@ class ActionMapper:
             pos[3] = int(defaults.get("rear_safe_m4", pos[3]))
             steps.append((_fmt_mot5(pos), True))
 
-        pos[ix] = _clamp_mot_coord(x)
-        pos[iz] = _clamp_mot_coord(z)
-        steps.append((_fmt_mot5(pos), True))
+        steps.append((_fmt_mot5(list(cell_target)), True))
 
-        pos = list(pos)
+        pos = list(cell_target)
         pos[ip] = _clamp_mot_coord(push_down)
         steps.append((_fmt_mot5(pos), True))
 
-        pos = list(pos)
+        pos = list(cell_target)
         pos[ip] = _clamp_mot_coord(push_up)
         steps.append((_fmt_mot5(pos), True))
 
         steps.append((_fmt_mot5(list(park)), True))
 
-        # $LOCK,ms: на ATmega delay(lock_ms), затем одна строка DONE — второго QTimer(lock_ms) на клиенте нет.
-        steps.append((f"LOCK,{lock_ms}", False))
-        return steps, lock_ms
+        return steps, 0
 
     def _ensure_hal_gate(self):
         if self._hal_gate is not None:
@@ -263,17 +360,35 @@ class ActionMapper:
         def _on_sequence_failed(idx: int, cmd: str, reason: str):
             self._hal_sequence_in_progress = False
             self.__executor.hardware_last_error = f"dispense_step_{idx}:{cmd}:{reason}"
+            logger.warning(
+                "HAL FSM sequence_failed step=%s cmd=%r reason=%s recent_rx=%s",
+                idx,
+                cmd,
+                reason,
+                self.__executor.format_hal_rx_snapshot(),
+            )
             self.__executor.handle_controller_serial_response("err_devices")
 
         def _on_sequence_aborted():
             self._hal_sequence_in_progress = False
             self.__executor.hardware_last_error = "dispense_aborted"
+            logger.warning(
+                "HAL FSM sequence_aborted recent_rx=%s",
+                self.__executor.format_hal_rx_snapshot(),
+            )
             self.__executor.handle_controller_serial_response("err_devices")
 
         def _on_sequence_finished():
             self._hal_sequence_in_progress = False
-            # Люк уже удержан на MCU внутри $LOCK,ms до DONE; списание сразу по command_ok.
-            self.__executor.handle_controller_serial_response("command_ok")
+            logger.info(
+                "HAL FSM sequence_finished → command_ok recent_rx=%s",
+                self.__executor.format_hal_rx_snapshot(),
+            )
+            ctx = getattr(self.__executor, "engineer_wait_context", None)
+            if ctx in ("park", "dispense"):
+                self.__executor.handle_controller_serial_response("command_ok_engineer")
+            else:
+                self.__executor.handle_controller_serial_response("command_ok")
 
         gate.sequence_failed.connect(_on_sequence_failed)
         gate.sequence_aborted.connect(_on_sequence_aborted)
@@ -313,15 +428,20 @@ class ActionMapper:
             if loop.isRunning():
                 loop.quit()
 
+        ui_tick = QTimer()
+        ui_tick.timeout.connect(lambda: QApplication.processEvents())
+
         mgr.command_finished.connect(_on_finished)
         timer.timeout.connect(_on_timeout)
         timer.start(timeout_ms)
+        ui_tick.start(50)
 
         try:
             if not self.__executor.send_controller_command(expected, is_long=is_long):
                 return False, "send_rejected"
             loop.exec_()
         finally:
+            ui_tick.stop()
             try:
                 mgr.command_finished.disconnect(_on_finished)
             except Exception:
@@ -389,13 +509,161 @@ class ActionMapper:
             ok, reason = self._wait_hal_command_finished(cmd, is_long, timeout_ms)
             if not ok:
                 self.__executor.hardware_last_error = f"{cmd}:{reason}"
-                logger.error("cmd_test_self failed at %s: %s", cmd, reason)
+                logger.error(
+                    "cmd_test_self failed at %s: %s recent_rx=%s",
+                    cmd,
+                    reason,
+                    self.__executor.format_hal_rx_snapshot(),
+                )
                 return {"trigger": "err_devices"}
 
         self.__executor.hardware_ready = True
-        logger.info("cmd_test_self: hardware ready")
+        self._hal_motor_positions = [0, 0, 0, 0, 0]
+        self._sync_motor_positions_to_executor()
+        logger.info(
+            "cmd_test_self: hardware ready recent_rx=%s",
+            self.__executor.format_hal_rx_snapshot(),
+        )
         return {"trigger": "ok"}
 
+    def cmd_hal_zero(self, *args, **kwargs):
+        """Homing: только $ZERO (инженер, экран координат)."""
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_coords_payload()
+
+        ok, reason = self._wait_hal_command_finished("ZERO", True, 120_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"ZERO:{reason}"
+            return {"trigger": "err_devices"}
+
+        self._hal_motor_positions = [0, 0, 0, 0, 0]
+        self._sync_motor_positions_to_executor()
+        payload = self._hal_view_coords_payload()
+        payload["hal_zero_ok"] = True
+        return payload
+
+    def cmd_hal_park(self, *args, **kwargs):
+        """Парковка: MOT,p1..p5 из park_m1..park_m5 профиля."""
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_coords_payload()
+
+        profile = self._load_hal_motion_profile()
+        park = self._park_vector_five(profile)
+        cmd = _fmt_mot5(park)
+        ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"{cmd}:{reason}"
+            return {"trigger": "err_devices"}
+
+        self._hal_motor_positions = list(park)
+        self._sync_motor_positions_to_executor()
+        payload = self._hal_view_coords_payload()
+        payload["hal_park_ok"] = True
+        return payload
+
+    def cmd_hal_jog(self, *args, trigger=None, **kwargs):
+        """Короткий кадр MOT со сдвигом одной логической оси."""
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_coords_payload()
+
+        jog_trigger = (
+            trigger
+            or kwargs.get("trigger")
+            or getattr(self.__executor, "last_hal_jog_trigger", "")
+        )
+        axis, sign = self._parse_hal_jog_trigger(str(jog_trigger))
+        if not axis:
+            self.__executor.hardware_last_error = f"unknown_jog_trigger:{jog_trigger}"
+            return {"trigger": "err_devices"}
+
+        profile = self._load_hal_motion_profile()
+        ui_step = getattr(self.__executor, "hal_jog_step", None)
+        if ui_step is not None:
+            try:
+                step = int(ui_step)
+            except (TypeError, ValueError):
+                step = int(profile.get("jog_step", 50))
+        else:
+            step = int(profile.get("jog_step", 50))
+        if step <= 0:
+            step = 50
+        delta = sign * step
+        indices = self._jog_motor_indices(axis, profile)
+        pos = list(self._hal_motor_positions)
+        for idx in indices:
+            pos[idx] = _clamp_mot_coord(int(pos[idx]) + delta)
+
+        cmd = _fmt_mot5(pos)
+        ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"{cmd}:{reason}"
+            return {"trigger": "err_devices"}
+
+        self._hal_motor_positions = pos
+        self._sync_motor_positions_to_executor()
+        return self._hal_view_coords_payload()
+
+    def cmd_hal_mot_goto(self, *args, **kwargs):
+        """Абсолютный кадр MOT,p1..p5 из полей ввода на screen_38."""
+        from EventsSystem.hal_coords import (
+            MOT_STEP_MAX,
+            MOT_STEP_MIN,
+            message_for_reason,
+            validate_motor_position_texts,
+        )
+
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_coords_payload()
+
+        raw = kwargs.get("hal_motor_positions")
+        if raw is None:
+            raw = getattr(self.__executor, "hal_mot_goto_positions", None)
+        texts = [str(int(v)) for v in (raw or [])[:5]]
+        while len(texts) < 5:
+            texts.append("0")
+        pos_list, bad_index, reason = validate_motor_position_texts(texts)
+        if bad_index is not None:
+            label = f"M{bad_index + 1}"
+            return {
+                "trigger": "view_hal_coords",
+                "hal_input_error": message_for_reason(
+                    reason,
+                    motor_label=label,
+                    min_v=MOT_STEP_MIN,
+                    max_v=MOT_STEP_MAX,
+                ),
+                "hal_motor_positions": list(self._hal_motor_positions),
+            }
+
+        pos = [_clamp_mot_coord(int(v)) for v in pos_list[:5]]
+        cmd = _fmt_mot5(pos)
+        ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"{cmd}:{reason}"
+            return {"trigger": "err_devices"}
+
+        self._hal_motor_positions = pos
+        self._sync_motor_positions_to_executor()
+        return self._hal_view_coords_payload()
+
+    def get_hal_motor_positions(self) -> list:
+        return list(self._hal_motor_positions)
 
     def cmd_send(self, number, tool_name, cell_id=None, port='COM30', baudrate=9600, timeout=15, trigger=None, **kwargs):
         # print(f"Отправка команды: {number} | Инструмент: {tool_name} | Порт: {port}")
@@ -417,6 +685,12 @@ class ActionMapper:
             self.__executor.hardware_last_error = "dispense_gate_unavailable"
             return {"trigger": "err_devices"}
 
+        coords, coord_err = self._resolve_hal_target_coords(int(number), cell_id=cell_id)
+        if coord_err:
+            self.__executor.hardware_last_error = coord_err
+            logger.error("HAL dispense blocked: %s", coord_err)
+            return {"trigger": "err_devices"}
+
         try:
             steps, lock_ms = self._build_hal_dispense_steps(int(number), cell_id=cell_id)
         except Exception as e:
@@ -431,7 +705,10 @@ class ActionMapper:
             return {"trigger": "err_devices"}
 
         self._hal_sequence_in_progress = True
-        # FSM: wait по command_is_send; command_ok после цепочки (без доп. задержки lock_ms на клиенте).
+        ctx = getattr(self.__executor, "engineer_wait_context", None)
+        if ctx == "dispense":
+            self.__executor.wait_screen_message = "Тестовая выдача…"
+        # FSM: wait по command_is_send; command_ok после цепочки MOT/LED.
         return {"trigger": "command_is_send"}
 
 

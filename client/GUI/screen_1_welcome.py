@@ -59,7 +59,7 @@ class screen_1_welcome(BaseScreen, Ui_screen_1_welcome):
             'user': 'test_user',
             'admin': 'view_type_admin',
             'developer': 'view_type_admin',
-            'engineer': 'test_user',
+            'engineer': 'view_type_engineer',
             'manager': 'type_storekeeper',
         }
         if role_name in role_to_trigger:

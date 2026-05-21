@@ -6,6 +6,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from GUI.BaseScreen import BaseScreen
 
 logger = get_logger(__name__)
+from GUI.helper.back_button import style_back_button
 from GUI.ui_classes.Ui_screen_14_stockman import Ui_screen_14_stockman
 try:
     import RPi.GPIO as GPIO
@@ -72,6 +73,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        style_back_button(self.btn_back)
 
         # Устанавливаем политику фокуса для приема всех событий клавиатуры
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -90,7 +92,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
         self._btn_open_door_original_style = self.btn_open_door.styleSheet()
 
         self.btn_open_door.clicked.connect(self.on_open_door)
-        self.btn_back.clicked.connect(self.close_door)
+        # btn_back — только FSM (MainWindow.bind_transitions), не close_door
 
     def on_open_door(self):
         """
@@ -178,6 +180,7 @@ class screen_14_stockman(BaseScreen, Ui_screen_14_stockman):
     def hideEvent(self, event):
         """Событие, которое срабатывает, когда виджет скрывается."""
         super().hideEvent(event)
+        control_relay_off()
         self._barcode_timer.stop()
         # Восстанавливаем состояние кнопки при скрытии экрана
         if self._relay_worker and self._relay_worker.isRunning():

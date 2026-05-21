@@ -235,8 +235,11 @@ def execute():
                 lock_ms_default=15000,
                 push_down_default=900,
                 push_up_default=0,
-                park_x_default=0,
-                park_z_default=0,
+                park_m1_default=0,
+                park_m2_default=0,
+                park_m3_default=0,
+                park_m4_default=0,
+                park_m5_default=0,
             )
         status_names = [
             "start_system",

@@ -49,6 +49,7 @@ _HAL_FSM_TO_UI = frozenset(
     (
         "command_is_send",
         "command_ok",
+        "command_ok_engineer",
         "err_devices",
     )
 )
@@ -88,9 +89,17 @@ class MainWindow(QtWidgets.QWidget):
         # # Наш навигационный менеджер
         # self.nav_manager = NavigationManager()
 
-        # Основной layout
+        # Основной layout; экраны — в QStackedWidget (не в общий VBox: на Windows
+        # скрытые Expanding-виджеты раздувают высоту и сдвигают активный экран вверх).
         self.layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.layout)
+        self._screen_stack = QtWidgets.QStackedWidget(self)
+        self._screen_stack.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Expanding,
+        )
+        self.layout.addWidget(self._screen_stack)
+        self._screen_size = QtCore.QSize(480, 800)
 
         # Создание экранов
         self.create_widgets()
@@ -98,6 +107,7 @@ class MainWindow(QtWidgets.QWidget):
         QApplication.instance().installEventFilter(self.session_manager)
         self.last_widget_value = {}
         self.action_callback = None
+        self.executor = None
         self.open_widget(self.lump.state(), None, None)
         # self.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0.5, y1:0, x2:0.5, y2:1, stop:0 rgba(47, 70, 105, 255), stop:1 rgba(131, 149, 174, 255));\n""")
         self.setStyleSheet("background-color: #2e4461;")
@@ -106,10 +116,14 @@ class MainWindow(QtWidgets.QWidget):
         """Создает виджеты для всех экранов."""
         for screen_name, buttons in screen.items():
             widget = self.create_widget(screen_name)
-            widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+            widget.setSizePolicy(
+                QtWidgets.QSizePolicy.Expanding,
+                QtWidgets.QSizePolicy.Expanding,
+            )
+            widget.resize(self._screen_size)
             self.widgets[screen_name] = widget
-            self.layout.addWidget(widget)
-            self.layout.setContentsMargins(0, 0, 0, 0)
+            self._screen_stack.addWidget(widget)
+        self.layout.setContentsMargins(0, 0, 0, 0)
 
         self.bind_transitions()
 
@@ -160,10 +174,81 @@ class MainWindow(QtWidgets.QWidget):
             if btn:
                 btn.clicked.connect(self._on_screen_9_back_to_plan_clicked)
                 self.button_signals[btn.objectName()] = btn.clicked
+        self._bind_engineer_screen_events()
+
+    def _bind_engineer_screen_events(self):
+        s38 = self.widgets.get("screen_38_hal_coords")
+        if s38 is not None:
+            s38.event_hal_jog = self._on_hal_jog_clicked
+            s38.event_hal_mot_send = self._on_hal_mot_send_clicked
+            s38.event_hal_save_coords = self._on_hal_save_coords_clicked
+            s38.event_hal_park = self._on_hal_park_clicked
+            s38.event_hal_zero = self._on_hal_zero_clicked
+            for btn_name, handler in (
+                ("btn_hal_save_coords", s38.forward_save_coords),
+                ("btn_hal_park", s38._forward_hal_park),
+                ("btn_hal_zero", s38._forward_hal_zero),
+            ):
+                btn = s38.findChild(QtWidgets.QPushButton, btn_name)
+                if btn is not None:
+                    btn.clicked.connect(lambda checked=False, h=handler: h())
+        s41 = self.widgets.get("screen_41_hal_cells_table")
+        if s41 is not None:
+            s41.event_hal_cell_row = self._on_hal_cell_row_clicked
+
+    def _on_hal_jog_clicked(self, trigger_name: str):
+        if self.executor is not None:
+            self.executor.last_hal_jog_trigger = trigger_name
+        self.button_clicked(trigger_name, "cmd_hal_jog")
+
+    def _on_hal_mot_send_clicked(self):
+        self.button_clicked("btn_hal_mot_send", "cmd_hal_mot_goto")
+
+    def _on_hal_save_coords_clicked(self):
+        self.button_clicked("btn_hal_save_coords", "write_db_cell_hal_coords")
+
+    def _on_hal_park_clicked(self):
+        self.button_clicked("btn_hal_park", "cmd_hal_park")
+
+    def _on_hal_zero_clicked(self):
+        self.button_clicked("btn_hal_zero", "cmd_hal_zero")
+
+    def _on_hal_cell_row_clicked(self, cell_number: int):
+        if self.executor is not None:
+            self.executor.engineer_cell_number = int(cell_number)
+        self.button_clicked("hal_cell_row_select", "screen_38_hal_coords")
+
+    def _capture_engineer_cell_number_from_widget(self):
+        widget = self.widgets.get(self.lump.state())
+        if widget is None or not hasattr(widget, "get_data"):
+            return
+        try:
+            data = widget.get_data()
+        except Exception:
+            return
+        if isinstance(data, dict) and self.executor is not None:
+            if data.get("engineer_cell_number") is not None:
+                self.executor.engineer_cell_number = data["engineer_cell_number"]
+            if data.get("hal_x") is not None:
+                self.executor.hal_save_hal_x = int(data["hal_x"])
+            if data.get("hal_z") is not None:
+                self.executor.hal_save_hal_z = int(data["hal_z"])
 
     def bind_button_signal(self, source, trigger, dest):
         """Привязывает сигнал кнопки к обработчику."""
         # event_timeout_back отключён — используется глобальный SessionIdleManager
+
+        # JOG / «Отправка» / «Сохранить» на screen_38 — через event_hal_* (иначе двойной cmd).
+        if source == "screen_38_hal_coords" and (
+            trigger.startswith("hal_jog_")
+            or trigger in (
+                "btn_hal_mot_send",
+                "btn_hal_save_coords",
+                "btn_hal_park",
+                "btn_hal_zero",
+            )
+        ):
+            return
 
         if self.widgets[source].event_input_name_code:
             self.widgets[source].event_input_name_code = (lambda checked, btn_name="input_name_code": self.button_clicked(btn_name, dest))
@@ -255,6 +340,7 @@ class MainWindow(QtWidgets.QWidget):
             return
 
         try:
+            self._capture_engineer_cell_number_from_widget()
             self.back_state = self.lump.state()
             self.lump.trigger(button_name)
             state = self.lump.state()
@@ -323,34 +409,37 @@ class MainWindow(QtWidgets.QWidget):
 
         widget_found = False
         if 'screen' in widget_name:
-            # Обработка виджетов
-            for name, widget in self.widgets.items():
-                visible = name == widget_name
-                widget.setVisible(visible)
+            widget = self.widgets.get(widget_name)
+            if widget is not None:
+                self._screen_stack.setCurrentWidget(widget)
                 widget.setFocus()
-                if visible:
-                    widget_found = True
-                    # value = self._handle_widget_data(widget, source, value)
-                    # Передаем данные в виджет и сохраняем текущее состояние
-                    self.current_value = self._handle_widget_data(widget, source, value)
-                    # Контекст выдачи для кнопки «Назад» на экранах подтверждения/успеха/ошибки
-                    if widget_name == "screen_7_select_group":
-                        self.issue_context = "by_group"
-                    elif widget_name == "screen_9_select_tool_by_plan" and self.last_widget_value:
-                        v = self.last_widget_value
-                        if isinstance(v, (tuple, list)) and len(v) >= 4:
-                            self.issue_context = "by_plan"
-                            self.value["plan_context"] = {
-                                "plan_id": v[3],
-                                "plan_designation": v[1],
-                                "plan_name": v[2],
-                            }
-                    # Запоминаем меню роли для возврата со сводки и выбора плана
-                    if widget_name in ("screen_6_user", "screen_26_admin", "screen_14_stockman"):
-                        self.last_role_screen = widget_name
-                    # Список планов для возврата с screen_9 в screen_33 (user)
-                    if widget_name == "screen_33_select_plan" and value:
-                        self.value["plan_list_context"] = value
+                widget_found = True
+                self.current_value = self._handle_widget_data(widget, source, value)
+                # Контекст выдачи для кнопки «Назад» на экранах подтверждения/успеха/ошибки
+                if widget_name == "screen_7_select_group":
+                    self.issue_context = "by_group"
+                elif widget_name == "screen_9_select_tool_by_plan" and self.last_widget_value:
+                    v = self.last_widget_value
+                    if isinstance(v, (tuple, list)) and len(v) >= 4:
+                        self.issue_context = "by_plan"
+                        self.value["plan_context"] = {
+                            "plan_id": v[3],
+                            "plan_designation": v[1],
+                            "plan_name": v[2],
+                        }
+                # Запоминаем меню роли для возврата со сводки и выбора плана
+                if widget_name in (
+                    "screen_6_user",
+                    "screen_26_admin",
+                    "screen_14_stockman",
+                    "screen_37_engineer_hub",
+                ):
+                    self.last_role_screen = widget_name
+                # Список планов для возврата с screen_9 в screen_33 (user)
+                if widget_name == "screen_33_select_plan" and value:
+                    self.value["plan_list_context"] = value
+                widget.updateGeometry()
+                self._screen_stack.update()
 
         self.current_screen = widget_name
 
@@ -379,8 +468,14 @@ class MainWindow(QtWidgets.QWidget):
         # write = widget.is_write()
         # read  = widget.is_read()
         # if write and not read:
-        widget.set_data(*value, source)
-        # elif read and not write:
+        if isinstance(value, dict):
+            widget.set_data(value, source=source)
+        elif isinstance(value, (list, tuple)):
+            widget.set_data(*value, source=source)
+        elif value is not None:
+            widget.set_data(value, source=source)
+        else:
+            widget.set_data(source=source)
         data = widget.get_data()
         self.widget_back = widget
         return data

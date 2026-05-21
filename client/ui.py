@@ -33,6 +33,10 @@ from GUI.screen_32_wait import screen_32_wait
 from GUI.screen_33_select_plan import screen_33_select_plan
 from GUI.screen_35_plan_complete_confirmation import screen_35_plan_complete_confirmation
 from GUI.screen_36_hardware_err import screen_36_hardware_err
+from GUI.screen_37_engineer_hub import screen_37_engineer_hub
+from GUI.screen_38_hal_coords import screen_38_hal_coords
+from GUI.screen_40_hal_dispense import screen_40_hal_dispense
+from GUI.screen_41_hal_cells_table import screen_41_hal_cells_table
 screen_register = {
         "screen_1_welcome": screen_1_welcome,
         "screen_2_help": screen_2_help,
@@ -68,5 +72,9 @@ screen_register = {
         "screen_32_wait": screen_32_wait,
         "screen_33_select_plan": screen_33_select_plan,
         "screen_35_plan_complete_confirmation": screen_35_plan_complete_confirmation,
-        "screen_36_hardware_err": screen_36_hardware_err
+        "screen_36_hardware_err": screen_36_hardware_err,
+        "screen_37_engineer_hub": screen_37_engineer_hub,
+        "screen_38_hal_coords": screen_38_hal_coords,
+        "screen_40_hal_dispense": screen_40_hal_dispense,
+        "screen_41_hal_cells_table": screen_41_hal_cells_table,
     }

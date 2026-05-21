@@ -13,6 +13,9 @@ class CombinedMeta(QtWidgets.QWidget.__class__, ABCMeta):
 
 # Создаём базовый класс с этим метаклассом
 class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
+    SCREEN_WIDTH = 480
+    SCREEN_HEIGHT = 800
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__is_read = False
@@ -40,6 +43,12 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
     # Инициализируется один раз при первом показе экрана, когда все
     # дочерние виджеты уже созданы через setupUi.
     # ------------------------------------------------------------------
+    def normalize_screen_geometry(self) -> None:
+        """Фиксированный размер экрана как у .ui (480×800)."""
+        self.setMinimumSize(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        self.setMaximumSize(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        self.resize(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+
     def showEvent(self, event):
         super().showEvent(event)
         if self.enable_touch_scroll and not self._touch_scroll_initialized:

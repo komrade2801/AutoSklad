@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>screen_41_hal_cells_table</class>
+ <widget class="QWidget" name="screen_41_hal_cells_table">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>480</width><height>800</height></rect></property>
+  <property name="windowTitle"><string>screen_41_hal_cells_table</string></property>
+  <property name="styleSheet"><string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
+	color: #FFFFFF;
+	border-width: 0px;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}</string></property>
+  <layout class="QVBoxLayout" name="verticalLayout">   <property name="leftMargin"><number>12</number></property>
+   <property name="topMargin"><number>12</number></property>
+   <property name="rightMargin"><number>12</number></property>
+   <property name="bottomMargin"><number>10</number></property>
+   <property name="spacing"><number>8</number></property>   <item>
+    <widget class="QLabel" name="lbl_title">
+     <property name="text"><string>Таблица HAL-координат</string></property>
+   <property name="alignment"><set>Qt::AlignCenter</set></property>
+   <property name="styleSheet"><string notr="true">font-size: 26px; font-weight: 700;</string></property>
+    </widget>
+   </item>   <item>
+    <widget class="QWidget" name="widget_table_header">
+     <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
+     <property name="maximumSize"><size><width>16777215</width><height>44</height></size></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QListWidget" name="listWidget">
+     <property name="horizontalScrollBarPolicy"><enum>Qt::ScrollBarAlwaysOff</enum></property>
+     <property name="verticalScrollBarPolicy"><enum>Qt::ScrollBarAsNeeded</enum></property>
+     <property name="styleSheet"><string notr="true">QListWidget {
+	border: none;
+	background: transparent;
+	outline: 0;
+}
+QListWidget::item {
+	border: none;
+	padding: 0px;
+}</string></property>
+    </widget>
+   </item>   <item>
+  <widget class="QPushButton" name="btn_back">
+   <property name="minimumSize"><size><width>0</width><height>50</height></size></property>
+   <property name="maximumSize"><size><width>16777215</width><height>50</height></size></property>
+   <property name="text"><string/></property>
+   <property name="icon">
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
+   </property>
+   <property name="iconSize"><size><width>51</width><height>51</height></size></property>
+  </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../img/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

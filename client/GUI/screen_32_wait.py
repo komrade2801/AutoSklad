@@ -37,8 +37,21 @@ class screen_32_wait(BaseScreen, Ui_screen_32_wait):
         event.accept()
 
     def set_data(self, *args, **kwargs):
-        """Устанавливает текст. Реализуется в каждом экране."""
-        pass
+        """Подпись ожидания: «Парковка…», «Тестовая выдача…» или стандартная выдача."""
+        message = kwargs.get("wait_screen_message")
+        if not message and args:
+            first = args[0]
+            if isinstance(first, dict):
+                message = first.get("wait_screen_message")
+        if not message:
+            parent = self.window()
+            executor = getattr(parent, "executor", None)
+            if executor is not None:
+                message = getattr(executor, "wait_screen_message", "") or ""
+        if message:
+            self.lbl_info_1.setText(str(message))
+        else:
+            self.lbl_info_1.setText("Выдача инструмента")
 
     def get_data(self):
-        return {'trigger': 'command_ok'}
+        return None

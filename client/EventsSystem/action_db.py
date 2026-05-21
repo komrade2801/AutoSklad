@@ -47,6 +47,7 @@ from DB.Models.OperationsConsumption import OperationsConsumption
 from DB.Models.ToolTypes import ToolTypes
 from DB.Models.Group import Group
 from DB.Models.User import User
+from EventsSystem.hal_coords import format_hal_coords_error, validate_hal_cell_coords
 from sphinx.cmd.quickstart import valid_dir
 
 from Core.role_display import get_role_display_name
@@ -248,6 +249,11 @@ class ActionMapper:
             'write_db_err_login': lambda *args, **kwargs: logger.debug("write_db_err_login"),
             'read_db_err_history': lambda *args, **kwargs: self.read_db_err_history(),
             'read_db_err': lambda *args, **kwargs: logger.debug("read_db_err"),
+            'read_db_cells_hal_list': lambda *args, **kwargs: self.read_db_cells_hal_list(*args, **kwargs),
+            'write_db_cell_hal_coords': lambda *args, **kwargs: self.write_db_cell_hal_coords(*args, **kwargs),
+            'write_db_hal_park_defaults': lambda *args, **kwargs: self.write_db_hal_park_defaults(*args, **kwargs),
+            'read_db_engineer_get_cell': lambda *args, **kwargs: self.read_db_engineer_get_cell(*args, **kwargs),
+            'read_db_engineer_command_ok': lambda *args, **kwargs: self.read_db_engineer_command_ok(*args, **kwargs),
         }
 
     def _invalidate_availability_caches(self, log_prefix: str = ""):
@@ -279,6 +285,24 @@ class ActionMapper:
         # Объединяем все аргументы в одну строку с разделением
         output = ' '.join(filter(None, [args_str, kwargs_str]))
         logger.debug("write_db_err_rights: %s".format( output))
+
+    def _hal_coords_gate(self, cell) -> Optional[dict]:
+        """
+        Для atmega_hal: блокирует выдачу без валидных hal_x/hal_z (до cmd_send / UART).
+        """
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return None
+        ok, reason = validate_hal_cell_coords(cell.hal_x, cell.hal_z)
+        if ok:
+            return None
+        self.__executor.hardware_last_error = format_hal_coords_error(
+            reason,
+            cell_id=cell.id,
+            number=cell.number,
+        )
+        logger.error("HAL coords gate: %s", self.__executor.hardware_last_error)
+        return {"trigger": "err_devices"}
 
     def write_db_err_devices(self, *args, **kwargs):
         """
@@ -368,14 +392,20 @@ class ActionMapper:
         # cell = cells[0]
         self.select_cell = selected_cell
 
+        if not selected_cell:
+            return None
+
+        blocked = self._hal_coords_gate(selected_cell)
+        if blocked:
+            return blocked
+
         # Предполагается, что инструмент связан с одной ячейкой
-        # Возвращаем номер первой найденной ячейки
         return {
             "trigger": "send_number",
             "number": selected_cell.number,
             "cell_id": selected_cell.id,
             "tool_name": tool_name,
-        } if selected_cell else None
+        }
 
     def read_db_get_cells(self, tool_list):
         logger.debug("read_db_get_cells %s".format( tool_list))
@@ -459,8 +489,13 @@ class ActionMapper:
                 self.plan_cell_list.pop(0)
                 continue
 
+            blocked = self._hal_coords_gate(cell)
+            if blocked:
+                return blocked
+
             # Ячейка доступна для выдачи
             self.select_cell = self.plan_cell_list.pop(0)
+
             return {
                 "trigger": "send_number",
                 "number": self.select_cell.number,
@@ -3017,6 +3052,189 @@ class ActionMapper:
                 f"Ошибка при чтении инструментов для плана {plan_id}: {str(e)}")
             logger.exception("")
             return []
+
+    def write_db_hal_park_defaults(self, *args, **kwargs):
+        """Сохранение park_m1..park_m5 в HardwareConfig (экран тестовой выдачи)."""
+        from DB.Engine.DeviceConfigCRUD import EngineDeviceConfig
+        from DB.Engine.HardwareConfigCRUD import EngineHardwareConfig
+        from EventsSystem.hal_coords import (
+            MOT_STEP_MAX,
+            MOT_STEP_MIN,
+            message_for_reason,
+            validate_motor_position_texts,
+        )
+
+        texts = []
+        for i in range(1, 6):
+            key = f"park_m{i}"
+            if key in kwargs:
+                texts.append(str(kwargs[key]))
+            else:
+                texts.append("")
+        positions, bad_index, reason = validate_motor_position_texts(texts)
+        if reason:
+            label = f"M{bad_index + 1}" if bad_index is not None else ""
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": message_for_reason(
+                    reason,
+                    motor_label=label,
+                    min_v=MOT_STEP_MIN,
+                    max_v=MOT_STEP_MAX,
+                ),
+            }
+
+        e_device = EngineDeviceConfig(session=self.session_local)
+        device_cfg = e_device.get_active()
+        if not device_cfg:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Конфигурация устройства не найдена",
+            }
+        e_hw = EngineHardwareConfig(session=self.session_local)
+        hw_cfg = e_hw.get_by_device(device_cfg.id)
+        if not hw_cfg:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Профиль железа не найден",
+            }
+        ok = e_hw.update_park_defaults(
+            hw_cfg.id,
+            park_m1=positions[0],
+            park_m2=positions[1],
+            park_m3=positions[2],
+            park_m4=positions[3],
+            park_m5=positions[4],
+        )
+        if not ok:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Не удалось сохранить парковку",
+            }
+        payload = {f"park_m{i}": positions[i - 1] for i in range(1, 6)}
+        payload["hal_park_save_ok"] = True
+        return {"trigger": "view_hal_dispense", **payload}
+
+    def read_db_cells_hal_list(self, *args, **kwargs):
+        """Список ячеек с hal_x/hal_z для screen_41."""
+        try:
+            rows = self.e_cell.list_cells_hal_summary()
+            return {"trigger": "view_hal_cells_table", "cells": rows}
+        except Exception as e:
+            logger.exception("read_db_cells_hal_list: %s", e)
+            return {"trigger": "view_err"}
+
+    def write_db_cell_hal_coords(self, *args, **kwargs):
+        """Запись hal_x/hal_z из полей M1/M3 (screen_38) в ячейку по номеру."""
+        from EventsSystem.hal_coords import (
+            message_for_reason,
+            validate_cell_number_text,
+            validate_hal_cell_coords,
+        )
+
+        number = getattr(self.__executor, "engineer_cell_number", None)
+        if number is None:
+            try:
+                number = int(kwargs.get("number") or (args[0] if args else 0))
+            except (TypeError, ValueError):
+                number = None
+        if number is not None:
+            _parsed, reason = validate_cell_number_text(str(number))
+            if reason:
+                number = None
+        if number is None:
+            logger.warning("write_db_cell_hal_coords: номер ячейки не задан")
+            return {
+                "trigger": "view_hal_coords",
+                "hal_input_error": "Ячейка №: укажите номер ячейки",
+            }
+
+        cell = self.e_cell.get_cell_by_number(int(number))
+        if not cell:
+            logger.warning("write_db_cell_hal_coords: ячейка number=%s не найдена", number)
+            return {
+                "trigger": "view_hal_coords",
+                "hal_input_error": "Ячейка с таким номером не найдена",
+            }
+
+        hal_x = kwargs.get("hal_x")
+        hal_z = kwargs.get("hal_z")
+        if hal_x is None:
+            hal_x = getattr(self.__executor, "hal_save_hal_x", None)
+        if hal_z is None:
+            hal_z = getattr(self.__executor, "hal_save_hal_z", None)
+        try:
+            hal_x = int(hal_x)
+            hal_z = int(hal_z)
+        except (TypeError, ValueError):
+            return {
+                "trigger": "view_hal_coords",
+                "hal_input_error": "M1/M3: укажите координаты для сохранения",
+            }
+
+        ok_coords, reason = validate_hal_cell_coords(hal_x, hal_z)
+        if not ok_coords:
+            return {
+                "trigger": "view_hal_coords",
+                "hal_input_error": message_for_reason(reason or ""),
+            }
+
+        ok = self.e_cell.update_cell_hal_profile(cell.id, hal_x=hal_x, hal_z=hal_z)
+        if not ok:
+            logger.warning("write_db_cell_hal_coords: update failed cell_id=%s", cell.id)
+            return {
+                "trigger": "view_hal_coords",
+                "hal_input_error": "Не удалось сохранить координаты",
+            }
+        return {"trigger": "view_hal_coords", "hal_save_ok": True}
+
+    def read_db_engineer_get_cell(self, *args, **kwargs):
+        """Поиск ячейки по номеру для тестовой выдачи (без списания)."""
+        number = getattr(self.__executor, "engineer_cell_number", None)
+        if number is None:
+            try:
+                number = int(kwargs.get("number") or (args[0] if args else 0))
+            except (TypeError, ValueError):
+                number = None
+        if number is None:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Ячейка №: укажите номер ячейки",
+            }
+
+        cell = self.e_cell.get_cell_by_number(int(number))
+        if not cell:
+            logger.warning("read_db_engineer_get_cell: ячейка number=%s не найдена", number)
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Ячейка с таким номером не найдена",
+            }
+
+        blocked = self._hal_coords_gate(cell)
+        if blocked:
+            return blocked
+
+        self.__executor.engineer_wait_context = "dispense"
+        tool_name = ""
+        if cell.tools_id:
+            tool = self.e_tool_types.get_tool_type_by_id(cell.tools_id)
+            if tool:
+                tool_name = getattr(tool, "name", "") or ""
+        return {
+            "trigger": "send_number",
+            "number": cell.number,
+            "cell_id": cell.id,
+            "tool_name": tool_name,
+        }
+
+    def read_db_engineer_command_ok(self, *args, **kwargs):
+        """Маршрут после command_ok_engineer с screen_32_wait."""
+        ctx = getattr(self.__executor, "engineer_wait_context", None)
+        self.__executor.engineer_wait_context = None
+        self.__executor.wait_screen_message = ""
+        if ctx == "dispense":
+            return {"trigger": "view_hal_dispense"}
+        return {"trigger": "view_hal_coords"}
 
     def execute(self, act, *args, **kwargs):
         try:

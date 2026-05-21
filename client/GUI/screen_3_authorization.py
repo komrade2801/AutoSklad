@@ -239,7 +239,7 @@ class screen_3_authorization(BaseScreen, Ui_screen_3_authorization):
             'user': 'test_user',
             'admin': 'view_type_admin',
             'developer': 'view_type_admin',  # Developer имеет админские права
-            'engineer': 'test_user',  # Если понадобится
+            'engineer': 'view_type_engineer',
             'manager': 'type_storekeeper'  # Если понадобится
         }
         if role_name in role_to_trigger:

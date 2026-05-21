@@ -6,6 +6,8 @@ from DB.Engine.BaseCRUD import BaseCRUD  # Импортируем BaseCRUD
 
 logger = get_logger(__name__)
 from DB.Models.Cell import Cell  # Импортируем модель Cell
+
+_UNSET = object()
 from DB.Models.Tools import Tools  # Импортируем модель Tools
 from DB.Models.Group import Group  # Импортируем модель Group
 from DB.Data.db import SessionLocal
@@ -123,13 +125,13 @@ class EngineCell(BaseCRUD):
     #         status_id=status_id,
     #     )
     def update_cell(self, cell_id: int,
-                    number=None,
-                    description=None,
-                    groups_id=None,
-                    tools_id=None,
-                    status_id=None,
-                    hal_x=None,
-                    hal_z=None,
+                    number=_UNSET,
+                    description=_UNSET,
+                    groups_id=_UNSET,
+                    tools_id=_UNSET,
+                    status_id=_UNSET,
+                    hal_x=_UNSET,
+                    hal_z=_UNSET,
                     ) -> bool:
         """
             Обновляет параметры ячейки по её уникальному идентификатору.
@@ -151,21 +153,21 @@ class EngineCell(BaseCRUD):
         if not instance:
             return False
 
-        # 2) Собираем только те поля, которые действительно изменились
+        # 2) Только явно переданные поля (не трогаем остальные колонки)
         updates = {}
-        if number is not None and instance.number != number:
+        if number is not _UNSET and instance.number != number:
             updates['number'] = number
-        if description is not None and instance.description != description:
+        if description is not _UNSET and instance.description != description:
             updates['description'] = description
-        # if groups_id is not None and instance.groups_id != groups_id:
-        updates['groups_id'] = groups_id
-        # if tools_id is not None and instance.tools_id != tools_id:
-        updates['tools_id'] = tools_id
-        # if status_id is not None and instance.status_id != status_id:
-        updates['status_id'] = status_id
-        if hal_x is not None and instance.hal_x != hal_x:
+        if groups_id is not _UNSET and instance.groups_id != groups_id:
+            updates['groups_id'] = groups_id
+        if tools_id is not _UNSET and instance.tools_id != tools_id:
+            updates['tools_id'] = tools_id
+        if status_id is not _UNSET and instance.status_id != status_id:
+            updates['status_id'] = status_id
+        if hal_x is not _UNSET and instance.hal_x != hal_x:
             updates['hal_x'] = hal_x
-        if hal_z is not None and instance.hal_z != hal_z:
+        if hal_z is not _UNSET and instance.hal_z != hal_z:
             updates['hal_z'] = hal_z
 
         # 3) Если нечего менять — вернём True, потому что ошибок нет
@@ -184,13 +186,50 @@ class EngineCell(BaseCRUD):
         hal_z: Optional[int] = None,
     ) -> bool:
         """
-        Обновляет только HAL-профиль ячейки.
+        Обновляет только hal_x и hal_z (остальные поля ячейки не меняются).
         """
-        return self.update_cell(
-            cell_id=cell_id,
-            hal_x=hal_x,
-            hal_z=hal_z,
-        )
+        updates = {}
+        if hal_x is not None:
+            updates["hal_x"] = int(hal_x)
+        if hal_z is not None:
+            updates["hal_z"] = int(hal_z)
+        if not updates:
+            return True
+        instance = self.session.query(self.model).get(cell_id)
+        if not instance:
+            return False
+        changed = {
+            k: v for k, v in updates.items() if getattr(instance, k) != v
+        }
+        if not changed:
+            return True
+        return self.update(index=cell_id, **changed)
+
+    def get_cell_by_number(self, number: int) -> Optional[Cell]:
+        """Ячейка по номеру (number)."""
+        try:
+            return (
+                self.session.query(self.model)
+                .execution_options(populate_existing=True)
+                .filter_by(number=int(number))
+                .first()
+            )
+        except Exception:
+            return None
+
+    def list_cells_hal_summary(self) -> List[dict]:
+        """Список ячеек с HAL-координатами для инженерного экрана."""
+        rows = []
+        for cell in self.session.query(self.model).order_by(self.model.number).all():
+            rows.append(
+                {
+                    "cell_id": cell.id,
+                    "number": cell.number,
+                    "hal_x": cell.hal_x,
+                    "hal_z": cell.hal_z,
+                }
+            )
+        return rows
 
     def get_cell_hal_profile(self, cell_id: int) -> Optional[dict]:
         """

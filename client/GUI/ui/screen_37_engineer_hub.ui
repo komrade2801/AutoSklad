@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>screen_37_engineer_hub</class>
+ <widget class="QWidget" name="screen_37_engineer_hub">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>480</width><height>800</height></rect></property>
+  <property name="windowTitle"><string>screen_37_engineer_hub</string></property>
+  <property name="styleSheet"><string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
+	color: #FFFFFF;
+	border-width: 0px;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}</string></property>
+  <layout class="QVBoxLayout" name="verticalLayout">   <property name="leftMargin"><number>12</number></property>
+   <property name="topMargin"><number>16</number></property>
+   <property name="rightMargin"><number>12</number></property>
+   <property name="bottomMargin"><number>10</number></property>
+   <property name="spacing"><number>12</number></property>   <item>
+    <widget class="QLabel" name="lbl_title">
+     <property name="text"><string>Инженерное меню</string></property>
+   <property name="alignment"><set>Qt::AlignCenter</set></property>
+   <property name="styleSheet"><string notr="true">font-size: 30px; font-weight: 700;</string></property>
+    </widget>
+   </item>   <item>
+    <widget class="QLabel" name="lbl_name">
+     <property name="text"><string></string></property>
+   <property name="alignment"><set>Qt::AlignCenter</set></property>
+   <property name="styleSheet"><string notr="true">font-size: 22px;</string></property>
+    </widget>
+   </item>   <item>
+    <widget class="QPushButton" name="btn_hal_coords">
+     <property name="text"><string>Координаты</string></property>
+     <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 24px; font-weight: 600; min-height: 64px; }</string></property>
+    </widget>
+   </item>   <item>
+    <widget class="QPushButton" name="btn_hal_dispense">
+     <property name="text"><string>Выдача</string></property>
+     <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 24px; font-weight: 600; min-height: 64px; }</string></property>
+    </widget>
+   </item>   <item>
+    <widget class="QPushButton" name="btn_hal_cells_table">
+     <property name="text"><string>Таблица ячеек</string></property>
+     <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 24px; font-weight: 600; min-height: 64px; }</string></property>
+    </widget>
+   </item>   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation"><enum>Qt::Vertical</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property>
+    </spacer>
+   </item>   <item>
+  <widget class="QPushButton" name="btn_back">
+   <property name="minimumSize"><size><width>0</width><height>50</height></size></property>
+   <property name="maximumSize"><size><width>16777215</width><height>50</height></size></property>
+   <property name="text"><string/></property>
+   <property name="icon">
+    <iconset resource="../img/resources.qrc">
+     <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
+   </property>
+   <property name="iconSize"><size><width>51</width><height>51</height></size></property>
+  </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../img/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

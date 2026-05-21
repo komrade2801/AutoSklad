@@ -23,6 +23,8 @@
 
 Сейчас контроллер: `SerialManager` + `$<номер>\r\n` и ответы `command_is_send` / `command_ok` (см. `serial_manager.py`, `action_cmd.py`, `state_map.py`). Сканер — второй порт. Известные долги: запись в COM из GUI, заглушки `write_db_err_*`, реле на `screen_14_stockman` параллельно будущему `$LOCK`.
 
+**HAL-координаты (этап 2):** без явных `hal_x`/`hal_z` в `Cell` (и не `(0,0)`) выдача по `atmega_hal` не стартует — `err_devices` → `screen_36_hardware_err`, UART не трогаем (`EventsSystem/hal_coords.py`, `read_db_get_cell`, `cmd_send`).
+
 ---
 
 ## Справочник: протокол UART
@@ -78,7 +80,7 @@
 **Рекомендуемая логика последовательности кадров** (подбирается на стенде с учётом габаритов):
 
 1. **Безопасная высота/зона** задней каретки (MOT3,4), если передней (MOT1,2) иначе упрётся в механику — часто первый кадр задаёт «заднюю» позицию в безопасной точке, передняя на парковке или на промежуточной точке.
-2. **Подъезд передней** к координатам ячейки у окна (`hal_x`/`hal_z` в проекции на пару MOT1,2 — конкретная формула мм→шаги фиксируется калибровкой).
+2. **Подъезд передней** к координатам ячейки у окна (`hal_x`/`hal_z` в проекции на пару MOT1,2 — конкретная формула мм→шаги фиксируется калибровкой). Координаты **обязательны** в `Cell` (см. задачи этапа 2 про отказ от fallback).
 3. **Задняя каретка** в положение захвата/подъёма ячейки (если цикл требует задней фазы отдельно от передней).
 4. **Штырь MOT5:** отдельные кадры «вниз» / «вверх» с неизменными остальными осями (или с совместным микросдвигом, если механика требует).
 5. **Отвод** в парковку: обычно сначала штырь вверх, затем отвод передней/задней в конфигурируемые `park_*`, чтобы не цеплять ячейку.
@@ -117,7 +119,7 @@
 
 ## Этап 2. БД, кинематика, FSM
 
-**Статус этапа:** `[x]` сценарий выдачи и профиль согласованы с **`no_block_plata.ino`** (`MOT,p1..p5`, `LED` 0/1 или `RGB`, без двойного ожидания `lock_ms` на клиенте)
+**Статус этапа:** `[x]` сценарий выдачи на `no_block_plata` готов; валидация `hal_x`/`hal_z` без fallback на `Cell.number`
 
 |  | Задача |
 |--|--------|
@@ -133,17 +135,123 @@
 | [x] | Списание в БД синхронизировано с `$LOCK,ms`: `command_ok` после **полной** HAL-цепочки (включая `DONE` по `$LOCK,ms`), **без** дополнительного `QTimer(lock_ms)` на клиенте |
 | [x] | `ERROR`/таймаут: стоп сценария, без списания, запись в `Error`, реализованы `write_db_err_devices` / `write_db_err_timeout` с переходом в аппаратную ошибку |
 | [x] | Экран «Сбой механики» (`screen_36_hardware_err`): только кнопка возврата, без retry/инженерного меню; подключён в FSM по `err_devices`/таймаутам |
+| [x] | **Убрать fallback координат** в `_build_hal_dispense_steps` / `cmd_send`: не подставлять `Cell.number` в `hal_x` и `0` в `hal_z`, если в БД `NULL` |
+| [x] | **Валидация перед UART:** для ячейки выдачи требовать заданные `hal_x` и `hal_z` (`IS NOT NULL`); если **оба равны 0** — считать координаты невалидными (не запускать `DispenseCommandGate`) |
+| [x] | **FSM при невалидных координатах:** до `cmd_send` (в `read_db_get_cell` / `read_db_get_more_cells` или в `cmd_send` при сборке шагов) — `err_devices` или отдельный триггер → `write_db_err_devices` → **`screen_36_hardware_err`** (без списания в `Consumption`) |
+| [x] | Запись в `Error` / лог: причина `missing_hal_coords` / `zero_hal_coords`, `cell_id`, `number` — для синка и разбора на стенде |
+
+**Правило приёмки (координаты):** выдача по `atmega_hal` возможна только при `hal_x`, `hal_z` из БД и `(hal_x, hal_z) ≠ (0, 0)`; иначе пользователь видит экран аппаратной ошибки, UART не трогаем.
 
 ---
 
 ## Этап 3. UI и инженерное меню
 
-**Статус этапа:** `[ ]` не начато
+**Статус этапа:** `[x]` реализовано
+
+**Цель:** отдельное меню для роли **Engineer** (не расширять `screen_6_user` / `screen_26_admin`). UART и последовательность `MOT` — только через `action_cmd` + FSM; GUI шлёт триггеры, не строки в COM напрямую.
+
+**Роль и вход:** в `screen_1_welcome` / `screen_3_authorization` — триггер `view_type_engineer` → домашний экран **`screen_37_engineer_hub`** (сейчас Engineer ошибочно ведёт на `screen_6_user` как `test_user`).
+
+**Паттерны UI (как в проекте):** экран = `BaseScreen` + `Ui_*` из `.ui`; кнопки в `StateMachine/screens.py` + переходы в `state_map.py`; списки — `QListWidget` + `setItemWidget` (`screen_8`, `screen_33`); цифровой ввод — overlay `WidgetKeyboard` (`screen_3`) или встроенные `btn_number_*` (`screen_28`); на всех экранах инженерного раздела внизу **`btn_back`** с иконкой `GUI/ui/img/btn_ico_back.png` (как в `screen_22_users.ui`).
+
+```mermaid
+flowchart TB
+  welcome["screen_1_welcome / screen_3_authorization"]
+  hub["screen_37_engineer_hub"]
+  coords["screen_38_hal_coords"]
+  wait["screen_32_wait"]
+  dispense["screen_40_hal_dispense"]
+  table["screen_41_hal_cells_table"]
+  err36["screen_36_hardware_err"]
+
+  welcome -->|view_type_engineer| hub
+  hub -->|btn_hal_coords| coords
+  hub -->|btn_hal_dispense| dispense
+  hub -->|btn_hal_cells_table| table
+  coords -->|btn_hal_park| wait
+  coords -->|btn_back| hub
+  dispense -->|btn_back| hub
+  table -->|btn_back| hub
+  wait -->|command_ok engineer| coords
+  wait -->|err_devices| err36
+  coords -->|err_devices| err36
+  dispense -->|cmd_send| wait
+```
+
+### Экраны
+
+| Экран | Назначение |
+|-------|------------|
+| **`screen_37_engineer_hub`** | Хаб: 3 кнопки — «Координаты», «Выдача», «Таблица ячеек»; ФИО инженера; `btn_back` → `screen_1_welcome` |
+| **`screen_38_hal_coords`** | Меню координат, JOG, сохранение в БД, **парковка** (см. ниже) |
+| **`screen_32_wait`** | **Переиспользуется** при парковке и тестовой выдаче (ожидание UART); GIF + подпись; без отдельного `screen_39_hal_park` |
+| **`screen_40_hal_dispense`** | Тестовая выдача по номеру ячейки |
+| **`screen_41_hal_cells_table`** | Список/таблица `hal_x` / `hal_z` по ячейкам из БД |
+
+#### `screen_38_hal_coords` — меню координат
+
+| Элемент UI | Поведение |
+|------------|-----------|
+| Лейбл **M1…M5** | Текущие координаты (после каждого `command_finished`; до появления `$POS` на прошивке — последние подтверждённые/отправленные шаги с пометкой в UI) |
+| **Парковка** (`btn_hal_park`) | FSM: `cmd_hal_zero` (цепочка как в startup: `$ZERO`, затем `$MOT,0,0,0,0,0`) → `command_is_send` → **`screen_32_wait`** (подпись через `set_data`, напр. «Парковка…»). По `command_ok` — **возврат на `screen_38_hal_coords`**, без `write_db_tool_consumption` |
+| Поле **номер ячейки** | `QLineEdit` + кнопка клавиатуры → overlay **`WidgetKeyboard`** (как `screen_3`) или выбор из всплывающего диалога |
+| **Сохранить координаты** | `write_db_cell_hal_coords`: записать текущие **hal_x/hal_z** (проекция MOT1/MOT2 или по профилю `x_axis_motor`/`z_axis_motor`) в `Cell` для выбранного `number` / `cell_id` |
+| **JOG** (виджет `WidgetHalJogPanel`, новый) | **X** и **Z**: одна пара «− / +» — синхронное движение передней и задней пары (MOT1+MOT3, MOT2+MOT4 по калибровке); **Y** — только **MOT5** (штырь). Шаг из `hal_motion_profile`; команды → `cmd_hal_jog` в `action_cmd`, не из GUI в UART |
+| `btn_back` | → `screen_37_engineer_hub` |
+
+**Важно для FSM:** сейчас `screen_32_wait` + `command_ok` ведёт в `write_db_tool_consumption` (сценарий пользовательской выдачи). Для инженера нужна **ветка контекста** (флаг сессии / отдельный триггер `command_ok_engineer`): парковка и тестовая выдача с `screen_40` не должны списывать `Consumption`.
+
+#### Парковка — только через `screen_32_wait`
+
+Отдельный экран **`screen_39_hal_park` не делаем.** Долгая операция `$ZERO` + парковочный кадр `MOT` — тот же UX ожидания, что при выдаче: `screen_32_wait.py` (анимация, блокировка лишних кнопок). Отличие — только целевое состояние после успеха (`screen_38_hal_coords`, а не `screen_11_tool_issued`).
+
+#### `screen_40_hal_dispense` — тестовая выдача
+
+| Элемент | Поведение |
+|---------|-----------|
+| Ввод номера ячейки | Постоянное поле + `WidgetKeyboard` (предпочтительно для стенда) или отдельный шаг выбора |
+| **Выдать** | `read_db_get_cell` по номеру (или упрощённый lookup) → `cmd_send` с `cell_id`; валидация `hal_coords` как в этапе 2 |
+| Ожидание | `command_is_send` → **`screen_32_wait`** → при успехе инженерной ветки — возврат на `screen_40` или сообщение «готово», **без** записи расхода в продуктивном режиме (режим «тест» в `action_cmd` / отдельный флаг) |
+| `btn_back` | → `screen_37_engineer_hub` |
+
+#### `screen_41_hal_cells_table` — массив координат
+
+| Элемент | Поведение |
+|---------|-----------|
+| Список | `QListWidget` + строковый виджет **`WidgetCellHalRow`** (номер, `hal_x`, `hal_z`, метка NULL / (0,0)); `enable_touch_scroll = True` |
+| Данные | `read_db_cells_hal_list` в `action_db` |
+| Тап по строке (опц.) | Переход на `screen_38_hal_coords` с подставленным номером ячейки |
+| `btn_back` | → `screen_37_engineer_hub` |
+
+### Слой логики (новые состояния FSM / actions)
+
+| Состояние / action | Назначение |
+|--------------------|------------|
+| `cmd_hal_zero` | Парковка: `$ZERO` + `MOT,0,0,0,0,0` (таймауты как в `cmd_test_self`) |
+| `cmd_hal_jog` | Короткий кадр `MOT,…` со сдвигом одной логической оси |
+| `write_db_cell_hal_coords` | `EngineCell.update_cell_hal_profile` |
+| `read_db_cells_hal_list` | Выборка ячеек с `number`, `hal_x`, `hal_z`, `cell_id` |
+
+Ошибки HAL → `err_devices` → `write_db_err_devices` → **`screen_36_hardware_err`** (уже есть).
+
+### Чеклист реализации
 
 |  | Задача |
 |--|--------|
-| [ ] | Расширить `screen_26_admin` или `screen_hardware_test`: SPEED/BOOST, jog, опрос `$SENS`, сохранение X/Z в ячейку |
-| [ ] | Согласовать GPIO реле кладовщика с `$LOCK` (убрать дублирование или разнести контуры) |
+| [ ] | Роль **Engineer**: `view_type_engineer` в welcome/authorization → `screen_37_engineer_hub` |
+| [ ] | UI: `screen_37`, `screen_38`, `screen_40`, `screen_41` (`.ui` + `screen_*.py` + `ui.py` + `screens.py`) |
+| [ ] | Виджеты: `WidgetHalJogPanel`, `WidgetCellHalRow`; переиспользование `WidgetKeyboard` на `screen_38` / `screen_40` |
+| [ ] | Единый **`btn_back`** с `btn_ico_back.png` на экранах 37–41 |
+| [ ] | FSM: переходы хаб ↔ дочерние экраны; **`btn_hal_park`** → `cmd_hal_zero` → **`screen_32_wait`** → возврат на `screen_38` |
+| [ ] | FSM: **контекст инженера** для `screen_32_wait` — `command_ok` не в `write_db_tool_consumption` при парковке/тесте |
+| [ ] | `action_cmd`: `cmd_hal_zero`, `cmd_hal_jog`; учёт текущего вектора M1…M5 на клиенте |
+| [ ] | `action_db`: `write_db_cell_hal_coords`, `read_db_cells_hal_list` |
+| [ ] | Согласовать GPIO реле кладовщика (`screen_14_stockman`) с `$LOCK` (убрать дублирование или разнести контуры) |
+| [ ] | (Позже) SPEED/BOOST, опрос `$SENS` — после базового JOG и сохранения координат |
+
+**Не делать:** расширять `screen_26_admin` под JOG; вешать HAL на `screen_6_user`; отдельный экран `screen_39_hal_park`.
+
+**Правило приёмки (инженер):** Engineer после входа видит только хаб и три раздела; парковка показывает `screen_32_wait` до `DONE`/`ERROR`; сохранение координат пишет `hal_x`/`hal_z` в `Cell`; тестовая выдача уважает валидацию координат этапа 2; UART из GUI не вызывается.
 
 ---
 
@@ -154,7 +262,7 @@
 |  | Задача |
 |--|--------|
 | [ ] | Обновить `docs/hardware_barcode_relay_dispensing.md` под фактический протокол |
-| [ ] | **DoD:** полный цикл на моке; на стенде выдача из БД по мм; `$ZERO` при старте; инженерный экран; ошибки в `Error` и синк |
+| [ ] | **DoD:** полный цикл на моке; на стенде выдача из БД по **`hal_x`/`hal_z`** (без fallback); отказ выдачи при NULL/(0,0) → `screen_36_hardware_err`; `$ZERO` при старте; **`screen_37`–`41` + парковка через `screen_32_wait`**; ошибки в `Error` и синк |
 
 ---
 
@@ -166,6 +274,7 @@
 | Обрыв строк / буфер | Только `readline`, не `read_all` для текста |
 | Долгий `$LOCK` на прошивке | UART не обслуживается во время `delay(ms)`; на клиенте — таймауты и учёт блокировки очереди; в перспективе — неблокирующий lock в прошивке |
 | Расхождение `OK` vs `WAIT` | В драйвере трактовать `WAIT` как ack длинной команды; мок опционально эмулировать оба варианта |
+| Выдача с `hal_x`/`hal_z` = NULL или (0,0) | Убрать fallback на `number`; блокировать до UART, экран `screen_36_hardware_err`, запись в `Error` |
 
 ---
 
@@ -180,6 +289,8 @@
 | HAL-сценарий выдачи / старт железа | `client/EventsSystem/action_cmd.py` |
 | Вход в приложение | `client/main.py`, `client/EventsSystem/Executor.py`, `client/GUI/MainWindow.py` |
 | FSM | `client/StateMachine/state_map.py` |
+| Инженерное меню (план) | `screen_37_engineer_hub`, `screen_38_hal_coords`, `screen_40_hal_dispense`, `screen_41_hal_cells_table`; ожидание — `screen_32_wait` |
+| Валидация HAL-координат | `client/EventsSystem/hal_coords.py` |
 | БД ячеек | `client/DB/Models/Cell.py`, `client/DB/Engine/CellCRUD.py` |
 | Прошивка (текущая в репозитории) | `client/MegaHardware/no_block_plata.ino` |
 

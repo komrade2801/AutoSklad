@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>screen_38_hal_coords</class>
+ <widget class="QWidget" name="screen_38_hal_coords">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>480</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>screen_38_hal_coords</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
+	color: #FFFFFF;
+	border-width: 0px;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>12</number>
+   </property>
+   <property name="topMargin">
+    <number>12</number>
+   </property>
+   <property name="rightMargin">
+    <number>12</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   <property name="spacing">
+    <number>8</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="lbl_title">
+     <property name="text">
+      <string>Координаты HAL</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size: 26px; font-weight: 700;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="layout_cell_row">
+     <item>
+      <widget class="QLabel" name="lbl_cell">
+       <property name="text">
+        <string>Ячейка №</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">font-size: 24px; font-weight: 600;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="edit_cell_number">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>52</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>22</pointsize>
+        </font>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="lbl_input_error">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">color: #ffb4b4; font-size: 16px; font-weight: 600;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="layout_park_row">
+     <property name="spacing">
+      <number>8</number>
+     </property>
+     <item>
+      <widget class="QPushButton" name="btn_hal_park">
+       <property name="text">
+        <string>Парковка</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 20px; font-weight: 600; min-height: 48px; }</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_hal_zero">
+       <property name="text">
+        <string>Нули</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 20px; font-weight: 600; min-height: 48px; }</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_hal_save_coords">
+     <property name="text">
+      <string>Сохранить координаты</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 20px; font-weight: 600; min-height: 48px; }</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="spacer_above_jog">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>10</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="lbl_jog_title">
+     <property name="text">
+      <string>JOG</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-size: 20px; font-weight: 600;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="layout_jog_step_row">
+     <property name="spacing">
+      <number>6</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="lbl_jog_step">
+       <property name="text">
+        <string>Шаг</string>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">font-size: 18px; font-weight: 600;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_jog_step_10">
+       <property name="text">
+        <string>10</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 18px; font-weight: 600; min-height: 40px; }
+QPushButton:checked { background-color: #c86a10; border: 2px solid #FFFFFF; }</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_jog_step_50">
+       <property name="text">
+        <string>50</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 18px; font-weight: 600; min-height: 40px; }
+QPushButton:checked { background-color: #c86a10; border: 2px solid #FFFFFF; }</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_jog_step_100">
+       <property name="text">
+        <string>100</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 18px; font-weight: 600; min-height: 40px; }
+QPushButton:checked { background-color: #c86a10; border: 2px solid #FFFFFF; }</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_jog_step_500">
+       <property name="text">
+        <string>500</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 18px; font-weight: 600; min-height: 40px; }
+QPushButton:checked { background-color: #c86a10; border: 2px solid #FFFFFF; }</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_jog_step_1000">
+       <property name="text">
+        <string>1000</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 18px; font-weight: 600; min-height: 40px; }
+QPushButton:checked { background-color: #c86a10; border: 2px solid #FFFFFF; }</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget_jog_placeholder" native="true">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>10</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_back">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset resource="../img/resources.qrc">
+       <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>51</width>
+       <height>51</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../img/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

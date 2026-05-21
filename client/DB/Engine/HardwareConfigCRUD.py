@@ -21,8 +21,11 @@ class EngineHardwareConfig(BaseCRUD):
         lock_ms_default: int = 15000,
         push_down_default: int = 900,
         push_up_default: int = 0,
-        park_x_default: int = 0,
-        park_z_default: int = 0,
+        park_m1_default: int = 0,
+        park_m2_default: int = 0,
+        park_m3_default: int = 0,
+        park_m4_default: int = 0,
+        park_m5_default: int = 0,
         speed_x: Optional[int] = None,
         speed_z: Optional[int] = None,
         speed_push: Optional[int] = None,
@@ -39,8 +42,11 @@ class EngineHardwareConfig(BaseCRUD):
             lock_ms_default=lock_ms_default,
             push_down_default=push_down_default,
             push_up_default=push_up_default,
-            park_x_default=park_x_default,
-            park_z_default=park_z_default,
+            park_m1_default=park_m1_default,
+            park_m2_default=park_m2_default,
+            park_m3_default=park_m3_default,
+            park_m4_default=park_m4_default,
+            park_m5_default=park_m5_default,
             speed_x=speed_x,
             speed_z=speed_z,
             speed_push=speed_push,
@@ -51,4 +57,23 @@ class EngineHardwareConfig(BaseCRUD):
 
     def get_by_device(self, device_config_id: int) -> Optional[HardwareConfig]:
         return self.session.query(self.model).filter_by(device_config_id=device_config_id).first()
+
+    def update_park_defaults(
+        self,
+        hw_config_id: int,
+        *,
+        park_m1: int,
+        park_m2: int,
+        park_m3: int,
+        park_m4: int,
+        park_m5: int,
+    ) -> bool:
+        return self.update(
+            index=hw_config_id,
+            park_m1_default=park_m1,
+            park_m2_default=park_m2,
+            park_m3_default=park_m3,
+            park_m4_default=park_m4,
+            park_m5_default=park_m5,
+        )
 

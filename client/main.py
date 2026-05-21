@@ -344,6 +344,7 @@ def main():
         executor.attach_serial_manager(serial_manager)
         executor.attach_barcode_manager(barcode_manager)
         window.action_callback = executor.handle_widget_executor
+        window.executor = executor
         executor.handle_serial_controller = window.handle_controller_serial_response
         executor.handle_barcode_manager = window.handle_barcode_manager_response
         # Повторно инициируем текущее стартовое состояние после подключения action_callback,

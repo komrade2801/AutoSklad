@@ -25,8 +25,11 @@ class HardwareConfig(Base, Model):
     lock_ms_default = Column(Integer, nullable=False, default=15000)
     push_down_default = Column(Integer, nullable=False, default=900)
     push_up_default = Column(Integer, nullable=False, default=0)
-    park_x_default = Column(Integer, nullable=False, default=0)
-    park_z_default = Column(Integer, nullable=False, default=0)
+    park_m1_default = Column(Integer, nullable=False, default=0)
+    park_m2_default = Column(Integer, nullable=False, default=0)
+    park_m3_default = Column(Integer, nullable=False, default=0)
+    park_m4_default = Column(Integer, nullable=False, default=0)
+    park_m5_default = Column(Integer, nullable=False, default=0)
 
     # Параметры для инженерного меню
     speed_x = Column(Integer, nullable=True)
