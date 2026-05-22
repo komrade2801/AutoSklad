@@ -4,10 +4,12 @@ from Core.app_logging import get_logger
 from EventsSystem.hal_coords import (
     CELL_NUMBER_MAX,
     CELL_NUMBER_MIN,
+    MOT_EXCEEDS_MAX_MESSAGE,
     MOT_STEP_MAX,
     MOT_STEP_MIN,
+    clamp_motor_text,
+    clamp_motor_value,
     message_for_reason,
-    parse_uint,
     validate_cell_number_text,
     validate_motor_position_texts,
 )
@@ -19,6 +21,7 @@ logger = get_logger(__name__)
 
 
 class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
+    _PARK_ROW_MOTOR_INDICES = (0, 2, 3, 4)
     _KEYBOARD_CLOSE_MS = 350
     _SAVE_OK_MS = 3000
     _EDIT_CELL_OK = (
@@ -44,6 +47,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
     def __init__(self):
         super().__init__()
+        self.event_hal_park_save = None
         self._keyboard_target = None
         self._keyboard_closing = False
         self._park_save_ok_timer = None
@@ -65,7 +69,6 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             edit.installEventFilter(self)
         self.btn_back.clicked.connect(self._clear_input_error)
         self.btn_hal_dispense_run.clicked.connect(self._clear_input_error)
-        self.btn_hal_park_save.clicked.connect(self._clear_input_error)
         self.edit_cell_number.textChanged.connect(self._try_clear_error_on_valid_input)
         for edit in self._park_edits:
             edit.textChanged.connect(self._try_clear_error_on_valid_input)
@@ -75,7 +78,6 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         layout = QtWidgets.QVBoxLayout(self.widget_park_rows)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
-        mot_validator = QtGui.QIntValidator(MOT_STEP_MIN, MOT_STEP_MAX, self)
         label_style = "color: #FFFFFF; font-size: 13px; font-weight: 600;"
         park_rows = (
             ("M1–M2", "edit_park_m12"),
@@ -83,7 +85,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             ("M4", "edit_park_m4"),
             ("M5", "edit_park_m5"),
         )
-        for label, obj_name in park_rows:
+        for row_i, (label, obj_name) in enumerate(park_rows):
             row = QtWidgets.QHBoxLayout()
             row.setSpacing(8)
             lbl = QtWidgets.QLabel(label, self.widget_park_rows)
@@ -93,7 +95,9 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             edit.setAlignment(QtCore.Qt.AlignCenter)
             edit.setMinimumHeight(35)
             edit.setStyleSheet(self._EDIT_PARK_OK)
-            edit.setValidator(mot_validator)
+            edit.setValidator(
+                QtGui.QIntValidator(MOT_STEP_MIN, MOT_STEP_MAX, self)
+            )
             edit.setObjectName(obj_name)
             row.addWidget(lbl)
             row.addWidget(edit, 1)
@@ -138,14 +142,58 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
     def _is_numeric_input(self, obj) -> bool:
         return obj is self.edit_cell_number or self._is_park_input(obj)
 
+    def _motor_index_for_park_edit(self, edit) -> int:
+        try:
+            row_i = self._park_edits.index(edit)
+            return self._PARK_ROW_MOTOR_INDICES[row_i]
+        except ValueError:
+            return 0
+
+    def forward_park_save(self) -> None:
+        """Сохранить парковку; при превышении лимита — усечь поля, предупредить, без БД."""
+        if self._clamp_park_inputs():
+            self._show_input_error(MOT_EXCEEDS_MAX_MESSAGE)
+            return
+        self._clear_input_error()
+        if callable(self.event_hal_park_save):
+            self.event_hal_park_save()
+
+    def _clamp_park_inputs(self) -> bool:
+        """Ограничить поля парковки по осям MOT."""
+        any_clamped = False
+        for edit, mot_idx in zip(self._park_edits, self._PARK_ROW_MOTOR_INDICES):
+            new_text, clamped = clamp_motor_text(edit.text(), mot_idx)
+            if not clamped:
+                continue
+            any_clamped = True
+            edit.blockSignals(True)
+            edit.setText(new_text)
+            edit.blockSignals(False)
+        return any_clamped
+
+    def _clamp_park_edit(self, edit) -> bool:
+        """Усечь одно поле парковки; True, если значение превышало лимит оси."""
+        if edit is None or not self._is_park_input(edit):
+            return False
+        mot_idx = self._motor_index_for_park_edit(edit)
+        new_text, clamped = clamp_motor_text(edit.text(), mot_idx)
+        if not clamped:
+            return False
+        edit.blockSignals(True)
+        edit.setText(new_text)
+        edit.blockSignals(False)
+        return True
+
     def _normalize_park_edit_if_empty(self, edit) -> None:
-        """При уходе с поля парковки: пустое → «0»."""
+        """При уходе с поля: пустое → «0»; при превышении — усечь и предупредить."""
         if edit is None or not self._is_park_input(edit):
             return
         if not (edit.text() or "").strip():
             edit.blockSignals(True)
             edit.setText("0")
             edit.blockSignals(False)
+        if self._clamp_park_edit(edit):
+            self._show_input_error(MOT_EXCEEDS_MAX_MESSAGE)
 
     def _clear_field_for_entry(self, target) -> None:
         """При фокусе на поле — очистить для нового ввода."""
@@ -198,7 +246,10 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
     def _hide_keyboard(self):
         self._keyboard_closing = True
-        self._normalize_park_edit_if_empty(self._keyboard_target)
+        if self._is_park_input(self._keyboard_target):
+            self._normalize_park_edit_if_empty(self._keyboard_target)
+        else:
+            self._normalize_park_edit_if_empty(self._keyboard_target)
         self.keyboard.setVisible(False)
         self.btn_back.show()
         if self._keyboard_target is not None:
@@ -216,14 +267,6 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         new_text = (self._keyboard_target.text() or "") + ch
         if self._keyboard_target is self.edit_cell_number:
             _, reason = validate_cell_number_text(new_text)
-            if reason:
-                return
-        else:
-            _, reason = parse_uint(
-                new_text,
-                min_value=MOT_STEP_MIN,
-                max_value=MOT_STEP_MAX,
-            )
             if reason:
                 return
         self._keyboard_target.setText(new_text)
@@ -279,7 +322,18 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                 return
         elif any(
             x in err_lower
-            for x in ("m1", "m2", "m3", "m4", "m5", "m1–m2", "допустимо", "поле")
+            for x in (
+                "m1",
+                "m2",
+                "m3",
+                "m4",
+                "m5",
+                "m1–m2",
+                "допустимо",
+                "поле",
+                "превышено",
+                "максимальное",
+            )
         ):
             _, bad_index, reason = validate_motor_position_texts(
                 self._park_five_texts()
@@ -324,9 +378,11 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             int(profile.get("park_m4", 0)),
             int(profile.get("park_m5", 0)),
         ]
-        for edit, val in zip(self._park_edits, row_values):
+        for edit, val, mot_idx in zip(
+            self._park_edits, row_values, self._PARK_ROW_MOTOR_INDICES
+        ):
             edit.blockSignals(True)
-            edit.setText(str(val))
+            edit.setText(str(clamp_motor_value(val, mot_idx)))
             edit.setStyleSheet(self._EDIT_PARK_OK)
             edit.blockSignals(False)
 
@@ -339,9 +395,11 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             int(data.get("park_m4", 0)),
             int(data.get("park_m5", 0)),
         ]
-        for edit, val in zip(self._park_edits, row_values):
+        for edit, val, mot_idx in zip(
+            self._park_edits, row_values, self._PARK_ROW_MOTOR_INDICES
+        ):
             edit.blockSignals(True)
-            edit.setText(str(val))
+            edit.setText(str(clamp_motor_value(val, mot_idx)))
             edit.setStyleSheet(self._EDIT_PARK_OK)
             edit.blockSignals(False)
 

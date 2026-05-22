@@ -3058,9 +3058,9 @@ class ActionMapper:
         from DB.Engine.DeviceConfigCRUD import EngineDeviceConfig
         from DB.Engine.HardwareConfigCRUD import EngineHardwareConfig
         from EventsSystem.hal_coords import (
-            MOT_STEP_MAX,
             MOT_STEP_MIN,
             message_for_reason,
+            mot_axis_max,
             validate_motor_position_texts,
         )
 
@@ -3080,7 +3080,7 @@ class ActionMapper:
                     reason,
                     motor_label=label,
                     min_v=MOT_STEP_MIN,
-                    max_v=MOT_STEP_MAX,
+                    max_v=mot_axis_max(bad_index) if bad_index is not None else None,
                 ),
             }
 

@@ -19,8 +19,12 @@ from EventsSystem.hal_coords import (
     HAL_JOG_Z_INDICES,
     HAL_MOT_PUSH_INDEX,
     format_hal_coords_error,
+    MOT_EXCEEDS_MAX_MESSAGE,
+    apply_jog_to_motor_positions,
     clamp_mot_vector,
+    clamp_motor_value,
     hal_dispense_target_mot5,
+    parse_hal_jog_trigger,
     hal_project_hal_xz_from_motors,
     validate_hal_cell_coords,
 )
@@ -78,7 +82,8 @@ def _clamp_rgb_byte(value: int) -> int:
 
 def _fmt_mot5(pos):
     """Одна команда $MOT,p1..p5 для no_block_plata (без ведущего $)."""
-    return "MOT," + ",".join(str(_clamp_mot_coord(p)) for p in pos)
+    clamped = clamp_mot_vector(pos)
+    return "MOT," + ",".join(str(p) for p in clamped)
 
 
 def _motor_index(motor_1_to_5: int, label: str) -> int:
@@ -258,7 +263,7 @@ class ActionMapper:
     def _park_vector_five(self, profile: dict) -> list:
         """Парковочный кадр MOT,p1..p5 из park_m1..park_m5 профиля."""
         return [
-            _clamp_mot_coord(int(profile.get(f"park_m{i}", 0)))
+            clamp_motor_value(int(profile.get(f"park_m{i}", 0)), i - 1)
             for i in range(1, 6)
         ]
 
@@ -586,7 +591,7 @@ class ActionMapper:
             or kwargs.get("trigger")
             or getattr(self.__executor, "last_hal_jog_trigger", "")
         )
-        axis, sign = self._parse_hal_jog_trigger(str(jog_trigger))
+        axis, sign = parse_hal_jog_trigger(str(jog_trigger))
         if not axis:
             self.__executor.hardware_last_error = f"unknown_jog_trigger:{jog_trigger}"
             return {"trigger": "err_devices"}
@@ -602,12 +607,18 @@ class ActionMapper:
             step = int(profile.get("jog_step", 50))
         if step <= 0:
             step = 50
-        delta = sign * step
-        indices = self._jog_motor_indices(axis, profile)
-        pos = list(self._hal_motor_positions)
-        for idx in indices:
-            pos[idx] = _clamp_mot_coord(int(pos[idx]) + delta)
-        pos = clamp_mot_vector(pos)
+        pos, limit_hit = apply_jog_to_motor_positions(
+            self._hal_motor_positions,
+            axis=axis,
+            sign=sign,
+            step=step,
+        )
+        if limit_hit:
+            return {
+                "trigger": "view_hal_coords",
+                "hal_motor_positions": pos,
+                "hal_input_error": MOT_EXCEEDS_MAX_MESSAGE,
+            }
 
         cmd = _fmt_mot5(pos)
         ok, reason = self._wait_hal_command_finished(cmd, True, 90_000)
@@ -622,9 +633,9 @@ class ActionMapper:
     def cmd_hal_mot_goto(self, *args, **kwargs):
         """Абсолютный кадр MOT,p1..p5 из полей ввода на screen_38."""
         from EventsSystem.hal_coords import (
-            MOT_STEP_MAX,
             MOT_STEP_MIN,
             message_for_reason,
+            mot_axis_max,
             validate_motor_position_texts,
         )
 
@@ -650,7 +661,7 @@ class ActionMapper:
                     reason,
                     motor_label=label,
                     min_v=MOT_STEP_MIN,
-                    max_v=MOT_STEP_MAX,
+                    max_v=mot_axis_max(bad_index),
                 ),
                 "hal_motor_positions": list(self._hal_motor_positions),
             }

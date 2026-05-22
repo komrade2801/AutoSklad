@@ -10,8 +10,12 @@ from EventsSystem.hal_coords import (
     HAL_SAVE_MOT_Z_INDEX,
     MOT_STEP_MAX,
     MOT_STEP_MIN,
+    clamp_motor_text,
+    clamp_motor_value,
     message_for_reason,
-    parse_uint,
+    mot_axis_max,
+    motor_label,
+    parse_motor_uint,
     validate_motor_position_texts,
 )
 
@@ -75,8 +79,6 @@ class WidgetHalJogPanel(QtWidgets.QWidget):
         self.event_hal_jog = None
         self.event_hal_mot_send = None
 
-        mot_validator = QtGui.QIntValidator(MOT_STEP_MIN, MOT_STEP_MAX, self)
-
         grid = QtWidgets.QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setHorizontalSpacing(8)
@@ -110,7 +112,9 @@ class WidgetHalJogPanel(QtWidgets.QWidget):
             edit_coord.setAlignment(QtCore.Qt.AlignCenter)
             edit_coord.setMinimumHeight(_JOG_ROW_HEIGHT)
             edit_coord.setStyleSheet(self._EDIT_OK)
-            edit_coord.setValidator(mot_validator)
+            edit_coord.setValidator(
+                QtGui.QIntValidator(MOT_STEP_MIN, MOT_STEP_MAX, self)
+            )
             edit_coord.setObjectName(f"edit_jog_row_{row_idx}")
             edit_coord.setFocusPolicy(QtCore.Qt.ClickFocus)
             edit_coord.setSizePolicy(
@@ -180,7 +184,12 @@ class WidgetHalJogPanel(QtWidgets.QWidget):
         p = list(positions[:5])
         while len(p) < 5:
             p.append(0)
-        row_values = [int(p[HAL_MOT_Z_INDICES[0]]), int(p[2]), int(p[3]), int(p[4])]
+        row_values = [
+            clamp_motor_value(int(p[HAL_MOT_Z_INDICES[0]]), HAL_MOT_Z_INDICES[0]),
+            clamp_motor_value(int(p[2]), 2),
+            clamp_motor_value(int(p[3]), 3),
+            clamp_motor_value(int(p[4]), 4),
+        ]
         for edit, val in zip(self._coord_edits, row_values):
             edit.blockSignals(True)
             edit.setText(str(val))
@@ -189,6 +198,23 @@ class WidgetHalJogPanel(QtWidgets.QWidget):
 
     def motor_coord_texts(self) -> list:
         return self._five_motor_texts()
+
+    def row_motor_indices(self) -> List[int]:
+        """Индекс MOT (0..4) для каждой строки ввода координат."""
+        return [indices[0] for indices in self._row_mot_indices]
+
+    def clamp_coord_inputs(self) -> bool:
+        """Ограничить поля ввода по осям. True, если хотя бы одно значение усечено."""
+        any_clamped = False
+        for edit, mot_idx in zip(self._coord_edits, self.row_motor_indices()):
+            new_text, clamped = clamp_motor_text(edit.text(), mot_idx)
+            if not clamped:
+                continue
+            any_clamped = True
+            edit.blockSignals(True)
+            edit.setText(new_text)
+            edit.blockSignals(False)
+        return any_clamped
 
     def parse_motor_positions(self):
         return validate_motor_position_texts(self._five_motor_texts())
@@ -212,11 +238,7 @@ class WidgetHalJogPanel(QtWidgets.QWidget):
         )
         for idx, label in checks:
             raw = texts[idx] if idx < len(texts) else ""
-            value, reason = parse_uint(
-                raw,
-                min_value=MOT_STEP_MIN,
-                max_value=MOT_STEP_MAX,
-            )
+            value, reason = parse_motor_uint(raw, idx)
             if reason:
                 return None, None, idx, reason
             out.append(value)
@@ -250,11 +272,12 @@ class WidgetHalJogPanel(QtWidgets.QWidget):
             label = _JOG_ROWS[row_i][0]
         else:
             label = f"M{bad_index + 1}"
+        max_v = mot_axis_max(bad_index) if bad_index is not None else None
         return message_for_reason(
             reason,
             motor_label=label,
             min_v=MOT_STEP_MIN,
-            max_v=MOT_STEP_MAX,
+            max_v=max_v,
         )
 
     def set_motion_highlight(self, motor_index=None, all_motors: bool = False) -> None:

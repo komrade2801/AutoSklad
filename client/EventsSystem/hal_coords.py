@@ -7,10 +7,14 @@ REASON_ZERO_HAL_COORDS = "zero_hal_coords"
 REASON_EMPTY = "empty"
 REASON_INVALID_CHARS = "invalid_chars"
 REASON_OUT_OF_RANGE = "out_of_range"
+REASON_EXCEEDS_AXIS_MAX = "exceeds_axis_max"
 REASON_CELL_NOT_FOUND = "cell_not_found"
 
 MOT_STEP_MIN = 0
 MOT_STEP_MAX = 999999
+# Максимальные шаги по осям MOT1..MOT5 (индекс 0..4)
+MOT_AXIS_MAX = (420, 420, 632, 590, 60)
+MOT_EXCEEDS_MAX_MESSAGE = "Превышено максимальное значение"
 CELL_NUMBER_MIN = 1
 CELL_NUMBER_MAX = 9999
 
@@ -32,21 +36,99 @@ HAL_JOG_X_INDICES = (HAL_MOT_X_INDEX,)
 HAL_JOG_Z_INDICES = HAL_MOT_Z_INDICES
 
 
-def _clamp_step(value: int) -> int:
-    return max(MOT_STEP_MIN, min(MOT_STEP_MAX, int(value)))
+def mot_axis_max(motor_index: int) -> int:
+    """Верхняя граница шагов для MOT1..MOT5 (motor_index 0..4)."""
+    idx = max(0, min(4, int(motor_index)))
+    return int(MOT_AXIS_MAX[idx])
+
+
+def motor_label(motor_index: int) -> str:
+    if motor_index in HAL_MOT_Z_INDICES:
+        return "M1–M2"
+    return f"M{int(motor_index) + 1}"
+
+
+def _clamp_step(value: int, motor_index: Optional[int] = None) -> int:
+    v = int(value)
+    if motor_index is not None:
+        return max(MOT_STEP_MIN, min(mot_axis_max(motor_index), v))
+    return max(MOT_STEP_MIN, min(MOT_STEP_MAX, v))
+
+
+def clamp_motor_value(value: int, motor_index: int) -> int:
+    return _clamp_step(value, motor_index)
+
+
+def apply_jog_delta(value: int, delta: int, motor_index: int) -> Tuple[int, bool]:
+    """Сдвиг по оси с усечением; True, если цель выходила за [0, max]."""
+    raw = int(value) + int(delta)
+    clamped = clamp_motor_value(raw, motor_index)
+    return clamped, clamped != raw
+
+
+def parse_hal_jog_trigger(trigger: str) -> Tuple[Optional[str], int]:
+    """
+    hal_jog_z_plus / hal_jog_m3_minus -> ('z'|'m3'|..., sign).
+    sign: +1 или -1; axis None, если триггер не распознан.
+    """
+    name = (trigger or "").strip().lower()
+    if not name.startswith("hal_jog_"):
+        return None, 0
+    body = name[len("hal_jog_") :]
+    if body.endswith("_plus"):
+        axis = body[: -len("_plus")]
+        sign = 1
+    elif body.endswith("_minus"):
+        axis = body[: -len("_minus")]
+        sign = -1
+    else:
+        return None, 0
+    if axis in ("z", "m1", "m2", "m3", "m4", "m5"):
+        return axis, sign
+    return None, 0
+
+
+def jog_motor_indices_for_axis(axis: str) -> List[int]:
+    if axis == "z":
+        return list(HAL_MOT_Z_INDICES)
+    if axis in ("m1", "m2", "m3", "m4", "m5"):
+        return [int(axis[1]) - 1]
+    return []
+
+
+def apply_jog_to_motor_positions(
+    positions,
+    *,
+    axis: str,
+    sign: int,
+    step: int,
+) -> Tuple[List[int], bool]:
+    """Рассчитать кадр MOT после JOG; True, если хотя бы одна ось усечена."""
+    delta = int(sign) * int(step)
+    indices = jog_motor_indices_for_axis(axis)
+    pos = list(positions)[:5]
+    while len(pos) < 5:
+        pos.append(0)
+    any_clamped = False
+    for idx in indices:
+        new_v, clamped = apply_jog_delta(pos[idx], delta, idx)
+        if clamped:
+            any_clamped = True
+        pos[idx] = new_v
+    return pos, any_clamped
 
 
 def hal_mot4_from_hal_x(hal_x: int) -> int:
     """MOT4 при выдаче: hal_x − 25 (задняя ось X)."""
-    return _clamp_step(int(hal_x) - HAL_MOT_X_OFFSET_M4)
+    return clamp_motor_value(int(hal_x) - HAL_MOT_X_OFFSET_M4, HAL_MOT_X_DERIVED_INDEX)
 
 
 def clamp_mot_vector(pos) -> List[int]:
     """Привести вектор MOT к 5 осям и диапазону без пересчёта M4 от M3."""
-    p = [_clamp_step(int(v)) for v in list(pos)[:5]]
-    while len(p) < 5:
-        p.append(0)
-    return p
+    raw = list(pos)[:5]
+    while len(raw) < 5:
+        raw.append(0)
+    return [clamp_motor_value(int(v), i) for i, v in enumerate(raw)]
 
 
 def normalize_mot_vector(pos) -> List[int]:
@@ -58,8 +140,8 @@ def hal_dispense_target_mot5(hal_x: int, hal_z: int) -> Tuple[int, int, int, int
     """
     Подъезд к ячейке: M1=M2=hal_z, M3=hal_x, M4=hal_x−25, M5=0.
     """
-    hx = _clamp_step(int(hal_x))
-    hz = _clamp_step(int(hal_z))
+    hx = clamp_motor_value(int(hal_x), HAL_MOT_X_INDEX)
+    hz = clamp_motor_value(int(hal_z), HAL_MOT_Z_INDICES[0])
     return (hz, hz, hx, hal_mot4_from_hal_x(hx), 0)
 
 
@@ -74,6 +156,7 @@ _MESSAGES = {
     REASON_EMPTY: "Поле не заполнено",
     REASON_INVALID_CHARS: "Только цифры",
     REASON_OUT_OF_RANGE: "Число вне допустимого диапазона",
+    REASON_EXCEEDS_AXIS_MAX: MOT_EXCEEDS_MAX_MESSAGE,
     REASON_CELL_NOT_FOUND: "Ячейка с таким номером не найдена",
 }
 
@@ -87,6 +170,40 @@ def message_for_reason(reason: str, *, motor_label: str = "", min_v=None, max_v=
     if motor_label:
         return f"{motor_label}: {base}"
     return base
+
+
+def parse_motor_uint(
+    text: str,
+    motor_index: int,
+    *,
+    min_value: int = MOT_STEP_MIN,
+) -> Tuple[Optional[int], Optional[str]]:
+    """Разбор координаты MOT с верхней границей по оси."""
+    return parse_uint(
+        text,
+        min_value=min_value,
+        max_value=mot_axis_max(motor_index),
+    )
+
+
+def clamp_motor_text(
+    text: str,
+    motor_index: int,
+) -> Tuple[str, bool]:
+    """
+    Подставить ближайшее допустимое значение для поля ввода.
+    Возвращает (текст для QLineEdit, было_ли_усечение).
+    """
+    raw = (text or "").strip()
+    if not raw:
+        return "0", False
+    if not raw.isdigit():
+        return raw, False
+    value = int(raw)
+    max_v = mot_axis_max(motor_index)
+    if value > max_v:
+        return str(max_v), True
+    return str(value), False
 
 
 def parse_uint(
@@ -123,11 +240,7 @@ def validate_motor_position_texts(
     """
     out: List[int] = []
     for i, t in enumerate(texts[:5]):
-        value, reason = parse_uint(
-            t,
-            min_value=MOT_STEP_MIN,
-            max_value=MOT_STEP_MAX,
-        )
+        value, reason = parse_motor_uint(t, i)
         if reason:
             return None, i, reason
         out.append(value)

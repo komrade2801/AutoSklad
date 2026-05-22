@@ -218,6 +218,16 @@ class MainWindow(QtWidgets.QWidget):
                 btn = s38.findChild(QtWidgets.QPushButton, btn_name)
                 if btn is not None:
                     btn.clicked.connect(lambda checked=False, h=handler: h())
+        s40 = self.widgets.get("screen_40_hal_dispense")
+        if s40 is not None:
+            s40.event_hal_park_save = self._on_hal_park_save_clicked
+            btn = s40.findChild(QtWidgets.QPushButton, "btn_hal_park_save")
+            if btn is not None:
+                btn.clicked.connect(lambda checked=False: s40.forward_park_save())
+
+    def _on_hal_park_save_clicked(self):
+        self.button_clicked("btn_hal_park_save", "write_db_hal_park_defaults")
+
     def _on_hal_jog_clicked(self, trigger_name: str):
         if self.executor is not None:
             self.executor.last_hal_jog_trigger = trigger_name
@@ -265,6 +275,9 @@ class MainWindow(QtWidgets.QWidget):
                 "btn_hal_zero",
             )
         ):
+            return
+
+        if source == "screen_40_hal_dispense" and trigger == "btn_hal_park_save":
             return
 
         if self.widgets[source].event_input_name_code:

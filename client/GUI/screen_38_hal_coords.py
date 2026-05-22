@@ -4,16 +4,20 @@ from Core.app_logging import get_logger
 from EventsSystem.hal_coords import (
     CELL_NUMBER_MAX,
     CELL_NUMBER_MIN,
-    MOT_STEP_MAX,
+    MOT_EXCEEDS_MAX_MESSAGE,
     MOT_STEP_MIN,
+    apply_jog_to_motor_positions,
+    clamp_motor_text,
     hal_mot4_from_hal_x,
     message_for_reason,
+    mot_axis_max,
+    parse_hal_jog_trigger,
     validate_cell_number_text,
     validate_hal_cell_coords,
 )
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_38_hal_coords import Ui_screen_38_hal_coords
-from GUI.widgets.widget_hal_jog_panel import WidgetHalJogPanel, _LABEL_WIDTH
+from GUI.widgets.widget_hal_jog_panel import WidgetHalJogPanel
 from GUI.widgets.widget_keyboard import WidgetKeyboard
 
 logger = get_logger(__name__)
@@ -34,6 +38,8 @@ def _motor_index_from_jog_trigger(trigger_name: str):
 
 
 class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
+    _CELL_LABEL_MIN_WIDTH = 111
+    _CELL_NUMBER_SHIFT_LEFT_PX = 30
     _KEYBOARD_CLOSE_MS = 350
     JOG_STEP_OPTIONS = (1, 5, 10, 50, 100)
     DEFAULT_JOG_STEP = 50
@@ -69,9 +75,13 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         self.setupUi(self)
         self._btn_park_style_normal = self.btn_hal_park.styleSheet()
         self._btn_zero_style_normal = self.btn_hal_zero.styleSheet()
-        self.lbl_cell.setFixedWidth(_LABEL_WIDTH)
+        self.lbl_cell.setMinimumWidth(self._CELL_LABEL_MIN_WIDTH)
         self.lbl_cell.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.layout_cell_row.setSpacing(8)
+        if hasattr(self, "layout_cell_number"):
+            m = self.layout_cell_number.contentsMargins()
+            shift = -self._CELL_NUMBER_SHIFT_LEFT_PX
+            self.layout_cell_number.setContentsMargins(shift, m.top(), m.right(), m.bottom())
         mot_lbl_idx = self.layout_cell_row.indexOf(self.lbl_cell_mot_coords)
         self.layout_cell_row.setStretch(mot_lbl_idx, 1)
         self.lbl_cell_mot_coords.setText(self._LBL_CELL_MOT_DEFAULT)
@@ -177,7 +187,13 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
 
         if any(
             x in err_lower
-            for x in ("(0, 0)", "координаты ячейки", "подведите каретку")
+            for x in (
+                "(0, 0)",
+                "координаты ячейки",
+                "подведите каретку",
+                "превышено",
+                "максимальное",
+            )
         ):
             hal_x, hal_z, bad_idx, _reason = self.jog_panel.get_mot13_hal_xz()
             if bad_idx is not None:
@@ -207,6 +223,7 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         return number, None
 
     def _validate_motors_ui(self):
+        self.jog_panel.clamp_coord_inputs()
         positions, bad_index, reason = self.jog_panel.parse_motor_positions()
         if bad_index is not None:
             self.jog_panel.set_field_error(bad_index, True)
@@ -214,13 +231,16 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
                 reason,
                 motor_label=f"M{bad_index + 1}",
                 min_v=MOT_STEP_MIN,
-                max_v=MOT_STEP_MAX,
+                max_v=mot_axis_max(bad_index),
             )
             return None, msg
         self.jog_panel.clear_field_errors()
         return positions, None
 
     def _validate_save_ui(self):
+        if self.jog_panel.clamp_coord_inputs():
+            self._show_input_error(MOT_EXCEEDS_MAX_MESSAGE)
+            return False
         self._clear_input_error()
         number, err = self._validate_cell_number_ui()
         if err:
@@ -255,7 +275,7 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
                 mot_reason,
                 motor_label=f"M{bad_index + 1}",
                 min_v=MOT_STEP_MIN,
-                max_v=MOT_STEP_MAX,
+                max_v=mot_axis_max(bad_index),
             )
             self._show_input_error(msg)
             return False
@@ -271,11 +291,15 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         return True
 
     def _validate_mot_send_ui(self):
-        self._clear_input_error()
+        clamped = self.jog_panel.clamp_coord_inputs()
+        if not clamped:
+            self._clear_input_error()
         positions, err = self._validate_motors_ui()
         if err:
             self._show_input_error(err)
             return None
+        if clamped:
+            self._show_input_error(MOT_EXCEEDS_MAX_MESSAGE)
         return positions
 
     def _setup_jog_step_selector(self):
@@ -342,14 +366,38 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
     def _is_coord_input(self, obj) -> bool:
         return obj in self.jog_panel.coord_edits()
 
+    def _motor_index_for_coord_edit(self, edit) -> int:
+        edits = self.jog_panel.coord_edits()
+        row_indices = self.jog_panel.row_motor_indices()
+        try:
+            row_i = edits.index(edit)
+            return row_indices[row_i]
+        except ValueError:
+            return 0
+
+    def _clamp_coord_edit(self, edit) -> bool:
+        """Усечь одно поле координаты по оси; True, если значение было выше лимита."""
+        if edit is None or not self._is_coord_input(edit):
+            return False
+        mot_idx = self._motor_index_for_coord_edit(edit)
+        new_text, clamped = clamp_motor_text(edit.text(), mot_idx)
+        if not clamped:
+            return False
+        edit.blockSignals(True)
+        edit.setText(new_text)
+        edit.blockSignals(False)
+        return True
+
     def _normalize_coord_edit_if_empty(self, edit) -> None:
-        """При уходе с поля координаты: пустое → «0»."""
+        """При уходе с поля: пустое → «0»; при превышении лимита — усечь и предупредить."""
         if edit is None or not self._is_coord_input(edit):
             return
         if not (edit.text() or "").strip():
             edit.blockSignals(True)
             edit.setText("0")
             edit.blockSignals(False)
+        if self._clamp_coord_edit(edit):
+            self._show_input_error(MOT_EXCEEDS_MAX_MESSAGE)
 
     def eventFilter(self, obj, event):
         if obj is self.edit_cell_number or self._is_coord_input(obj):
@@ -407,8 +455,39 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         if executor is not None:
             self.jog_panel.set_motor_positions(list(executor.hal_motor_positions))
 
+    def _jog_blocked_by_axis_limit(self, trigger_name: str) -> bool:
+        """JOG у упора: усечь координаты в полях, предупредить, без UART."""
+        axis, sign = parse_hal_jog_trigger(trigger_name)
+        if not axis:
+            return False
+        parent = self.window()
+        executor = getattr(parent, "executor", None)
+        if executor is None:
+            return False
+        self._sync_jog_step_to_executor()
+        try:
+            step = int(getattr(executor, "hal_jog_step", self.hal_jog_step))
+        except (TypeError, ValueError):
+            step = self.DEFAULT_JOG_STEP
+        if step <= 0:
+            step = self.DEFAULT_JOG_STEP
+        current = list(getattr(executor, "hal_motor_positions", None) or [0] * 5)
+        new_pos, limit_hit = apply_jog_to_motor_positions(
+            current,
+            axis=axis,
+            sign=sign,
+            step=step,
+        )
+        if not limit_hit:
+            return False
+        self.jog_panel.set_motor_positions(new_pos)
+        self._show_input_error(MOT_EXCEEDS_MAX_MESSAGE)
+        return True
+
     def _forward_jog(self, trigger_name: str):
         if self._motion_busy:
+            return
+        if self._jog_blocked_by_axis_limit(trigger_name):
             return
         self._clear_input_error()
         self._sync_jog_step_to_executor()
@@ -528,7 +607,10 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         self._keyboard_closing = True
         if self._keyboard_target is self.edit_cell_number:
             self._refresh_cell_mot_coords_label()
-        self._normalize_coord_edit_if_empty(self._keyboard_target)
+        elif self._is_coord_input(self._keyboard_target):
+            self._normalize_coord_edit_if_empty(self._keyboard_target)
+        else:
+            self._normalize_coord_edit_if_empty(self._keyboard_target)
         self.keyboard.setVisible(False)
         self.btn_back.show()
         if not self._motion_busy:
@@ -548,16 +630,6 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
         new_text = (self._keyboard_target.text() or "") + ch
         if self._keyboard_target is self.edit_cell_number:
             _, reason = validate_cell_number_text(new_text)
-            if reason:
-                return
-        elif self._keyboard_target in self.jog_panel.coord_edits():
-            from EventsSystem.hal_coords import parse_uint
-
-            _, reason = parse_uint(
-                new_text,
-                min_value=MOT_STEP_MIN,
-                max_value=MOT_STEP_MAX,
-            )
             if reason:
                 return
         self._keyboard_target.setText(new_text)
