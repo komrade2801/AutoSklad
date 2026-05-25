@@ -80,6 +80,21 @@ QPushButton {
      <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }</string></property>
     </widget>
    </item>   <item>
+    <widget class="QPushButton" name="btn_hal_led">
+     <property name="text"><string>Подсветка</string></property>
+     <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }</string></property>
+    </widget>
+   </item>   <item>
+    <widget class="QPushButton" name="btn_hal_solenoid">
+     <property name="text"><string>Соленоид</string></property>
+     <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }</string></property>
+    </widget>
+   </item>   <item>
+    <widget class="QPushButton" name="btn_hal_lock">
+     <property name="text"><string>Замки</string></property>
+     <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }</string></property>
+    </widget>
+   </item>   <item>
     <spacer name="verticalSpacer">
      <property name="orientation"><enum>Qt::Vertical</enum></property>
      <property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property>

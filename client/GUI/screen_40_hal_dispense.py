@@ -44,10 +44,21 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         "QPushButton { color: #FFFFFF; background-color: #2d7a3e;"
         "border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }"
     )
+    _BTN_HAL_ACTIVE = (
+        "QPushButton { color: #FFFFFF; background-color: #2d7a3e;"
+        "border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }"
+        "QPushButton:disabled { color: #FFFFFF; background-color: #2d7a3e; }"
+    )
+    _HAL_PULSE_MS = 10_000
 
     def __init__(self):
         super().__init__()
         self.event_hal_park_save = None
+        self.event_hal_led_toggle = None
+        self.event_hal_solenoid = None
+        self.event_hal_lock = None
+        self._hal_led_on = False
+        self._pulse_timers = {}
         self._keyboard_target = None
         self._keyboard_closing = False
         self._park_save_ok_timer = None
@@ -64,6 +75,9 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self._setup_park_rows()
         self._setup_keyboard()
         self._btn_park_save_style_normal = self.btn_hal_park_save.styleSheet()
+        self._btn_hal_led_style_normal = self.btn_hal_led.styleSheet()
+        self._btn_hal_solenoid_style_normal = self.btn_hal_solenoid.styleSheet()
+        self._btn_hal_lock_style_normal = self.btn_hal_lock.styleSheet()
         for edit in [self.edit_cell_number, *self._park_edits]:
             edit.setFocusPolicy(QtCore.Qt.ClickFocus)
             edit.installEventFilter(self)
@@ -148,6 +162,59 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             return self._PARK_ROW_MOTOR_INDICES[row_i]
         except ValueError:
             return 0
+
+    def _set_hal_led_style(self, active: bool) -> None:
+        self._hal_led_on = bool(active)
+        self.btn_hal_led.setStyleSheet(
+            self._BTN_HAL_ACTIVE if active else self._btn_hal_led_style_normal
+        )
+
+    def _begin_pulse(self, button: QtWidgets.QPushButton) -> None:
+        name = button.objectName()
+        timer = self._pulse_timers.get(name)
+        if timer is not None:
+            timer.stop()
+        button.setEnabled(False)
+        button.setStyleSheet(self._BTN_HAL_ACTIVE)
+        timer = QtCore.QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(
+            lambda b=button: self._end_pulse(b)
+        )
+        timer.start(self._HAL_PULSE_MS)
+        self._pulse_timers[name] = timer
+
+    def _end_pulse(self, button: QtWidgets.QPushButton) -> None:
+        name = button.objectName()
+        timer = self._pulse_timers.pop(name, None)
+        if timer is not None:
+            timer.stop()
+        if name == "btn_hal_solenoid":
+            normal = self._btn_hal_solenoid_style_normal
+        elif name == "btn_hal_lock":
+            normal = self._btn_hal_lock_style_normal
+        else:
+            normal = button.styleSheet()
+        button.setStyleSheet(normal)
+        button.setEnabled(True)
+
+    def forward_hal_led_toggle(self) -> None:
+        if callable(self.event_hal_led_toggle):
+            self.event_hal_led_toggle()
+
+    def forward_hal_solenoid(self) -> None:
+        if self._pulse_timers.get("btn_hal_solenoid") is not None:
+            return
+        self._begin_pulse(self.btn_hal_solenoid)
+        if callable(self.event_hal_solenoid):
+            self.event_hal_solenoid()
+
+    def forward_hal_lock(self) -> None:
+        if self._pulse_timers.get("btn_hal_lock") is not None:
+            return
+        self._begin_pulse(self.btn_hal_lock)
+        if callable(self.event_hal_lock):
+            self.event_hal_lock()
 
     def forward_park_save(self) -> None:
         """Сохранить парковку; при превышении лимита — усечь поля, предупредить, без БД."""
@@ -474,6 +541,25 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
         if kwargs.get("hal_park_save_ok"):
             self._flash_park_save_success()
+
+        if "hal_led_on" in kwargs:
+            self._set_hal_led_style(bool(kwargs["hal_led_on"]))
+        else:
+            for a in args:
+                if isinstance(a, dict) and "hal_led_on" in a:
+                    self._set_hal_led_style(bool(a["hal_led_on"]))
+                    break
+
+        cancel = kwargs.get("hal_pulse_cancel")
+        if cancel is None:
+            for a in args:
+                if isinstance(a, dict) and "hal_pulse_cancel" in a:
+                    cancel = a["hal_pulse_cancel"]
+                    break
+        if cancel == "solenoid":
+            self._end_pulse(self.btn_hal_solenoid)
+        elif cancel == "lock":
+            self._end_pulse(self.btn_hal_lock)
 
         prefill = kwargs.get("engineer_cell_number")
         if prefill is None and args:

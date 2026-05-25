@@ -38,10 +38,16 @@ logger = logging.getLogger(__name__)
 
 _CONFIG_JSON = Path(__file__).resolve().parent.parent / "config.json"
 
+# Импульс соленоида после парковки (окно выдачи), мс — прошивка $SOL,ms
+HAL_DISPENSE_SOL_MS = 20_000
+# Импульс соленоида/замка на экране тестовой выдачи (инженер), мс
+HAL_ENGINEER_TEST_PULSE_MS = 10_000
+
 _HAL_JSON_MERGE_KEYS = frozenset(
     {
         "led",
         "lock_ms",
+        "sol_ms",
         "push_down",
         "push_up",
         "x_axis_motor",
@@ -116,6 +122,9 @@ class ActionMapper:
             'cmd_hal_park': lambda *args, **kwargs: self.cmd_hal_park(*args, **kwargs),
             'cmd_hal_jog': lambda *args, **kwargs: self.cmd_hal_jog(*args, **kwargs),
             'cmd_hal_mot_goto': lambda *args, **kwargs: self.cmd_hal_mot_goto(*args, **kwargs),
+            'cmd_hal_led_toggle': lambda *args, **kwargs: self.cmd_hal_led_toggle(*args, **kwargs),
+            'cmd_hal_solenoid': lambda *args, **kwargs: self.cmd_hal_solenoid(*args, **kwargs),
+            'cmd_hal_lock': lambda *args, **kwargs: self.cmd_hal_lock(*args, **kwargs),
             'cmd_run_timer_event': lambda *args, **kwargs: self.cmd_run_timer_event(*args, **kwargs),
             'cmd_keyboard_toggle': lambda index: logger.debug("cmd_keyboard_toggle %s", index),
         }
@@ -123,6 +132,7 @@ class ActionMapper:
         self._hal_gate = None
         self._hal_lock_ms_pending = 0
         self._hal_sequence_in_progress = False
+        self._hal_led_on = False
         from DB.hardware_config_migrate import migrate_hardware_config_park_motors
 
         eng = engine()
@@ -171,6 +181,7 @@ class ActionMapper:
         defaults = {
             "led": 1,
             "lock_ms": 15000,
+            "sol_ms": HAL_DISPENSE_SOL_MS,
             "push_down": 900,
             "push_up": 0,
             "park_m1": 0,
@@ -214,6 +225,11 @@ class ActionMapper:
             "trigger": "view_hal_coords",
             "hal_motor_positions": list(self._hal_motor_positions),
         }
+
+    def _hal_view_dispense_payload(self, **extra) -> dict:
+        payload = {"trigger": "view_hal_dispense", "hal_led_on": self._hal_led_on}
+        payload.update(extra)
+        return payload
 
     def _sync_motor_positions_to_executor(self) -> None:
         self.__executor.hal_motor_positions = list(self._hal_motor_positions)
@@ -283,6 +299,15 @@ class ActionMapper:
         led_on = 1 if int(profile.get("led", 0)) != 0 else 0
         return f"LED,{led_on}", False
 
+    def _illumination_off_step(self, profile: dict):
+        """Гасит ту же подсветку, что включали в начале выдачи (RGB или LED,0)."""
+        if all(
+            profile.get(k) is not None
+            for k in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b")
+        ):
+            return "RGB,0,0,0", False
+        return "LED,0", False
+
     def _resolve_hal_target_coords(self, number: int, cell_id=None):
         """
         Целевые hal_x/hal_z только из БД; без fallback на Cell.number / 0.
@@ -312,7 +337,8 @@ class ActionMapper:
     def _build_hal_dispense_steps(self, number: int, cell_id=None):
         """
         Цепочка под no_block_plata: кадры MOT,p1..p5 (параллель осей в одном кадре),
-        порядок — подсветка (LED/RGB) → ZERO → задняя «безопасная» (опц.) → к ячейке → штырь → парковка.
+        порядок — подсветка (LED/RGB) → ZERO → задняя «безопасная» (опц.) → к ячейке → штырь
+        → парковка → $SOL,ms (окно выдачи) → выключение LED/RGB.
 
         Подъезд к ячейке: M1=M2=hal_z, M3=hal_x, M4=hal_x−25, M5=0; штырь M5: 60 → 0.
         """
@@ -347,6 +373,14 @@ class ActionMapper:
         steps.append((_fmt_mot5(clamp_mot_vector(pos)), True))
 
         steps.append((_fmt_mot5(list(park)), True))
+
+        sol_ms = int(defaults.get("sol_ms", HAL_DISPENSE_SOL_MS))
+        if sol_ms < 0:
+            sol_ms = 0
+        if sol_ms > 65_535:
+            sol_ms = 65_535
+        steps.append((f"SOL,{sol_ms}", True))
+        steps.append(self._illumination_off_step(defaults))
 
         return steps, 0
 
@@ -676,6 +710,61 @@ class ActionMapper:
         self._hal_motor_positions = pos
         self._sync_motor_positions_to_executor()
         return self._hal_view_coords_payload()
+
+    def cmd_hal_led_toggle(self, *args, **kwargs):
+        """Переключение LED-подсветки ($LED,0|1)."""
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_dispense_payload()
+
+        new_on = not self._hal_led_on
+        cmd = f"LED,{1 if new_on else 0}"
+        ok, reason = self._wait_hal_command_finished(cmd, False, 15_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"{cmd}:{reason}"
+            return {"trigger": "err_devices"}
+
+        self._hal_led_on = new_on
+        return self._hal_view_dispense_payload()
+
+    def cmd_hal_solenoid(self, *args, **kwargs):
+        """Импульс соленоида $SOL,ms (тестовая выдача)."""
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_dispense_payload(hal_pulse_cancel="solenoid")
+
+        ms = HAL_ENGINEER_TEST_PULSE_MS
+        cmd = f"SOL,{ms}"
+        ok, reason = self._wait_hal_command_finished(cmd, True, ms + 5_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"{cmd}:{reason}"
+            return self._hal_view_dispense_payload(hal_pulse_cancel="solenoid")
+
+        return self._hal_view_dispense_payload()
+
+    def cmd_hal_lock(self, *args, **kwargs):
+        """Импульс замка $LOCK,ms (тестовая выдача)."""
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_dispense_payload(hal_pulse_cancel="lock")
+
+        ms = HAL_ENGINEER_TEST_PULSE_MS
+        cmd = f"LOCK,{ms}"
+        ok, reason = self._wait_hal_command_finished(cmd, True, ms + 5_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"{cmd}:{reason}"
+            return self._hal_view_dispense_payload(hal_pulse_cancel="lock")
+
+        return self._hal_view_dispense_payload()
 
     def get_hal_motor_positions(self) -> list:
         return list(self._hal_motor_positions)

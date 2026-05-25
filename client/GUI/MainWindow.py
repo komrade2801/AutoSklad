@@ -221,12 +221,30 @@ class MainWindow(QtWidgets.QWidget):
         s40 = self.widgets.get("screen_40_hal_dispense")
         if s40 is not None:
             s40.event_hal_park_save = self._on_hal_park_save_clicked
-            btn = s40.findChild(QtWidgets.QPushButton, "btn_hal_park_save")
-            if btn is not None:
-                btn.clicked.connect(lambda checked=False: s40.forward_park_save())
+            s40.event_hal_led_toggle = self._on_hal_led_toggle_clicked
+            s40.event_hal_solenoid = self._on_hal_solenoid_clicked
+            s40.event_hal_lock = self._on_hal_lock_clicked
+            for btn_name, handler in (
+                ("btn_hal_park_save", s40.forward_park_save),
+                ("btn_hal_led", s40.forward_hal_led_toggle),
+                ("btn_hal_solenoid", s40.forward_hal_solenoid),
+                ("btn_hal_lock", s40.forward_hal_lock),
+            ):
+                btn = s40.findChild(QtWidgets.QPushButton, btn_name)
+                if btn is not None:
+                    btn.clicked.connect(lambda checked=False, h=handler: h())
 
     def _on_hal_park_save_clicked(self):
         self.button_clicked("btn_hal_park_save", "write_db_hal_park_defaults")
+
+    def _on_hal_led_toggle_clicked(self):
+        self.button_clicked("btn_hal_led", "cmd_hal_led_toggle")
+
+    def _on_hal_solenoid_clicked(self):
+        self.button_clicked("btn_hal_solenoid", "cmd_hal_solenoid")
+
+    def _on_hal_lock_clicked(self):
+        self.button_clicked("btn_hal_lock", "cmd_hal_lock")
 
     def _on_hal_jog_clicked(self, trigger_name: str):
         if self.executor is not None:
@@ -277,7 +295,12 @@ class MainWindow(QtWidgets.QWidget):
         ):
             return
 
-        if source == "screen_40_hal_dispense" and trigger == "btn_hal_park_save":
+        if source == "screen_40_hal_dispense" and trigger in (
+            "btn_hal_park_save",
+            "btn_hal_led",
+            "btn_hal_solenoid",
+            "btn_hal_lock",
+        ):
             return
 
         if self.widgets[source].event_input_name_code:

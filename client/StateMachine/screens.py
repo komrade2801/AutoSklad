@@ -48,6 +48,13 @@ screen = {
         'hal_jog_m3_minus', 'hal_jog_m3_plus', 'hal_jog_m4_minus', 'hal_jog_m4_plus',
         'hal_jog_m5_minus', 'hal_jog_m5_plus',
     ],
-    'screen_40_hal_dispense': ['btn_back', 'btn_hal_dispense_run', 'btn_hal_park_save'],
+    'screen_40_hal_dispense': [
+        'btn_back',
+        'btn_hal_dispense_run',
+        'btn_hal_park_save',
+        'btn_hal_led',
+        'btn_hal_solenoid',
+        'btn_hal_lock',
+    ],
     'screen_41_hal_cells_table': ['btn_back'],
 }
