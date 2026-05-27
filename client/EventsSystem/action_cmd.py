@@ -384,6 +384,15 @@ class ActionMapper:
 
         return steps, 0
 
+    def is_hal_operation_busy(self) -> bool:
+        """Цикл выдачи через DispenseCommandGate или флаг активной HAL-последовательности."""
+        if self._hal_sequence_in_progress:
+            return True
+        gate = self._hal_gate
+        if gate is not None and gate.is_running():
+            return True
+        return False
+
     def _ensure_hal_gate(self):
         if self._hal_gate is not None:
             return self._hal_gate

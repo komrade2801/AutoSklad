@@ -344,6 +344,20 @@ class MainWindow(QtWidgets.QWidget):
             #
             # button.clicked.connect(lambda checked, btn_name=button_name: self.button_clicked(btn_name, dest))
 
+    def attach_session_idle_hardware_monitoring(self) -> None:
+        """
+        Пока VendingSerialManager или DispenseCommandGate выполняют операции,
+        SessionIdleManager не отсчитывает время простоя.
+        """
+        if self.executor is None:
+            return
+        mgr = self.executor.controller_serial_manager
+        if mgr is not None and hasattr(mgr, "is_hardware_busy"):
+            self.session_manager.register_busy_checker(mgr.is_hardware_busy)
+        cmd_mapper = self.executor.selector.mappers.get("cmd")
+        if cmd_mapper is not None and hasattr(cmd_mapper, "is_hal_operation_busy"):
+            self.session_manager.register_busy_checker(cmd_mapper.is_hal_operation_busy)
+
     def handle_controller_serial_response(self, response):
         """Обрабатываем полученный ответ"""
         self.session_manager.reset_timer()

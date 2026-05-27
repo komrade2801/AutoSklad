@@ -345,6 +345,7 @@ def main():
         executor.attach_barcode_manager(barcode_manager)
         window.action_callback = executor.handle_widget_executor
         window.executor = executor
+        window.attach_session_idle_hardware_monitoring()
         executor.handle_serial_controller = window.handle_controller_serial_response
         executor.handle_barcode_manager = window.handle_barcode_manager_response
         executor.wait_screen_message = "Загрузка"
@@ -404,6 +405,7 @@ def main():
 
                 if hal_steps:
                     hal_gate = DispenseCommandGate(serial_manager, parent=window)
+                    window.session_manager.register_busy_checker(hal_gate.is_running)
 
                     def _hal_step_started(idx: int, cmd: str) -> None:
                         logger.info("[HAL test] шаг %s: отправка %r", idx, cmd)

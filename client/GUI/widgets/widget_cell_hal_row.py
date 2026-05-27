@@ -24,6 +24,7 @@ class WidgetCellHalRow(BaseScreen):
 
     def __init__(self):
         super().__init__()
+        self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, True)
         self.setObjectName("widget_cell_hal_row")
         self.cell_id = None
         self.cell_number = None

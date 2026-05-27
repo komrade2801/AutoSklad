@@ -6,9 +6,10 @@
 - Таймер сбрасывается при любом действии пользователя (клик, касание, клавиша)
 """
 
-from PyQt5.QtCore import QTimer, QObject, QEvent
+from typing import Callable, List
+
+from PyQt5.QtCore import QTimer, QObject, QEvent, Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QApplication
-from PyQt5.QtCore import Qt
 
 from Core.app_logging import get_logger
 
@@ -26,6 +27,7 @@ class SessionIdleManager(QObject):
         self._main_window = main_window
         self._remaining_seconds = TOTAL_SECONDS
         self._is_active = False
+        self._busy_checkers: List[Callable[[], bool]] = []
 
         self._timer = QTimer(self)
         self._timer.setInterval(1000)
@@ -93,19 +95,33 @@ class SessionIdleManager(QObject):
         self._hide_popup()
         logger.debug("SessionIdleManager: stopped")
 
+    def register_busy_checker(self, checker: Callable[[], bool]) -> None:
+        """Регистрирует проверку «железо занято» — пока True, таймер не тикает."""
+        if checker not in self._busy_checkers:
+            self._busy_checkers.append(checker)
+
+    def _is_hardware_busy(self) -> bool:
+        for checker in self._busy_checkers:
+            try:
+                if checker():
+                    return True
+            except Exception:
+                logger.exception("SessionIdleManager: busy_checker failed")
+        return False
+
     def reset_timer(self):
         """Сбрасывает таймер при активности пользователя."""
         if not self._is_active:
             return
         self._remaining_seconds = TOTAL_SECONDS
-        if self._remaining_seconds > WARNING_THRESHOLD:
-            self._hide_popup()
-        else:
-            self._hide_popup()
+        self._hide_popup()
 
     def _tick(self):
         """Вызывается каждую секунду."""
         if not self._is_active:
+            return
+        if self._is_hardware_busy():
+            logger.debug("SessionIdleManager: idle hold (hardware busy)")
             return
         self._remaining_seconds -= 1
 

@@ -64,12 +64,17 @@ class MockVendingSerialManager(threading.Thread, QObject):
 
         self._tx_queue: "queue.Queue[str]" = queue.Queue()
         self.running = True
+        self._simulating = False
         self._lock_is_on = False
         self.serial_conn = None
 
     class _MockSerialConnection:
         def __init__(self) -> None:
             self.is_open = True
+
+    def is_hardware_busy(self) -> bool:
+        """True, если mock обрабатывает команду или в очереди TX есть шаги."""
+        return self._simulating or not self._tx_queue.empty()
 
     def enqueue_command(self, command: str, is_long: Optional[bool] = None) -> None:
         cmd = (command or "").strip()
@@ -131,11 +136,14 @@ class MockVendingSerialManager(threading.Thread, QObject):
                 is_long = bool(int(flag_s))
             except ValueError:
                 continue
+            self._simulating = True
             try:
                 self._simulate(is_long, cmd)
             except Exception as exc:
                 self.debug_log.emit(f"MockVending simulate error: {exc}")
                 self._emit_error(cmd)
+            finally:
+                self._simulating = False
 
         self.close_port()
 

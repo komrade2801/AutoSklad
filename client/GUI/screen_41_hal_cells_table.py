@@ -1,4 +1,5 @@
 from Core.app_logging import get_logger
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QListWidgetItem
 
 from GUI.BaseScreen import BaseScreen
@@ -14,6 +15,10 @@ class screen_41_hal_cells_table(BaseScreen, Ui_screen_41_hal_cells_table):
         super().__init__()
         self.setupUi(self)
         self.enable_touch_scroll = True
+        list_idx = self.verticalLayout.indexOf(self.listWidget)
+        if list_idx >= 0:
+            self.verticalLayout.setStretch(list_idx, 1)
+        self.listWidget.setFocusPolicy(Qt.NoFocus)
         self._table_header = WidgetCellHalHeader()
         header_layout = self.widget_table_header.layout()
         if header_layout is None:
@@ -68,6 +73,7 @@ class screen_41_hal_cells_table(BaseScreen, Ui_screen_41_hal_cells_table):
             if not isinstance(row, dict):
                 continue
             widget = WidgetCellHalRow()
+            widget.setAttribute(Qt.WA_TransparentForMouseEvents, True)
             widget.set_data(**row)
             if width > 0:
                 widget.setFixedWidth(width)

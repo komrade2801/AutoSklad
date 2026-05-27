@@ -1,7 +1,10 @@
 from PyQt5 import QtWidgets
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QAbstractScrollArea,
     QAbstractItemView,
+    QScroller,
+    QScrollerProperties,
 )
 from abc import ABC, ABCMeta, abstractmethod
 
@@ -56,7 +59,7 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
             self._enable_touch_scroll()
 
     def _enable_touch_scroll(self):
-        """Включает плавный скролл по пикселям для прокручиваемых областей (только «листовые», без вложенных)."""
+        """Плавный скролл по пикселям + кинетический свайп (QScroller) для тач-экрана."""
         all_scroll_areas = self.findChildren(QAbstractScrollArea)
         # Только области без вложенных QAbstractScrollArea, чтобы не было двойного скролла и скачков
         for scroll_area in all_scroll_areas:
@@ -71,8 +74,21 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
             if isinstance(scroll_area, QAbstractItemView):
                 scroll_area.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
                 scroll_area.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-                # Плавный скролл колесиком мыши: шаг в пикселях (20 ≈ как при тач-свайпе)
                 scroll_area.verticalScrollBar().setSingleStep(20)
+
+            viewport = scroll_area.viewport()
+            viewport.setAttribute(Qt.WA_AcceptTouchEvents, True)
+            QScroller.grabGesture(viewport, QScroller.TouchGesture)
+            QScroller.grabGesture(viewport, QScroller.LeftMouseButtonGesture)
+            scroller = QScroller.scroller(viewport)
+            props = scroller.scrollerProperties()
+            props.setScrollMetric(
+                QScrollerProperties.DecelerationFactor, 0.12
+            )
+            props.setScrollMetric(
+                QScrollerProperties.MaximumVelocity, 1.2
+            )
+            scroller.setScrollerProperties(props)
 
     @staticmethod
     def format_fio_short(user):

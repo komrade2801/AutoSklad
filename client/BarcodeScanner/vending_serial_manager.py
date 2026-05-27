@@ -91,6 +91,10 @@ class VendingSerialManager(threading.Thread, QObject):
     # -----------------------------
     # Public API (for future usage)
     # -----------------------------
+    def is_hardware_busy(self) -> bool:
+        """True, если в очереди или на проводе есть HAL-команда (ожидание платы)."""
+        return self._ctx is not None or not self._tx_queue.empty()
+
     def enqueue_command(self, command: str, is_long: Optional[bool] = None) -> None:
         """
         Enqueue command WITHOUT leading '$' and WITHOUT line ending.
