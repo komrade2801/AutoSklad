@@ -159,9 +159,9 @@ QPushButton {
    </property>
    <property name="geometry">
     <rect>
-     <x>5</x>
+     <x>153</x>
      <y>170</y>
-     <width>143</width>
+     <width>144</width>
      <height>50</height>
     </rect>
    </property>
@@ -411,9 +411,9 @@ QPushButton {
    </property>
    <property name="geometry">
     <rect>
-     <x>153</x>
+     <x>302</x>
      <y>170</y>
-     <width>144</width>
+     <width>143</width>
      <height>50</height>
     </rect>
    </property>
@@ -447,7 +447,7 @@ QPushButton {
    </property>
    <property name="geometry">
     <rect>
-     <x>302</x>
+     <x>5</x>
      <y>170</y>
      <width>143</width>
      <height>50</height>
