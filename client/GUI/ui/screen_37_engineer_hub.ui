@@ -45,7 +45,7 @@ QPushButton {
     </widget>
    </item>   <item>
     <widget class="QPushButton" name="btn_hal_dispense">
-     <property name="text"><string>Выдача</string></property>
+     <property name="text"><string>Команды</string></property>
      <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 24px; font-weight: 600; min-height: 64px; }</string></property>
     </widget>
    </item>   <item>

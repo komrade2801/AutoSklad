@@ -1,8 +1,9 @@
 """
 Mock ATmega HAL serial device for development and tests.
 
-С `emulate_no_block_plata=True` повторяет строки no_block_plata.ino: WAIT+DONE для ZERO/MOT,
-только DONE для LED/RGB, пауза по ms затем DONE для LOCK,/SOL,. Иначе — старый эталон OK+DONE.
+С `emulate_no_block_plata=True` повторяет прошивку SPEEDx2:
+WAIT+DONE / DONE ZERO / DONE MOT для ZERO/MOT; DONE / DONE LED / DONE RGB для LED/RGB;
+LOCK,/SOL, → WAIT, затем DONE LOCK / DONE SOL после ms (не блокирует очередь TX).
 
 Special command MOCKFAIL — emits ERROR (сценарий «механика сломалась»).
 """
@@ -13,9 +14,16 @@ import queue
 import re
 import threading
 import time
+from dataclasses import dataclass
 from typing import Dict, Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
+
+@dataclass
+class _PendingPulse:
+    command: str
+    channel: str
 
 
 class MockVendingSerialManager(threading.Thread, QObject):
@@ -32,6 +40,7 @@ class MockVendingSerialManager(threading.Thread, QObject):
     event_lock_state = pyqtSignal(bool)
 
     fsm_trigger = pyqtSignal(str)
+    command_accepted = pyqtSignal(str)
     command_finished = pyqtSignal(str, str)
 
     def __init__(
@@ -66,6 +75,7 @@ class MockVendingSerialManager(threading.Thread, QObject):
         self.running = True
         self._simulating = False
         self._lock_is_on = False
+        self._pending_pulses: Dict[str, _PendingPulse] = {}
         self.serial_conn = None
 
     class _MockSerialConnection:
@@ -156,6 +166,14 @@ class MockVendingSerialManager(threading.Thread, QObject):
         except ValueError:
             return 0
 
+    @staticmethod
+    def _pulse_channel(u: str) -> Optional[str]:
+        if u.startswith("LOCK,"):
+            return "lock"
+        if u.startswith("SOL,"):
+            return "sol"
+        return None
+
     def _mot_csv_five_valid(self, c: str) -> bool:
         if "," not in c:
             return False
@@ -171,6 +189,42 @@ class MockVendingSerialManager(threading.Thread, QObject):
         except ValueError:
             return False
         return True
+
+    def _schedule_pulse_done(self, cmd: str, channel: str, delay_s: float) -> None:
+        done_line = "DONE LOCK" if channel == "lock" else "DONE SOL"
+
+        def _worker() -> None:
+            time.sleep(delay_s)
+            pending = self._pending_pulses.pop(channel, None)
+            if pending is None or pending.command != cmd:
+                self.debug_log.emit(
+                    f"MockVending: stale pulse done ignored channel={channel} cmd={cmd!r}"
+                )
+                return
+            self.raw_line.emit(done_line)
+            self.event_done.emit()
+            if self.bridge_done_to_fsm:
+                self.fsm_trigger.emit("command_ok")
+            self.command_finished.emit(cmd, "done")
+            self.debug_log.emit(f"MockVending: {done_line} for {cmd!r}")
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _emit_pulse_ack(self, cmd: str, u: str) -> None:
+        channel = self._pulse_channel(u)
+        if channel is None:
+            self._emit_error(cmd)
+            return
+        ms = self._parse_blocking_ms(u)
+        delay = min(ms / 1000.0 + 0.05, self._blocking_cap)
+        self._pending_pulses[channel] = _PendingPulse(command=cmd, channel=channel)
+        self.raw_line.emit("WAIT")
+        self.event_ok.emit()
+        if self.bridge_ok_to_fsm:
+            self.fsm_trigger.emit("command_is_send")
+        self.command_accepted.emit(cmd)
+        self.debug_log.emit(f"MockVending: WAIT pulse_ack {cmd!r}")
+        self._schedule_pulse_done(cmd, channel, delay)
 
     def _simulate_firmware(self, is_long: bool, c: str, u: str) -> bool:
         if u.startswith("LED,"):
@@ -202,10 +256,7 @@ class MockVendingSerialManager(threading.Thread, QObject):
             return True
 
         if u.startswith("LOCK,") or u.startswith("SOL,"):
-            ms = self._parse_blocking_ms(u)
-            delay = min(ms / 1000.0 + 0.05, self._blocking_cap)
-            time.sleep(delay)
-            self._emit_done_only(c)
+            self._emit_pulse_ack(c, u)
             return True
 
         if u == "ZERO":

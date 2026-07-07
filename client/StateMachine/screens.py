@@ -52,6 +52,7 @@ screen = {
         'btn_back',
         'btn_hal_dispense_run',
         'btn_hal_park_save',
+        'btn_hal_rgb_save',
         'btn_hal_led',
         'btn_hal_solenoid',
         'btn_hal_lock',

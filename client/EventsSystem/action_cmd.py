@@ -12,6 +12,7 @@ import logging
 from pathlib import Path
 from Core.platforms import detect
 from BarcodeScanner.dispense_command_gate import DispenseCommandGate
+from EventsSystem.hal_pulse_bridge import HalPulseBridge
 from EventsSystem.hal_coords import (
     HAL_DISPENSE_PUSH_DOWN,
     HAL_DISPENSE_PUSH_UP,
@@ -42,6 +43,9 @@ _CONFIG_JSON = Path(__file__).resolve().parent.parent / "config.json"
 HAL_DISPENSE_SOL_MS = 20_000
 # Импульс соленоида/замка на экране тестовой выдачи (инженер), мс
 HAL_ENGINEER_TEST_PULSE_MS = 10_000
+# Запас к ms импульса для fallback-сброса UI, если DONE LOCK/SOL не пришёл
+HAL_PULSE_FALLBACK_MARGIN_MS = 5_000
+HAL_PULSE_ACCEPT_TIMEOUT_MS = 3_000
 
 _HAL_JSON_MERGE_KEYS = frozenset(
     {
@@ -123,6 +127,7 @@ class ActionMapper:
             'cmd_hal_jog': lambda *args, **kwargs: self.cmd_hal_jog(*args, **kwargs),
             'cmd_hal_mot_goto': lambda *args, **kwargs: self.cmd_hal_mot_goto(*args, **kwargs),
             'cmd_hal_led_toggle': lambda *args, **kwargs: self.cmd_hal_led_toggle(*args, **kwargs),
+            'cmd_hal_rgb': lambda *args, **kwargs: self.cmd_hal_rgb(*args, **kwargs),
             'cmd_hal_solenoid': lambda *args, **kwargs: self.cmd_hal_solenoid(*args, **kwargs),
             'cmd_hal_lock': lambda *args, **kwargs: self.cmd_hal_lock(*args, **kwargs),
             'cmd_run_timer_event': lambda *args, **kwargs: self.cmd_run_timer_event(*args, **kwargs),
@@ -133,6 +138,15 @@ class ActionMapper:
         self._hal_lock_ms_pending = 0
         self._hal_sequence_in_progress = False
         self._hal_led_on = False
+        self._hal_lock_active = False
+        self._hal_lock_pending = False
+        self._hal_sol_active = False
+        self._hal_sol_pending = False
+        self._hal_pulse_ms: dict = {"lock": 0, "sol": 0}
+        self._hal_pulse_fallback_timers: dict = {}
+        self._hal_pulse_handlers_wired = False
+        self._hal_pulse_bridge = HalPulseBridge()
+        self.__executor.hal_pulse_bridge = self._hal_pulse_bridge
         from DB.hardware_config_migrate import migrate_hardware_config_park_motors
 
         eng = engine()
@@ -227,9 +241,203 @@ class ActionMapper:
         }
 
     def _hal_view_dispense_payload(self, **extra) -> dict:
-        payload = {"trigger": "view_hal_dispense", "hal_led_on": self._hal_led_on}
+        payload = {
+            "trigger": "view_hal_dispense",
+            "hal_led_on": self._hal_led_on,
+            "hal_lock_active": self._hal_lock_active,
+            "hal_lock_pending": self._hal_lock_pending,
+            "hal_sol_active": self._hal_sol_active,
+            "hal_sol_pending": self._hal_sol_pending,
+        }
         payload.update(extra)
         return payload
+
+    @staticmethod
+    def _pulse_channel_from_cmd(command: str):
+        u = (command or "").strip().lstrip("$").upper()
+        if u.startswith("LOCK,"):
+            return "lock"
+        if u.startswith("SOL,"):
+            return "sol"
+        return None
+
+    @staticmethod
+    def _parse_pulse_ms(command: str) -> int:
+        u = (command or "").strip().lstrip("$").upper()
+        if "," not in u:
+            return 0
+        try:
+            return max(0, int(u.split(",", 1)[1]))
+        except ValueError:
+            return 0
+
+    def is_hal_actuators_busy(self) -> bool:
+        """Импульс LOCK/SOL: pending (до WAIT) или active (до DONE)."""
+        return (
+            self._hal_lock_pending
+            or self._hal_lock_active
+            or self._hal_sol_pending
+            or self._hal_sol_active
+        )
+
+    def wire_hal_pulse_handlers(self, serial_manager) -> None:
+        if self._hal_pulse_handlers_wired or serial_manager is None:
+            return
+        if not hasattr(serial_manager, "command_accepted"):
+            return
+        serial_manager.command_accepted.connect(self._on_hal_pulse_accepted)
+        serial_manager.command_finished.connect(self._on_hal_pulse_command_finished)
+        self._hal_pulse_handlers_wired = True
+
+    def _emit_hal_pulse_state(self, channel: str) -> None:
+        if channel == "lock":
+            self._hal_pulse_bridge.state_changed.emit(
+                "lock", self._hal_lock_active, self._hal_lock_pending
+            )
+        elif channel == "sol":
+            self._hal_pulse_bridge.state_changed.emit(
+                "sol", self._hal_sol_active, self._hal_sol_pending
+            )
+
+    def _start_hal_pulse_fallback(self, channel: str, ms: int) -> None:
+        timer = self._hal_pulse_fallback_timers.get(channel)
+        if timer is not None:
+            timer.stop()
+        timer = QTimer()
+        timer.setSingleShot(True)
+        timer.timeout.connect(lambda ch=channel: self._on_hal_pulse_fallback(ch))
+        timer.start(int(ms) + HAL_PULSE_FALLBACK_MARGIN_MS)
+        self._hal_pulse_fallback_timers[channel] = timer
+
+    def _stop_hal_pulse_fallback(self, channel: str) -> None:
+        timer = self._hal_pulse_fallback_timers.pop(channel, None)
+        if timer is not None:
+            timer.stop()
+
+    def _clear_hal_pulse_channel(self, channel: str, reason: str) -> None:
+        if channel == "lock":
+            self._hal_lock_active = False
+            self._hal_lock_pending = False
+        elif channel == "sol":
+            self._hal_sol_active = False
+            self._hal_sol_pending = False
+        else:
+            return
+        self._stop_hal_pulse_fallback(channel)
+        logger.info("HAL pulse channel %s cleared (%s)", channel, reason)
+        self._emit_hal_pulse_state(channel)
+
+    def _on_hal_pulse_accepted(self, cmd: str) -> None:
+        channel = self._pulse_channel_from_cmd(cmd)
+        if channel is None:
+            return
+        ms = self._parse_pulse_ms(cmd)
+        self._hal_pulse_ms[channel] = ms
+        if channel == "lock":
+            self._hal_lock_pending = False
+            self._hal_lock_active = True
+        else:
+            self._hal_sol_pending = False
+            self._hal_sol_active = True
+        self._start_hal_pulse_fallback(channel, ms)
+        self._emit_hal_pulse_state(channel)
+
+    def _on_hal_pulse_command_finished(self, cmd: str, outcome: str) -> None:
+        channel = self._pulse_channel_from_cmd(cmd)
+        if channel is None:
+            return
+        if outcome == "done":
+            if channel == "lock" and (self._hal_lock_active or self._hal_lock_pending):
+                self._clear_hal_pulse_channel("lock", "done")
+            elif channel == "sol" and (self._hal_sol_active or self._hal_sol_pending):
+                self._clear_hal_pulse_channel("sol", "done")
+            return
+        if outcome in ("error", "timeout_ack", "timeout_done"):
+            if channel == "lock" and (self._hal_lock_active or self._hal_lock_pending):
+                self._clear_hal_pulse_channel("lock", outcome)
+            elif channel == "sol" and (self._hal_sol_active or self._hal_sol_pending):
+                self._clear_hal_pulse_channel("sol", outcome)
+
+    def _on_hal_pulse_fallback(self, channel: str) -> None:
+        active = (
+            self._hal_lock_active if channel == "lock" else self._hal_sol_active
+        )
+        if not active:
+            return
+        logger.warning(
+            "HAL pulse fallback: no DONE %s within ms+margin; forcing UI idle",
+            channel.upper(),
+        )
+        self._clear_hal_pulse_channel(channel, "fallback_timeout")
+
+    def _wait_hal_command_accepted(self, command: str, timeout_ms: int):
+        """Отправляет pulse-команду и ждёт WAIT (command_accepted)."""
+        mgr = self.__executor.controller_serial_manager
+        if not mgr or not hasattr(mgr, "command_accepted"):
+            return False, "hal_manager_unavailable"
+
+        self.wire_hal_pulse_handlers(mgr)
+
+        result = {"ok": False, "reason": "timeout"}
+        loop = QEventLoop()
+        timer = QTimer()
+        timer.setSingleShot(True)
+
+        expected = (command or "").strip().lstrip("$")
+
+        def _on_accepted(cmd: str):
+            if (cmd or "").strip().lstrip("$") != expected:
+                return
+            result["ok"] = True
+            result["reason"] = "accepted"
+            if loop.isRunning():
+                loop.quit()
+
+        def _on_finished(cmd: str, outcome: str):
+            if (cmd or "").strip().lstrip("$") != expected:
+                return
+            if outcome in ("error", "timeout_ack", "timeout_done"):
+                result["ok"] = False
+                result["reason"] = outcome
+                if loop.isRunning():
+                    loop.quit()
+
+        def _on_timeout():
+            result["ok"] = False
+            result["reason"] = "timeout_wait_accept"
+            if loop.isRunning():
+                loop.quit()
+
+        ui_tick = QTimer()
+        ui_tick.timeout.connect(lambda: QApplication.processEvents())
+
+        mgr.command_accepted.connect(_on_accepted)
+        mgr.command_finished.connect(_on_finished)
+        timer.timeout.connect(_on_timeout)
+        timer.start(timeout_ms)
+        ui_tick.start(50)
+
+        try:
+            if not self.__executor.send_controller_command(expected, is_long=False):
+                return False, "send_rejected"
+            loop.exec_()
+        finally:
+            ui_tick.stop()
+            try:
+                mgr.command_accepted.disconnect(_on_accepted)
+            except Exception:
+                pass
+            try:
+                mgr.command_finished.disconnect(_on_finished)
+            except Exception:
+                pass
+            try:
+                timer.timeout.disconnect(_on_timeout)
+            except Exception:
+                pass
+            timer.stop()
+
+        return bool(result["ok"]), str(result["reason"])
 
     def _sync_motor_positions_to_executor(self) -> None:
         self.__executor.hal_motor_positions = list(self._hal_motor_positions)
@@ -739,39 +947,104 @@ class ActionMapper:
         self._hal_led_on = new_on
         return self._hal_view_dispense_payload()
 
-    def cmd_hal_solenoid(self, *args, **kwargs):
-        """Импульс соленоида $SOL,ms (тестовая выдача)."""
+    def cmd_hal_rgb(self, *args, **kwargs):
+        """Отправка $RGB,r,g,b из полей экрана тестовой выдачи."""
+        from EventsSystem.hal_coords import (
+            RGB_BYTE_MAX,
+            RGB_BYTE_MIN,
+            message_for_reason,
+            rgb_channel_label,
+            validate_rgb_texts,
+        )
+
         protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
         if protocol != "atmega_hal":
             return {"trigger": "err_devices"}
 
         if self._hal_sequence_in_progress:
-            return self._hal_view_dispense_payload(hal_pulse_cancel="solenoid")
+            return self._hal_view_dispense_payload()
+
+        texts = []
+        for key in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b"):
+            if key in kwargs:
+                texts.append(str(kwargs[key]))
+            else:
+                texts.append("0")
+        rgb, bad_index, reason = validate_rgb_texts(texts)
+        if reason:
+            label = rgb_channel_label(bad_index) if bad_index is not None else ""
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": message_for_reason(
+                    reason,
+                    motor_label=label,
+                    min_v=RGB_BYTE_MIN,
+                    max_v=RGB_BYTE_MAX,
+                ),
+            }
+
+        r, g, b = rgb
+        cmd = f"RGB,{r},{g},{b}"
+        ok, finish_reason = self._wait_hal_command_finished(cmd, False, 15_000)
+        if not ok:
+            self.__executor.hardware_last_error = f"{cmd}:{finish_reason}"
+            return {"trigger": "err_devices"}
+
+        return self._hal_view_dispense_payload(hal_rgb_save_ok=True)
+
+    def cmd_hal_solenoid(self, *args, **kwargs):
+        """Импульс соленоида $SOL,ms (fire-and-forget после WAIT)."""
+        protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
+        if protocol != "atmega_hal":
+            return {"trigger": "err_devices"}
+
+        if self._hal_sol_pending or self._hal_sol_active:
+            return self._hal_view_dispense_payload()
+
+        if self._hal_sequence_in_progress:
+            return self._hal_view_dispense_payload()
+
+        mgr = self.__executor.controller_serial_manager
+        self.wire_hal_pulse_handlers(mgr)
 
         ms = HAL_ENGINEER_TEST_PULSE_MS
         cmd = f"SOL,{ms}"
-        ok, reason = self._wait_hal_command_finished(cmd, True, ms + 5_000)
+        self._hal_sol_pending = True
+        self._emit_hal_pulse_state("sol")
+
+        ok, reason = self._wait_hal_command_accepted(cmd, HAL_PULSE_ACCEPT_TIMEOUT_MS)
         if not ok:
+            self._clear_hal_pulse_channel("sol", reason)
             self.__executor.hardware_last_error = f"{cmd}:{reason}"
-            return self._hal_view_dispense_payload(hal_pulse_cancel="solenoid")
+            return self._hal_view_dispense_payload()
 
         return self._hal_view_dispense_payload()
 
     def cmd_hal_lock(self, *args, **kwargs):
-        """Импульс замка $LOCK,ms (тестовая выдача)."""
+        """Импульс замка $LOCK,ms (fire-and-forget после WAIT)."""
         protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
         if protocol != "atmega_hal":
             return {"trigger": "err_devices"}
 
+        if self._hal_lock_pending or self._hal_lock_active:
+            return self._hal_view_dispense_payload()
+
         if self._hal_sequence_in_progress:
-            return self._hal_view_dispense_payload(hal_pulse_cancel="lock")
+            return self._hal_view_dispense_payload()
+
+        mgr = self.__executor.controller_serial_manager
+        self.wire_hal_pulse_handlers(mgr)
 
         ms = HAL_ENGINEER_TEST_PULSE_MS
         cmd = f"LOCK,{ms}"
-        ok, reason = self._wait_hal_command_finished(cmd, True, ms + 5_000)
+        self._hal_lock_pending = True
+        self._emit_hal_pulse_state("lock")
+
+        ok, reason = self._wait_hal_command_accepted(cmd, HAL_PULSE_ACCEPT_TIMEOUT_MS)
         if not ok:
+            self._clear_hal_pulse_channel("lock", reason)
             self.__executor.hardware_last_error = f"{cmd}:{reason}"
-            return self._hal_view_dispense_payload(hal_pulse_cancel="lock")
+            return self._hal_view_dispense_payload()
 
         return self._hal_view_dispense_payload()
 

@@ -81,6 +81,6 @@ class Ui_screen_37_engineer_hub(object):
         screen_37_engineer_hub.setWindowTitle(_translate("screen_37_engineer_hub", "screen_37_engineer_hub"))
         self.lbl_title.setText(_translate("screen_37_engineer_hub", "Инженерное меню"))
         self.btn_hal_coords.setText(_translate("screen_37_engineer_hub", "Координаты"))
-        self.btn_hal_dispense.setText(_translate("screen_37_engineer_hub", "Выдача"))
+        self.btn_hal_dispense.setText(_translate("screen_37_engineer_hub", "Команды"))
         self.btn_hal_cells_table.setText(_translate("screen_37_engineer_hub", "Таблица ячеек"))
 from ..img import resources_rc

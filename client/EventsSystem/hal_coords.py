@@ -17,6 +17,10 @@ MOT_AXIS_MAX = (420, 420, 632, 590, 60)
 MOT_EXCEEDS_MAX_MESSAGE = "Превышено максимальное значение"
 CELL_NUMBER_MIN = 1
 CELL_NUMBER_MAX = 9999
+RGB_BYTE_MIN = 0
+RGB_BYTE_MAX = 255
+RGB_EXCEEDS_MAX_MESSAGE = MOT_EXCEEDS_MAX_MESSAGE
+RGB_CHANNEL_LABELS = ("R", "G", "B")
 
 # Индексы MOT (0-based): M1,M2 — hal_z; M3 — hal_x на экране координат; M5 — штырь
 HAL_MOT_Z_INDICES = (0, 1)
@@ -247,6 +251,50 @@ def validate_motor_position_texts(
     while len(out) < 5:
         out.append(0)
     return out, None, None
+
+
+def rgb_channel_label(channel_index: int) -> str:
+    idx = max(0, min(2, int(channel_index)))
+    return RGB_CHANNEL_LABELS[idx]
+
+
+def clamp_rgb_byte(value: int) -> int:
+    return max(RGB_BYTE_MIN, min(RGB_BYTE_MAX, int(value)))
+
+
+def clamp_rgb_text(text: str) -> Tuple[str, bool]:
+    """Подставить ближайшее допустимое значение RGB (0..255)."""
+    raw = (text or "").strip()
+    if not raw:
+        return "0", False
+    if not raw.isdigit():
+        return raw, False
+    value = int(raw)
+    if value > RGB_BYTE_MAX:
+        return str(RGB_BYTE_MAX), True
+    return str(value), False
+
+
+def validate_rgb_texts(
+    texts: List[str],
+) -> Tuple[Optional[Tuple[int, int, int]], Optional[int], Optional[str]]:
+    """
+    texts: 3 строки R, G, B.
+    Возвращает ((r, g, b), bad_index, reason). bad_index 0..2 при ошибке.
+    """
+    out: List[int] = []
+    for i, t in enumerate(texts[:3]):
+        value, reason = parse_uint(
+            t,
+            min_value=RGB_BYTE_MIN,
+            max_value=RGB_BYTE_MAX,
+        )
+        if reason:
+            return None, i, reason
+        out.append(value)
+    while len(out) < 3:
+        out.append(0)
+    return (out[0], out[1], out[2]), None, None
 
 
 def validate_hal_cell_coords(

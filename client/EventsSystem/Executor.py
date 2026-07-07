@@ -155,6 +155,9 @@ class Executor:
                 serial_manager.raw_line.connect(self._on_hal_raw_line)
             if hasattr(serial_manager, "command_finished"):
                 serial_manager.command_finished.connect(self._on_hal_command_finished_log)
+            cmd_mapper = self.selector.mappers.get("cmd")
+            if cmd_mapper is not None and hasattr(cmd_mapper, "wire_hal_pulse_handlers"):
+                cmd_mapper.wire_hal_pulse_handlers(serial_manager)
             return
         if hasattr(serial_manager, "fsm_trigger"):
             serial_manager.fsm_trigger.connect(self.handle_controller_serial_response)

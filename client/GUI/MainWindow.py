@@ -110,6 +110,7 @@ class MainWindow(QtWidgets.QWidget):
         )
         self.layout.addWidget(self._screen_stack)
         self._screen_size = QtCore.QSize(480, 800)
+        self.executor = None
 
         # Создание экранов
         self.create_widgets()
@@ -117,7 +118,6 @@ class MainWindow(QtWidgets.QWidget):
         QApplication.instance().installEventFilter(self.session_manager)
         self.last_widget_value = {}
         self.action_callback = None
-        self.executor = None
         self._startup_hardware_done = False
         if self.lump.state() == "screen_32_wait":
             self.open_widget(
@@ -221,11 +221,13 @@ class MainWindow(QtWidgets.QWidget):
         s40 = self.widgets.get("screen_40_hal_dispense")
         if s40 is not None:
             s40.event_hal_park_save = self._on_hal_park_save_clicked
+            s40.event_hal_rgb_save = self._on_hal_rgb_save_clicked
             s40.event_hal_led_toggle = self._on_hal_led_toggle_clicked
             s40.event_hal_solenoid = self._on_hal_solenoid_clicked
             s40.event_hal_lock = self._on_hal_lock_clicked
             for btn_name, handler in (
                 ("btn_hal_park_save", s40.forward_park_save),
+                ("btn_hal_rgb_save", s40.forward_rgb_save),
                 ("btn_hal_led", s40.forward_hal_led_toggle),
                 ("btn_hal_solenoid", s40.forward_hal_solenoid),
                 ("btn_hal_lock", s40.forward_hal_lock),
@@ -236,6 +238,9 @@ class MainWindow(QtWidgets.QWidget):
 
     def _on_hal_park_save_clicked(self):
         self.button_clicked("btn_hal_park_save", "write_db_hal_park_defaults")
+
+    def _on_hal_rgb_save_clicked(self):
+        self.button_clicked("btn_hal_rgb_save", "cmd_hal_rgb")
 
     def _on_hal_led_toggle_clicked(self):
         self.button_clicked("btn_hal_led", "cmd_hal_led_toggle")
@@ -297,6 +302,7 @@ class MainWindow(QtWidgets.QWidget):
 
         if source == "screen_40_hal_dispense" and trigger in (
             "btn_hal_park_save",
+            "btn_hal_rgb_save",
             "btn_hal_led",
             "btn_hal_solenoid",
             "btn_hal_lock",
@@ -344,6 +350,22 @@ class MainWindow(QtWidgets.QWidget):
             #
             # button.clicked.connect(lambda checked, btn_name=button_name: self.button_clicked(btn_name, dest))
 
+    def _bind_hal_pulse_bridge(self) -> None:
+        """HalPulseBridge доступен только после window.executor = executor в main."""
+        if self.executor is None:
+            return
+        s40 = self.widgets.get("screen_40_hal_dispense")
+        if s40 is None or not hasattr(s40, "apply_hal_actuator_state"):
+            return
+        bridge = getattr(self.executor, "hal_pulse_bridge", None)
+        if bridge is None:
+            return
+        try:
+            bridge.state_changed.disconnect(s40.apply_hal_actuator_state)
+        except (TypeError, RuntimeError):
+            pass
+        bridge.state_changed.connect(s40.apply_hal_actuator_state)
+
     def attach_session_idle_hardware_monitoring(self) -> None:
         """
         Пока VendingSerialManager или DispenseCommandGate выполняют операции,
@@ -351,12 +373,15 @@ class MainWindow(QtWidgets.QWidget):
         """
         if self.executor is None:
             return
+        self._bind_hal_pulse_bridge()
         mgr = self.executor.controller_serial_manager
         if mgr is not None and hasattr(mgr, "is_hardware_busy"):
             self.session_manager.register_busy_checker(mgr.is_hardware_busy)
         cmd_mapper = self.executor.selector.mappers.get("cmd")
         if cmd_mapper is not None and hasattr(cmd_mapper, "is_hal_operation_busy"):
             self.session_manager.register_busy_checker(cmd_mapper.is_hal_operation_busy)
+        if cmd_mapper is not None and hasattr(cmd_mapper, "is_hal_actuators_busy"):
+            self.session_manager.register_busy_checker(cmd_mapper.is_hal_actuators_busy)
 
     def handle_controller_serial_response(self, response):
         """Обрабатываем полученный ответ"""

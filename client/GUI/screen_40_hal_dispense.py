@@ -5,13 +5,18 @@ from EventsSystem.hal_coords import (
     CELL_NUMBER_MAX,
     CELL_NUMBER_MIN,
     MOT_EXCEEDS_MAX_MESSAGE,
-    MOT_STEP_MAX,
     MOT_STEP_MIN,
+    RGB_BYTE_MAX,
+    RGB_BYTE_MIN,
+    RGB_EXCEEDS_MAX_MESSAGE,
     clamp_motor_text,
     clamp_motor_value,
+    clamp_rgb_text,
     message_for_reason,
+    rgb_channel_label,
     validate_cell_number_text,
     validate_motor_position_texts,
+    validate_rgb_texts,
 )
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_40_hal_dispense import Ui_screen_40_hal_dispense
@@ -24,21 +29,37 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
     _PARK_ROW_MOTOR_INDICES = (0, 2, 3, 4)
     _KEYBOARD_CLOSE_MS = 350
     _SAVE_OK_MS = 3000
+    _COMPACT_EDIT_MIN_WIDTH = 52
+    _COMPACT_EDIT_MAX_LEN = 4
+    _RGB_EDIT_MAX_LEN = 3
+    _PARK_FIELD_MAX = 9999
+    _RGB_FIELD_MAX = RGB_BYTE_MAX
+    _ROW_CONTROL_HEIGHT = 48
+    _PARK_LABEL_HEIGHT = 16
+    _ACTION_BTN_MIN_WIDTH = 104
     _EDIT_CELL_OK = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 17px; }"
+        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 18px; }"
     )
     _EDIT_CELL_ERR = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 2px solid #e04040; border-radius: 6px; font-size: 17px; }"
+        "border: 2px solid #e04040; border-radius: 6px; font-size: 18px; }"
     )
     _EDIT_PARK_OK = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 17px; }"
+        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 18px; }"
     )
     _EDIT_PARK_ERR = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 2px solid #e04040; border-radius: 6px; font-size: 17px; }"
+        "border: 2px solid #e04040; border-radius: 6px; font-size: 18px; }"
+    )
+    _EDIT_RGB_OK = (
+        "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
+        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 18px; }"
+    )
+    _EDIT_RGB_ERR = (
+        "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
+        "border: 2px solid #e04040; border-radius: 6px; font-size: 18px; }"
     )
     _BTN_SAVE_OK = (
         "QPushButton { color: #FFFFFF; background-color: #2d7a3e;"
@@ -49,36 +70,42 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         "border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }"
         "QPushButton:disabled { color: #FFFFFF; background-color: #2d7a3e; }"
     )
-    _HAL_PULSE_MS = 10_000
 
     def __init__(self):
         super().__init__()
         self.event_hal_park_save = None
+        self.event_hal_rgb_save = None
         self.event_hal_led_toggle = None
         self.event_hal_solenoid = None
         self.event_hal_lock = None
         self._hal_led_on = False
-        self._pulse_timers = {}
+        self._hal_lock_active = False
+        self._hal_lock_pending = False
+        self._hal_sol_active = False
+        self._hal_sol_pending = False
         self._keyboard_target = None
         self._keyboard_closing = False
         self._park_save_ok_timer = None
+        self._rgb_save_ok_timer = None
         self._park_edits = []
+        self._rgb_edits = []
         self.setupUi(self)
-        stretch_idx = self.layout_cell_row.indexOf(self.edit_cell_number)
-        self.layout_cell_row.setStretch(stretch_idx, 1)
         self.lbl_input_error.setText("")
         self.lbl_input_error.hide()
         self.edit_cell_number.setValidator(
             QtGui.QIntValidator(CELL_NUMBER_MIN, CELL_NUMBER_MAX, self)
         )
         self.edit_cell_number.setStyleSheet(self._EDIT_CELL_OK)
+        self._setup_cell_row_layout()
         self._setup_park_rows()
+        self._setup_rgb_rows()
         self._setup_keyboard()
         self._btn_park_save_style_normal = self.btn_hal_park_save.styleSheet()
+        self._btn_rgb_save_style_normal = self.btn_hal_rgb_save.styleSheet()
         self._btn_hal_led_style_normal = self.btn_hal_led.styleSheet()
         self._btn_hal_solenoid_style_normal = self.btn_hal_solenoid.styleSheet()
         self._btn_hal_lock_style_normal = self.btn_hal_lock.styleSheet()
-        for edit in [self.edit_cell_number, *self._park_edits]:
+        for edit in [self.edit_cell_number, *self._park_edits, *self._rgb_edits]:
             edit.setFocusPolicy(QtCore.Qt.ClickFocus)
             edit.installEventFilter(self)
         self.btn_back.clicked.connect(self._clear_input_error)
@@ -86,37 +113,138 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self.edit_cell_number.textChanged.connect(self._try_clear_error_on_valid_input)
         for edit in self._park_edits:
             edit.textChanged.connect(self._try_clear_error_on_valid_input)
+        for edit in self._rgb_edits:
+            edit.textChanged.connect(self._try_clear_error_on_valid_input)
         self.normalize_screen_geometry()
 
+    def _setup_cell_row_layout(self) -> None:
+        self.layout_cell_row.setStretch(0, 0)
+        self.layout_cell_row.setStretch(1, 1)
+        self.layout_cell_row.setStretch(2, 0)
+        self.edit_cell_number.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+        self.btn_hal_dispense_run.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+
+    def _configure_compact_edit(self, edit: QtWidgets.QLineEdit) -> None:
+        edit.setMaxLength(self._COMPACT_EDIT_MAX_LEN)
+        edit.setMinimumWidth(self._COMPACT_EDIT_MIN_WIDTH)
+        edit.setMinimumHeight(self._ROW_CONTROL_HEIGHT)
+        edit.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+        edit.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Fixed,
+        )
+        edit.setValidator(
+            QtGui.QIntValidator(MOT_STEP_MIN, self._PARK_FIELD_MAX, self)
+        )
+
     def _setup_park_rows(self):
-        layout = QtWidgets.QVBoxLayout(self.widget_park_rows)
+        layout = QtWidgets.QHBoxLayout(self.widget_park_rows)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        label_style = "color: #FFFFFF; font-size: 13px; font-weight: 600;"
+        layout.setSpacing(8)
+        label_style = (
+            "color: #FFFFFF; font-size: 13px; font-weight: 600;"
+        )
         park_rows = (
             ("M1–M2", "edit_park_m12"),
             ("M3", "edit_park_m3"),
             ("M4", "edit_park_m4"),
             ("M5", "edit_park_m5"),
         )
-        for row_i, (label, obj_name) in enumerate(park_rows):
-            row = QtWidgets.QHBoxLayout()
-            row.setSpacing(8)
+        for label, obj_name in park_rows:
+            col = QtWidgets.QVBoxLayout()
+            col.setSpacing(4)
             lbl = QtWidgets.QLabel(label, self.widget_park_rows)
-            lbl.setMinimumWidth(48)
+            lbl.setFixedHeight(self._PARK_LABEL_HEIGHT)
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
             lbl.setStyleSheet(label_style)
             edit = QtWidgets.QLineEdit(self.widget_park_rows)
             edit.setAlignment(QtCore.Qt.AlignCenter)
-            edit.setMinimumHeight(35)
             edit.setStyleSheet(self._EDIT_PARK_OK)
-            edit.setValidator(
-                QtGui.QIntValidator(MOT_STEP_MIN, MOT_STEP_MAX, self)
-            )
             edit.setObjectName(obj_name)
-            row.addWidget(lbl)
-            row.addWidget(edit, 1)
-            layout.addLayout(row)
+            self._configure_compact_edit(edit)
+            col.addWidget(lbl)
+            col.addWidget(edit)
+            layout.addLayout(col, 1)
             self._park_edits.append(edit)
+
+        save_col = QtWidgets.QVBoxLayout()
+        save_col.setSpacing(4)
+        save_spacer = QtWidgets.QLabel("", self.widget_park_rows)
+        save_spacer.setFixedHeight(self._PARK_LABEL_HEIGHT)
+        self.btn_hal_park_save.setVisible(True)
+        self.btn_hal_park_save.setMinimumWidth(self._ACTION_BTN_MIN_WIDTH)
+        self.btn_hal_park_save.setMinimumHeight(self._ROW_CONTROL_HEIGHT)
+        self.btn_hal_park_save.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+        save_col.addWidget(save_spacer)
+        save_col.addWidget(self.btn_hal_park_save)
+        layout.addLayout(save_col, 1)
+
+    def _configure_rgb_edit(self, edit: QtWidgets.QLineEdit) -> None:
+        edit.setMaxLength(self._RGB_EDIT_MAX_LEN)
+        edit.setMinimumWidth(self._COMPACT_EDIT_MIN_WIDTH)
+        edit.setMinimumHeight(self._ROW_CONTROL_HEIGHT)
+        edit.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+        edit.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Fixed,
+        )
+        edit.setValidator(
+            QtGui.QIntValidator(RGB_BYTE_MIN, self._RGB_FIELD_MAX, self)
+        )
+
+    def _setup_rgb_rows(self) -> None:
+        layout = QtWidgets.QHBoxLayout(self.widget_rgb_rows)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        label_style = (
+            "color: #FFFFFF; font-size: 13px; font-weight: 600;"
+        )
+        rgb_rows = (
+            ("R", "edit_rgb_r"),
+            ("G", "edit_rgb_g"),
+            ("B", "edit_rgb_b"),
+        )
+        for label, obj_name in rgb_rows:
+            col = QtWidgets.QVBoxLayout()
+            col.setSpacing(4)
+            lbl = QtWidgets.QLabel(label, self.widget_rgb_rows)
+            lbl.setFixedHeight(self._PARK_LABEL_HEIGHT)
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
+            lbl.setStyleSheet(label_style)
+            edit = QtWidgets.QLineEdit(self.widget_rgb_rows)
+            edit.setAlignment(QtCore.Qt.AlignCenter)
+            edit.setStyleSheet(self._EDIT_RGB_OK)
+            edit.setObjectName(obj_name)
+            self._configure_rgb_edit(edit)
+            col.addWidget(lbl)
+            col.addWidget(edit)
+            layout.addLayout(col, 1)
+            self._rgb_edits.append(edit)
+
+        save_col = QtWidgets.QVBoxLayout()
+        save_col.setSpacing(4)
+        save_spacer = QtWidgets.QLabel("", self.widget_rgb_rows)
+        save_spacer.setFixedHeight(self._PARK_LABEL_HEIGHT)
+        self.btn_hal_rgb_save.setVisible(True)
+        self.btn_hal_rgb_save.setMinimumWidth(self._ACTION_BTN_MIN_WIDTH)
+        self.btn_hal_rgb_save.setMinimumHeight(self._ROW_CONTROL_HEIGHT)
+        self.btn_hal_rgb_save.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+        save_col.addWidget(save_spacer)
+        save_col.addWidget(self.btn_hal_rgb_save)
+        layout.addLayout(save_col, 1)
+
+        toggle_col = QtWidgets.QVBoxLayout()
+        toggle_col.setSpacing(4)
+        toggle_spacer = QtWidgets.QLabel("", self.widget_rgb_rows)
+        toggle_spacer.setFixedHeight(self._PARK_LABEL_HEIGHT)
+        self.btn_hal_led.setVisible(True)
+        self.btn_hal_led.setMinimumWidth(self._ROW_CONTROL_HEIGHT)
+        self.btn_hal_led.setMaximumWidth(self._ROW_CONTROL_HEIGHT)
+        self.btn_hal_led.setMinimumHeight(self._ROW_CONTROL_HEIGHT)
+        self.btn_hal_led.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+        toggle_col.addWidget(toggle_spacer)
+        toggle_col.addWidget(self.btn_hal_led)
+        layout.addLayout(toggle_col, 0)
 
     def _park_five_texts(self):
         """Пять значений парковки: M1–M2 → park_m1 и park_m2."""
@@ -130,6 +258,11 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             (self._park_edits[2].text() or "").strip(),
             (self._park_edits[3].text() or "").strip(),
         ]
+
+    def _rgb_three_texts(self):
+        if len(self._rgb_edits) < 3:
+            return ["0", "0", "0"]
+        return [(edit.text() or "").strip() for edit in self._rgb_edits]
 
     def _setup_keyboard(self):
         self.keyboard = WidgetKeyboard()
@@ -153,8 +286,15 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
     def _is_park_input(self, obj) -> bool:
         return obj in self._park_edits
 
+    def _is_rgb_input(self, obj) -> bool:
+        return obj in self._rgb_edits
+
     def _is_numeric_input(self, obj) -> bool:
-        return obj is self.edit_cell_number or self._is_park_input(obj)
+        return (
+            obj is self.edit_cell_number
+            or self._is_park_input(obj)
+            or self._is_rgb_input(obj)
+        )
 
     def _motor_index_for_park_edit(self, edit) -> int:
         try:
@@ -169,50 +309,60 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             self._BTN_HAL_ACTIVE if active else self._btn_hal_led_style_normal
         )
 
-    def _begin_pulse(self, button: QtWidgets.QPushButton) -> None:
-        name = button.objectName()
-        timer = self._pulse_timers.get(name)
-        if timer is not None:
-            timer.stop()
-        button.setEnabled(False)
-        button.setStyleSheet(self._BTN_HAL_ACTIVE)
-        timer = QtCore.QTimer(self)
-        timer.setSingleShot(True)
-        timer.timeout.connect(
-            lambda b=button: self._end_pulse(b)
-        )
-        timer.start(self._HAL_PULSE_MS)
-        self._pulse_timers[name] = timer
+    def _is_lock_busy(self) -> bool:
+        return self._hal_lock_active or self._hal_lock_pending
 
-    def _end_pulse(self, button: QtWidgets.QPushButton) -> None:
-        name = button.objectName()
-        timer = self._pulse_timers.pop(name, None)
-        if timer is not None:
-            timer.stop()
-        if name == "btn_hal_solenoid":
-            normal = self._btn_hal_solenoid_style_normal
-        elif name == "btn_hal_lock":
-            normal = self._btn_hal_lock_style_normal
+    def _is_sol_busy(self) -> bool:
+        return self._hal_sol_active or self._hal_sol_pending
+
+    def apply_hal_actuator_state(
+        self, channel: str, active: bool, pending: bool
+    ) -> None:
+        """Слот HalPulseBridge: обновление кнопок без полного set_data."""
+        if channel == "lock":
+            self._hal_lock_active = bool(active)
+            self._hal_lock_pending = bool(pending)
+        elif channel == "sol":
+            self._hal_sol_active = bool(active)
+            self._hal_sol_pending = bool(pending)
         else:
-            normal = button.styleSheet()
-        button.setStyleSheet(normal)
-        button.setEnabled(True)
+            return
+        self._sync_actuator_buttons()
+
+    def _apply_actuator_ui(self, channel: str) -> None:
+        """Пессимистичный UI: зелёный только при active (после WAIT), disabled при busy."""
+        if channel == "lock":
+            btn = self.btn_hal_lock
+            normal = self._btn_hal_lock_style_normal
+            busy = self._is_lock_busy()
+            active = self._hal_lock_active
+        elif channel == "sol":
+            btn = self.btn_hal_solenoid
+            normal = self._btn_hal_solenoid_style_normal
+            busy = self._is_sol_busy()
+            active = self._hal_sol_active
+        else:
+            return
+        btn.setEnabled(not busy)
+        btn.setStyleSheet(self._BTN_HAL_ACTIVE if active else normal)
+
+    def _sync_actuator_buttons(self) -> None:
+        self._apply_actuator_ui("lock")
+        self._apply_actuator_ui("sol")
 
     def forward_hal_led_toggle(self) -> None:
         if callable(self.event_hal_led_toggle):
             self.event_hal_led_toggle()
 
     def forward_hal_solenoid(self) -> None:
-        if self._pulse_timers.get("btn_hal_solenoid") is not None:
+        if self._is_sol_busy():
             return
-        self._begin_pulse(self.btn_hal_solenoid)
         if callable(self.event_hal_solenoid):
             self.event_hal_solenoid()
 
     def forward_hal_lock(self) -> None:
-        if self._pulse_timers.get("btn_hal_lock") is not None:
+        if self._is_lock_busy():
             return
-        self._begin_pulse(self.btn_hal_lock)
         if callable(self.event_hal_lock):
             self.event_hal_lock()
 
@@ -224,6 +374,15 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self._clear_input_error()
         if callable(self.event_hal_park_save):
             self.event_hal_park_save()
+
+    def forward_rgb_save(self) -> None:
+        """Отправить RGB; при превышении 255 — усечь поля и предупредить."""
+        if self._clamp_rgb_inputs():
+            self._show_input_error(RGB_EXCEEDS_MAX_MESSAGE)
+            return
+        self._clear_input_error()
+        if callable(self.event_hal_rgb_save):
+            self.event_hal_rgb_save()
 
     def _clamp_park_inputs(self) -> bool:
         """Ограничить поля парковки по осям MOT."""
@@ -237,6 +396,29 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             edit.setText(new_text)
             edit.blockSignals(False)
         return any_clamped
+
+    def _clamp_rgb_inputs(self) -> bool:
+        any_clamped = False
+        for edit in self._rgb_edits:
+            new_text, clamped = clamp_rgb_text(edit.text())
+            if not clamped:
+                continue
+            any_clamped = True
+            edit.blockSignals(True)
+            edit.setText(new_text)
+            edit.blockSignals(False)
+        return any_clamped
+
+    def _clamp_rgb_edit(self, edit) -> bool:
+        if edit is None or not self._is_rgb_input(edit):
+            return False
+        new_text, clamped = clamp_rgb_text(edit.text())
+        if not clamped:
+            return False
+        edit.blockSignals(True)
+        edit.setText(new_text)
+        edit.blockSignals(False)
+        return True
 
     def _clamp_park_edit(self, edit) -> bool:
         """Усечь одно поле парковки; True, если значение превышало лимит оси."""
@@ -261,6 +443,22 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             edit.blockSignals(False)
         if self._clamp_park_edit(edit):
             self._show_input_error(MOT_EXCEEDS_MAX_MESSAGE)
+
+    def _normalize_rgb_edit_if_empty(self, edit) -> None:
+        if edit is None or not self._is_rgb_input(edit):
+            return
+        if not (edit.text() or "").strip():
+            edit.blockSignals(True)
+            edit.setText("0")
+            edit.blockSignals(False)
+        if self._clamp_rgb_edit(edit):
+            self._show_input_error(RGB_EXCEEDS_MAX_MESSAGE)
+
+    def _normalize_numeric_edit_if_empty(self, edit) -> None:
+        if self._is_park_input(edit):
+            self._normalize_park_edit_if_empty(edit)
+        elif self._is_rgb_input(edit):
+            self._normalize_rgb_edit_if_empty(edit)
 
     def _clear_field_for_entry(self, target) -> None:
         """При фокусе на поле — очистить для нового ввода."""
@@ -300,7 +498,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             self._keyboard_target is not None
             and self._keyboard_target is not target
         ):
-            self._normalize_park_edit_if_empty(self._keyboard_target)
+            self._normalize_numeric_edit_if_empty(self._keyboard_target)
         self._clear_field_for_entry(target)
         self._keyboard_target = target
         if hasattr(target, "setFocus"):
@@ -313,10 +511,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
     def _hide_keyboard(self):
         self._keyboard_closing = True
-        if self._is_park_input(self._keyboard_target):
-            self._normalize_park_edit_if_empty(self._keyboard_target)
-        else:
-            self._normalize_park_edit_if_empty(self._keyboard_target)
+        self._normalize_numeric_edit_if_empty(self._keyboard_target)
         self.keyboard.setVisible(False)
         self.btn_back.show()
         if self._keyboard_target is not None:
@@ -335,6 +530,12 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         if self._keyboard_target is self.edit_cell_number:
             _, reason = validate_cell_number_text(new_text)
             if reason:
+                return
+        elif self._is_park_input(self._keyboard_target):
+            if len(new_text) > self._COMPACT_EDIT_MAX_LEN:
+                return
+        elif self._is_rgb_input(self._keyboard_target):
+            if len(new_text) > self._RGB_EDIT_MAX_LEN:
                 return
         self._keyboard_target.setText(new_text)
         self._try_clear_error_on_valid_input()
@@ -356,7 +557,13 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                 self._EDIT_PARK_ERR if bad_index == i else self._EDIT_PARK_OK
             )
 
-    def _show_input_error(self, message: str, *, bad_park_index=None) -> None:
+    def _set_rgb_field_errors(self, bad_index=None) -> None:
+        for i, edit in enumerate(self._rgb_edits):
+            edit.setStyleSheet(
+                self._EDIT_RGB_ERR if bad_index == i else self._EDIT_RGB_OK
+            )
+
+    def _show_input_error(self, message: str, *, bad_park_index=None, bad_rgb_index=None) -> None:
         text = (message or "").strip()
         if not text:
             self._clear_input_error()
@@ -366,18 +573,26 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         if bad_park_index is not None:
             self._set_cell_field_error(False)
             self._set_park_field_errors(bad_park_index)
+            self._set_rgb_field_errors()
+        elif bad_rgb_index is not None:
+            self._set_cell_field_error(False)
+            self._set_park_field_errors()
+            self._set_rgb_field_errors(bad_rgb_index)
         elif "ячейк" in text.lower():
             self._set_cell_field_error(True)
             self._set_park_field_errors()
+            self._set_rgb_field_errors()
         else:
             self._set_cell_field_error(False)
             self._set_park_field_errors()
+            self._set_rgb_field_errors()
 
     def _clear_input_error(self) -> None:
         self.lbl_input_error.clear()
         self.lbl_input_error.hide()
         self._set_cell_field_error(False)
         self._set_park_field_errors()
+        self._set_rgb_field_errors()
 
     def _try_clear_error_on_valid_input(self) -> None:
         if not self.lbl_input_error.isVisible():
@@ -385,6 +600,10 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         err_lower = self.lbl_input_error.text().lower()
         if "ячейк" in err_lower:
             _, reason = validate_cell_number_text(self.edit_cell_number.text())
+            if reason is not None:
+                return
+        elif any(err_lower.startswith(f"{label}:") for label in ("r", "g", "b")):
+            _, _bad_index, reason = validate_rgb_texts(self._rgb_three_texts())
             if reason is not None:
                 return
         elif any(
@@ -437,6 +656,9 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             logger.warning("Не удалось прочитать park_m из БД: %s", e)
             return {}
 
+    def _park_display_value(self, val: int, mot_idx: int) -> int:
+        return min(clamp_motor_value(val, mot_idx), self._PARK_FIELD_MAX)
+
     def _load_park_current_values(self) -> None:
         profile = self._park_values_from_db()
         row_values = [
@@ -449,7 +671,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             self._park_edits, row_values, self._PARK_ROW_MOTOR_INDICES
         ):
             edit.blockSignals(True)
-            edit.setText(str(clamp_motor_value(val, mot_idx)))
+            edit.setText(str(self._park_display_value(val, mot_idx)))
             edit.setStyleSheet(self._EDIT_PARK_OK)
             edit.blockSignals(False)
 
@@ -466,8 +688,56 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             self._park_edits, row_values, self._PARK_ROW_MOTOR_INDICES
         ):
             edit.blockSignals(True)
-            edit.setText(str(clamp_motor_value(val, mot_idx)))
+            edit.setText(str(self._park_display_value(val, mot_idx)))
             edit.setStyleSheet(self._EDIT_PARK_OK)
+            edit.blockSignals(False)
+
+    def _rgb_values_from_profile(self) -> dict:
+        """RGB из hal_motion_profile (config.json) или 0,0,0."""
+        defaults = {"rgb_issue_r": 0, "rgb_issue_g": 0, "rgb_issue_b": 0}
+        try:
+            from pathlib import Path
+            import json
+
+            config_path = (
+                Path(__file__).resolve().parent.parent / "config.json"
+            )
+            if config_path.is_file():
+                cfg = json.loads(config_path.read_text(encoding="utf-8"))
+                blob = (cfg.get("hardware") or {}).get("hal_motion_profile")
+                if isinstance(blob, dict):
+                    for key in defaults:
+                        if blob.get(key) is not None:
+                            defaults[key] = int(blob[key])
+        except Exception as e:
+            logger.warning("Не удалось прочитать RGB из config.json: %s", e)
+        return defaults
+
+    def _load_rgb_current_values(self) -> None:
+        profile = self._rgb_values_from_profile()
+        values = [
+            int(profile.get("rgb_issue_r", 0)),
+            int(profile.get("rgb_issue_g", 0)),
+            int(profile.get("rgb_issue_b", 0)),
+        ]
+        for edit, val in zip(self._rgb_edits, values):
+            edit.blockSignals(True)
+            edit.setText(str(max(RGB_BYTE_MIN, min(self._RGB_FIELD_MAX, val))))
+            edit.setStyleSheet(self._EDIT_RGB_OK)
+            edit.blockSignals(False)
+
+    def _apply_rgb_values(self, data: dict) -> None:
+        if not data:
+            return
+        values = [
+            int(data.get("rgb_issue_r", 0)),
+            int(data.get("rgb_issue_g", 0)),
+            int(data.get("rgb_issue_b", 0)),
+        ]
+        for edit, val in zip(self._rgb_edits, values):
+            edit.blockSignals(True)
+            edit.setText(str(max(RGB_BYTE_MIN, min(self._RGB_FIELD_MAX, val))))
+            edit.setStyleSheet(self._EDIT_RGB_OK)
             edit.blockSignals(False)
 
     def _flash_park_save_success(self) -> None:
@@ -483,6 +753,19 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         )
         self._park_save_ok_timer.start(self._SAVE_OK_MS)
 
+    def _flash_rgb_save_success(self) -> None:
+        if self._rgb_save_ok_timer is not None:
+            self._rgb_save_ok_timer.stop()
+        self.btn_hal_rgb_save.setStyleSheet(self._BTN_SAVE_OK)
+        self._rgb_save_ok_timer = QtCore.QTimer(self)
+        self._rgb_save_ok_timer.setSingleShot(True)
+        self._rgb_save_ok_timer.timeout.connect(
+            lambda: self.btn_hal_rgb_save.setStyleSheet(
+                self._btn_rgb_save_style_normal
+            )
+        )
+        self._rgb_save_ok_timer.start(self._SAVE_OK_MS)
+
     def _dismiss_keyboard_on_show(self):
         self._keyboard_closing = False
         self._keyboard_target = None
@@ -492,10 +775,27 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self.edit_cell_number.clearFocus()
         self.setFocus(QtCore.Qt.OtherFocusReason)
 
+    def _sync_hal_actuator_state_from_app(self) -> None:
+        """При повторном входе на экран — подтянуть LOCK/SOL из action_cmd."""
+        window = self.window()
+        executor = getattr(window, "executor", None)
+        if executor is None:
+            return
+        cmd_mapper = getattr(getattr(executor, "selector", None), "mappers", {}).get("cmd")
+        if cmd_mapper is None:
+            return
+        self._hal_lock_active = bool(getattr(cmd_mapper, "_hal_lock_active", False))
+        self._hal_lock_pending = bool(getattr(cmd_mapper, "_hal_lock_pending", False))
+        self._hal_sol_active = bool(getattr(cmd_mapper, "_hal_sol_active", False))
+        self._hal_sol_pending = bool(getattr(cmd_mapper, "_hal_sol_pending", False))
+        self._sync_actuator_buttons()
+
     def showEvent(self, event):
         super().showEvent(event)
         self._dismiss_keyboard_on_show()
         self._load_park_current_values()
+        self._load_rgb_current_values()
+        self._sync_hal_actuator_state_from_app()
 
     def hideEvent(self, event):
         self._keyboard_closing = False
@@ -512,13 +812,22 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                     break
         if err_msg:
             bad_park = None
+            bad_rgb = None
             err_lower = str(err_msg).lower()
             _mot_to_park_row = {0: 0, 1: 0, 2: 1, 3: 2, 4: 3}
             for i in range(1, 6):
                 if f"m{i}" in err_lower:
                     bad_park = _mot_to_park_row.get(i - 1)
                     break
-            self._show_input_error(str(err_msg), bad_park_index=bad_park)
+            for i, label in enumerate(("r", "g", "b")):
+                if err_lower.startswith(f"{label}:") or f" {label}:" in err_lower:
+                    bad_rgb = i
+                    break
+            self._show_input_error(
+                str(err_msg),
+                bad_park_index=bad_park,
+                bad_rgb_index=bad_rgb,
+            )
         else:
             self._clear_input_error()
 
@@ -542,6 +851,22 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         if kwargs.get("hal_park_save_ok"):
             self._flash_park_save_success()
 
+        if kwargs.get("hal_rgb_save_ok"):
+            self._flash_rgb_save_success()
+
+        rgb_data = {}
+        for key in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b"):
+            if key in kwargs:
+                rgb_data[key] = kwargs[key]
+        if not rgb_data and args:
+            for a in args:
+                if isinstance(a, dict):
+                    for key in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b"):
+                        if key in a:
+                            rgb_data[key] = a[key]
+        if rgb_data:
+            self._apply_rgb_values(rgb_data)
+
         if "hal_led_on" in kwargs:
             self._set_hal_led_style(bool(kwargs["hal_led_on"]))
         else:
@@ -550,16 +875,20 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                     self._set_hal_led_style(bool(a["hal_led_on"]))
                     break
 
-        cancel = kwargs.get("hal_pulse_cancel")
-        if cancel is None:
-            for a in args:
-                if isinstance(a, dict) and "hal_pulse_cancel" in a:
-                    cancel = a["hal_pulse_cancel"]
-                    break
-        if cancel == "solenoid":
-            self._end_pulse(self.btn_hal_solenoid)
-        elif cancel == "lock":
-            self._end_pulse(self.btn_hal_lock)
+        for key, attr in (
+            ("hal_lock_active", "_hal_lock_active"),
+            ("hal_lock_pending", "_hal_lock_pending"),
+            ("hal_sol_active", "_hal_sol_active"),
+            ("hal_sol_pending", "_hal_sol_pending"),
+        ):
+            if key in kwargs:
+                setattr(self, attr, bool(kwargs[key]))
+            else:
+                for a in args:
+                    if isinstance(a, dict) and key in a:
+                        setattr(self, attr, bool(a[key]))
+                        break
+        self._sync_actuator_buttons()
 
         prefill = kwargs.get("engineer_cell_number")
         if prefill is None and args:
@@ -578,8 +907,11 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         positions, _bad_index, _reason = validate_motor_position_texts(
             self._park_five_texts()
         )
+        rgb, _rgb_bad, _rgb_reason = validate_rgb_texts(self._rgb_three_texts())
         data = {"engineer_cell_number": number, "number": number}
         if positions is not None:
             for i, val in enumerate(positions, start=1):
                 data[f"park_m{i}"] = val
+        if rgb is not None:
+            data["rgb_issue_r"], data["rgb_issue_g"], data["rgb_issue_b"] = rgb
         return data

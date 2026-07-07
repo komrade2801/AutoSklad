@@ -2,20 +2,20 @@ import queue
 import threading
 import time
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 
 import serial
 from PyQt5.QtCore import QObject, pyqtSignal
 
 
-# no_block_plata.ino: ZERO / MOT,* → WAIT then DONE; LED/RGB → DONE only;
-# LOCK,SOL → blocking delay then DONE (no line until then).
+# SPEEDx2 / no_block_plata: ZERO / MOT,* → WAIT then DONE or DONE ZERO / DONE MOT;
+# LED/RGB → DONE or DONE LED / DONE RGB; LOCK,SOL → WAIT then DONE LOCK / DONE SOL.
 
 
 @dataclass
 class CommandContext:
     command: str
-    """two_phase | done_only | blocking_done | ok_ack (legacy short OK)."""
+    """two_phase | done_only | pulse_ack | ok_ack (legacy short OK)."""
     mode: str
     sent_at: float
     ack_deadline: float
@@ -23,14 +23,22 @@ class CommandContext:
     acked: bool = False
 
 
+@dataclass
+class PendingPulse:
+    command: str
+    channel: str
+    ms: int
+    accepted_at: float
+
+
 class VendingSerialManager(threading.Thread, QObject):
     """
-    Line-based UART HAL for no_block_plata.ino.
+    Line-based UART HAL for ATmega firmware.
 
     Responses (text + \\n):
-    - ZERO / MOT,* : WAIT (ack) then DONE or ERROR
-    - LED,* / RGB,* : DONE (or ERROR) immediately, no WAIT/OK
-    - LOCK,ms / SOL,ms : silence until delay(ms) on MCU, then DONE
+    - ZERO / MOT,* : WAIT (ack) then DONE / DONE ZERO / DONE MOT or ERROR
+    - LED,* / RGB,* : DONE / DONE LED / DONE RGB (or ERROR), no WAIT/OK
+    - LOCK,ms / SOL,ms : WAIT (ack), затем DONE LOCK / DONE SOL по таймеру на MCU
     - Optional legacy: OK as ack for long ops; LOCK0/LOCK1 → LOCK OFF/ON lines
     """
 
@@ -51,6 +59,9 @@ class VendingSerialManager(threading.Thread, QObject):
 
     # Legacy/FSM bridge events for future easy integration
     fsm_trigger = pyqtSignal(str)  # command_is_send / command_ok / err_devices
+
+    # pulse_ack: WAIT принят, TX свободен; финал — command_finished(..., "done")
+    command_accepted = pyqtSignal(str)
 
     # Correlation: one emission per logical completion of the in-flight UART command.
     # outcome: ok_short | done | error | timeout_ack | timeout_done
@@ -87,12 +98,13 @@ class VendingSerialManager(threading.Thread, QObject):
         # Outbound queue and current command state
         self._tx_queue: "queue.Queue[str]" = queue.Queue()
         self._ctx: Optional[CommandContext] = None
+        self._pending_pulses: Dict[str, PendingPulse] = {}
 
     # -----------------------------
     # Public API (for future usage)
     # -----------------------------
     def is_hardware_busy(self) -> bool:
-        """True, если в очереди или на проводе есть HAL-команда (ожидание платы)."""
+        """True, если в очереди или на проводе есть HAL-команда (ожидание WAIT/ответа)."""
         return self._ctx is not None or not self._tx_queue.empty()
 
     def enqueue_command(self, command: str, is_long: Optional[bool] = None) -> None:
@@ -166,7 +178,7 @@ class VendingSerialManager(threading.Thread, QObject):
         if not self.serial_conn or not self.serial_conn.is_open:
             return
 
-        # Strict serialization: only one in-flight command.
+        # Strict serialization: only one in-flight command awaiting first response.
         if self._ctx is not None:
             return
 
@@ -208,6 +220,14 @@ class VendingSerialManager(threading.Thread, QObject):
     # -----------------------------
     # Protocol handling
     # -----------------------------
+    @staticmethod
+    def _pulse_channel(cmd_upper: str) -> Optional[str]:
+        if cmd_upper.startswith("LOCK,"):
+            return "lock"
+        if cmd_upper.startswith("SOL,"):
+            return "sol"
+        return None
+
     def _parse_blocking_ms(self, cmd_upper: str) -> int:
         if "," not in cmd_upper:
             return 0
@@ -224,10 +244,11 @@ class VendingSerialManager(threading.Thread, QObject):
                 command=cmd, mode="done_only", sent_at=now, ack_deadline=ddl, done_deadline=ddl
             )
         if u.startswith("LOCK,") or u.startswith("SOL,"):
-            ms = self._parse_blocking_ms(u)
-            ddl = now + max(self.ack_timeout_s, ms / 1000.0 + self.blocking_margin_s)
             return CommandContext(
-                command=cmd, mode="blocking_done", sent_at=now, ack_deadline=ddl, done_deadline=ddl
+                command=cmd,
+                mode="pulse_ack",
+                sent_at=now,
+                ack_deadline=now + self.ack_timeout_s,
             )
         if u in ("LOCK0", "LOCK1"):
             return CommandContext(
@@ -250,12 +271,20 @@ class VendingSerialManager(threading.Thread, QObject):
             self._on_wait_or_ok("OK")
             return
 
-        if line == "DONE":
+        if line == "DONE LOCK":
+            self._on_tagged_pulse_done("lock")
+            return
+
+        if line == "DONE SOL":
+            self._on_tagged_pulse_done("sol")
+            return
+
+        if self._is_command_done_line(line):
             self.event_done.emit()
             self._on_done_line()
             return
 
-        if line == "ERROR":
+        if line == "ERROR" or line.startswith("ERROR"):
             self.event_error.emit("device_error")
             if self.bridge_error_to_fsm:
                 self.fsm_trigger.emit("err_devices")
@@ -286,6 +315,19 @@ class VendingSerialManager(threading.Thread, QObject):
 
         self.unknown_line.emit(line)
         self.debug_log.emit(f"Unknown line: {line}")
+
+    @staticmethod
+    def _is_command_done_line(line: str) -> bool:
+        """
+        Завершение ZERO/MOT/LED/RGB: plain DONE или tagged (SPEEDx2 прошивка).
+        DONE LOCK / DONE SOL обрабатываются отдельно (импульсы).
+        """
+        if line == "DONE":
+            return True
+        if not line.startswith("DONE "):
+            return False
+        tag = line[5:].strip().upper()
+        return tag in ("ZERO", "MOT", "RGB", "LED")
 
     def _parse_sensor(self, line: str) -> Optional[tuple]:
         # Expected: SENS1_0 ... SENS6_1
@@ -319,6 +361,26 @@ class VendingSerialManager(threading.Thread, QObject):
             if self.bridge_ok_to_fsm:
                 self.fsm_trigger.emit("command_is_send")
             return
+        if mode == "pulse_ack" and line == "WAIT":
+            cmd = self._ctx.command
+            u = cmd.upper()
+            channel = self._pulse_channel(u)
+            if channel is None:
+                self.debug_log.emit(f"pulse_ack without channel: {cmd!r}")
+                return
+            ms = self._parse_blocking_ms(u)
+            self._pending_pulses[channel] = PendingPulse(
+                command=cmd,
+                channel=channel,
+                ms=ms,
+                accepted_at=time.monotonic(),
+            )
+            self.event_ok.emit()
+            if self.bridge_ok_to_fsm:
+                self.fsm_trigger.emit("command_is_send")
+            self.command_accepted.emit(cmd)
+            self._release_tx_after_accept()
+            return
         if mode == "ok_ack" and line == "OK":
             self.event_ok.emit()
             if self.bridge_ok_to_fsm:
@@ -326,6 +388,16 @@ class VendingSerialManager(threading.Thread, QObject):
             self._clear_inflight("ok_short")
             return
         self.debug_log.emit(f"Ignored {line!r} for mode={mode} cmd={self._ctx.command!r}")
+
+    def _on_tagged_pulse_done(self, channel: str) -> None:
+        self.event_done.emit()
+        pending = self._pending_pulses.pop(channel, None)
+        if pending is None:
+            self.debug_log.emit(f"DONE {channel.upper()} without pending pulse")
+            return
+        if self.bridge_done_to_fsm:
+            self.fsm_trigger.emit("command_ok")
+        self.command_finished.emit(pending.command, "done")
 
     def _on_done_line(self) -> None:
         if self._ctx is None:
@@ -340,12 +412,17 @@ class VendingSerialManager(threading.Thread, QObject):
                 self.fsm_trigger.emit("command_ok")
             self._clear_inflight("done")
             return
-        if mode in ("done_only", "blocking_done"):
+        if mode == "done_only":
             if self.bridge_done_to_fsm:
                 self.fsm_trigger.emit("command_ok")
             self._clear_inflight("done")
             return
         self.debug_log.emit(f"Unexpected DONE in mode={mode}")
+
+    def _release_tx_after_accept(self) -> None:
+        if self._ctx is not None:
+            self.debug_log.emit(f"TX released after accept: {self._ctx.command}")
+        self._ctx = None
 
     def _clear_inflight(self, reason: str) -> None:
         old_cmd = self._ctx.command if self._ctx else ""
@@ -378,7 +455,7 @@ class VendingSerialManager(threading.Thread, QObject):
                 self._clear_inflight("timeout_done")
             return
 
-        if ctx.mode in ("done_only", "blocking_done"):
+        if ctx.mode == "done_only":
             if ctx.done_deadline is not None and now > ctx.done_deadline:
                 self.event_timeout.emit("timeout_done")
                 self.event_error.emit("timeout_done")
@@ -387,10 +464,11 @@ class VendingSerialManager(threading.Thread, QObject):
                 self._clear_inflight("timeout_done")
             return
 
-        if ctx.mode == "ok_ack":
-            if not ctx.acked and now > ctx.ack_deadline:
+        if ctx.mode in ("pulse_ack", "ok_ack"):
+            if now > ctx.ack_deadline:
                 self.event_timeout.emit("timeout_ack")
                 self.event_error.emit("timeout_ack")
                 if self.bridge_error_to_fsm:
                     self.fsm_trigger.emit("err_devices")
                 self._clear_inflight("timeout_ack")
+            return
