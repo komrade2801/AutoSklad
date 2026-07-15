@@ -12,11 +12,16 @@ from EventsSystem.hal_coords import (
     clamp_motor_text,
     clamp_motor_value,
     clamp_rgb_text,
+    clamp_sol_s_text,
     message_for_reason,
     rgb_channel_label,
+    SOL_S_DEFAULT,
+    SOL_S_MAX,
+    SOL_S_MIN,
     validate_cell_number_text,
     validate_motor_position_texts,
     validate_rgb_texts,
+    validate_sol_s_text,
 )
 from GUI.BaseScreen import BaseScreen
 from GUI.ui_classes.Ui_screen_40_hal_dispense import Ui_screen_40_hal_dispense
@@ -30,8 +35,11 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
     _KEYBOARD_CLOSE_MS = 350
     _SAVE_OK_MS = 3000
     _COMPACT_EDIT_MIN_WIDTH = 52
+    _RGB_EDIT_MIN_WIDTH = 40
+    _RGB_ROW_CONTROL_HEIGHT = 40
     _COMPACT_EDIT_MAX_LEN = 4
     _RGB_EDIT_MAX_LEN = 3
+    _SOL_EDIT_MAX_LEN = 2
     _PARK_FIELD_MAX = 9999
     _RGB_FIELD_MAX = RGB_BYTE_MAX
     _ROW_CONTROL_HEIGHT = 48
@@ -55,11 +63,19 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
     )
     _EDIT_RGB_OK = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 18px; }"
+        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 15px; }"
     )
     _EDIT_RGB_ERR = (
         "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
-        "border: 2px solid #e04040; border-radius: 6px; font-size: 18px; }"
+        "border: 2px solid #e04040; border-radius: 6px; font-size: 15px; }"
+    )
+    _EDIT_SOL_OK = (
+        "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
+        "border: 1px solid #4a6a8a; border-radius: 6px; font-size: 16px; }"
+    )
+    _EDIT_SOL_ERR = (
+        "QLineEdit { color: #FFFFFF; background-color: #1e3350;"
+        "border: 2px solid #e04040; border-radius: 6px; font-size: 16px; }"
     )
     _BTN_SAVE_OK = (
         "QPushButton { color: #FFFFFF; background-color: #2d7a3e;"
@@ -70,11 +86,21 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         "border-radius: 8px; font-size: 19px; font-weight: 600; min-height: 43px; }"
         "QPushButton:disabled { color: #FFFFFF; background-color: #2d7a3e; }"
     )
+    _BTN_SOL_SAVE_NORMAL = (
+        "QPushButton { color: #FFFFFF; background-color: #f09022;"
+        "border-radius: 6px; font-size: 11px; font-weight: 600; padding: 0px; }"
+    )
+    _BTN_SOL_SAVE_OK = (
+        "QPushButton { color: #FFFFFF; background-color: #2d7a3e;"
+        "border-radius: 6px; font-size: 11px; font-weight: 600; padding: 0px; }"
+    )
+    _SOL_CONTROL_WIDTH = 72
 
     def __init__(self):
         super().__init__()
         self.event_hal_park_save = None
         self.event_hal_rgb_save = None
+        self.event_hal_sol_save = None
         self.event_hal_led_toggle = None
         self.event_hal_solenoid = None
         self.event_hal_lock = None
@@ -87,8 +113,10 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self._keyboard_closing = False
         self._park_save_ok_timer = None
         self._rgb_save_ok_timer = None
+        self._sol_save_ok_timer = None
         self._park_edits = []
         self._rgb_edits = []
+        self.edit_sol_s = None
         self.setupUi(self)
         self.lbl_input_error.setText("")
         self.lbl_input_error.hide()
@@ -99,15 +127,20 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self._setup_cell_row_layout()
         self._setup_park_rows()
         self._setup_rgb_rows()
+        self._setup_sol_time_row()
         self._setup_keyboard()
         self._btn_park_save_style_normal = self.btn_hal_park_save.styleSheet()
         self._btn_rgb_save_style_normal = self.btn_hal_rgb_save.styleSheet()
+        self._btn_sol_save_style_normal = self._BTN_SOL_SAVE_NORMAL
         self._btn_hal_led_style_normal = self.btn_hal_led.styleSheet()
         self._btn_hal_solenoid_style_normal = self.btn_hal_solenoid.styleSheet()
         self._btn_hal_lock_style_normal = self.btn_hal_lock.styleSheet()
         for edit in [self.edit_cell_number, *self._park_edits, *self._rgb_edits]:
             edit.setFocusPolicy(QtCore.Qt.ClickFocus)
             edit.installEventFilter(self)
+        if self.edit_sol_s is not None:
+            self.edit_sol_s.setFocusPolicy(QtCore.Qt.ClickFocus)
+            self.edit_sol_s.installEventFilter(self)
         self.btn_back.clicked.connect(self._clear_input_error)
         self.btn_hal_dispense_run.clicked.connect(self._clear_input_error)
         self.edit_cell_number.textChanged.connect(self._try_clear_error_on_valid_input)
@@ -115,6 +148,8 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             edit.textChanged.connect(self._try_clear_error_on_valid_input)
         for edit in self._rgb_edits:
             edit.textChanged.connect(self._try_clear_error_on_valid_input)
+        if self.edit_sol_s is not None:
+            self.edit_sol_s.textChanged.connect(self._try_clear_error_on_valid_input)
         self.normalize_screen_geometry()
 
     def _setup_cell_row_layout(self) -> None:
@@ -181,9 +216,10 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
     def _configure_rgb_edit(self, edit: QtWidgets.QLineEdit) -> None:
         edit.setMaxLength(self._RGB_EDIT_MAX_LEN)
-        edit.setMinimumWidth(self._COMPACT_EDIT_MIN_WIDTH)
-        edit.setMinimumHeight(self._ROW_CONTROL_HEIGHT)
-        edit.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
+        edit.setMinimumWidth(self._RGB_EDIT_MIN_WIDTH)
+        edit.setMaximumWidth(56)
+        edit.setMinimumHeight(self._RGB_ROW_CONTROL_HEIGHT)
+        edit.setMaximumHeight(self._RGB_ROW_CONTROL_HEIGHT)
         edit.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding,
             QtWidgets.QSizePolicy.Fixed,
@@ -218,7 +254,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             self._configure_rgb_edit(edit)
             col.addWidget(lbl)
             col.addWidget(edit)
-            layout.addLayout(col, 1)
+            layout.addLayout(col, 0)
             self._rgb_edits.append(edit)
 
         save_col = QtWidgets.QVBoxLayout()
@@ -238,13 +274,44 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         toggle_spacer = QtWidgets.QLabel("", self.widget_rgb_rows)
         toggle_spacer.setFixedHeight(self._PARK_LABEL_HEIGHT)
         self.btn_hal_led.setVisible(True)
-        self.btn_hal_led.setMinimumWidth(self._ROW_CONTROL_HEIGHT)
-        self.btn_hal_led.setMaximumWidth(self._ROW_CONTROL_HEIGHT)
+        self.btn_hal_led.setText("LED")
+        self.btn_hal_led.setIcon(QtGui.QIcon())
+        self.btn_hal_led.setMinimumWidth(56)
+        self.btn_hal_led.setMaximumWidth(16777215)
         self.btn_hal_led.setMinimumHeight(self._ROW_CONTROL_HEIGHT)
         self.btn_hal_led.setMaximumHeight(self._ROW_CONTROL_HEIGHT)
         toggle_col.addWidget(toggle_spacer)
         toggle_col.addWidget(self.btn_hal_led)
         layout.addLayout(toggle_col, 0)
+
+    def _setup_sol_time_row(self) -> None:
+        layout = QtWidgets.QHBoxLayout(self.widget_sol_time_row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        layout.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+
+        self.edit_sol_s = QtWidgets.QLineEdit(self.widget_sol_time_row)
+        self.edit_sol_s.setObjectName("edit_sol_s")
+        self.edit_sol_s.setAlignment(QtCore.Qt.AlignCenter)
+        self.edit_sol_s.setStyleSheet(self._EDIT_SOL_OK)
+        self.edit_sol_s.setMaxLength(self._SOL_EDIT_MAX_LEN)
+        self.edit_sol_s.setFixedSize(
+            self._SOL_CONTROL_WIDTH,
+            self._RGB_ROW_CONTROL_HEIGHT,
+        )
+        self.edit_sol_s.setValidator(
+            QtGui.QIntValidator(SOL_S_MIN, SOL_S_MAX, self)
+        )
+        layout.addWidget(self.edit_sol_s, 0, QtCore.Qt.AlignLeft)
+
+        self.btn_hal_sol_save.setVisible(True)
+        self.btn_hal_sol_save.setStyleSheet(self._BTN_SOL_SAVE_NORMAL)
+        self.btn_hal_sol_save.setFixedSize(
+            self._SOL_CONTROL_WIDTH,
+            self._RGB_ROW_CONTROL_HEIGHT,
+        )
+        layout.addWidget(self.btn_hal_sol_save, 0, QtCore.Qt.AlignLeft)
+        layout.addStretch(1)
 
     def _park_five_texts(self):
         """Пять значений парковки: M1–M2 → park_m1 и park_m2."""
@@ -289,11 +356,15 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
     def _is_rgb_input(self, obj) -> bool:
         return obj in self._rgb_edits
 
+    def _is_sol_input(self, obj) -> bool:
+        return obj is self.edit_sol_s
+
     def _is_numeric_input(self, obj) -> bool:
         return (
             obj is self.edit_cell_number
             or self._is_park_input(obj)
             or self._is_rgb_input(obj)
+            or self._is_sol_input(obj)
         )
 
     def _motor_index_for_park_edit(self, edit) -> int:
@@ -384,6 +455,14 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         if callable(self.event_hal_rgb_save):
             self.event_hal_rgb_save()
 
+    def forward_sol_save(self) -> None:
+        if self._clamp_sol_input():
+            self._show_input_error("Превышено максимальное значение", bad_sol=True)
+            return
+        self._clear_input_error()
+        if callable(self.event_hal_sol_save):
+            self.event_hal_sol_save()
+
     def _clamp_park_inputs(self) -> bool:
         """Ограничить поля парковки по осям MOT."""
         any_clamped = False
@@ -408,6 +487,17 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             edit.setText(new_text)
             edit.blockSignals(False)
         return any_clamped
+
+    def _clamp_sol_input(self) -> bool:
+        if self.edit_sol_s is None:
+            return False
+        new_text, clamped = clamp_sol_s_text(self.edit_sol_s.text())
+        if not clamped:
+            return False
+        self.edit_sol_s.blockSignals(True)
+        self.edit_sol_s.setText(new_text)
+        self.edit_sol_s.blockSignals(False)
+        return True
 
     def _clamp_rgb_edit(self, edit) -> bool:
         if edit is None or not self._is_rgb_input(edit):
@@ -454,11 +544,26 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         if self._clamp_rgb_edit(edit):
             self._show_input_error(RGB_EXCEEDS_MAX_MESSAGE)
 
+    def _normalize_sol_edit_if_empty(self) -> None:
+        if self.edit_sol_s is None:
+            return
+        if not (self.edit_sol_s.text() or "").strip():
+            self.edit_sol_s.blockSignals(True)
+            self.edit_sol_s.setText(str(SOL_S_DEFAULT))
+            self.edit_sol_s.blockSignals(False)
+        if self._clamp_sol_input():
+            self._show_input_error(
+                f"SOL: допустимо {SOL_S_MIN}…{SOL_S_MAX}",
+                bad_sol=True,
+            )
+
     def _normalize_numeric_edit_if_empty(self, edit) -> None:
         if self._is_park_input(edit):
             self._normalize_park_edit_if_empty(edit)
         elif self._is_rgb_input(edit):
             self._normalize_rgb_edit_if_empty(edit)
+        elif self._is_sol_input(edit):
+            self._normalize_sol_edit_if_empty()
 
     def _clear_field_for_entry(self, target) -> None:
         """При фокусе на поле — очистить для нового ввода."""
@@ -537,6 +642,12 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         elif self._is_rgb_input(self._keyboard_target):
             if len(new_text) > self._RGB_EDIT_MAX_LEN:
                 return
+        elif self._is_sol_input(self._keyboard_target):
+            if len(new_text) > self._SOL_EDIT_MAX_LEN:
+                return
+            _, reason = validate_sol_s_text(new_text)
+            if reason:
+                return
         self._keyboard_target.setText(new_text)
         self._try_clear_error_on_valid_input()
 
@@ -563,7 +674,21 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                 self._EDIT_RGB_ERR if bad_index == i else self._EDIT_RGB_OK
             )
 
-    def _show_input_error(self, message: str, *, bad_park_index=None, bad_rgb_index=None) -> None:
+    def _set_sol_field_error(self, active: bool) -> None:
+        if self.edit_sol_s is None:
+            return
+        self.edit_sol_s.setStyleSheet(
+            self._EDIT_SOL_ERR if active else self._EDIT_SOL_OK
+        )
+
+    def _show_input_error(
+        self,
+        message: str,
+        *,
+        bad_park_index=None,
+        bad_rgb_index=None,
+        bad_sol=False,
+    ) -> None:
         text = (message or "").strip()
         if not text:
             self._clear_input_error()
@@ -574,18 +699,27 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             self._set_cell_field_error(False)
             self._set_park_field_errors(bad_park_index)
             self._set_rgb_field_errors()
+            self._set_sol_field_error(False)
         elif bad_rgb_index is not None:
             self._set_cell_field_error(False)
             self._set_park_field_errors()
             self._set_rgb_field_errors(bad_rgb_index)
+            self._set_sol_field_error(False)
+        elif bad_sol:
+            self._set_cell_field_error(False)
+            self._set_park_field_errors()
+            self._set_rgb_field_errors()
+            self._set_sol_field_error(True)
         elif "ячейк" in text.lower():
             self._set_cell_field_error(True)
             self._set_park_field_errors()
             self._set_rgb_field_errors()
+            self._set_sol_field_error(False)
         else:
             self._set_cell_field_error(False)
             self._set_park_field_errors()
             self._set_rgb_field_errors()
+            self._set_sol_field_error(False)
 
     def _clear_input_error(self) -> None:
         self.lbl_input_error.clear()
@@ -593,6 +727,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self._set_cell_field_error(False)
         self._set_park_field_errors()
         self._set_rgb_field_errors()
+        self._set_sol_field_error(False)
 
     def _try_clear_error_on_valid_input(self) -> None:
         if not self.lbl_input_error.isVisible():
@@ -604,6 +739,12 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                 return
         elif any(err_lower.startswith(f"{label}:") for label in ("r", "g", "b")):
             _, _bad_index, reason = validate_rgb_texts(self._rgb_three_texts())
+            if reason is not None:
+                return
+        elif err_lower.startswith("sol:"):
+            _, reason = validate_sol_s_text(
+                self.edit_sol_s.text() if self.edit_sol_s is not None else ""
+            )
             if reason is not None:
                 return
         elif any(
@@ -713,6 +854,48 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             logger.warning("Не удалось прочитать RGB из config.json: %s", e)
         return defaults
 
+    def _sol_value_from_db(self) -> int:
+        try:
+            from DB.Data.db import SessionLocal, engine
+            from DB.Engine.DeviceConfigCRUD import EngineDeviceConfig
+            from DB.Engine.HardwareConfigCRUD import EngineHardwareConfig
+
+            session = SessionLocal(engine())
+            try:
+                device_cfg = EngineDeviceConfig(session).get_active()
+                if not device_cfg:
+                    return SOL_S_DEFAULT
+                hw_cfg = EngineHardwareConfig(session).get_by_device(device_cfg.id)
+                if not hw_cfg:
+                    return SOL_S_DEFAULT
+                return max(
+                    SOL_S_MIN,
+                    min(SOL_S_MAX, int(getattr(hw_cfg, "sol_s_default", SOL_S_DEFAULT))),
+                )
+            finally:
+                session.close()
+        except Exception as e:
+            logger.warning("Не удалось прочитать sol_s из БД: %s", e)
+            return SOL_S_DEFAULT
+
+    def _load_sol_current_value(self) -> None:
+        if self.edit_sol_s is None:
+            return
+        value = self._sol_value_from_db()
+        self.edit_sol_s.blockSignals(True)
+        self.edit_sol_s.setText(str(value))
+        self.edit_sol_s.setStyleSheet(self._EDIT_SOL_OK)
+        self.edit_sol_s.blockSignals(False)
+
+    def _apply_sol_value(self, value: int) -> None:
+        if self.edit_sol_s is None:
+            return
+        clamped = max(SOL_S_MIN, min(SOL_S_MAX, int(value)))
+        self.edit_sol_s.blockSignals(True)
+        self.edit_sol_s.setText(str(clamped))
+        self.edit_sol_s.setStyleSheet(self._EDIT_SOL_OK)
+        self.edit_sol_s.blockSignals(False)
+
     def _load_rgb_current_values(self) -> None:
         profile = self._rgb_values_from_profile()
         values = [
@@ -766,6 +949,19 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         )
         self._rgb_save_ok_timer.start(self._SAVE_OK_MS)
 
+    def _flash_sol_save_success(self) -> None:
+        if self._sol_save_ok_timer is not None:
+            self._sol_save_ok_timer.stop()
+        self.btn_hal_sol_save.setStyleSheet(self._BTN_SOL_SAVE_OK)
+        self._sol_save_ok_timer = QtCore.QTimer(self)
+        self._sol_save_ok_timer.setSingleShot(True)
+        self._sol_save_ok_timer.timeout.connect(
+            lambda: self.btn_hal_sol_save.setStyleSheet(
+                self._btn_sol_save_style_normal
+            )
+        )
+        self._sol_save_ok_timer.start(self._SAVE_OK_MS)
+
     def _dismiss_keyboard_on_show(self):
         self._keyboard_closing = False
         self._keyboard_target = None
@@ -795,6 +991,7 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         self._dismiss_keyboard_on_show()
         self._load_park_current_values()
         self._load_rgb_current_values()
+        self._load_sol_current_value()
         self._sync_hal_actuator_state_from_app()
 
     def hideEvent(self, event):
@@ -823,10 +1020,12 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                 if err_lower.startswith(f"{label}:") or f" {label}:" in err_lower:
                     bad_rgb = i
                     break
+            bad_sol = err_lower.startswith("sol:")
             self._show_input_error(
                 str(err_msg),
                 bad_park_index=bad_park,
                 bad_rgb_index=bad_rgb,
+                bad_sol=bad_sol,
             )
         else:
             self._clear_input_error()
@@ -853,6 +1052,17 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
 
         if kwargs.get("hal_rgb_save_ok"):
             self._flash_rgb_save_success()
+
+        if kwargs.get("hal_sol_save_ok"):
+            self._flash_sol_save_success()
+
+        if "sol_s" in kwargs:
+            self._apply_sol_value(int(kwargs["sol_s"]))
+        elif args:
+            for a in args:
+                if isinstance(a, dict) and "sol_s" in a:
+                    self._apply_sol_value(int(a["sol_s"]))
+                    break
 
         rgb_data = {}
         for key in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b"):
@@ -914,4 +1124,8 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
                 data[f"park_m{i}"] = val
         if rgb is not None:
             data["rgb_issue_r"], data["rgb_issue_g"], data["rgb_issue_b"] = rgb
+        if self.edit_sol_s is not None:
+            sol_s, _reason = validate_sol_s_text(self.edit_sol_s.text())
+            if sol_s is not None:
+                data["sol_s"] = sol_s
         return data

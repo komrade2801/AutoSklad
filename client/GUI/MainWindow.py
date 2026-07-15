@@ -202,6 +202,32 @@ class MainWindow(QtWidgets.QWidget):
                 self.button_signals[btn.objectName()] = btn.clicked
         self._bind_engineer_screen_events()
 
+    def _bind_hal_terminal_events(self):
+        s42 = self.widgets.get("screen_42_hal_terminal")
+        if s42 is None:
+            return
+        if self.executor is not None:
+            s42.attach_executor(self.executor)
+        try:
+            s42.edit_cmd.returnPressed.disconnect()
+        except (TypeError, RuntimeError):
+            pass
+        s42.edit_cmd.returnPressed.connect(s42.on_command_entered)
+        btn_clear = s42.findChild(QtWidgets.QPushButton, "btn_clear")
+        if btn_clear is not None:
+            try:
+                btn_clear.clicked.disconnect()
+            except (TypeError, RuntimeError):
+                pass
+            btn_clear.clicked.connect(s42.clear_log)
+        btn_help = s42.findChild(QtWidgets.QPushButton, "btn_help")
+        if btn_help is not None:
+            try:
+                btn_help.clicked.disconnect()
+            except (TypeError, RuntimeError):
+                pass
+            btn_help.clicked.connect(s42.show_help)
+
     def _bind_engineer_screen_events(self):
         s38 = self.widgets.get("screen_38_hal_coords")
         if s38 is not None:
@@ -222,12 +248,14 @@ class MainWindow(QtWidgets.QWidget):
         if s40 is not None:
             s40.event_hal_park_save = self._on_hal_park_save_clicked
             s40.event_hal_rgb_save = self._on_hal_rgb_save_clicked
+            s40.event_hal_sol_save = self._on_hal_sol_save_clicked
             s40.event_hal_led_toggle = self._on_hal_led_toggle_clicked
             s40.event_hal_solenoid = self._on_hal_solenoid_clicked
             s40.event_hal_lock = self._on_hal_lock_clicked
             for btn_name, handler in (
                 ("btn_hal_park_save", s40.forward_park_save),
                 ("btn_hal_rgb_save", s40.forward_rgb_save),
+                ("btn_hal_sol_save", s40.forward_sol_save),
                 ("btn_hal_led", s40.forward_hal_led_toggle),
                 ("btn_hal_solenoid", s40.forward_hal_solenoid),
                 ("btn_hal_lock", s40.forward_hal_lock),
@@ -235,12 +263,16 @@ class MainWindow(QtWidgets.QWidget):
                 btn = s40.findChild(QtWidgets.QPushButton, btn_name)
                 if btn is not None:
                     btn.clicked.connect(lambda checked=False, h=handler: h())
+        self._bind_hal_terminal_events()
 
     def _on_hal_park_save_clicked(self):
         self.button_clicked("btn_hal_park_save", "write_db_hal_park_defaults")
 
     def _on_hal_rgb_save_clicked(self):
         self.button_clicked("btn_hal_rgb_save", "cmd_hal_rgb")
+
+    def _on_hal_sol_save_clicked(self):
+        self.button_clicked("btn_hal_sol_save", "write_db_hal_sol_s_default")
 
     def _on_hal_led_toggle_clicked(self):
         self.button_clicked("btn_hal_led", "cmd_hal_led_toggle")
@@ -303,6 +335,7 @@ class MainWindow(QtWidgets.QWidget):
         if source == "screen_40_hal_dispense" and trigger in (
             "btn_hal_park_save",
             "btn_hal_rgb_save",
+            "btn_hal_sol_save",
             "btn_hal_led",
             "btn_hal_solenoid",
             "btn_hal_lock",
@@ -373,6 +406,7 @@ class MainWindow(QtWidgets.QWidget):
         """
         if self.executor is None:
             return
+        self._bind_hal_terminal_events()
         self._bind_hal_pulse_bridge()
         mgr = self.executor.controller_serial_manager
         if mgr is not None and hasattr(mgr, "is_hardware_busy"):

@@ -26,6 +26,8 @@ class Executor:
         self.hardware_last_error: str = ""
         # Контекст ожидания screen_32_wait для инженера: None | 'park' | 'dispense'
         self.engineer_wait_context: Optional[str] = None
+        # Экран UART-терминала (screen_42) открыт — прямой ввод на плату
+        self.hal_terminal_active: bool = False
         # Текущий вектор шагов M1..M5 (последние отправленные/подтверждённые)
         self.hal_motor_positions: list = [0, 0, 0, 0, 0]
         self.hal_projected_x: int = 0

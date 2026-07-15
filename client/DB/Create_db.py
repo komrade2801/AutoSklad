@@ -233,6 +233,7 @@ def execute():
                 push_motor=5,
                 led_default=1,
                 lock_ms_default=15000,
+                sol_s_default=15,
                 push_down_default=900,
                 push_up_default=0,
                 park_m1_default=0,

@@ -19,6 +19,7 @@ class EngineHardwareConfig(BaseCRUD):
         push_motor: int = 5,
         led_default: int = 1,
         lock_ms_default: int = 15000,
+        sol_s_default: int = 15,
         push_down_default: int = 900,
         push_up_default: int = 0,
         park_m1_default: int = 0,
@@ -40,6 +41,7 @@ class EngineHardwareConfig(BaseCRUD):
             push_motor=push_motor,
             led_default=led_default,
             lock_ms_default=lock_ms_default,
+            sol_s_default=sol_s_default,
             push_down_default=push_down_default,
             push_up_default=push_up_default,
             park_m1_default=park_m1_default,
@@ -76,4 +78,7 @@ class EngineHardwareConfig(BaseCRUD):
             park_m4_default=park_m4,
             park_m5_default=park_m5,
         )
+
+    def update_sol_s_default(self, hw_config_id: int, *, sol_s: int) -> bool:
+        return self.update(index=hw_config_id, sol_s_default=sol_s)
 

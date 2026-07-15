@@ -23,6 +23,8 @@ class HardwareConfig(Base, Model):
     # Дефолты сценария выдачи
     led_default = Column(Integer, nullable=False, default=1)
     lock_ms_default = Column(Integer, nullable=False, default=15000)
+    # Длительность импульса $SOL, с (в UART уходит как ms = sol_s_default * 1000)
+    sol_s_default = Column(Integer, nullable=False, default=15)
     push_down_default = Column(Integer, nullable=False, default=900)
     push_up_default = Column(Integer, nullable=False, default=0)
     park_m1_default = Column(Integer, nullable=False, default=0)

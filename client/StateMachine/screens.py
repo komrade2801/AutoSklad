@@ -41,7 +41,7 @@ screen = {
     'screen_33_select_plan': ['btn_back'],
     'screen_35_plan_complete_confirmation': ['btn_ok', 'btn_back'],
     'screen_36_hardware_err': ['btn_back'],
-    'screen_37_engineer_hub': ['btn_back', 'btn_hal_coords', 'btn_hal_dispense', 'btn_hal_cells_table'],
+    'screen_37_engineer_hub': ['btn_back', 'btn_hal_coords', 'btn_hal_dispense', 'btn_hal_cells_table', 'btn_hal_terminal'],
     'screen_38_hal_coords': [
         'btn_back', 'btn_hal_park', 'btn_hal_zero', 'btn_hal_save_coords', 'btn_hal_mot_send',
         'hal_jog_z_minus', 'hal_jog_z_plus',
@@ -56,6 +56,8 @@ screen = {
         'btn_hal_led',
         'btn_hal_solenoid',
         'btn_hal_lock',
+        'btn_hal_sol_save',
     ],
     'screen_41_hal_cells_table': ['btn_back'],
+    'screen_42_hal_terminal': ['btn_back'],
 }

@@ -37,6 +37,7 @@ from GUI.screen_37_engineer_hub import screen_37_engineer_hub
 from GUI.screen_38_hal_coords import screen_38_hal_coords
 from GUI.screen_40_hal_dispense import screen_40_hal_dispense
 from GUI.screen_41_hal_cells_table import screen_41_hal_cells_table
+from GUI.screen_42_hal_terminal import screen_42_hal_terminal
 screen_register = {
         "screen_1_welcome": screen_1_welcome,
         "screen_2_help": screen_2_help,
@@ -77,4 +78,5 @@ screen_register = {
         "screen_38_hal_coords": screen_38_hal_coords,
         "screen_40_hal_dispense": screen_40_hal_dispense,
         "screen_41_hal_cells_table": screen_41_hal_cells_table,
+        "screen_42_hal_terminal": screen_42_hal_terminal,
     }

@@ -21,6 +21,10 @@ RGB_BYTE_MIN = 0
 RGB_BYTE_MAX = 255
 RGB_EXCEEDS_MAX_MESSAGE = MOT_EXCEEDS_MAX_MESSAGE
 RGB_CHANNEL_LABELS = ("R", "G", "B")
+SOL_S_MIN = 1
+SOL_S_MAX = 65
+SOL_MS_MAX = 65535
+SOL_S_DEFAULT = 15
 
 # Индексы MOT (0-based): M1,M2 — hal_z; M3 — hal_x на экране координат; M5 — штырь
 HAL_MOT_Z_INDICES = (0, 1)
@@ -30,6 +34,7 @@ HAL_MOT_PUSH_INDEX = 4
 # Смещение M4 только в сценарии выдачи: M4 = hal_x − HAL_MOT_X_OFFSET_M4
 HAL_MOT_X_OFFSET_M4 = 25
 HAL_DISPENSE_PUSH_DOWN = 60
+HAL_DISPENSE_PUSH_MID = 30
 HAL_DISPENSE_PUSH_UP = 0
 
 # Запись hal_x/hal_z с экрана координат: M3 → hal_x, M1 → hal_z
@@ -120,6 +125,29 @@ def apply_jog_to_motor_positions(
             any_clamped = True
         pos[idx] = new_v
     return pos, any_clamped
+
+
+def sol_pulse_ms_from_seconds(sol_s: int) -> int:
+    """Секунды → миллисекунды для $SOL,ms (верхняя граница прошивки)."""
+    return max(0, min(SOL_MS_MAX, int(sol_s) * 1000))
+
+
+def validate_sol_s_text(text: str) -> Tuple[Optional[int], Optional[str]]:
+    return parse_uint(text, min_value=SOL_S_MIN, max_value=SOL_S_MAX)
+
+
+def clamp_sol_s_text(text: str) -> Tuple[str, bool]:
+    raw = (text or "").strip()
+    if not raw:
+        return str(SOL_S_DEFAULT), False
+    if not raw.isdigit():
+        return raw, False
+    value = int(raw)
+    if value > SOL_S_MAX:
+        return str(SOL_S_MAX), True
+    if value < SOL_S_MIN:
+        return str(SOL_S_MIN), True
+    return str(value), False
 
 
 def hal_mot4_from_hal_x(hal_x: int) -> int:

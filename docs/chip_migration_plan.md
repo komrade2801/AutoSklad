@@ -147,9 +147,9 @@
 
 ## Этап 3. UI и инженерное меню
 
-**Статус этапа:** `[x]` реализовано
+**Статус этапа:** `[~]` базовые экраны 37–41 и **UART-терминал** (`screen_42_hal_terminal`) реализованы; опциональные улучшения — см. ниже
 
-**Цель:** отдельное меню для роли **Engineer** (не расширять `screen_6_user` / `screen_26_admin`). UART и последовательность `MOT` — только через `action_cmd` + FSM; GUI шлёт триггеры, не строки в COM напрямую.
+**Цель:** отдельное меню для роли **Engineer** (не расширять `screen_6_user` / `screen_26_admin`). UART и последовательность `MOT` — только через `action_cmd` + FSM; GUI шлёт триггеры, не строки в COM напрямую. **Исключение:** экран **`screen_42_hal_terminal`** — прямая отправка строк на плату для отладки (только `atmega_hal`, только Engineer).
 
 **Роль и вход:** в `screen_1_welcome` / `screen_3_authorization` — триггер `view_type_engineer` → домашний экран **`screen_37_engineer_hub`** (сейчас Engineer ошибочно ведёт на `screen_6_user` как `test_user`).
 
@@ -163,16 +163,19 @@ flowchart TB
   wait["screen_32_wait"]
   dispense["screen_40_hal_dispense"]
   table["screen_41_hal_cells_table"]
+  terminal["screen_42_hal_terminal"]
   err36["screen_36_hardware_err"]
 
   welcome -->|view_type_engineer| hub
   hub -->|btn_hal_coords| coords
   hub -->|btn_hal_dispense| dispense
   hub -->|btn_hal_cells_table| table
+  hub -->|btn_hal_terminal| terminal
   coords -->|btn_hal_park| wait
   coords -->|btn_back| hub
   dispense -->|btn_back| hub
   table -->|btn_back| hub
+  terminal -->|btn_back| hub
   wait -->|command_ok engineer| coords
   wait -->|err_devices| err36
   coords -->|err_devices| err36
@@ -183,11 +186,12 @@ flowchart TB
 
 | Экран | Назначение |
 |-------|------------|
-| **`screen_37_engineer_hub`** | Хаб: 3 кнопки — «Координаты», «Выдача», «Таблица ячеек»; ФИО инженера; `btn_back` → `screen_1_welcome` |
+| **`screen_37_engineer_hub`** | Хаб: кнопки «Координаты», «Команды» (тестовая выдача), «Таблица ячеек», **«Терминал»**; ФИО инженера; `btn_back` → `screen_1_welcome` |
 | **`screen_38_hal_coords`** | Меню координат, JOG, сохранение в БД, **парковка** (см. ниже) |
 | **`screen_32_wait`** | **Переиспользуется** при парковке и тестовой выдаче (ожидание UART); GIF + подпись; без отдельного `screen_39_hal_park` |
 | **`screen_40_hal_dispense`** | Тестовая выдача по номеру ячейки |
 | **`screen_41_hal_cells_table`** | Список/таблица `hal_x` / `hal_z` по ячейкам из БД |
+| **`screen_42_hal_terminal`** | UART-терминал: прямой ввод команд на плату, потоковый вывод ответов (план, см. ниже) |
 
 #### `screen_38_hal_coords` — меню координат
 
@@ -225,6 +229,78 @@ flowchart TB
 | Тап по строке | Нет — только просмотр списка; редактирование на `screen_38_hal_coords` |
 | `btn_back` | → `screen_37_engineer_hub` |
 
+#### `screen_42_hal_terminal` — UART-терминал
+
+**Статус:** `[x]` MVP реализовано
+
+**Цель:** простой интерактивный терминал для отладки платы ATmega: ввод команды с **USB-клавиатуры Raspberry Pi** (или с тач-экрана через ОС-клавиатуру), отправка по **Enter**, потоковый вывод ответов платы построчно. Не использовать `DispenseCommandGate` и `screen_32_wait` — экран остаётся открытым, ответы идут в лог в реальном времени.
+
+**Протокол** (прошивка SPEEDx2 / `no_block_plata`, см. справочник UART выше):
+
+| Ввод (без `$`) | Типичные ответы |
+|----------------|-----------------|
+| `ZERO` / `ZERO,n` | `WAIT` → `DONE` / `DONE ZERO`; при занятости — `BUSY` |
+| `MOT,p1..p5` | `WAIT` → `DONE` / `DONE MOT`; `ERROR: INCORRECT MOTOR VALUE`; `BUSY` |
+| `LED,0\|1` | `DONE LED` / `ERROR` |
+| `RGB,r,g,b` | `DONE RGB` |
+| `LOCK,ms` / `SOL,ms` | `WAIT` → `DONE LOCK` / `DONE SOL` |
+| `c,n` / `f` / `g` | наследие монолита (текст, цикл выдачи) |
+| прочее | `UNKNOWN COMMAND` |
+
+Клиент шлёт `$cmd\n` через `VendingSerialManager.enqueue_command`; приём — сигнал **`raw_line`** (все строки до разбора протокола).
+
+**Архитектура (экран-центричная, без FSM на каждую команду):**
+
+| Слой | Роль |
+|------|------|
+| **`screen_42_hal_terminal`** | `QPlainTextEdit` (лог RX), `QLineEdit` (ввод), `returnPressed` → отправка; локальные команды `clear` / `help` |
+| **`Executor`** | флаг `hal_terminal_active`; отправка через `send_controller_command()` |
+| **`VendingSerialManager`** | очередь TX, `raw_line` для вывода |
+| **FSM** | только `btn_hal_terminal` (hub → terminal) и `btn_back` |
+
+**UI (480×800, стиль инженерного раздела):**
+
+| Элемент | Поведение |
+|---------|-----------|
+| `te_log` | read-only журнал; префикс исходящих `> CMD`; автоскролл; лимит ~300–500 строк |
+| `edit_cmd` | строка ввода; фокус при `showEvent` (`StrongFocus`) для USB-клавиатуры; **без** overlay `WidgetKeyboard` |
+| `lbl_status` | «Подключено» / «Очередь занята» / «Только atmega_hal» |
+| `btn_clear` (опц.) | очистка лога — только в Python, не через FSM |
+| `btn_back` | → `screen_37_engineer_hub` |
+
+**Жизненный цикл сигналов:** в `showEvent` — `hal_terminal_active = True`, подписка на `raw_line`; в `hideEvent` — отписка, `hal_terminal_active = False`. Привязка в `MainWindow._bind_hal_terminal_events()` (аналог `_bind_engineer_screen_events`).
+
+**Нормализация ввода:** trim; снять ведущий `$`; пустые строки игнорировать; `is_long=None` в `enqueue_command` (авто: `ZERO`/`MOT` — двухфазные, `LED`/`RGB` — `done_only`, `LOCK`/`SOL` — `pulse_ack`).
+
+**Конфликты и безопасность:**
+
+| Ситуация | Поведение |
+|----------|-----------|
+| Идёт `DispenseCommandGate` / HAL-цепочка | при отправке из терминала — сообщение в лог, не ломать FSM |
+| Терминал активен + тестовая выдача / JOG | guard в `cmd_send` / `is_hal_operation_busy` или по флагу `hal_terminal_active` |
+| Протокол `legacy` | экран открывается, UART не трогается |
+| Ответ `BUSY` без `WAIT` | in-flight в драйвере до `timeout_ack`; в help: дождаться `DONE` перед следующим движением; (позже) трактовать `BUSY` как немедленный сбой in-flight |
+
+**Встроенная справка `help`:** `ZERO`, `ZERO,n`, `MOT,p1..p5`, `LED`, `RGB`, `LOCK,ms`, `SOL,ms`, `c,n`, `f`, `g`, `clear`.
+
+**FSM (минимум):**
+
+- состояние `screen_42_hal_terminal`;
+- `btn_hal_terminal`: `screen_37_engineer_hub` → `screen_42_hal_terminal`;
+- `btn_back`: `screen_42_hal_terminal` → `screen_37_engineer_hub`.
+
+**Файлы:** `GUI/ui/screen_42_hal_terminal.ui`, `GUI/screen_42_hal_terminal.py`, `ui.py`, `state_map.py`, `screens.py` (`btn_hal_terminal` в hub), кнопка в `screen_37_engineer_hub.ui`, `Executor.hal_terminal_active`, опционально guard в `action_cmd.cmd_send`.
+
+**Этапы реализации:**
+
+| Этап | Содержание |
+|------|------------|
+| MVP | UI, hub-кнопка, `raw_line` + `send_controller_command`, фокус клавиатуры, `clear`/`help`, guard `atmega_hal` и busy gate |
+| 2 | `BUSY` в `VendingSerialManager`; индикатор `is_hardware_busy()`; история команд (↑/↓) |
+| 3 (опц.) | шаблоны-кнопки для тач; аудит `cmd_hal_terminal_send` |
+
+**Приёмка (терминал):** Engineer: hub → «Терминал» → `LED,1` + Enter → в логе `> LED,1`, затем `DONE LED`; `MOT,…` → `WAIT` → `DONE`; USB-клавиатура на RPi без overlay; уход с экрана отписывает `raw_line`; во время gate — понятное сообщение, без перехода в `screen_36_hardware_err` (`bridge_error_to_fsm=False` уже в `main.py`).
+
 ### Слой логики (новые состояния FSM / actions)
 
 | Состояние / action | Назначение |
@@ -250,10 +326,13 @@ flowchart TB
 | [ ] | `action_db`: `write_db_cell_hal_coords`, `read_db_cells_hal_list` |
 | [ ] | Согласовать GPIO реле кладовщика (`screen_14_stockman`) с `$LOCK` (убрать дублирование или разнести контуры) |
 | [ ] | (Позже) SPEED/BOOST, опрос `$SENS` — после базового JOG и сохранения координат |
+| [x] | **`screen_42_hal_terminal`:** UI + FSM (hub ↔ terminal); `raw_line` / `send_controller_command`; флаг `hal_terminal_active`; кнопка «Терминал» в hub |
+| [x] | Терминал: фокус `QLineEdit` для USB-клавиатуры; `clear`/`help`; guard при busy gate и `legacy` |
+| [ ] | (Позже) `BUSY` в `VendingSerialManager`; история команд; опциональный аудит UART в лог |
 
-**Не делать:** расширять `screen_26_admin` под JOG; вешать HAL на `screen_6_user`; отдельный экран `screen_39_hal_park`.
+**Не делать:** расширять `screen_26_admin` под JOG; вешать HAL на `screen_6_user`; отдельный экран `screen_39_hal_park`; FSM/`screen_32_wait` на каждую строку терминала.
 
-**Правило приёмки (инженер):** Engineer после входа видит только хаб и три раздела; парковка показывает `screen_32_wait` до `DONE`/`ERROR`; сохранение координат пишет `hal_x`/`hal_z` в `Cell`; тестовая выдача уважает валидацию координат этапа 2; UART из GUI не вызывается.
+**Правило приёмки (инженер):** Engineer после входа видит хаб и разделы координат / тестовой выдачи / таблицы / **терминала**; парковка показывает `screen_32_wait` до `DONE`/`ERROR`; сохранение координат пишет `hal_x`/`hal_z` в `Cell`; тестовая выдача уважает валидацию координат этапа 2; UART из обычных экранов GUI не вызывается — **кроме** `screen_42_hal_terminal`.
 
 ---
 
@@ -264,7 +343,7 @@ flowchart TB
 |  | Задача |
 |--|--------|
 | [ ] | Обновить `docs/hardware_barcode_relay_dispensing.md` под фактический протокол |
-| [ ] | **DoD:** полный цикл на моке; на стенде выдача из БД по **`hal_x`/`hal_z`** (без fallback); отказ выдачи при NULL/(0,0) → `screen_36_hardware_err`; `$ZERO` при старте; **`screen_37`–`41` + парковка через `screen_32_wait`**; ошибки в `Error` и синк |
+| [ ] | **DoD:** полный цикл на моке; на стенде выдача из БД по **`hal_x`/`hal_z`** (без fallback); отказ выдачи при NULL/(0,0) → `screen_36_hardware_err`; `$ZERO` при старте; **`screen_37`–`42` + парковка через `screen_32_wait`**; UART-терминал на стенде; ошибки в `Error` и синк |
 
 ---
 
@@ -277,6 +356,8 @@ flowchart TB
 | Долгий `$LOCK` на прошивке | UART не обслуживается во время `delay(ms)`; на клиенте — таймауты и учёт блокировки очереди; в перспективе — неблокирующий lock в прошивке |
 | Расхождение `OK` vs `WAIT` | В драйвере трактовать `WAIT` как ack длинной команды; мок опционально эмулировать оба варианта |
 | Выдача с `hal_x`/`hal_z` = NULL или (0,0) | Убрать fallback на `number`; блокировать до UART, экран `screen_36_hardware_err`, запись в `Error` |
+| `BUSY` с платы без `WAIT` (терминал) | Дождаться `DONE` между движениями; позже — сброс in-flight по `BUSY` в драйвере |
+| Терминал + `DispenseCommandGate` параллельно | `hal_terminal_active`, guard в `cmd_send` / busy-check при отправке из терминала |
 
 ---
 
@@ -291,7 +372,7 @@ flowchart TB
 | HAL-сценарий выдачи / старт железа | `client/EventsSystem/action_cmd.py` |
 | Вход в приложение | `client/main.py`, `client/EventsSystem/Executor.py`, `client/GUI/MainWindow.py` |
 | FSM | `client/StateMachine/state_map.py` |
-| Инженерное меню (план) | `screen_37_engineer_hub`, `screen_38_hal_coords`, `screen_40_hal_dispense`, `screen_41_hal_cells_table`; ожидание — `screen_32_wait` |
+| Инженерное меню | `screen_37_engineer_hub`, `screen_38_hal_coords`, `screen_40_hal_dispense`, `screen_41_hal_cells_table`, **`screen_42_hal_terminal`** (план); ожидание — `screen_32_wait` |
 | Валидация HAL-координат | `client/EventsSystem/hal_coords.py` |
 | БД ячеек | `client/DB/Models/Cell.py`, `client/DB/Engine/CellCRUD.py` |
 | Прошивка (текущая в репозитории) | `client/MegaHardware/no_block_plata.ino` |

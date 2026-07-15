@@ -136,6 +136,7 @@ states = [
     {'name': 'screen_38_hal_coords'},
     {'name': 'screen_40_hal_dispense'},
     {'name': 'screen_41_hal_cells_table'},
+    {'name': 'screen_42_hal_terminal'},
     {'name': 'cmd_hal_zero'},
     {'name': 'cmd_hal_park'},
     {'name': 'cmd_hal_jog'},
@@ -149,6 +150,7 @@ states = [
     {'name': 'read_db_engineer_get_cell'},
     {'name': 'read_db_engineer_command_ok'},
     {'name': 'write_db_hal_park_defaults'},
+    {'name': 'write_db_hal_sol_s_default'},
 ]
 
 transitions = [
@@ -470,9 +472,11 @@ transitions = [
     {'trigger': 'btn_hal_coords', 'source': 'screen_37_engineer_hub', 'dest': 'screen_38_hal_coords'},
     {'trigger': 'btn_hal_dispense', 'source': 'screen_37_engineer_hub', 'dest': 'screen_40_hal_dispense'},
     {'trigger': 'btn_hal_cells_table', 'source': 'screen_37_engineer_hub', 'dest': 'read_db_cells_hal_list'},
+    {'trigger': 'btn_hal_terminal', 'source': 'screen_37_engineer_hub', 'dest': 'screen_42_hal_terminal'},
     {'trigger': 'btn_back', 'source': 'screen_38_hal_coords', 'dest': 'screen_37_engineer_hub'},
     {'trigger': 'btn_back', 'source': 'screen_40_hal_dispense', 'dest': 'screen_37_engineer_hub'},
     {'trigger': 'btn_back', 'source': 'screen_41_hal_cells_table', 'dest': 'screen_37_engineer_hub'},
+    {'trigger': 'btn_back', 'source': 'screen_42_hal_terminal', 'dest': 'screen_37_engineer_hub'},
     {'trigger': 'btn_hal_park', 'source': 'screen_38_hal_coords', 'dest': 'cmd_hal_park'},
     {'trigger': 'btn_hal_zero', 'source': 'screen_38_hal_coords', 'dest': 'cmd_hal_zero'},
     {'trigger': 'btn_hal_save_coords', 'source': 'screen_38_hal_coords', 'dest': 'write_db_cell_hal_coords'},
@@ -483,7 +487,9 @@ transitions = [
     {'trigger': 'btn_hal_led', 'source': 'screen_40_hal_dispense', 'dest': 'cmd_hal_led_toggle'},
     {'trigger': 'btn_hal_solenoid', 'source': 'screen_40_hal_dispense', 'dest': 'cmd_hal_solenoid'},
     {'trigger': 'btn_hal_lock', 'source': 'screen_40_hal_dispense', 'dest': 'cmd_hal_lock'},
+    {'trigger': 'btn_hal_sol_save', 'source': 'screen_40_hal_dispense', 'dest': 'write_db_hal_sol_s_default'},
     {'trigger': 'view_hal_dispense', 'source': 'write_db_hal_park_defaults', 'dest': 'screen_40_hal_dispense'},
+    {'trigger': 'view_hal_dispense', 'source': 'write_db_hal_sol_s_default', 'dest': 'screen_40_hal_dispense'},
     {'trigger': 'view_hal_dispense', 'source': 'cmd_hal_rgb', 'dest': 'screen_40_hal_dispense'},
     {'trigger': 'err_devices', 'source': 'cmd_hal_rgb', 'dest': 'write_db_err_devices'},
     {'trigger': 'view_hal_dispense', 'source': 'cmd_hal_led_toggle', 'dest': 'screen_40_hal_dispense'},

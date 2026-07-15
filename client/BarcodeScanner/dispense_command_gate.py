@@ -20,13 +20,31 @@ import logging
 import threading
 from typing import List, Optional, Tuple
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
 from BarcodeScanner.vending_serial_manager import VendingSerialManager
 
 logger = logging.getLogger(__name__)
 
 DispenseStep = Tuple[str, bool]
+
+HAL_DELAY_STEP_PREFIX = "__HAL_DELAY_MS:"
+
+
+def hal_delay_step(ms: int) -> DispenseStep:
+    """Пауза между UART-шагами без отправки команды на плату."""
+    delay_ms = max(0, int(ms))
+    return (f"{HAL_DELAY_STEP_PREFIX}{delay_ms}", False)
+
+
+def _parse_hal_delay_ms(command: str) -> Optional[int]:
+    cmd = (command or "").strip()
+    if not cmd.startswith(HAL_DELAY_STEP_PREFIX):
+        return None
+    try:
+        return max(0, int(cmd[len(HAL_DELAY_STEP_PREFIX) :]))
+    except ValueError:
+        return 0
 
 
 class DispenseCommandGate(QObject):
@@ -47,6 +65,7 @@ class DispenseCommandGate(QObject):
         self._running = False
         self._expected_cmd: Optional[str] = None
         self._expected_long = False
+        self._delay_timer: Optional[QTimer] = None
 
         self._serial.command_finished.connect(self._on_command_finished)
 
@@ -93,6 +112,9 @@ class DispenseCommandGate(QObject):
                 return
             self._running = False
             self._expected_cmd = None
+        if self._delay_timer is not None:
+            self._delay_timer.stop()
+            self._delay_timer = None
         self.sequence_aborted.emit()
 
     def _kick(self) -> None:
@@ -122,7 +144,38 @@ class DispenseCommandGate(QObject):
 
         assert cmd_to_send is not None
         self.step_started.emit(idx, cmd_to_send)
+
+        delay_ms = _parse_hal_delay_ms(cmd_to_send)
+        if delay_ms is not None:
+            timer = QTimer(self)
+            timer.setSingleShot(True)
+            timer.timeout.connect(self._on_delay_finished)
+            self._delay_timer = timer
+            timer.start(delay_ms)
+            return
+
         self._serial.enqueue_command(cmd_to_send, is_long)
+
+    def _on_delay_finished(self) -> None:
+        self._delay_timer = None
+        with self._lock:
+            if not self._running or self._expected_cmd is None:
+                return
+            cmd = self._expected_cmd
+            idx = self._index
+            self._index += 1
+            self._expected_cmd = None
+            emit_sequence_done = self._index >= len(self._steps)
+            if emit_sequence_done:
+                self._running = False
+            need_kick = not emit_sequence_done
+
+        self.step_completed.emit(idx, cmd, "delay")
+        if emit_sequence_done:
+            self.sequence_finished.emit()
+            return
+        if need_kick:
+            self._kick()
 
     def _on_command_finished(self, cmd: str, outcome: str) -> None:
         """

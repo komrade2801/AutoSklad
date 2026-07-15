@@ -15,6 +15,7 @@ from BarcodeScanner.dispense_command_gate import DispenseCommandGate
 from EventsSystem.hal_pulse_bridge import HalPulseBridge
 from EventsSystem.hal_coords import (
     HAL_DISPENSE_PUSH_DOWN,
+    HAL_DISPENSE_PUSH_MID,
     HAL_DISPENSE_PUSH_UP,
     HAL_JOG_X_INDICES,
     HAL_JOG_Z_INDICES,
@@ -27,6 +28,8 @@ from EventsSystem.hal_coords import (
     hal_dispense_target_mot5,
     parse_hal_jog_trigger,
     hal_project_hal_xz_from_motors,
+    sol_pulse_ms_from_seconds,
+    SOL_S_DEFAULT,
     validate_hal_cell_coords,
 )
 from DB.Data.sqlite_db import SessionLocal, engine
@@ -39,9 +42,7 @@ logger = logging.getLogger(__name__)
 
 _CONFIG_JSON = Path(__file__).resolve().parent.parent / "config.json"
 
-# Импульс соленоида после парковки (окно выдачи), мс — прошивка $SOL,ms
-HAL_DISPENSE_SOL_MS = 20_000
-# Импульс соленоида/замка на экране тестовой выдачи (инженер), мс
+# Импульс замка на экране тестовой выдачи (инженер), мс — для $LOCK
 HAL_ENGINEER_TEST_PULSE_MS = 10_000
 # Запас к ms импульса для fallback-сброса UI, если DONE LOCK/SOL не пришёл
 HAL_PULSE_FALLBACK_MARGIN_MS = 5_000
@@ -51,7 +52,6 @@ _HAL_JSON_MERGE_KEYS = frozenset(
     {
         "led",
         "lock_ms",
-        "sol_ms",
         "push_down",
         "push_up",
         "x_axis_motor",
@@ -191,11 +191,15 @@ class ActionMapper:
             for i in range(1, 6)
         }
 
+    def _sol_pulse_ms_from_profile(self, profile: dict) -> int:
+        sol_s = int(profile.get("sol_s", SOL_S_DEFAULT))
+        return sol_pulse_ms_from_seconds(sol_s)
+
     def _load_hal_motion_profile(self):
         defaults = {
             "led": 1,
             "lock_ms": 15000,
-            "sol_ms": HAL_DISPENSE_SOL_MS,
+            "sol_s": SOL_S_DEFAULT,
             "push_down": 900,
             "push_up": 0,
             "park_m1": 0,
@@ -219,6 +223,7 @@ class ActionMapper:
                         {
                             "led": hw_cfg.led_default,
                             "lock_ms": hw_cfg.lock_ms_default,
+                            "sol_s": int(getattr(hw_cfg, "sol_s_default", SOL_S_DEFAULT)),
                             "push_down": hw_cfg.push_down_default,
                             "push_up": hw_cfg.push_up_default,
                             "x_axis_motor": hw_cfg.x_axis_motor,
@@ -546,9 +551,10 @@ class ActionMapper:
         """
         Цепочка под no_block_plata: кадры MOT,p1..p5 (параллель осей в одном кадре),
         порядок — подсветка (LED/RGB) → ZERO → задняя «безопасная» (опц.) → к ячейке → штырь
-        → парковка → $SOL,ms (окно выдачи) → выключение LED/RGB.
+        → подъём штыря (M5=0) → парковка → $SOL,ms (окно выдачи) → выключение LED/RGB.
 
-        Подъезд к ячейке: M1=M2=hal_z, M3=hal_x, M4=hal_x−25, M5=0; штырь M5: 60 → 0.
+        Подъезд к ячейке: M1=M2=hal_z, M3=hal_x, M4=hal_x−25, M5=0; штырь M5: 60 → 30 → 60 → 0,
+        затем парковка и SOL.
         """
         coords, coord_err = self._resolve_hal_target_coords(number, cell_id=cell_id)
         if coord_err:
@@ -572,9 +578,14 @@ class ActionMapper:
 
         steps.append((_fmt_mot5(list(cell_target)), True))
 
-        pos = list(cell_target)
-        pos[HAL_MOT_PUSH_INDEX] = _clamp_mot_coord(HAL_DISPENSE_PUSH_DOWN)
-        steps.append((_fmt_mot5(clamp_mot_vector(pos)), True))
+        for push_m5 in (
+            HAL_DISPENSE_PUSH_DOWN,
+            HAL_DISPENSE_PUSH_MID,
+            HAL_DISPENSE_PUSH_DOWN,
+        ):
+            pos = list(cell_target)
+            pos[HAL_MOT_PUSH_INDEX] = _clamp_mot_coord(push_m5)
+            steps.append((_fmt_mot5(clamp_mot_vector(pos)), True))
 
         pos = list(cell_target)
         pos[HAL_MOT_PUSH_INDEX] = _clamp_mot_coord(HAL_DISPENSE_PUSH_UP)
@@ -582,11 +593,7 @@ class ActionMapper:
 
         steps.append((_fmt_mot5(list(park)), True))
 
-        sol_ms = int(defaults.get("sol_ms", HAL_DISPENSE_SOL_MS))
-        if sol_ms < 0:
-            sol_ms = 0
-        if sol_ms > 65_535:
-            sol_ms = 65_535
+        sol_ms = self._sol_pulse_ms_from_profile(defaults)
         steps.append((f"SOL,{sol_ms}", True))
         steps.append(self._illumination_off_step(defaults))
 
@@ -1007,7 +1014,8 @@ class ActionMapper:
         mgr = self.__executor.controller_serial_manager
         self.wire_hal_pulse_handlers(mgr)
 
-        ms = HAL_ENGINEER_TEST_PULSE_MS
+        profile = self._load_hal_motion_profile()
+        ms = self._sol_pulse_ms_from_profile(profile)
         cmd = f"SOL,{ms}"
         self._hal_sol_pending = True
         self._emit_hal_pulse_state("sol")
@@ -1061,6 +1069,11 @@ class ActionMapper:
         if protocol != "atmega_hal":
             self.__executor.send_controller_command(str(number))
             return None
+
+        if getattr(self.__executor, "hal_terminal_active", False):
+            logger.warning("cmd_send rejected: HAL terminal is active")
+            self.__executor.hardware_last_error = "hal_terminal_active"
+            return {"trigger": "err_devices"}
 
         if self._hal_sequence_in_progress:
             logger.warning("HAL dispense is already running")

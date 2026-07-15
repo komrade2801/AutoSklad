@@ -60,6 +60,10 @@ class Ui_screen_37_engineer_hub(object):
         self.btn_hal_cells_table.setStyleSheet("QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 24px; font-weight: 600; min-height: 64px; }")
         self.btn_hal_cells_table.setObjectName("btn_hal_cells_table")
         self.verticalLayout.addWidget(self.btn_hal_cells_table)
+        self.btn_hal_terminal = QtWidgets.QPushButton(screen_37_engineer_hub)
+        self.btn_hal_terminal.setStyleSheet("QPushButton { color: #FFFFFF; background-color: #f09022;border-radius: 8px; font-size: 24px; font-weight: 600; min-height: 64px; }")
+        self.btn_hal_terminal.setObjectName("btn_hal_terminal")
+        self.verticalLayout.addWidget(self.btn_hal_terminal)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
         self.btn_back = QtWidgets.QPushButton(screen_37_engineer_hub)
@@ -83,4 +87,5 @@ class Ui_screen_37_engineer_hub(object):
         self.btn_hal_coords.setText(_translate("screen_37_engineer_hub", "Координаты"))
         self.btn_hal_dispense.setText(_translate("screen_37_engineer_hub", "Команды"))
         self.btn_hal_cells_table.setText(_translate("screen_37_engineer_hub", "Таблица ячеек"))
+        self.btn_hal_terminal.setText(_translate("screen_37_engineer_hub", "Терминал"))
 from ..img import resources_rc

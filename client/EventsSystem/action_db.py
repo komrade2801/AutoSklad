@@ -252,6 +252,7 @@ class ActionMapper:
             'read_db_cells_hal_list': lambda *args, **kwargs: self.read_db_cells_hal_list(*args, **kwargs),
             'write_db_cell_hal_coords': lambda *args, **kwargs: self.write_db_cell_hal_coords(*args, **kwargs),
             'write_db_hal_park_defaults': lambda *args, **kwargs: self.write_db_hal_park_defaults(*args, **kwargs),
+            'write_db_hal_sol_s_default': lambda *args, **kwargs: self.write_db_hal_sol_s_default(*args, **kwargs),
             'read_db_engineer_get_cell': lambda *args, **kwargs: self.read_db_engineer_get_cell(*args, **kwargs),
             'read_db_engineer_command_ok': lambda *args, **kwargs: self.read_db_engineer_command_ok(*args, **kwargs),
         }
@@ -3114,6 +3115,58 @@ class ActionMapper:
         payload = {f"park_m{i}": positions[i - 1] for i in range(1, 6)}
         payload["hal_park_save_ok"] = True
         return {"trigger": "view_hal_dispense", **payload}
+
+    def write_db_hal_sol_s_default(self, *args, **kwargs):
+        """Сохранение длительности $SOL (секунды) в HardwareConfig."""
+        from DB.Engine.DeviceConfigCRUD import EngineDeviceConfig
+        from DB.Engine.HardwareConfigCRUD import EngineHardwareConfig
+        from EventsSystem.hal_coords import (
+            SOL_S_MIN,
+            SOL_S_MAX,
+            message_for_reason,
+            validate_sol_s_text,
+        )
+
+        raw = kwargs.get("sol_s")
+        if raw is None:
+            raw = kwargs.get("sol_s_default")
+        value, reason = validate_sol_s_text("" if raw is None else str(raw))
+        if reason:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": message_for_reason(
+                    reason,
+                    motor_label="SOL",
+                    min_v=SOL_S_MIN,
+                    max_v=SOL_S_MAX,
+                ),
+            }
+
+        e_device = EngineDeviceConfig(session=self.session_local)
+        device_cfg = e_device.get_active()
+        if not device_cfg:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Конфигурация устройства не найдена",
+            }
+        e_hw = EngineHardwareConfig(session=self.session_local)
+        hw_cfg = e_hw.get_by_device(device_cfg.id)
+        if not hw_cfg:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Профиль железа не найден",
+            }
+        ok = e_hw.update_sol_s_default(hw_cfg.id, sol_s=value)
+        if not ok:
+            return {
+                "trigger": "view_hal_dispense",
+                "hal_input_error": "Не удалось сохранить время SOL",
+            }
+        return {
+            "trigger": "view_hal_dispense",
+            "sol_s": value,
+            "hal_sol_save_ok": True,
+        }
 
     def read_db_cells_hal_list(self, *args, **kwargs):
         """Список ячеек с hal_x/hal_z для screen_41."""
