@@ -156,7 +156,3 @@ Key entry points:
 - Python versions: 3.10–3.12
 - Activate virtual environments for both `server/` and `client/`
 - To tweak sync during UI work, you can temporarily use unreachable `server.ip` in client config or comment the sync start/stop in `client/main.py`
-
-
-## License
-Not specified. Add your license of choice (e.g., MIT) to `LICENSE` if needed. 
