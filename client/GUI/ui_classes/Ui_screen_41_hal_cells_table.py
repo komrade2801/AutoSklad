@@ -37,11 +37,38 @@ class Ui_screen_41_hal_cells_table(object):
         self.verticalLayout.setContentsMargins(12, 12, 12, 10)
         self.verticalLayout.setSpacing(8)
         self.verticalLayout.setObjectName("verticalLayout")
+        self.horizontalLayout_title = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_title.setContentsMargins(4, 4, 4, 4)
+        self.horizontalLayout_title.setSpacing(12)
+        self.horizontalLayout_title.setObjectName("horizontalLayout_title")
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_title.addItem(spacerItem)
         self.lbl_title = QtWidgets.QLabel(screen_41_hal_cells_table)
         self.lbl_title.setAlignment(QtCore.Qt.AlignCenter)
         self.lbl_title.setStyleSheet("font-size: 26px; font-weight: 700;")
         self.lbl_title.setObjectName("lbl_title")
-        self.verticalLayout.addWidget(self.lbl_title)
+        self.horizontalLayout_title.addWidget(self.lbl_title)
+        self.btn_title_down = QtWidgets.QPushButton(screen_41_hal_cells_table)
+        self.btn_title_down.setMinimumSize(QtCore.QSize(36, 36))
+        self.btn_title_down.setMaximumSize(QtCore.QSize(36, 36))
+        self.btn_title_down.setStyleSheet("QPushButton {\n"
+"    color: #FFFFFF;\n"
+"    background-color: #f09022;\n"
+"    border-width: 0px;\n"
+"    border-radius: 8px;\n"
+"    font-weight: 600;\n"
+"    padding: 6px;\n"
+"}")
+        self.btn_title_down.setText("")
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/icons/down.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btn_title_down.setIcon(icon)
+        self.btn_title_down.setIconSize(QtCore.QSize(22, 22))
+        self.btn_title_down.setObjectName("btn_title_down")
+        self.horizontalLayout_title.addWidget(self.btn_title_down)
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_title.addItem(spacerItem1)
+        self.verticalLayout.addLayout(self.horizontalLayout_title)
         self.widget_table_header = QtWidgets.QWidget(screen_41_hal_cells_table)
         self.widget_table_header.setMinimumSize(QtCore.QSize(0, 44))
         self.widget_table_header.setMaximumSize(QtCore.QSize(16777215, 44))
@@ -65,9 +92,9 @@ class Ui_screen_41_hal_cells_table(object):
         self.btn_back.setMinimumSize(QtCore.QSize(0, 50))
         self.btn_back.setMaximumSize(QtCore.QSize(16777215, 50))
         self.btn_back.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/icons/back_white.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.btn_back.setIcon(icon)
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap(":/icons/back_white.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btn_back.setIcon(icon1)
         self.btn_back.setIconSize(QtCore.QSize(51, 51))
         self.btn_back.setObjectName("btn_back")
         self.verticalLayout.addWidget(self.btn_back)
@@ -78,5 +105,5 @@ class Ui_screen_41_hal_cells_table(object):
     def retranslateUi(self, screen_41_hal_cells_table):
         _translate = QtCore.QCoreApplication.translate
         screen_41_hal_cells_table.setWindowTitle(_translate("screen_41_hal_cells_table", "screen_41_hal_cells_table"))
-        self.lbl_title.setText(_translate("screen_41_hal_cells_table", "Таблица HAL-координат"))
+        self.lbl_title.setText(_translate("screen_41_hal_cells_table", "Координаты ячеек"))
 from ..img import resources_rc

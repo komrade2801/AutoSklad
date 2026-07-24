@@ -58,6 +58,9 @@ screen = {
         'btn_hal_lock',
         'btn_hal_sol_save',
     ],
-    'screen_41_hal_cells_table': ['btn_back'],
+    'screen_41_hal_cells_table': ['btn_back', 'btn_title_down'],
     'screen_42_hal_terminal': ['btn_back'],
+    'screen_43_hal_import_confirm': ['btn_ok', 'btn_back'],
+    'screen_44_hal_import_ok': ['btn_back'],
+    'screen_45_hal_import_err': ['btn_back'],
 }

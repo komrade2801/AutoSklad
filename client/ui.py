@@ -38,6 +38,9 @@ from GUI.screen_38_hal_coords import screen_38_hal_coords
 from GUI.screen_40_hal_dispense import screen_40_hal_dispense
 from GUI.screen_41_hal_cells_table import screen_41_hal_cells_table
 from GUI.screen_42_hal_terminal import screen_42_hal_terminal
+from GUI.screen_43_hal_import_confirm import screen_43_hal_import_confirm
+from GUI.screen_44_hal_import_ok import screen_44_hal_import_ok
+from GUI.screen_45_hal_import_err import screen_45_hal_import_err
 screen_register = {
         "screen_1_welcome": screen_1_welcome,
         "screen_2_help": screen_2_help,
@@ -79,4 +82,7 @@ screen_register = {
         "screen_40_hal_dispense": screen_40_hal_dispense,
         "screen_41_hal_cells_table": screen_41_hal_cells_table,
         "screen_42_hal_terminal": screen_42_hal_terminal,
+        "screen_43_hal_import_confirm": screen_43_hal_import_confirm,
+        "screen_44_hal_import_ok": screen_44_hal_import_ok,
+        "screen_45_hal_import_err": screen_45_hal_import_err,
     }

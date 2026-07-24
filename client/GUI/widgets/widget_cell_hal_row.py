@@ -15,8 +15,14 @@ def hal_table_column_widths(viewport_width: int):
     return COL_NUM_WIDTH, half, remaining - half
 
 
+CELL_BORDER = "#8aa0b8"
+
+
 def _cell_style() -> str:
-    return f"color: #FFFFFF; font-size: {FONT_SIZE_PX}px;"
+    return (
+        f"QLabel {{ color: #FFFFFF; font-size: {FONT_SIZE_PX}px;"
+        f" border: 1px solid {CELL_BORDER}; background: transparent; }}"
+    )
 
 
 class WidgetCellHalRow(BaseScreen):
@@ -30,7 +36,7 @@ class WidgetCellHalRow(BaseScreen):
         self.cell_number = None
 
         root = QtWidgets.QHBoxLayout(self)
-        root.setContentsMargins(8, 6, 8, 6)
+        root.setContentsMargins(8, 0, 8, 0)
         root.setSpacing(0)
 
         style = _cell_style()
@@ -40,6 +46,7 @@ class WidgetCellHalRow(BaseScreen):
         for lbl in (self.lbl_number, self.lbl_hal_x, self.lbl_hal_z):
             lbl.setStyleSheet(style)
             lbl.setAlignment(QtCore.Qt.AlignCenter)
+            lbl.setMinimumHeight(44)
 
         root.addWidget(self.lbl_number)
         root.addWidget(self.lbl_hal_x)

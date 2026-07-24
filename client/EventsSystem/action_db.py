@@ -251,6 +251,8 @@ class ActionMapper:
             'read_db_err': lambda *args, **kwargs: logger.debug("read_db_err"),
             'read_db_cells_hal_list': lambda *args, **kwargs: self.read_db_cells_hal_list(*args, **kwargs),
             'write_db_cell_hal_coords': lambda *args, **kwargs: self.write_db_cell_hal_coords(*args, **kwargs),
+            'read_db_hal_import_validate': lambda *args, **kwargs: self.read_db_hal_import_validate(*args, **kwargs),
+            'write_db_hal_import_coords': lambda *args, **kwargs: self.write_db_hal_import_coords(*args, **kwargs),
             'write_db_hal_park_defaults': lambda *args, **kwargs: self.write_db_hal_park_defaults(*args, **kwargs),
             'write_db_hal_sol_s_default': lambda *args, **kwargs: self.write_db_hal_sol_s_default(*args, **kwargs),
             'read_db_engineer_get_cell': lambda *args, **kwargs: self.read_db_engineer_get_cell(*args, **kwargs),
@@ -3176,6 +3178,85 @@ class ActionMapper:
         except Exception as e:
             logger.exception("read_db_cells_hal_list: %s", e)
             return {"trigger": "view_err"}
+
+    def read_db_hal_import_validate(self, *args, **kwargs):
+        """Парсинг и валидация CSV перед подтверждением импорта."""
+        from EventsSystem.hal_cells_import import (
+            confirm_message,
+            default_hal_cells_csv_path,
+            parse_hal_cells_csv,
+        )
+
+        self.__executor.hal_import_rows = None
+        self.__executor.hal_import_message = ""
+        try:
+            known = {
+                int(cell.number)
+                for cell in self.e_cell.session.query(Cell).all()
+                if cell.number is not None
+            }
+            result = parse_hal_cells_csv(
+                default_hal_cells_csv_path(),
+                known_numbers=known,
+            )
+        except Exception as e:
+            logger.exception("read_db_hal_import_validate: %s", e)
+            self.__executor.hal_import_message = f"Ошибка чтения файла:\n{e}"
+            return {
+                "trigger": "view_hal_import_err",
+                "message": self.__executor.hal_import_message,
+            }
+
+        if not result.ok:
+            self.__executor.hal_import_message = result.error or "Ошибка импорта"
+            return {
+                "trigger": "view_hal_import_err",
+                "message": self.__executor.hal_import_message,
+            }
+
+        self.__executor.hal_import_rows = list(result.rows)
+        self.__executor.hal_import_message = confirm_message(
+            result.rows, result.path
+        )
+        return {
+            "trigger": "view_hal_import_confirm",
+            "message": self.__executor.hal_import_message,
+            "count": len(result.rows),
+        }
+
+    def write_db_hal_import_coords(self, *args, **kwargs):
+        """Запись validated rows из executor в БД одной транзакцией."""
+        from EventsSystem.hal_cells_import import success_message
+
+        rows = getattr(self.__executor, "hal_import_rows", None) or []
+        if not rows:
+            self.__executor.hal_import_message = (
+                "Нет данных для импорта. Повторите загрузку файла."
+            )
+            return {
+                "trigger": "view_hal_import_err",
+                "message": self.__executor.hal_import_message,
+            }
+        try:
+            self.e_cell.bulk_update_hal_coords(rows)
+            cells = self.e_cell.list_cells_hal_summary()
+            count = len(rows)
+            self.__executor.hal_import_rows = None
+            self.__executor.hal_import_message = success_message(count)
+            return {
+                "trigger": "view_hal_import_ok",
+                "message": self.__executor.hal_import_message,
+                "cells": cells,
+                "count": count,
+            }
+        except Exception as e:
+            logger.exception("write_db_hal_import_coords: %s", e)
+            self.__executor.hal_import_rows = None
+            self.__executor.hal_import_message = f"Ошибка записи в БД:\n{e}"
+            return {
+                "trigger": "view_hal_import_err",
+                "message": self.__executor.hal_import_message,
+            }
 
     def write_db_cell_hal_coords(self, *args, **kwargs):
         """Запись hal_x/hal_z из MOT3/M1 (screen_38) в ячейку по номеру."""

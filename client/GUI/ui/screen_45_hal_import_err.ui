@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>screen_45_hal_import_err</class>
+ <widget class="QWidget" name="screen_45_hal_import_err">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>480</width><height>800</height></rect></property>
+  <property name="windowTitle"><string>screen_45_hal_import_err</string></property>
+  <property name="styleSheet"><string notr="true">QWidget{
+	background-color: #2e4461;
+}
+QLabel {
+	background: none;
+	color: #FFFFFF;
+	border-width: 0px;
+	border-radius: 0px;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}
+QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-family: &quot;Roboto&quot;, Sans-serif;
+}</string></property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin"><number>24</number></property>
+   <property name="topMargin"><number>24</number></property>
+   <property name="rightMargin"><number>24</number></property>
+   <property name="bottomMargin"><number>24</number></property>
+   <property name="spacing"><number>16</number></property>
+   <item>
+    <widget class="QLabel" name="lbl_title">
+     <property name="text"><string>Ошибка импорта</string></property>
+     <property name="alignment"><set>Qt::AlignCenter</set></property>
+     <property name="styleSheet"><string notr="true">font-size: 34px; font-weight: 700;</string></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="lbl_icon">
+     <property name="minimumSize"><size><width>0</width><height>96</height></size></property>
+     <property name="alignment"><set>Qt::AlignCenter</set></property>
+     <property name="pixmap"><pixmap resource="../img/resources.qrc">:/icons/error.png</pixmap></property>
+     <property name="scaledContents"><bool>false</bool></property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="lbl_body">
+     <property name="text"><string>Не удалось импортировать координаты.</string></property>
+     <property name="alignment"><set>Qt::AlignCenter</set></property>
+     <property name="styleSheet"><string notr="true">font-size: 22px;</string></property>
+     <property name="wordWrap"><bool>true</bool></property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation"><enum>Qt::Vertical</enum></property>
+     <property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_back">
+     <property name="text"><string>Назад</string></property>
+     <property name="styleSheet"><string notr="true">QPushButton { color: #FFFFFF; background-color: #f09022; border-radius: 8px; font-weight: 600; font-size: 25px; min-height: 72px; }</string></property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../img/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

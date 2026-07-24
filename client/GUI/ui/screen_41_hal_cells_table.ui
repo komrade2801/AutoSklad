@@ -22,17 +22,61 @@ QPushButton {
 	font-weight: 600;
 	font-family: &quot;Roboto&quot;, Sans-serif;
 }</string></property>
-  <layout class="QVBoxLayout" name="verticalLayout">   <property name="leftMargin"><number>12</number></property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin"><number>12</number></property>
    <property name="topMargin"><number>12</number></property>
    <property name="rightMargin"><number>12</number></property>
    <property name="bottomMargin"><number>10</number></property>
-   <property name="spacing"><number>8</number></property>   <item>
-    <widget class="QLabel" name="lbl_title">
-     <property name="text"><string>Таблица HAL-координат</string></property>
-   <property name="alignment"><set>Qt::AlignCenter</set></property>
-   <property name="styleSheet"><string notr="true">font-size: 26px; font-weight: 700;</string></property>
-    </widget>
-   </item>   <item>
+   <property name="spacing"><number>8</number></property>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_title">
+     <property name="spacing"><number>12</number></property>
+     <property name="leftMargin"><number>4</number></property>
+     <property name="topMargin"><number>4</number></property>
+     <property name="rightMargin"><number>4</number></property>
+     <property name="bottomMargin"><number>4</number></property>
+     <item>
+      <spacer name="horizontalSpacer_title_left">
+       <property name="orientation"><enum>Qt::Horizontal</enum></property>
+       <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="lbl_title">
+       <property name="text"><string>Координаты ячеек</string></property>
+       <property name="alignment"><set>Qt::AlignCenter</set></property>
+       <property name="styleSheet"><string notr="true">font-size: 26px; font-weight: 700;</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btn_title_down">
+       <property name="minimumSize"><size><width>36</width><height>36</height></size></property>
+       <property name="maximumSize"><size><width>36</width><height>36</height></size></property>
+       <property name="text"><string/></property>
+       <property name="icon">
+        <iconset resource="../img/resources.qrc">
+         <normaloff>:/icons/down.png</normaloff>:/icons/down.png</iconset>
+       </property>
+       <property name="iconSize"><size><width>22</width><height>22</height></size></property>
+       <property name="styleSheet"><string notr="true">QPushButton {
+	color: #FFFFFF;
+	background-color: #f09022;
+	border-width: 0px;
+	border-radius: 8px;
+	font-weight: 600;
+	padding: 6px;
+}</string></property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_title_right">
+       <property name="orientation"><enum>Qt::Horizontal</enum></property>
+       <property name="sizeHint" stdset="0"><size><width>40</width><height>20</height></size></property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QWidget" name="widget_table_header">
      <property name="minimumSize"><size><width>0</width><height>44</height></size></property>
      <property name="maximumSize"><size><width>16777215</width><height>44</height></size></property>
@@ -52,17 +96,18 @@ QListWidget::item {
 	padding: 0px;
 }</string></property>
     </widget>
-   </item>   <item>
-  <widget class="QPushButton" name="btn_back">
-   <property name="minimumSize"><size><width>0</width><height>50</height></size></property>
-   <property name="maximumSize"><size><width>16777215</width><height>50</height></size></property>
-   <property name="text"><string/></property>
-   <property name="icon">
-    <iconset resource="../img/resources.qrc">
-     <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
-   </property>
-   <property name="iconSize"><size><width>51</width><height>51</height></size></property>
-  </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_back">
+     <property name="minimumSize"><size><width>0</width><height>50</height></size></property>
+     <property name="maximumSize"><size><width>16777215</width><height>50</height></size></property>
+     <property name="text"><string/></property>
+     <property name="icon">
+      <iconset resource="../img/resources.qrc">
+       <normaloff>:/icons/back_white.png</normaloff>:/icons/back_white.png</iconset>
+     </property>
+     <property name="iconSize"><size><width>51</width><height>51</height></size></property>
+    </widget>
    </item>
   </layout>
  </widget>

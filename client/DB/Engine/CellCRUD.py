@@ -205,6 +205,36 @@ class EngineCell(BaseCRUD):
             return True
         return self.update(index=cell_id, **changed)
 
+    def bulk_update_hal_coords(self, rows) -> int:
+        """
+        Обновляет hal_x/hal_z по number в одной транзакции.
+        rows: iterable of (number, hal_x, hal_z).
+        Возвращает число затронутых строк. При отсутствии number — RuntimeError.
+        """
+        payload = list(rows)
+        if not payload:
+            return 0
+        with self.transaction() as db:
+            by_number = {
+                int(cell.number): cell
+                for cell in db.query(self.model).all()
+                if cell.number is not None
+            }
+            updated = 0
+            for number, hal_x, hal_z in payload:
+                cell = by_number.get(int(number))
+                if cell is None:
+                    raise RuntimeError(f"Ячейка number={number} не найдена в БД")
+                hx = int(hal_x)
+                hz = int(hal_z)
+                if cell.hal_x != hx or cell.hal_z != hz:
+                    cell.hal_x = hx
+                    cell.hal_z = hz
+                    updated += 1
+        self._cache.clear()
+        return updated
+
+
     def get_cell_by_number(self, number: int) -> Optional[Cell]:
         """Ячейка по номеру (number)."""
         try:

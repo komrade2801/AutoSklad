@@ -39,6 +39,9 @@ class Executor:
         self.wait_screen_message: str = ""
         # Номер ячейки для инженерных экранов (ввод / выбор из таблицы)
         self.engineer_cell_number: Optional[int] = None
+        # Импорт CSV координат (screen_41 → confirm → write)
+        self.hal_import_rows: Optional[list] = None
+        self.hal_import_message: str = ""
         # Последний триггер JOG (hal_jog_x_plus и т.д.)
         self.last_hal_jog_trigger: str = ""
         # Шаг JOG с screen_38 (1 / 5 / 10 / 50 / 100), по умолчанию 50
