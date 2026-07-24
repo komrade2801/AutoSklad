@@ -44,6 +44,9 @@ _CONFIG_JSON = Path(__file__).resolve().parent.parent / "config.json"
 
 # Импульс замка на экране тестовой выдачи (инженер), мс — для $LOCK
 HAL_ENGINEER_TEST_PULSE_MS = 10_000
+# RGB: idle после старта / после SOL; green на время открытия соленоида
+HAL_RGB_IDLE = "RGB,255,0,0"
+HAL_RGB_SOL_OPEN = "RGB,0,255,0"
 # Запас к ms импульса для fallback-сброса UI, если DONE LOCK/SOL не пришёл
 HAL_PULSE_FALLBACK_MARGIN_MS = 5_000
 HAL_PULSE_ACCEPT_TIMEOUT_MS = 3_000
@@ -78,15 +81,6 @@ def _clamp_mot_coord(value: int) -> int:
         return 0
     if v > 999999:
         return 999999
-    return v
-
-
-def _clamp_rgb_byte(value: int) -> int:
-    v = int(value)
-    if v < 0:
-        return 0
-    if v > 255:
-        return 255
     return v
 
 
@@ -496,31 +490,6 @@ class ActionMapper:
             for i in range(1, 6)
         ]
 
-    def _illumination_step(self, profile: dict):
-        """
-        Прошивка: только $LED,0|1. Ненулевой led из БД трактуем как «вкл» (1).
-        Если заданы rgb_issue_r/g/b — шаг $RGB,r,g,b.
-        """
-        if all(
-            profile.get(k) is not None
-            for k in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b")
-        ):
-            r = _clamp_rgb_byte(int(profile["rgb_issue_r"]))
-            g = _clamp_rgb_byte(int(profile["rgb_issue_g"]))
-            b = _clamp_rgb_byte(int(profile["rgb_issue_b"]))
-            return f"RGB,{r},{g},{b}", False
-        led_on = 1 if int(profile.get("led", 0)) != 0 else 0
-        return f"LED,{led_on}", False
-
-    def _illumination_off_step(self, profile: dict):
-        """Гасит ту же подсветку, что включали в начале выдачи (RGB или LED,0)."""
-        if all(
-            profile.get(k) is not None
-            for k in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b")
-        ):
-            return "RGB,0,0,0", False
-        return "LED,0", False
-
     def _resolve_hal_target_coords(self, number: int, cell_id=None):
         """
         Целевые hal_x/hal_z только из БД; без fallback на Cell.number / 0.
@@ -550,11 +519,11 @@ class ActionMapper:
     def _build_hal_dispense_steps(self, number: int, cell_id=None):
         """
         Цепочка под no_block_plata: кадры MOT,p1..p5 (параллель осей в одном кадре),
-        порядок — подсветка (LED/RGB) → ZERO → задняя «безопасная» (опц.) → к ячейке → штырь
-        → подъём штыря (M5=0) → парковка → $SOL,ms (окно выдачи) → выключение LED/RGB.
+        порядок — ZERO → задняя «безопасная» (опц.) → к ячейке → штырь → подъём штыря (M5=0)
+        → парковка → RGB green → $SOL,ms → RGB red (idle).
 
-        Подъезд к ячейке: M1=M2=hal_z, M3=hal_x, M4=hal_x−25, M5=0; штырь M5: 60 → 30 → 60 → 0,
-        затем парковка и SOL.
+        Зелёный горит на всё время импульса SOL (включается до SOL, красный — после DONE SOL).
+        Подъезд к ячейке: M1=M2=hal_z, M3=hal_x, M4=hal_x−25, M5=0; штырь M5: 60 → 30 → 60 → 0.
         """
         coords, coord_err = self._resolve_hal_target_coords(number, cell_id=cell_id)
         if coord_err:
@@ -566,7 +535,6 @@ class ActionMapper:
         park = self._park_vector_five(defaults)
         cell_target = list(hal_dispense_target_mot5(x, z))
         steps = [
-            self._illumination_step(defaults),
             ("ZERO", True),
         ]
 
@@ -594,8 +562,9 @@ class ActionMapper:
         steps.append((_fmt_mot5(list(park)), True))
 
         sol_ms = self._sol_pulse_ms_from_profile(defaults)
+        steps.append((HAL_RGB_SOL_OPEN, False))
         steps.append((f"SOL,{sol_ms}", True))
-        steps.append(self._illumination_off_step(defaults))
+        steps.append((HAL_RGB_IDLE, False))
 
         return steps, 0
 
@@ -718,7 +687,7 @@ class ActionMapper:
         """
         Startup-контракт готовности железа:
         - для legacy: пропускаем без проверки;
-        - для atmega_hal: проверка связи + ZERO + парковка в нули.
+        - для atmega_hal: проверка связи + ZERO + MOT нули + LED,1 + RGB красный.
         """
         protocol = (self.__executor.controller_protocol or "legacy").strip().lower()
         self.__executor.hardware_last_error = ""
@@ -764,10 +733,12 @@ class ActionMapper:
         else:
             return _fail_startup("serial_port_not_ready")
 
-        # no_block_plata: только $ZERO и $MOT,p1..p5 (нет LOCK0/LOCK1 на прошивке).
+        # no_block_plata: ZERO → парковка в нули → LED вкл → RGB idle (красный).
         startup_sequence = [
             ("ZERO", True, 120_000),
             ("MOT,0,0,0,0,0", True, 90_000),
+            ("LED,1", False, 15_000),
+            (HAL_RGB_IDLE, False, 15_000),
         ]
 
         for cmd, is_long, timeout_ms in startup_sequence:
