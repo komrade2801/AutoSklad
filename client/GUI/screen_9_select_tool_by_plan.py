@@ -37,12 +37,12 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
         # self.tool_list = {}
 
         try:
-            source = args[1] if len(args) > 1 else None
+            payload, source = self.split_set_data_args(args, kwargs)
             if source == 'btn_back':
                 logger.debug('data restored')
             else:
-                if not args or not isinstance(args[0], (tuple, list)) or len(args[0]) < 4:
-                    logger.warning("screen_9_select_tool_by_plan: invalid payload: %s", args[0] if args else None)
+                if not isinstance(payload, (tuple, list)) or len(payload) < 4:
+                    logger.warning("screen_9_select_tool_by_plan: invalid payload: %s", payload)
                     self.plan_number.setText("")
                     self.plan_name.setText("")
                     self.plan_id_val = -1
@@ -51,7 +51,7 @@ class screen_9_select_tool_by_plan(BaseScreen, Ui_screen_9_select_tool_by_plan):
                     self.setCompleteButtonState(False)
                     return
 
-                data = args[0]
+                data = payload
 
                 self.plan_number.setText(data[1])
                 self.plan_name.setText(data[2])

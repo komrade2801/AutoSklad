@@ -642,34 +642,24 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
             self._try_clear_error_on_valid_input()
 
     def set_data(self, *args, **kwargs):
+        payload, _source = self.split_set_data_args(args, kwargs)
+        data = {k: v for k, v in kwargs.items() if k != "source"}
+        if isinstance(payload, dict):
+            data.update(payload)
+
         positions = None
-        if args and isinstance(args[0], dict):
-            positions = args[0].get("hal_motor_positions")
-        elif len(args) >= 1 and isinstance(args[0], (list, tuple)):
-            positions = args[0]
+        if isinstance(payload, dict):
+            positions = payload.get("hal_motor_positions")
+        elif isinstance(payload, (list, tuple)):
+            positions = payload
 
         if positions and len(positions) >= 5:
             self.jog_panel.set_motor_positions(positions)
 
-        err_msg = kwargs.get("hal_input_error")
-        if err_msg is None and args:
-            for a in args:
-                if isinstance(a, dict) and "hal_input_error" in a:
-                    err_msg = a["hal_input_error"]
-                    break
-        save_ok = kwargs.get("hal_save_ok")
-        park_ok = kwargs.get("hal_park_ok")
-        zero_ok = kwargs.get("hal_zero_ok")
-        if args:
-            for a in args:
-                if not isinstance(a, dict):
-                    continue
-                if save_ok is None and a.get("hal_save_ok"):
-                    save_ok = True
-                if park_ok is None and a.get("hal_park_ok"):
-                    park_ok = True
-                if zero_ok is None and a.get("hal_zero_ok"):
-                    zero_ok = True
+        err_msg = data.get("hal_input_error")
+        save_ok = data.get("hal_save_ok")
+        park_ok = data.get("hal_park_ok")
+        zero_ok = data.get("hal_zero_ok")
 
         if err_msg:
             self._show_input_error(str(err_msg))
@@ -692,11 +682,7 @@ class screen_38_hal_coords(BaseScreen, Ui_screen_38_hal_coords):
                 "_zero_ok_timer",
             )
 
-        prefill = kwargs.get("engineer_cell_number")
-        if prefill is None and args:
-            for a in args:
-                if isinstance(a, dict) and "engineer_cell_number" in a:
-                    prefill = a["engineer_cell_number"]
+        prefill = data.get("engineer_cell_number")
         if prefill is not None:
             self.edit_cell_number.blockSignals(True)
             self.edit_cell_number.setText(str(int(prefill)))

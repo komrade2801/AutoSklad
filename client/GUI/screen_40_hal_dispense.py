@@ -1001,12 +1001,12 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         super().hideEvent(event)
 
     def set_data(self, *args, **kwargs):
-        err_msg = kwargs.get("hal_input_error")
-        if err_msg is None and args:
-            for a in args:
-                if isinstance(a, dict) and "hal_input_error" in a:
-                    err_msg = a["hal_input_error"]
-                    break
+        payload, _source = self.split_set_data_args(args, kwargs)
+        data = {k: v for k, v in kwargs.items() if k != "source"}
+        if isinstance(payload, dict):
+            data.update(payload)
+
+        err_msg = data.get("hal_input_error")
         if err_msg:
             bad_park = None
             bad_rgb = None
@@ -1033,57 +1033,34 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
         park_data = {}
         for i in range(1, 6):
             key = f"park_m{i}"
-            if key in kwargs:
-                park_data[key] = kwargs[key]
-        if not park_data and args:
-            for a in args:
-                if isinstance(a, dict):
-                    for i in range(1, 6):
-                        key = f"park_m{i}"
-                        if key in a:
-                            park_data[key] = a[key]
+            if key in data:
+                park_data[key] = data[key]
         if park_data:
             self._apply_park_values(park_data)
         else:
             self._load_park_current_values()
 
-        if kwargs.get("hal_park_save_ok"):
+        if data.get("hal_park_save_ok"):
             self._flash_park_save_success()
 
-        if kwargs.get("hal_rgb_save_ok"):
+        if data.get("hal_rgb_save_ok"):
             self._flash_rgb_save_success()
 
-        if kwargs.get("hal_sol_save_ok"):
+        if data.get("hal_sol_save_ok"):
             self._flash_sol_save_success()
 
-        if "sol_s" in kwargs:
-            self._apply_sol_value(int(kwargs["sol_s"]))
-        elif args:
-            for a in args:
-                if isinstance(a, dict) and "sol_s" in a:
-                    self._apply_sol_value(int(a["sol_s"]))
-                    break
+        if "sol_s" in data:
+            self._apply_sol_value(int(data["sol_s"]))
 
         rgb_data = {}
         for key in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b"):
-            if key in kwargs:
-                rgb_data[key] = kwargs[key]
-        if not rgb_data and args:
-            for a in args:
-                if isinstance(a, dict):
-                    for key in ("rgb_issue_r", "rgb_issue_g", "rgb_issue_b"):
-                        if key in a:
-                            rgb_data[key] = a[key]
+            if key in data:
+                rgb_data[key] = data[key]
         if rgb_data:
             self._apply_rgb_values(rgb_data)
 
-        if "hal_led_on" in kwargs:
-            self._set_hal_led_style(bool(kwargs["hal_led_on"]))
-        else:
-            for a in args:
-                if isinstance(a, dict) and "hal_led_on" in a:
-                    self._set_hal_led_style(bool(a["hal_led_on"]))
-                    break
+        if "hal_led_on" in data:
+            self._set_hal_led_style(bool(data["hal_led_on"]))
 
         for key, attr in (
             ("hal_lock_active", "_hal_lock_active"),
@@ -1091,21 +1068,11 @@ class screen_40_hal_dispense(BaseScreen, Ui_screen_40_hal_dispense):
             ("hal_sol_active", "_hal_sol_active"),
             ("hal_sol_pending", "_hal_sol_pending"),
         ):
-            if key in kwargs:
-                setattr(self, attr, bool(kwargs[key]))
-            else:
-                for a in args:
-                    if isinstance(a, dict) and key in a:
-                        setattr(self, attr, bool(a[key]))
-                        break
+            if key in data:
+                setattr(self, attr, bool(data[key]))
         self._sync_actuator_buttons()
 
-        prefill = kwargs.get("engineer_cell_number")
-        if prefill is None and args:
-            for a in args:
-                if isinstance(a, dict) and "engineer_cell_number" in a:
-                    prefill = a["engineer_cell_number"]
-                    break
+        prefill = data.get("engineer_cell_number")
         if prefill is not None:
             self.edit_cell_number.blockSignals(True)
             self.edit_cell_number.setText(str(int(prefill)))

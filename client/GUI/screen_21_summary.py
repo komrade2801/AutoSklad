@@ -26,14 +26,14 @@ class screen_21_summary(BaseScreen, Ui_screen_21_summary):
         Каждый элемент отображается как отдельный виджет в listWidget.
         """
         try:
-            data_list = args[0]  # Список данных, переданный первым аргументом
+            data_list, source = self.split_set_data_args(args, kwargs)
             if not isinstance(data_list, list):
                 logger.warning("Ошибка: Ожидается список словарей.")
                 return
 
             self.listWidget.clear()  # Очищаем список перед добавлением новых данных
 
-            if args[1] and args[1] == 'btn_down':
+            if source == 'btn_down':
                 data_list.sort(reverse=False, key=self.history_sort_func)
             else:
                 data_list.sort(reverse=True, key=self.history_sort_func)

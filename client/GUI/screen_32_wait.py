@@ -38,11 +38,14 @@ class screen_32_wait(BaseScreen, Ui_screen_32_wait):
 
     def set_data(self, *args, **kwargs):
         """Подпись ожидания: «Парковка…», «Тестовая выдача…» или стандартная выдача."""
-        message = kwargs.get("wait_screen_message")
-        if not message and args:
-            first = args[0]
-            if isinstance(first, dict):
-                message = first.get("wait_screen_message")
+        payload, _source = self.split_set_data_args(args, kwargs)
+        message = None
+        if isinstance(payload, dict):
+            message = payload.get("wait_screen_message")
+        elif isinstance(payload, str) and payload.strip():
+            message = payload.strip()
+        if not message:
+            message = kwargs.get("wait_screen_message")
         if not message:
             parent = self.window()
             executor = getattr(parent, "executor", None)

@@ -111,6 +111,19 @@ class BaseScreen(QtWidgets.QWidget, ABC, metaclass=CombinedMeta):
     def is_write(self):
         return self.__is_write
 
+    @staticmethod
+    def split_set_data_args(args, kwargs=None):
+        """Контракт set_data: args[0] — payload, args[1] — source (кнопка/триггер).
+
+        kwargs['source'] оставляем только как запасной путь, если источник
+        не передали позиционно.
+        """
+        payload = args[0] if len(args) > 0 else None
+        source = args[1] if len(args) > 1 else None
+        if source is None and kwargs:
+            source = kwargs.get("source")
+        return payload, source
+
     @abstractmethod
     def set_data(self, *args, **kwargs):
         """Устанавливает текст. Реализуется в каждом экране."""

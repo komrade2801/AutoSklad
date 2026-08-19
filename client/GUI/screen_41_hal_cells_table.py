@@ -57,13 +57,14 @@ class screen_41_hal_cells_table(BaseScreen, Ui_screen_41_hal_cells_table):
             item.setSizeHint(widget.sizeHint())
 
     def set_data(self, *args, **kwargs):
-        cells = kwargs.get("cells")
-        if cells is None and args:
-            first = args[0]
-            if isinstance(first, dict):
-                cells = first.get("cells")
-            elif isinstance(first, list):
-                cells = first
+        payload, _source = self.split_set_data_args(args, kwargs)
+        cells = None
+        if isinstance(payload, dict):
+            cells = payload.get("cells")
+        elif isinstance(payload, list):
+            cells = payload
+        if cells is None:
+            cells = kwargs.get("cells")
         if not cells:
             return
 

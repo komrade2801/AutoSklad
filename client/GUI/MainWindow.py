@@ -591,27 +591,15 @@ class MainWindow(QtWidgets.QWidget):
         elif not widget_found:
             self._handle_widget_not_found(widget_name, source, value)
 
-    def _handle_widget_data(self, widget, source: str = None, *value: Any):
+    def _handle_widget_data(self, widget, source: str = None, value: Any = None):
         """
-        Обрабатывает передачу данных виджету.
+        Передаёт данные экрану по старому контракту: set_data(payload, source).
 
-        :param widget: Виджет для обработки.
-        :param value: Данные для передачи.
-        :param source: Имя источника перехода на виджет (кнопка).
+        payload — результат action или данные предыдущего экрана;
+        source — имя кнопки/триггера перехода (второй позиционный аргумент).
         """
         logger.debug("_handle_widget_data widget=%s source=%s value=%s", widget, source, self.last_widget_value)
-
-        # write = widget.is_write()
-        # read  = widget.is_read()
-        # if write and not read:
-        if isinstance(value, dict):
-            widget.set_data(value, source=source)
-        elif isinstance(value, (list, tuple)):
-            widget.set_data(*value, source=source)
-        elif value is not None:
-            widget.set_data(value, source=source)
-        else:
-            widget.set_data(source=source)
+        widget.set_data(value, source)
         data = widget.get_data()
         self.widget_back = widget
         return data

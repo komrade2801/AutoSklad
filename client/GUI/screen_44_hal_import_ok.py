@@ -5,16 +5,14 @@ from GUI.ui_classes.Ui_screen_44_hal_import_ok import Ui_screen_44_hal_import_ok
 
 
 def _message_from_set_data(args, kwargs) -> str:
-    detail = (kwargs.get("message") or "").strip()
-    if detail:
-        return detail
-    if args:
-        first = args[0]
-        if isinstance(first, dict):
-            return (first.get("message") or "").strip()
-        if isinstance(first, str):
-            return first.strip()
-    return ""
+    payload = args[0] if len(args) > 0 else None
+    if isinstance(payload, dict):
+        detail = (payload.get("message") or "").strip()
+        if detail:
+            return detail
+    if isinstance(payload, str) and payload.strip():
+        return payload.strip()
+    return (kwargs.get("message") or "").strip()
 
 
 class screen_44_hal_import_ok(BaseScreen, Ui_screen_44_hal_import_ok):

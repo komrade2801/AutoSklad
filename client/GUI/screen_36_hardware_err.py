@@ -21,11 +21,14 @@ class screen_36_hardware_err(BaseScreen, Ui_screen_36_hardware_err):
         self.normalize_screen_geometry()
 
     def set_data(self, *args, **kwargs):
-        detail = (kwargs.get("hardware_last_error") or "").strip()
-        if not detail and args:
-            first = args[0]
-            if isinstance(first, dict):
-                detail = (first.get("hardware_last_error") or "").strip()
+        payload, _source = self.split_set_data_args(args, kwargs)
+        detail = ""
+        if isinstance(payload, dict):
+            detail = (payload.get("hardware_last_error") or "").strip()
+        elif isinstance(payload, str):
+            detail = payload.strip()
+        if not detail:
+            detail = (kwargs.get("hardware_last_error") or "").strip()
         if not detail:
             parent = self.window()
             executor = getattr(parent, "executor", None)

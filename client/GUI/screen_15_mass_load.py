@@ -26,10 +26,11 @@ class screen_15_mass_load(BaseScreen, Ui_screen_15_mass_load):
     def set_data(self, *args, **kwargs):
         logger.debug("screen_15_mass_load set_data args=%s kwargs=%s", args, kwargs)
         try:
-            cell_list = args[0] if len(args) > 0 and args[0] is not None else []
+            payload, source = self.split_set_data_args(args, kwargs)
+            cell_list = payload if isinstance(payload, list) else []
             self.lbl_group_count.setText(f"Ячеек: {len(cell_list)}")
 
-            if args[1] and args[1] == 'btn_down':
+            if source == 'btn_down':
                 cell_list.sort(reverse=False, key=self.mass_load_sort_by_cell_func)
             else:
                 cell_list.sort(reverse=False, key=self.mass_load_sort_by_tool_func)
